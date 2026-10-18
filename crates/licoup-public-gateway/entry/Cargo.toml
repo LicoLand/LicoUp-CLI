@@ -1,0 +1,25 @@
+[package]
+# The Telegram channel package's own program.
+#
+# `package-telegram/manifest.json` declares `runtime.entry =
+# "bin/lico-telegram-channel"`; the binary target here is what that declaration
+# points at. The crate links the host for the lane port the channel consumes
+# (`licoup-native`) and the channel stack itself (`licoup-public-gateway`),
+# mirroring the private gateway's entry crate.
+name = "licoup-public-gateway-entry"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "lico-telegram-channel"
+path = "src/bin/lico-telegram-channel.rs"
+
+[dependencies]
+anyhow.workspace = true
+licoup-foundation = { path = "../../licoup-foundation" }
+licoup-native = { path = "../../licoup-native" }
+licoup-public-gateway = { path = "..", default-features = false }
+serde_json.workspace = true

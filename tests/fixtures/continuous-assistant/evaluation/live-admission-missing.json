@@ -1,0 +1,27 @@
+{
+  "schema": "licoup.continuity.evaluation-live-admission/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "requiredAuthority": ["target", "content", "scope"],
+  "requiredBudget": ["spendCeiling"],
+  "missingAuthority": {
+    "mode": "live",
+    "expectCode": "approval_required",
+    "expectPassingReceipt": false,
+    "expectExternalCalls": 0,
+    "expectEffectsStarted": false
+  },
+  "missingBudget": {
+    "mode": "live",
+    "authority": {
+      "target": "synthetic-target",
+      "content": "synthetic-content",
+      "scope": "synthetic-scope"
+    },
+    "expectCode": "budget_exhausted",
+    "expectPassingReceipt": false,
+    "expectExternalCalls": 0,
+    "expectEffectsStarted": false
+  },
+  "note": "M3 proves typed refusal. Exact live authority persistence is M4. Real model qualification remains unknown."
+}

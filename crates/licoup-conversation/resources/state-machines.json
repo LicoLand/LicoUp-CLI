@@ -1,0 +1,773 @@
+{
+  "machines": [
+    {
+      "id": "conversation.turn",
+      "rust_module": "conversation_turn",
+      "states": [
+        {
+          "id": "pending"
+        },
+        {
+          "id": "claimed"
+        },
+        {
+          "id": "running"
+        },
+        {
+          "id": "waiting-for-human"
+        },
+        {
+          "id": "succeeded"
+        },
+        {
+          "id": "failed"
+        },
+        {
+          "id": "interrupted"
+        },
+        {
+          "id": "cancelled"
+        }
+      ],
+      "events": [
+        "claim",
+        "start",
+        "wait-for-human",
+        "resume",
+        "succeed",
+        "fail",
+        "interrupt",
+        "cancel"
+      ],
+      "initial": "pending",
+      "terminal": [
+        "succeeded",
+        "failed",
+        "interrupted",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from_state": "pending",
+          "event": "claim",
+          "to_state": "claimed"
+        },
+        {
+          "from_state": "pending",
+          "event": "start",
+          "to_state": "running"
+        },
+        {
+          "from_state": "pending",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "pending",
+          "event": "interrupt",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "pending",
+          "event": "cancel",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "claimed",
+          "event": "start",
+          "to_state": "running"
+        },
+        {
+          "from_state": "claimed",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "claimed",
+          "event": "interrupt",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "claimed",
+          "event": "cancel",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "running",
+          "event": "wait-for-human",
+          "to_state": "waiting-for-human"
+        },
+        {
+          "from_state": "running",
+          "event": "succeed",
+          "to_state": "succeeded"
+        },
+        {
+          "from_state": "running",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "running",
+          "event": "interrupt",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "running",
+          "event": "cancel",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "waiting-for-human",
+          "event": "resume",
+          "to_state": "running"
+        },
+        {
+          "from_state": "waiting-for-human",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "waiting-for-human",
+          "event": "interrupt",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "waiting-for-human",
+          "event": "cancel",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "succeeded",
+          "event": "claim",
+          "to_state": "succeeded"
+        },
+        {
+          "from_state": "succeeded",
+          "event": "start",
+          "to_state": "succeeded"
+        },
+        {
+          "from_state": "succeeded",
+          "event": "wait-for-human",
+          "to_state": "succeeded"
+        },
+        {
+          "from_state": "succeeded",
+          "event": "resume",
+          "to_state": "succeeded"
+        },
+        {
+          "from_state": "succeeded",
+          "event": "succeed",
+          "to_state": "succeeded"
+        },
+        {
+          "from_state": "succeeded",
+          "event": "fail",
+          "to_state": "succeeded"
+        },
+        {
+          "from_state": "succeeded",
+          "event": "interrupt",
+          "to_state": "succeeded"
+        },
+        {
+          "from_state": "succeeded",
+          "event": "cancel",
+          "to_state": "succeeded"
+        },
+        {
+          "from_state": "failed",
+          "event": "claim",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "failed",
+          "event": "start",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "failed",
+          "event": "wait-for-human",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "failed",
+          "event": "resume",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "failed",
+          "event": "succeed",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "failed",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "failed",
+          "event": "interrupt",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "failed",
+          "event": "cancel",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "interrupted",
+          "event": "claim",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "interrupted",
+          "event": "start",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "interrupted",
+          "event": "wait-for-human",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "interrupted",
+          "event": "resume",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "interrupted",
+          "event": "succeed",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "interrupted",
+          "event": "fail",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "interrupted",
+          "event": "interrupt",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "interrupted",
+          "event": "cancel",
+          "to_state": "interrupted"
+        },
+        {
+          "from_state": "cancelled",
+          "event": "claim",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "cancelled",
+          "event": "start",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "cancelled",
+          "event": "wait-for-human",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "cancelled",
+          "event": "resume",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "cancelled",
+          "event": "succeed",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "cancelled",
+          "event": "fail",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "cancelled",
+          "event": "interrupt",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "cancelled",
+          "event": "cancel",
+          "to_state": "cancelled"
+        }
+      ]
+    },
+    {
+      "id": "conversation.send",
+      "rust_module": "conversation_send",
+      "states": [
+        {
+          "id": "sending"
+        },
+        {
+          "id": "delivered"
+        },
+        {
+          "id": "failed"
+        }
+      ],
+      "events": [
+        "deliver",
+        "fail"
+      ],
+      "initial": "sending",
+      "terminal": [
+        "delivered",
+        "failed"
+      ],
+      "transitions": [
+        {
+          "from_state": "sending",
+          "event": "deliver",
+          "to_state": "delivered"
+        },
+        {
+          "from_state": "sending",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "delivered",
+          "event": "deliver",
+          "to_state": "delivered"
+        },
+        {
+          "from_state": "delivered",
+          "event": "fail",
+          "to_state": "delivered"
+        },
+        {
+          "from_state": "failed",
+          "event": "deliver",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "failed",
+          "event": "fail",
+          "to_state": "failed"
+        }
+      ]
+    },
+    {
+      "id": "conversation.membership",
+      "rust_module": "conversation_membership",
+      "states": [
+        {
+          "id": "active"
+        },
+        {
+          "id": "left"
+        }
+      ],
+      "events": [
+        "leave",
+        "reactivate"
+      ],
+      "initial": "active",
+      "terminal": [],
+      "transitions": [
+        {
+          "from_state": "active",
+          "event": "leave",
+          "to_state": "left"
+        },
+        {
+          "from_state": "left",
+          "event": "reactivate",
+          "to_state": "active"
+        }
+      ]
+    },
+    {
+      "id": "conversation.dispatch",
+      "rust_module": "conversation_dispatch",
+      "states": [
+        {
+          "id": "accepted"
+        },
+        {
+          "id": "running"
+        },
+        {
+          "id": "cancel-requested"
+        },
+        {
+          "id": "completed"
+        },
+        {
+          "id": "failed"
+        },
+        {
+          "id": "cancelled"
+        }
+      ],
+      "events": [
+        "start",
+        "request-cancel",
+        "complete",
+        "fail",
+        "cancel"
+      ],
+      "initial": "accepted",
+      "terminal": [
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from_state": "accepted",
+          "event": "start",
+          "to_state": "running"
+        },
+        {
+          "from_state": "accepted",
+          "event": "request-cancel",
+          "to_state": "cancel-requested"
+        },
+        {
+          "from_state": "accepted",
+          "event": "complete",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "accepted",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "accepted",
+          "event": "cancel",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "running",
+          "event": "request-cancel",
+          "to_state": "cancel-requested"
+        },
+        {
+          "from_state": "running",
+          "event": "complete",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "running",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "running",
+          "event": "cancel",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "complete",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "cancel",
+          "to_state": "cancelled"
+        }
+      ]
+    },
+    {
+      "id": "conversation.subagent-claim",
+      "rust_module": "conversation_subagent_claim",
+      "states": [
+        {
+          "id": "claimed"
+        },
+        {
+          "id": "running"
+        },
+        {
+          "id": "cancel-requested"
+        },
+        {
+          "id": "reconciliation-required"
+        },
+        {
+          "id": "completed"
+        },
+        {
+          "id": "failed"
+        },
+        {
+          "id": "cancelled"
+        }
+      ],
+      "events": [
+        "start",
+        "request-cancel",
+        "require-reconciliation",
+        "resume",
+        "complete",
+        "fail",
+        "cancel",
+        "reconcile-running",
+        "reconcile-cancel-requested",
+        "reconcile-completed",
+        "reconcile-failed",
+        "reconcile-cancelled"
+      ],
+      "initial": "claimed",
+      "terminal": [
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from_state": "claimed",
+          "event": "start",
+          "to_state": "running"
+        },
+        {
+          "from_state": "claimed",
+          "event": "complete",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "claimed",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "claimed",
+          "event": "cancel",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "claimed",
+          "event": "require-reconciliation",
+          "to_state": "reconciliation-required"
+        },
+        {
+          "from_state": "running",
+          "event": "request-cancel",
+          "to_state": "cancel-requested"
+        },
+        {
+          "from_state": "running",
+          "event": "complete",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "running",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "running",
+          "event": "require-reconciliation",
+          "to_state": "reconciliation-required"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "complete",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "cancel",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "require-reconciliation",
+          "to_state": "reconciliation-required"
+        },
+        {
+          "from_state": "reconciliation-required",
+          "event": "resume",
+          "to_state": "running"
+        },
+        {
+          "from_state": "reconciliation-required",
+          "event": "complete",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "reconciliation-required",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "reconciliation-required",
+          "event": "cancel",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "claimed",
+          "event": "reconcile-running",
+          "to_state": "running"
+        },
+        {
+          "from_state": "claimed",
+          "event": "reconcile-cancel-requested",
+          "to_state": "cancel-requested"
+        },
+        {
+          "from_state": "claimed",
+          "event": "reconcile-completed",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "claimed",
+          "event": "reconcile-failed",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "claimed",
+          "event": "reconcile-cancelled",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "running",
+          "event": "reconcile-cancel-requested",
+          "to_state": "cancel-requested"
+        },
+        {
+          "from_state": "running",
+          "event": "reconcile-completed",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "running",
+          "event": "reconcile-failed",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "running",
+          "event": "reconcile-cancelled",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "reconcile-running",
+          "to_state": "running"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "reconcile-completed",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "reconcile-failed",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "cancel-requested",
+          "event": "reconcile-cancelled",
+          "to_state": "cancelled"
+        },
+        {
+          "from_state": "reconciliation-required",
+          "event": "reconcile-running",
+          "to_state": "running"
+        },
+        {
+          "from_state": "reconciliation-required",
+          "event": "reconcile-cancel-requested",
+          "to_state": "cancel-requested"
+        },
+        {
+          "from_state": "reconciliation-required",
+          "event": "reconcile-completed",
+          "to_state": "completed"
+        },
+        {
+          "from_state": "reconciliation-required",
+          "event": "reconcile-failed",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "reconciliation-required",
+          "event": "reconcile-cancelled",
+          "to_state": "cancelled"
+        }
+      ]
+    },
+    {
+      "id": "conversation.dispatch-delivery",
+      "rust_module": "conversation_dispatch_delivery",
+      "states": [
+        {
+          "id": "pending"
+        },
+        {
+          "id": "delivering"
+        },
+        {
+          "id": "delivered"
+        },
+        {
+          "id": "failed"
+        }
+      ],
+      "events": [
+        "begin",
+        "retry",
+        "deliver",
+        "fail"
+      ],
+      "initial": "pending",
+      "terminal": [
+        "delivered",
+        "failed"
+      ],
+      "transitions": [
+        {
+          "from_state": "pending",
+          "event": "begin",
+          "to_state": "delivering"
+        },
+        {
+          "from_state": "pending",
+          "event": "deliver",
+          "to_state": "delivered"
+        },
+        {
+          "from_state": "pending",
+          "event": "fail",
+          "to_state": "failed"
+        },
+        {
+          "from_state": "delivering",
+          "event": "retry",
+          "to_state": "pending"
+        },
+        {
+          "from_state": "delivering",
+          "event": "deliver",
+          "to_state": "delivered"
+        },
+        {
+          "from_state": "delivering",
+          "event": "fail",
+          "to_state": "failed"
+        }
+      ]
+    }
+  ]
+}

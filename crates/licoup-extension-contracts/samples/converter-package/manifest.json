@@ -1,0 +1,41 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.example.converter",
+  "version": "1.0.0",
+  "displayName": "Example native format converter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "native-converter",
+      "major": 1
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/example-converter"
+  },
+  "conversion": {
+    "kind": "native-executable",
+    "entry": "bin/example-converter",
+    "sourceFormats": [
+      "licoup-state-0.1.1"
+    ],
+    "targetFormat": "licoup-state-0.3.0"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [],
+  "contributions": [],
+  "extensions": {
+    "org.licoland.example/purpose": "Contract sample: a package that owns one published format conversion with a program it carries itself. It is not a product converter, needs no Agent, no Node, no Python and no developer toolchain on the target device, and is read only as a manifest by the sample tests."
+  }
+}

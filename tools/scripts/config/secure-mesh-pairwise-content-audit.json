@@ -1,0 +1,703 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.pairwise-content-audit-config.v2",
+  "reportOutput": "build/reports/secure-mesh-pairwise-content-crypto-audit.json",
+  "vectorCorpusOutput": "build/reports/secure-mesh-pairwise-content-vector-corpus.json",
+  "reviewSignoff": {
+    "envKeys": [
+      "LICO_SECURE_MESH_PAIRWISE_CONTENT_SIGNOFF"
+    ],
+    "ref": "build/reports/secure-mesh-pairwise-content-review-signoff.json"
+  },
+  "sourceChecks": [
+    {
+      "id": "content-payload-bucket-padding-is-bounded-and-authenticated",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_crypto/constants.rs",
+        "crates/licoup-native/src/core/secure_mesh_crypto/padding.rs",
+        "crates/licoup-native/src/core/secure_mesh_crypto/tests/padding.rs"
+      ],
+      "tokens": [
+        "PADDED_PLAINTEXT_MAGIC",
+        "MIN_PADDING_BUCKET_BYTES",
+        "LARGE_PADDING_BUCKET_STEP_BYTES",
+        "MAX_PADDING_BUCKET_BYTES",
+        "padding_bucket_for_ciphertext_size",
+        "add_bucket_padding",
+        "remove_authenticated_padding",
+        "secure_mesh_content_crypto_bucket_padding_hides_length_and_round_trips_boundaries",
+        "secure_mesh_content_crypto_rejects_invalid_padding_and_oversized_bucket"
+      ]
+    },
+    {
+      "id": "pairwise-relay-header-uses-double-ratchet-header-encryption",
+      "files": [
+        "crates/licoup-protocol-bindings/src/licoarc_relay/constants.rs",
+        "crates/licoup-protocol-bindings/src/licoarc_relay/aad.rs",
+        "crates/licoup-protocol-bindings/src/licoarc_relay/private_header_frame.rs",
+        "crates/licoup-protocol-bindings/src/licoarc_relay/private_header.rs",
+        "crates/licoup-protocol-bindings/src/licoarc_relay/tests/header.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/key_ratchet/relay_codec.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/codec.rs"
+      ],
+      "tokens": [
+        "RELAY_HEADER_FRAME_MAGIC",
+        "OUTER_AAD_MAGIC",
+        "LICOARC_ENCRYPTED_HEADER_BYTES",
+        "seal_private_relay_header_with_nonce",
+        "open_private_relay_header",
+        "private_header_round_trip_preserves_fixed_size_and_zeroizing_payload",
+        "private_header_authentication_binds_identifiers_expiry_and_carrier_lengths",
+        "secure_mesh_pairwise_encrypted_relay_header_hides_ratchet_structure_and_rejects_tamper"
+      ],
+      "forbiddenTokens": [
+        "LCOSM-PAIRWISE-RELAY-v1"
+      ]
+    },
+    {
+      "id": "pairwise-session-rotates-bounded-header-keys",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_pairwise/key_ratchet.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/key_ratchet.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/codec.rs"
+      ],
+      "tokens": [
+        "sending_header_key",
+        "receiving_header_key",
+        "next_sending_header_key",
+        "next_receiving_header_key",
+        "skipped_receiving_header_keys",
+        "secure_mesh_pairwise_encrypted_relay_header_hides_ratchet_structure_and_rejects_tamper",
+        "secure_mesh_pairwise_encrypted_headers_preserve_old_chain_envelope_out_of_order"
+      ]
+    },
+    {
+      "id": "content-crypto-stable-vectors-cover-all-payload-kinds",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_crypto/tests/stable_vector.rs"
+      ],
+      "tokens": [
+        "secure_mesh_content_crypto_has_stable_vectors_for_all_payload_kinds",
+        "ContentCryptoStableVector",
+        "SecureMeshPayloadKind::Command",
+        "SecureMeshPayloadKind::ResultPayload",
+        "SecureMeshPayloadKind::Error",
+        "SecureMeshPayloadKind::FileChunk",
+        "SecureMeshPayloadKind::FileManifest",
+        "SecureMeshPayloadKind::ServiceAction",
+        "SecureMeshPayloadKind::TypingIndicator",
+        "SecureMeshPayloadKind::ReadReceipt",
+        "assert_eq!(vectors.len(), 8)",
+        "candidate.encrypted_header",
+        "candidate.ciphertext",
+        "candidate.ciphertext_size"
+      ]
+    },
+    {
+      "id": "pqxdh-mlkem1024-schedule-has-known-answer-vectors",
+      "file": "crates/licoup-native/src/core/secure_mesh_pqxdh.rs",
+      "tokens": [
+        "licomesh.pqxdh-triple-ratchet.v1.x25519-ed25519-mlkem1024-hkdfsha256",
+        "ML_KEM_1024_PUBLIC_KEY_BYTES: usize = 1_568",
+        "ML_KEM_1024_PRIVATE_KEY_BYTES: usize = 3_168",
+        "ML_KEM_1024_CIPHERTEXT_BYTES: usize = 1_568",
+        "pqxdh_schedule_is_deterministic_domain_separated_and_context_bound",
+        "hex(first.ec_secret())",
+        "hex(first.scka_secret())",
+        "libcrux_sha3::sha256(first.associated_data())"
+      ]
+    },
+    {
+      "id": "mlkem1024-braid-parameters-and-authenticator-have-known-answers",
+      "file": "crates/licoup-native/src/core/secure_mesh_mlkem_braid/constants.rs",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_mlkem_braid/constants.rs",
+        "crates/licoup-native/src/core/secure_mesh_mlkem_braid/authenticator.rs",
+        "crates/licoup-native/src/core/secure_mesh_mlkem_braid/tests/authenticator.rs"
+      ],
+      "tokens": [
+        "mlkem1024::incremental",
+        "ML_KEM_BRAID_HEADER_BYTES: usize = 64",
+        "ML_KEM_BRAID_EK_BYTES: usize = 1_536",
+        "ML_KEM_BRAID_CT1_BYTES: usize = 1_408",
+        "ML_KEM_BRAID_CT2_BYTES: usize = 160",
+        "ML_KEM_BRAID_TRANSITION_COUNT: usize = 13",
+        "const _: [(); ML_KEM_BRAID_HEADER_BYTES] = [(); incremental::pk1_len()]",
+        "const _: [(); ML_KEM_BRAID_EK_BYTES] = [(); incremental::pk2_len()]",
+        "const _: [(); ML_KEM_BRAID_CT1_BYTES] = [(); Ciphertext1::len()]",
+        "const _: [(); ML_KEM_BRAID_CT2_BYTES] = [(); Ciphertext2::len()]",
+        "authenticator_known_answer"
+      ]
+    },
+    {
+      "id": "pairwise-pqxdh-triple-ratchet-combines-ec-and-sparse-pq",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_pairwise/support.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/session_negotiation.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/key_ratchet.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/session_negotiation.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/key_ratchet.rs"
+      ],
+      "tokens": [
+        "licomesh.pqxdh-triple-ratchet.v1.x25519-ed25519-mlkem1024-hkdfsha256-chacha20poly1305",
+        "derive_pqxdh_classical_initiator_secret",
+        "derive_pqxdh_classical_responder_secret",
+        "derive_triple_ratchet_initial_secrets",
+        "SecureMeshSparsePqRatchet",
+        "secure_mesh_pairwise_triple_ratchet_combines_ec_and_sparse_pq_messages",
+        "sparse_pq_header.message_number",
+        "rotate_sending_ratchet_with_secret"
+      ]
+    },
+    {
+      "id": "pairwise-authenticated-ratchet-is-restart-safe",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_pairwise/session_negotiation.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/key_ratchet.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/public_snapshot.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/session_codec.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/session_commit.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/session_read.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/secret_store_io.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/codec.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/key_ratchet.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/persistence_recovery.rs"
+      ],
+      "tokens": [
+        "handshake_transcript_hash",
+        "initiator_key_confirmed",
+        "pairwise_key_confirmation",
+        "pending_sending_ratchet",
+        "prepare_sending_ratchet_for_send",
+        "store_skipped_message_keys_until",
+        "secure_mesh_pairwise_dh_ratchet_reply_auto_rotates_after_remote_ratchet",
+        "secure_mesh_pairwise_dh_ratchet_preserves_old_chain_in_flight_messages",
+        "secure_mesh_pairwise_dh_ratchet_skip_limit_fails_closed_without_state_advance",
+        "secure_mesh_pairwise_pending_authenticated_ratchet_survives_restart",
+        "secure_mesh_pairwise_stale_and_replayed_relay_acks_do_not_advance_ratchet",
+        "secure_mesh_pairwise_revoked_session_fail_closed_for_seal_and_open"
+      ]
+    },
+    {
+      "id": "mls-product-policy-bindings-and-kt-signed-checkpoints",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_mls_product/constants.rs",
+        "crates/licoup-native/src/core/secure_mesh_mls_product/identity_trust.rs",
+        "crates/licoup-native/src/core/secure_mesh_mls_product/invitation_authorization.rs",
+        "crates/licoup-native/src/core/secure_mesh_mls_product/ledger_transaction.rs",
+        "crates/licoup-native/src/core/secure_mesh_mls_product/security_ledger.rs",
+        "crates/licoup-native/src/core/secure_mesh_mls_product/tests/invitation_authorization.rs"
+      ],
+      "tokens": [
+        "SECURE_MESH_MLS_PRODUCT_POLICY_STATUS",
+        "participant_from_device_identity",
+        "authorize_welcome_acceptance",
+        "authorize_commit_sender",
+        "cross_check_roster",
+        "authorize_sender_endpoint_binding",
+        "authorize_epoch_lag",
+        "authorize_member_add_with_directory",
+        "SecureMeshMlsSecurityLedger",
+        "already consumed",
+        "secure_mesh_mls_product_forged_sender_and_typed_kt_member_add"
+      ]
+    },
+    {
+      "id": "key-transparency-signed-checkpoints-non-authorizing-hash-chain",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_transparency.rs",
+        "crates/licoup-native/src/core/secure_mesh_transparency/constants.rs",
+        "crates/licoup-native/src/core/secure_mesh_transparency/diagnostics.rs",
+        "crates/licoup-native/src/core/secure_mesh_transparency/client_state/mod.rs",
+        "crates/licoup-native/src/core/secure_mesh_transparency/client_state/authorization.rs",
+        "crates/licoup-native/src/core/secure_mesh_transparency/proofs/inclusion.rs",
+        "crates/licoup-native/src/core/secure_mesh_transparency/proofs/consistency.rs",
+        "crates/licoup-native/src/core/secure_mesh_transparency/sparse_map.rs"
+      ],
+      "tokens": [
+        "SECURE_MESH_KT_PROTOCOL_VERSION",
+        "authorize_hashed_directory_view",
+        "verify_kt_inclusion",
+        "verify_kt_consistency",
+        "verify_kt_non_inclusion",
+        "equivocation_detected",
+        "diagnostic_hash_chain_tree_head",
+        "SECURE_MESH_DIAGNOSTIC_HASH_CHAIN_STATUS",
+        "diagnostic_only_unsigned_append_only_hash_chain_non_authorizing",
+        "SECURE_MESH_KT_GOSSIP_CONTENT_TYPE"
+      ],
+      "forbiddenTokens": [
+        "fn authorize_directory_leaf_with_hash_chain",
+        "verify_transparency_inclusion"
+      ]
+    },
+    {
+      "id": "lifecycle-service-actions-require-pairwise-or-mls-envelopes",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_lifecycle/mod.rs",
+        "crates/licoup-native/src/core/secure_mesh_lifecycle/projection.rs",
+        "crates/licoup-native/src/core/secure_mesh_lifecycle/pairwise.rs",
+        "crates/licoup-native/src/core/secure_mesh_lifecycle/mls.rs",
+        "crates/licoup-native/src/core/secure_mesh_lifecycle/tests/pairwise.rs"
+      ],
+      "tokens": [
+        "seal_lifecycle_service_action_pairwise",
+        "open_lifecycle_service_action_pairwise",
+        "seal_lifecycle_service_action_mls",
+        "reject_plaintext_lifecycle_service_action_transport",
+        "requiresPairwiseOrMlsEnvelope",
+        "plaintext transport is forbidden"
+      ]
+    },
+    {
+      "id": "pairwise-command-result-endpoint-kind-matrix-exists",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_pairwise/codec.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/key_ratchet.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/codec.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/test_support.rs"
+      ],
+      "tokens": [
+        "secure_mesh_pairwise_pc_pc_command_result_relay_round_trip",
+        "secure_mesh_pairwise_mobile_pc_command_result_relay_round_trip",
+        "secure_mesh_pairwise_pc_mobile_command_result_relay_round_trip",
+        "secure_mesh_pairwise_mobile_mobile_command_result_relay_round_trip",
+        "secure_mesh_pairwise_cli_desktop_command_result_relay_round_trip",
+        "secure_mesh_pairwise_agent_host_command_result_relay_round_trip",
+        "assert_pairwise_command_result_relay_round_trip",
+        "OpaquePairwiseRelay::default",
+        "open_payload_envelope",
+        "SecureMeshPayloadKind::ResultPayload"
+      ]
+    },
+    {
+      "id": "sesame-style-multi-device-fanout-uses-independent-pairwise-envelopes",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_pairwise/manager_fanout.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/manager_fanout.rs"
+      ],
+      "tokens": [
+        "secure_mesh_sesame_multi_device_fanout_uses_independent_pairwise_envelopes_and_ack_purge",
+        "SecureMeshSesameSessionManager::new",
+        "fanout_targets_for_user",
+        "assert_ne!(desktop_envelope.ciphertext(), mobile_envelope.ciphertext())",
+        "assert_ne!(",
+        "relay.ack",
+        "relay.queue_len()"
+      ]
+    },
+    {
+      "id": "pairwise-adversarial-open-failures-do-not-advance-state",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_pairwise/key_ratchet.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/codec.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/key_ratchet.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/manager_fanout.rs"
+      ],
+      "tokens": [
+        "secure_mesh_pairwise_relay_header_public_boundary_is_explicit_and_payload_free",
+        "relay_header_wire",
+        "pairwise relay header leaked",
+        "wrong_recipient",
+        "secure_mesh_pairwise_payload_authenticates_complete_ratchet_header_without_state_advance",
+        "secure_mesh_pairwise_payload_open_failure_does_not_advance_ratchet",
+        "context message mismatch",
+        "received_count()",
+        "secure_mesh_pairwise_skipped_key_gap_limit_rejects_without_state_advance",
+        "MAX_SKIPPED_KEYS",
+        "skipped message key is unavailable"
+      ]
+    },
+    {
+      "id": "mobile-relay-seals-command-result-with-pairwise-session",
+      "files": [
+        "crates/licoup-native/src/domain/mobile_relay/pairwise_session.rs",
+        "crates/licoup-native/src/domain/mobile_relay/pairwise_session/crypto_operation.rs",
+        "crates/licoup-native/src/domain/mobile_relay/pairwise_session/transaction.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/session_commit.rs",
+        "crates/licoup-native/src/domain/mobile_relay/tests/relay_operations/envelope_roundtrip.rs"
+      ],
+      "tokens": [
+        "fn seal_mobile_relay_payload",
+        "mobile_relay_pairwise_operation(",
+        "seal_mobile_relay_payload_with_pairwise_operation",
+        "pairwise_operation.session.seal_payload_envelope",
+        "pairwise_operation.commit()?",
+        "commit_session_with_authorized_session",
+        "mobile_relay_file_key_envelope_hides_attachment_key_and_opens_file_after_decrypt",
+        "mobile_relay_file_key_envelope_metadata_boundary_is_exhaustive"
+      ]
+    },
+    {
+      "id": "mobile-relay-opens-command-result-with-pairwise-session",
+      "files": [
+        "crates/licoup-native/src/domain/mobile_relay/pairwise_session/crypto_operation.rs",
+        "crates/licoup-native/src/domain/mobile_relay/pairwise_session/transaction.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/session_commit.rs"
+      ],
+      "tokens": [
+        "fn open_mobile_relay_payload",
+        "open_mobile_relay_payload_with_pairwise_operation",
+        "LicoArcRelayEnvelope::from_json(&wire)?",
+        ".open_payload_envelope(&pairwise_envelope, kind)?",
+        "pairwise_operation.commit()?",
+        "commit_session_with_authorized_session"
+      ]
+    },
+    {
+      "id": "mobile-relay-default-payload-route-does-not-own-content-key-derivation",
+      "files": [
+        "crates/licoup-native/src/domain/mobile_relay/pairwise_session/crypto_operation.rs"
+      ],
+      "functionName": "seal_mobile_relay_payload",
+      "forbiddenTokens": [
+        "ContentKey::from_bytes",
+        "crate::core::secure_mesh_crypto::seal_payload(",
+        "derive_aead_key",
+        "diffie_hellman("
+      ]
+    },
+    {
+      "id": "pairwise-runtime-status-remains-independent-review-blocked",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_pairwise.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/support.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/initial_write.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/remote_prekey.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/schema.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/session_commit.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/store_model.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/persistence_prekey.rs"
+      ],
+      "tokens": [
+        "SECURE_MESH_PAIRWISE_STATUS",
+        "independent_review_pending",
+        "SecureMeshPairwiseDurableStore",
+        "commit_session",
+        "SecureMeshRemotePreKeyUse",
+        "secure_mesh_pairwise_remote_prekey_uses",
+        "record_remote_prekey_use"
+      ]
+    },
+    {
+      "id": "telegram-like-lifecycle-service-actions-are-redacted",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_lifecycle/schema.rs",
+        "crates/licoup-native/src/core/secure_mesh_lifecycle/policy.rs",
+        "crates/licoup-native/src/core/secure_mesh_lifecycle/projection.rs",
+        "crates/licoup-native/src/core/secure_mesh_lifecycle/tests/policy.rs"
+      ],
+      "tokens": [
+        "SECURE_MESH_LIFECYCLE_STATUS",
+        "ttl_delete_screenshot_resend_ack_purge_typing_read_receipt_service_actions_redacted_policy_available",
+        "message_ttl_set",
+        "message_delete",
+        "screenshot_detected",
+        "resend_request",
+        "typing_state",
+        "read_receipt",
+        "ack_purge",
+        "secure_mesh_lifecycle_service_actions_redact_private_ids_and_plaintext"
+      ]
+    },
+    {
+      "id": "mobile-ffi-exposes-lifecycle-service-actions",
+      "file": "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi.rs",
+      "files": [
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/action_catalog.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/dispatch_router.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/feature_status.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/tests/fixture_policy.rs"
+      ],
+      "tokens": [
+        "FEATURE_LIFECYCLE_SERVICE_ACTIONS",
+        "secure_mesh.lifecycle.serviceAction",
+        "evaluate_service_action_json",
+        "mobile_ffi_exposes_shared_lifecycle_service_actions_without_plaintext"
+      ]
+    },
+    {
+      "id": "mobile-ffi-forbids-raw-payload-crypto-actions",
+      "file": "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi.rs",
+      "files": [
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/action_catalog.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/dispatch_context.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/dispatch_router.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/feature_status.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/fixture_envelope.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/fixture_file.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/fixture_lifecycle.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/fixture_payload.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/fixture_trust.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/protected_operation.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/redacted_error.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/request_validation.rs"
+      ],
+      "forbiddenTokens": [
+        "contentKeyBase64url",
+        "includeBodyBase64url"
+      ]
+    },
+    {
+      "id": "pairwise-payload-codec-uses-ratchet-message-key",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_pairwise/key_ratchet.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/key_ratchet/payload_adapter.rs"
+      ],
+      "tokens": [
+        "pub fn seal_payload(",
+        "advance_chain(",
+        "ContentKey::from_bytes(*message_key)",
+        "crate::core::secure_mesh_crypto::seal_payload_with_aad_binding"
+      ]
+    },
+    {
+      "id": "content-crypto-keeps-mls-product-route-disabled",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_crypto/constants.rs"
+      ],
+      "tokens": [
+        "SECURE_MESH_CONTENT_CRYPTO_STATUS",
+        "mls_exporter_diagnostic_only_product_group_messaging_disabled",
+        "HKDF_SALT_DOMAIN",
+        "AAD_MAGIC"
+      ]
+    },
+    {
+      "id": "pairwise-content-review-signoff-is-digest-bound",
+      "tokens": [
+        "licomesh.secure-mesh.pairwise-content-review-signoff.v2",
+        "reviewerSignatureVerified",
+        "releaseOwnerSignatureVerified",
+        "nativeTestFiltersDigest",
+        "sourceCheckIdsDigest",
+        "approved_for_release_gate"
+      ],
+      "files": [
+        "tools/scripts/client-secure-mesh-pairwise-content-audit.mjs",
+        "tools/scripts/client-secure-mesh-pairwise-content-audit/constants.mjs",
+        "tools/scripts/client-secure-mesh-pairwise-content-audit/corpus.mjs",
+        "tools/scripts/client-secure-mesh-pairwise-content-audit/hash.mjs",
+        "tools/scripts/client-secure-mesh-pairwise-content-audit/native-test.mjs",
+        "tools/scripts/client-secure-mesh-pairwise-content-audit/privacy.mjs",
+        "tools/scripts/client-secure-mesh-pairwise-content-audit/run.mjs",
+        "tools/scripts/client-secure-mesh-pairwise-content-audit/signoff-load.mjs",
+        "tools/scripts/client-secure-mesh-pairwise-content-audit/signoff.mjs",
+        "tools/scripts/client-secure-mesh-pairwise-content-audit/source-check.mjs",
+        "tools/scripts/client-secure-mesh-pairwise-content-audit/vectors.mjs"
+      ]
+    },
+    {
+      "id": "mls-exporter-payload-route-exists",
+      "file": "crates/licoup-native/src/core/secure_mesh_mls/group_payload.rs",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_mls/group_payload.rs",
+        "crates/licoup-native/src/core/secure_mesh_mls/constants.rs",
+        "crates/licoup-native/src/core/secure_mesh_mls/private_context_codec.rs"
+      ],
+      "tokens": [
+        "derive_group_payload_content_key",
+        "MLS_PAYLOAD_EXPORT_LABEL",
+        "seal_payload_message",
+        "open_payload_message"
+      ]
+    },
+    {
+      "id": "licoarc-badtower-acceptance-is-strict-and-endpoint-authenticated",
+      "files": [
+        "tools/scripts/client-licoarc-badtower-acceptance.mjs",
+        "tools/scripts/lib/licoarc-badtower-acceptance-report.mjs",
+        "tools/scripts/lib/licoarc-v1-bundle-validator.mjs",
+        "tools/scripts/lib/licoarc-badtower-candidate-binding.mjs"
+      ],
+      "tokens": [
+        "licoup.licoarc-badtower.acceptance.v1",
+        "freshEndpointCount",
+        "positiveExchange",
+        "roundTrip",
+        "stationPlaintextAbsent",
+        "nonConformantEnvelopeRejected",
+        "transportHintsNonAuthoritative",
+        "exactFiveOuterFields",
+        "validateLicoArcV1BundleBytes",
+        "candidateBindingsReady",
+        "createBadTowerStationEnvironment",
+        "endpointContentIncluded",
+        "clientRelease",
+        "hostedOperation"
+      ]
+    },
+    {
+      "id": "mobile-relay-pairwise-intro-and-claim-proof-bind-verified-peer",
+      "files": [
+        "crates/licoup-native/src/domain/mobile_relay/endpoint_trust/primitives.rs",
+        "crates/licoup-native/src/domain/mobile_relay/endpoint_trust/pairwise_codec.rs",
+        "crates/licoup-native/src/domain/mobile_relay/tests/pairwise_session.rs",
+        "crates/licoup-native/src/domain/mobile_relay/tests/pairing.rs"
+      ],
+      "tokens": [
+        "mobile_relay_claim_descriptor_binding",
+        "pairwiseIntroHash",
+        "pairwiseAcceptedHash",
+        "validate_pairwise_intro_targets_local_prekeys",
+        "intro.initiator_identity_public_key == peer_identity.identity_public_key",
+        "mobile_relay_pairwise_rejects_intro_initiator_identity_mismatch",
+        "mobile_relay_pairwise_rejects_intro_missing_one_time_prekey",
+        "out_of_band_pairing_response_rejects_tampered_intro_with_replayed_claim_proof"
+      ]
+    },
+    {
+      "id": "mobile-relay-peer-substitution-and-trust-tamper-fail-closed",
+      "files": [
+        "crates/licoup-native/src/domain/mobile_relay/tests/pairwise_session.rs",
+        "crates/licoup-native/src/domain/mobile_relay/tests/pairing.rs",
+        "crates/licoup-native/src/domain/mobile_relay/tests/endpoint_trust.rs"
+      ],
+      "tokens": [
+        "mobile_relay_pairwise_does_not_reinitialize_from_peer_descriptor_session_id",
+        "mrelay_session_stale_server_descriptor",
+        "out_of_band_pairing_response_rejects_substituted_peer_without_claim_proof",
+        "relay-supplied peer descriptor must not be trusted without a valid claim proof",
+        "mobile_relay_secure_command_requires_signed_peer_trust_record",
+        "peer trust record is missing",
+        "mobile_relay_secure_command_rejects_tampered_peer_trust_record",
+        "peer trust record is invalid"
+      ]
+    },
+    {
+      "id": "acp-envelope-aad-covers-protected-payload-binding",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_acp.rs",
+        "crates/licoup-native/src/core/secure_mesh_acp/tests/mod.rs"
+      ],
+      "tokens": [
+        "SECURE_MESH_ACP_ENVELOPE_PROTOCOL",
+        "LCOSM-ACP-AAD-v1",
+        "encode_acp_envelope_aad",
+        "acp_envelope_aad_digest",
+        "SecureMeshAcpEnvelopeBinding",
+        "acp_session_id",
+        "relay_session_id",
+        "relay_turn_id",
+        "message_sequence",
+        "operation_id",
+        "tool_call_id",
+        "permission_request_id",
+        "idempotency_key",
+        "policy_revision",
+        "grant_id",
+        "seal_acp_protected_payload",
+        "open_acp_protected_payload",
+        "secure_mesh_acp_envelope_aad_has_stable_digest_vector",
+        "secure_mesh_acp_envelope_aad_field_mutation_fails_open"
+      ]
+    },
+    {
+      "id": "acp-plaintext-protected-payload-relay-is-not-a-production-path",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_acp.rs",
+        "crates/licoup-native/src/core/secure_mesh_acp/tests/mod.rs"
+      ],
+      "tokens": [
+        "reject_plaintext_acp_protected_payload_relay",
+        "plaintext protected-payload relay is not a production path",
+        "SECURE_MESH_ACP_STATUS",
+        "plaintext_protected_payload_relay_blocked",
+        "independent_review_pending",
+        "pqxdh_mlkem1024_triple_ratchet",
+        "secure_mesh_acp_plaintext_protected_payload_relay_is_blocked"
+      ]
+    },
+    {
+      "id": "production-status-exposes-acp-envelope-contract",
+      "file": "crates/licoup-native/src/core/secure_mesh.rs",
+      "tokens": [
+        "SECURE_MESH_ACP_STATUS",
+        "acpEnvelopeStatus"
+      ]
+    },
+    {
+      "id": "static-endpoint-only-payload-cli-route-is-absent",
+      "file": "crates/licoup-native/src/ffi/commands/mod.rs",
+      "forbiddenTokens": [
+        "\"payload\", \"seal\"",
+        "\"payload\", \"open\"",
+        "key-base64url",
+        "contentKeyBase64url",
+        "includeBodyBase64url"
+      ]
+    }
+  ],
+  "nativeTestFilters": [
+    "secure_mesh_content_crypto_bucket_padding_hides_length_and_round_trips_boundaries",
+    "secure_mesh_content_crypto_rejects_invalid_padding_and_oversized_bucket",
+    "secure_mesh_pairwise_encrypted_relay_header_hides_ratchet_structure_and_rejects_tamper",
+    "secure_mesh_pairwise_encrypted_headers_preserve_old_chain_envelope_out_of_order",
+    "secure_mesh_content_crypto_has_stable_vectors_for_all_payload_kinds",
+    "pqxdh_schedule_is_deterministic_domain_separated_and_context_bound",
+    "authenticator_known_answer",
+    "secure_mesh_pairwise_triple_ratchet_combines_ec_and_sparse_pq_messages",
+    "secure_mesh_pairwise_dh_ratchet_reply_auto_rotates_after_remote_ratchet",
+    "secure_mesh_pairwise_dh_ratchet_preserves_old_chain_in_flight_messages",
+    "secure_mesh_pairwise_dh_ratchet_skip_limit_fails_closed_without_state_advance",
+    "secure_mesh_pairwise_pending_authenticated_ratchet_survives_restart",
+    "secure_mesh_pairwise_stale_and_replayed_relay_acks_do_not_advance_ratchet",
+    "secure_mesh_pairwise_revoked_session_fail_closed_for_seal_and_open",
+    "secure_mesh_pairwise_pc_pc_command_result_relay_round_trip",
+    "secure_mesh_pairwise_mobile_pc_command_result_relay_round_trip",
+    "secure_mesh_pairwise_pc_mobile_command_result_relay_round_trip",
+    "secure_mesh_pairwise_mobile_mobile_command_result_relay_round_trip",
+    "secure_mesh_pairwise_cli_desktop_command_result_relay_round_trip",
+    "secure_mesh_pairwise_agent_host_command_result_relay_round_trip",
+    "secure_mesh_sesame_multi_device_fanout_uses_independent_pairwise_envelopes_and_ack_purge",
+    "mobile_relay_e2ee_round_trips_command_and_result_without_plaintext",
+    "mobile_relay_file_key_envelope_hides_attachment_key_and_opens_file_after_decrypt",
+    "mobile_relay_file_key_envelope_metadata_boundary_is_exhaustive",
+    "mobile_relay_pairwise_initialization_requires_pqxdh_prekey_bundle",
+    "mobile_relay_pairwise_rejects_relay_asserted_prekey_trust_state",
+    "mobile_relay_pairwise_rejects_intro_signed_prekey_mismatch",
+    "mobile_relay_pairwise_rejects_intro_initiator_identity_mismatch",
+    "mobile_relay_pairwise_rejects_intro_missing_one_time_prekey",
+    "out_of_band_pairing_response_rejects_tampered_intro_with_replayed_claim_proof",
+    "mobile_relay_pairwise_rejects_reused_remote_one_time_prekey",
+    "mobile_relay_pairwise_rejects_tampered_prekey_signature_via_directory_commitment",
+    "tampered_mobile_relay_command_envelope_is_rejected_before_execution",
+    "replayed_mobile_relay_command_envelope_does_not_execute_twice",
+    "secure_mesh_pairwise_payload_codec_uses_ratchet_message_key",
+    "secure_mesh_pairwise_relay_header_public_boundary_is_explicit_and_payload_free",
+    "secure_mesh_pairwise_payload_open_failure_does_not_advance_ratchet",
+    "secure_mesh_pairwise_payload_out_of_order_uses_bounded_skipped_keys",
+    "secure_mesh_pairwise_skipped_key_gap_limit_rejects_without_state_advance",
+    "mobile_relay_pairwise_does_not_reinitialize_from_peer_descriptor_session_id",
+    "out_of_band_pairing_response_rejects_substituted_peer_without_claim_proof",
+    "mobile_relay_secure_command_rejects_tampered_peer_trust_record",
+    "secure_mesh_lifecycle_service_actions_redact_private_ids_and_plaintext",
+    "secure_mesh_lifecycle_typing_and_read_receipts_are_encrypted_service_actions",
+    "secure_mesh_lifecycle_service_actions_seal_only_inside_pairwise_envelopes",
+    "mobile_ffi_exposes_shared_lifecycle_service_actions_without_plaintext",
+    "secure_mesh_mls_product_identity_bound_credentials_and_welcome_roster",
+    "secure_mesh_mls_product_keypackage_one_time_consumption",
+    "secure_mesh_mls_product_commit_sender_roster_and_epoch_lag",
+    "secure_mesh_mls_product_forged_sender_and_typed_kt_member_add",
+    "secure_mesh_mls_product_payload_rejects_forged_sender_context",
+    "secure_mesh_mls_product_roster_cross_check",
+    "rfc9162_inclusion_paths_are_logarithmic_and_exact",
+    "rfc9162_consistency_paths_are_logarithmic_and_exact",
+    "sparse_map_authenticates_inclusion_absence_and_rejects_label_substitution",
+    "gossip_json_codec_round_trips_without_leaf_lists",
+    "gossip_same_size_split_view_is_persisted",
+    "sqlite_checkpoint_requires_consistency_and_persists_rollback_across_restart",
+    "gossip_observations_bind_distinct_issue_times_for_the_same_tree_view",
+    "secure_mesh_openmls_group_payload_wire_has_fixed_public_aad_and_private_full_context",
+    "secure_mesh_openmls_group_payload_rejects_context_tamper",
+    "secure_mesh_acp_envelope_aad_has_stable_digest_vector",
+    "secure_mesh_acp_envelope_aad_field_mutation_fails_open",
+    "secure_mesh_acp_pairwise_protected_payload_round_trip",
+    "secure_mesh_acp_plaintext_protected_payload_relay_is_blocked",
+    "secure_mesh_acp_sealed_payloads_hide_raw_and_encoded_canaries",
+    "secure_mesh_acp_payload_classes_cover_protected_taxonomy",
+    "secure_mesh_acp_status_remains_independent_review_blocked"
+  ]
+}

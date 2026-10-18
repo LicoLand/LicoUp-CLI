@@ -1,0 +1,12 @@
+[workspace]
+
+[package]
+name = "licoup-endpoint-collaboration-control"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+publish = false
+description = "Remote work control slice of the endpoint collaboration package (org.licoland.feature.collaboration): typed inspect/stop/owned-child/force intents, the durable request ledger that admits before any effect, and the consumer-owned port the kernel's own work owners implement."
+
+[dependencies]

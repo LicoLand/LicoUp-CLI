@@ -1,0 +1,57 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.adapter.antigravity",
+  "version": "0.14.0",
+  "displayName": "Antigravity adapter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "agent-execution",
+      "major": 1,
+      "capabilities": [
+        "agent-execution.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-agent-antigravity"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.adapter.antigravity/agent-process",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.antigravity/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.antigravity/client-data-home",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "command",
+      "id": "org.licoland.adapter.antigravity/adapter-status",
+      "definition": "contributions/adapter-status.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.adapter.antigravity/purpose": "The Antigravity adapter: the vendor CLI driver, the official Agent Hooks receipt writer and the PTY protocol that classifies one turn exactly once below the adapter port, plus the Subagent MCP caller registration an installed Antigravity client uses. The kernel owns no part of Antigravity and depends on none of it.",
+    "org.licoland.adapter.antigravity/persistentData": "none",
+    "org.licoland.adapter.antigravity/persistentDataReason": "This package declares no conversion because it owns no persisted package data of its own: it writes no data home, no cache and no store. The native conversation receipts it writes are one turn's identity at the path the launching driver names for that turn, and the client's own conversation store remains the kernel's."
+  }
+}

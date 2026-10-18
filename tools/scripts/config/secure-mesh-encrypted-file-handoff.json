@@ -1,0 +1,219 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.encrypted-file-handoff-config.v1",
+  "sourceChecks": [
+    {
+      "id": "file-manifest-and-chunk-codec-redacts-delivery-json",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_file/manifest_chunk_crypto.rs",
+        "crates/licoup-native/src/core/secure_mesh_file/tests/delivery_projection.rs",
+        "crates/licoup-native/src/core/secure_mesh_file/tests/manifest_chunk_crypto.rs"
+      ],
+      "tokens": [
+        "pub fn seal_file_manifest",
+        "pub fn open_file_manifest",
+        "pub fn seal_file_chunk",
+        "pub fn open_file_chunk",
+        "secure_mesh_file_delivery_json_hides_manifest_and_chunk_plaintext"
+      ]
+    },
+    {
+      "id": "file-transfer-state-tracks-resume-ack-and-purge",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_file/handoff_reseal.rs",
+        "crates/licoup-native/src/core/secure_mesh_file/transfer.rs",
+        "crates/licoup-native/src/core/secure_mesh_file/tests/handoff_reseal.rs",
+        "crates/licoup-native/src/core/secure_mesh_file/tests/key_proof.rs",
+        "crates/licoup-native/src/core/secure_mesh_file/tests/transfer.rs"
+      ],
+      "tokens": [
+        "pub fn start_file_transfer",
+        "pub fn record_file_chunk_receipt",
+        "pub fn acknowledge_file_transfer",
+        "pub struct SecureMeshFileTransferQueue",
+        "pub fn enqueue(",
+        "pub fn confirm_receive(",
+        "pub fn purge_acknowledged(",
+        "pub fn evaluate_file_handoff_proof_json",
+        "purge_local_ciphertext",
+        "secure_mesh_file_transfer_tracks_resume_ack_and_purge_state",
+        "secure_mesh_file_transfer_queue_is_bounded_confirmed_and_purged",
+        "secure_mesh_file_transfer_queue_rejects_ciphertext_byte_overflow_without_mutation",
+        "secure_mesh_file_key_wraps_through_pairwise_session_before_file_open",
+        "secure_mesh_file_key_wraps_out_of_order_and_revocation_fails_closed",
+        "secure_mesh_file_handoff_proof_reseals_distinct_ciphertext_for_multiple_recipients"
+      ]
+    },
+    {
+      "id": "android-secure-mesh-payload-crypto-is-rust-owned",
+      "files": [
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/MainActivity.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidNativeRuntime.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidCommandRouter.kt"
+      ],
+      "tokens": [
+        "private external fun nativeSecureMeshJson(",
+        "override fun invoke(",
+        "nativeRuntime.invoke(",
+        "usesSharedRustCore\" to true",
+        "rawJsonSecretsPassedThroughFfi\" to false",
+        "jniSecretStoreCallbacksCarryInProcessSecret\" to true"
+      ],
+      "forbiddenTokens": [
+        "private fun openSecureMeshPayload(",
+        "private fun sealSecureMeshPayload(",
+        "private fun deriveAeadKey(",
+        "LCOSM-AAD-v1",
+        "LCOSM-PT-v1",
+        "LCOSM-HDR-v1"
+      ]
+    },
+    {
+      "id": "file-handoff-proof-reseals-distinct-ciphertext-for-every-recipient",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_file/handoff_reseal.rs",
+        "crates/licoup-native/src/core/secure_mesh_file/tests/handoff_reseal.rs"
+      ],
+      "tokens": [
+        "fn handoff_recipient_endpoints",
+        "\"recipientDeliveries\"",
+        "\"multiRecipientIndependentResealReady\"",
+        "\"allRecipientsEndpointSpecificResealReady\"",
+        "\"allRecipientTransfersAckPurged\"",
+        "secure_mesh_file_handoff_proof_reseals_distinct_ciphertext_for_multiple_recipients"
+      ]
+    },
+    {
+      "id": "file-receive-policy-requires-approved-root-and-redacts-paths",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_file/receive_policy.rs",
+        "crates/licoup-native/src/core/secure_mesh_file/tests/receive_policy.rs"
+      ],
+      "tokens": [
+        "pub fn evaluate_file_receive_destination_json",
+        "pub fn evaluate_file_receive_confirmation_json",
+        "requiresUserApprovedRoot",
+        "userVisibleConfirmationRequired",
+        "autoPreviewDisabledByDefault",
+        "autoIngestionDisabledByDefault",
+        "destinationPathRedacted",
+        "approvedRootHash",
+        "secure_mesh_file_receive_destination_redacts_local_paths_and_metadata",
+        "secure_mesh_file_receive_confirmation_requires_user_action_and_disables_auto_open"
+      ]
+    },
+    {
+      "id": "secure-mesh-cli-exposes-file-route-and-receive-destination",
+      "file": "crates/licoup-native/src/ffi/commands/secure_mesh.rs",
+      "tokens": [
+        "(\"file\", \"route\")",
+        "(\"file\", \"receive-destination\")",
+        "(\"file\", \"receive-confirmation\")",
+        "secure_mesh_file_route_cli_reports_default_route_without_metadata",
+        "secure_mesh_file_receive_destination_cli_redacts_destination_paths",
+        "secure_mesh_file_receive_confirmation_cli_requires_user_confirmation_without_auto_open"
+      ]
+    },
+    {
+      "id": "release-cli-proof-executes-file-receive-confirmation-policy",
+      "file": "tools/scripts/client-secure-mesh-release-cli-proof.mjs",
+      "tokens": [
+        "\"file\"",
+        "\"receive-confirmation\"",
+        "fileReceiveConfirmationReady",
+        "userVisibleConfirmationRequired",
+        "autoPreviewEnabled",
+        "autoIngestionEnabled",
+        "destinationPathRedacted"
+      ]
+    },
+    {
+      "id": "windows-local-implementation-is-separated-from-native-host-evidence",
+      "file": "tools/scripts/client-secure-mesh-windows-implementation.mjs",
+      "tokens": [
+        "physicalReportRefs.windowsImplementation",
+        "persistent_custody_unverified",
+        "memory-only-ephemeral",
+        "windowsLocalBlockersCleared",
+        "nativeHostEvidencePending",
+        "windowsTrustCommandFileMatrixReady: false",
+        "productionReady",
+        "releaseReady"
+      ]
+    },
+    {
+      "id": "mobile-ffi-exposes-shared-file-policy-without-platform-crypto-fork",
+      "file": "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi.rs",
+      "files": [
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/action_catalog.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/dispatch_router.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/tests/fixture_policy.rs"
+      ],
+      "tokens": [
+        "\"secure_mesh.file.route\"",
+        "\"secure_mesh.file.receiveDestination\"",
+        "\"secure_mesh.file.receiveConfirmation\"",
+        "\"secure_mesh.file.handoffProof\"",
+        "crate::core::secure_mesh_file::evaluate_file_route_json",
+        "crate::core::secure_mesh_file::evaluate_file_receive_destination_json",
+        "crate::core::secure_mesh_file::evaluate_file_receive_confirmation_json",
+        "crate::core::secure_mesh_file::evaluate_file_handoff_proof_json",
+        "mobile_ffi_exposes_shared_file_handoff_reseal_proof_without_plaintext"
+      ]
+    },
+    {
+      "id": "mobile-relay-file-key-envelope-uses-pairwise-transport-with-opaque-relay-wire",
+      "files": [
+        "crates/licoup-native/src/domain/mobile_relay/pairwise_session.rs",
+        "crates/licoup-native/src/domain/mobile_relay/pairwise_session/crypto_operation.rs",
+        "crates/licoup-native/src/domain/mobile_relay/tests/relay_operations/envelope_roundtrip.rs"
+      ],
+      "tokens": [
+        "fn seal_mobile_relay_payload",
+        "fn open_mobile_relay_payload",
+        "session.seal_payload_envelope",
+        ".open_payload_envelope(&pairwise_envelope, kind)?",
+        "mobile_relay_file_key_envelope_hides_attachment_key_and_opens_file_after_decrypt",
+        "mobile_relay_file_key_envelope_metadata_boundary_is_exhaustive"
+      ]
+    },
+    {
+      "id": "android-platform-crypto-acceptance-covers-custody-authorization-and-ffi",
+      "file": "tools/scripts/client-android-native-tests.mjs",
+      "tokens": [
+        "licomesh.secure-mesh.android-platform-crypto-acceptance.v1",
+        "platformCryptoAcceptanceReady",
+        "platformCustodyContractReady",
+        "platformAuthorizationContractReady",
+        "rustFfiActionContractReady",
+        "mlsMemberRemoveReleaseActionReady",
+        "unknownReleaseActionsFailClosed"
+      ]
+    }
+  ],
+  "nativeTestFilters": [
+    "secure_mesh_file_manifest_and_chunk_round_trip_without_outer_metadata_leak",
+    "secure_mesh_file_delivery_json_hides_manifest_and_chunk_plaintext",
+    "secure_mesh_file_chunk_rejects_corrupted_ciphertext_hash",
+    "secure_mesh_file_manifest_rejects_path_traversal",
+    "secure_mesh_file_transfer_tracks_resume_ack_and_purge_state",
+    "secure_mesh_file_transfer_queue_is_bounded_confirmed_and_purged",
+    "secure_mesh_file_transfer_queue_rejects_ciphertext_byte_overflow_without_mutation",
+    "secure_mesh_file_transfer_rejects_conflicting_duplicate_chunk",
+    "secure_mesh_file_key_wraps_through_pairwise_session_before_file_open",
+    "secure_mesh_file_key_wraps_out_of_order_and_revocation_fails_closed",
+    "secure_mesh_file_handoff_proof_reseals_endpoint_specific_ciphertext",
+    "secure_mesh_file_handoff_proof_reseals_distinct_ciphertext_for_multiple_recipients",
+    "secure_mesh_file_route_json_uses_default_route_without_metadata_leak",
+    "secure_mesh_file_receive_destination_redacts_local_paths_and_metadata",
+    "secure_mesh_file_receive_destination_rejects_unapproved_paths",
+    "secure_mesh_file_receive_confirmation_requires_user_action_and_disables_auto_open",
+    "mobile_relay_file_key_envelope_hides_attachment_key_and_opens_file_after_decrypt",
+    "mobile_relay_file_key_envelope_metadata_boundary_is_exhaustive",
+    "mobile_ffi_exposes_shared_file_route_and_receive_destination_policy",
+    "mobile_ffi_exposes_shared_file_handoff_reseal_proof_without_plaintext",
+    "secure_mesh_file_route_cli_reports_default_route_without_metadata",
+    "secure_mesh_file_receive_destination_cli_redacts_destination_paths",
+    "secure_mesh_file_receive_confirmation_cli_requires_user_confirmation_without_auto_open"
+  ]
+}

@@ -1,0 +1,27 @@
+[package]
+name = "licoup-extension-contracts"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Language-agnostic extension SDK contract: the C09-C13 profiles, package closure and capability ownership."
+
+[dependencies]
+licoup-application = { path = "../licoup-application", version = "0.3.0" }
+serde.workspace = true
+serde_json.workspace = true
+# A provider endpoint is parsed by the standard URL parser: an origin that a
+# credential handle was issued for must be canonical, and a hand-written split
+# accepts malformed ports, user info and backslashes as if they were the same
+# origin.
+url.workspace = true
+# A package's compatibility list is compared with the running client in the same
+# version-requirement grammar the workspace already uses, rather than with a
+# second, hand-rolled range parser.
+semver.workspace = true
+
+# The agreement test compares the crate's published vocabularies with the
+# JSON Schema patterns under `schemas/extensions/`, so the two cannot drift.
+[dev-dependencies]
+regex = "1.11"

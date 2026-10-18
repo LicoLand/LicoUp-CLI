@@ -1,0 +1,57 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.adapter.hermes",
+  "version": "0.1.0",
+  "displayName": "Hermes Agent adapter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "agent-execution",
+      "major": 1,
+      "capabilities": [
+        "agent-execution.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-agent-hermes"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.adapter.hermes/agent-process",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.hermes/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.hermes/client-data-home",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "command",
+      "id": "org.licoland.adapter.hermes/adapter-status",
+      "definition": "contributions/adapter-status.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.adapter.hermes/purpose": "The Hermes Agent adapter: the persistent ACP frame dialect that classifies one Hermes stdio JSON-RPC line exactly once below the adapter port, the permission question Hermes asks, and the normalized transitions a Hermes turn reduces to. The kernel owns no part of Hermes' protocol and depends on none of it.",
+    "org.licoland.adapter.hermes/persistentData": "none",
+    "org.licoland.adapter.hermes/persistentDataReason": "This package declares no conversion because it owns no persisted package data of its own: it writes no data home, no cache and no store. The Hermes session records it reads belong to the installed Hermes client, and the client's own conversation store remains the kernel's."
+  }
+}

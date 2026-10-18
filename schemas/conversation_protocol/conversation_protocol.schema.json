@@ -1,0 +1,501 @@
+{
+  "title": "ConversationProtocol",
+  "version": 1,
+  "protocolVersion": "licoup.stdio.v1",
+  "limits": {
+    "maxFrameBytes": 16777216,
+    "maxResponseBytes": 16777216,
+    "maxIdBytes": 128,
+    "maxArgs": 4097,
+    "maxClientArgs": 256,
+    "maxErrorCodeBytes": 64,
+    "maxStderrBytes": 524288
+  },
+  "envelopeKeys": {
+    "protocol": "protocol",
+    "id": "id",
+    "workflowId": "workflowId",
+    "method": "method",
+    "params": "params",
+    "args": "args",
+    "portableDataDir": "portableDataDir",
+    "kind": "kind",
+    "sequence": "sequence",
+    "event": "event",
+    "ok": "ok",
+    "result": "result",
+    "error": "error"
+  },
+  "methods": [
+    {
+      "name": "execute",
+      "kind": "execute",
+      "lane": "command",
+      "structured": false,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "shutdown",
+      "kind": "shutdown",
+      "lane": "command",
+      "structured": false,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "catalog.status",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "catalog.invalidate",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "catalog.refresh",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "catalog.receipt",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "catalog.purge",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "catalog.reconnect",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "catalog.list",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "catalog.observe",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "state.get",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "state.set",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "agent.conversation.open",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["agent", "conversation", "open"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "agent.conversation.history",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["agent", "conversation", "history"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "agent.conversation.cleanup",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["agent", "conversation", "cleanup"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "agent.conversation.capabilities",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["agent", "conversation", "capabilities"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "agent.conversation.cancel",
+      "kind": "command",
+      "lane": "conversation",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": true,
+      "cli": {
+        "argv": ["agent", "conversation", "cancel"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "agent.conversation.stop",
+      "kind": "command",
+      "lane": "conversation",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": true,
+      "cli": null
+    },
+    {
+      "name": "agent.conversation.force.preview",
+      "kind": "command",
+      "lane": "conversation",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": true,
+      "cli": null
+    },
+    {
+      "name": "agent.conversation.force.confirm",
+      "kind": "command",
+      "lane": "conversation",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": true,
+      "cli": null
+    },
+    {
+      "name": "agent.conversation.steer",
+      "kind": "command",
+      "lane": "conversation",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": true,
+      "cli": {
+        "argv": ["agent", "conversation", "steer"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "agent.conversation.active",
+      "kind": "command",
+      "lane": "conversation",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["agent", "conversation", "active"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "agent.conversation.dispatch",
+      "kind": "command",
+      "lane": "conversation",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "agent.conversation.send",
+      "kind": "stream",
+      "lane": "conversation",
+      "structured": false,
+      "stream": true,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["agent", "conversation", "send"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true", "--stream-events", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "agent.conversation.attach",
+      "kind": "stream",
+      "lane": "conversation",
+      "structured": false,
+      "stream": true,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["agent", "conversation", "attach"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true", "--stream-events", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "agent.conversation.execution",
+      "kind": "stream",
+      "lane": "conversation",
+      "structured": false,
+      "stream": true,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "agent.conversation.execution.detach",
+      "kind": "command",
+      "lane": "conversation",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": true,
+      "cli": null
+    },
+    {
+      "name": "agent.conversation.stream",
+      "kind": "stream",
+      "lane": "conversation",
+      "structured": false,
+      "stream": true,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "client.conversation.execute",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "conversationLaneActions": ["conversation.dispatch.after-post"],
+      "unboundedActions": ["conversation.dispatch.after-post"],
+      "cli": {
+        "argv": ["conversation", "execute"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "strategy.execute",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "conversationLaneActions": [
+        "strategy.run.start",
+        "strategy.run.resume",
+        "strategy.run.retry",
+        "strategy.assistant.workflow.execute"
+      ],
+      "cli": {
+        "argv": ["strategy", "execute"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "targets.scan",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["targets", "scan", "--include-accessible-environments", "true"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "targets.add",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["targets", "add", "--target"],
+        "positionals": 1,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": [{"argvIndex": 3, "param": "target"}]
+      }
+    },
+    {
+      "name": "gateway.credentials.create",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["llm-gateway", "credentials", "create"],
+        "positionals": 0,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": []
+      }
+    },
+    {
+      "name": "gateway.credentials.update",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": {
+        "argv": ["llm-gateway", "credentials", "update"],
+        "positionals": 1,
+        "flags": ["--stdin-json", "true"],
+        "paramAliases": [{"argvIndex": 3, "param": "credentialId"}]
+      }
+    },
+    {
+      "name": "data.home.relocate",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "data.home.status",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "data.home.recover",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "data.home.cleanup",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "selection.matrix",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "selection.policy.get",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "selection.policy.adopt",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "selection.policy.supersede",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    },
+    {
+      "name": "selection.policy.revoke",
+      "kind": "command",
+      "lane": "command",
+      "structured": true,
+      "stream": false,
+      "inFlightControl": false,
+      "cli": null
+    }
+  ]
+}

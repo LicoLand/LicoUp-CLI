@@ -1,0 +1,111 @@
+id = "opencode"
+binary_names = ["opencode"]
+official_docs = "https://github.com/anomalyco/opencode"
+
+[[channels]]
+id = "homebrew"
+kind = "homebrew"
+oses = ["macos", "linux"]
+architectures = ["aarch64", "x86_64"]
+priority = 10
+official_recommended = true
+licoup_verified = true
+requires_manager = "homebrew"
+elevation = "none"
+scope = "user"
+package_coordinate = "anomalyco/tap/opencode"
+package_form = "formula"
+official_source = "https://github.com/anomalyco/opencode"
+version_policy = "latest-stable"
+install_argv = ["brew", "install", "anomalyco/tap/opencode"]
+update_argv = ["brew", "upgrade", "anomalyco/tap/opencode"]
+uninstall_argv = ["brew", "uninstall", "opencode"]
+verify_argv = ["opencode", "--version"]
+
+[[channels]]
+id = "npm"
+kind = "npm"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = true
+licoup_verified = true
+requires_manager = "npm"
+elevation = "none"
+scope = "user"
+package_coordinate = "opencode-ai"
+official_source = "https://www.npmjs.com/package/opencode-ai"
+version_policy = "latest-stable"
+install_argv = ["npm", "install", "-g", "opencode-ai"]
+update_argv = ["npm", "install", "-g", "opencode-ai"]
+uninstall_argv = ["npm", "uninstall", "-g", "opencode-ai"]
+verify_argv = ["opencode", "--version"]
+
+[[channels]]
+id = "winget"
+kind = "winget"
+oses = ["windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = false
+licoup_verified = false
+requires_manager = "winget"
+elevation = "none"
+scope = "user"
+selectable = false
+unsupported_reason = "no-official-package-coordinate"
+package_coordinate = "opencode"
+official_source = "https://github.com/anomalyco/opencode"
+version_policy = "latest-stable"
+
+[[channels]]
+id = "official-artifact"
+kind = "official-artifact"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 30
+official_recommended = true
+licoup_verified = true
+requires_manager = "none"
+elevation = "none"
+scope = "user"
+package_coordinate = "opencode-standalone"
+official_source = "https://github.com/anomalyco/opencode"
+version_policy = "vendor-latest"
+install_argv = ["tar", "-xzf", "{artifact}", "-C", "{staging}"]
+update_argv = ["tar", "-xzf", "{artifact}", "-C", "{staging}"]
+uninstall_argv = ["rm", "{install}"]
+verify_argv = ["{install}", "--version"]
+
+[channels.artifact]
+origin_host = "github.com"
+url_template = "https://github.com/anomalyco/opencode/releases/latest/download/opencode-{vendorOs}-{vendorArch}{installer}"
+# The vendor answers a release-asset request with a redirect to the host that
+# serves the bytes, so this recipe names that host instead of widening its
+# origin. The first request still has to reach github.com itself.
+redirect_hosts = ["release-assets.githubusercontent.com"]
+# The vendor publishes a zip for macOS and Windows and a tarball for Linux, so
+# this template's per-OS fragment is the archive suffix rather than a script name.
+[channels.artifact.installer]
+macos = ".zip"
+linux = ".tar.gz"
+windows = ".zip"
+[channels.artifact.vendor_os]
+macos = "darwin"
+linux = "linux"
+windows = "windows"
+[channels.artifact.vendor_arch]
+aarch64 = "arm64"
+x86_64 = "x64"
+
+# Where this channel installs its executable, and how. The placement step
+# below is the only thing that writes there, uninstall removes that path, and
+# verify runs it, so none of them depend on a name PATH happens to answer.
+[channels.install]
+argv = ["install", "-m", "0755", "{staging}/opencode", "{install}"]
+[channels.install.binary]
+macos = "opencode"
+linux = "opencode"
+[channels.install.dir]
+macos = "{home}/.opencode/bin"
+linux = "{home}/.opencode/bin"

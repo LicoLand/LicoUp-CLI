@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.acp-relay-governed-baseline-config.v2",
+  "reportOutput": "build/reports/secure-mesh-acp-relay-governed-baseline.json",
+  "ownership": {
+    "acpRelayGovernance": "tower",
+    "secureMeshAcpEnvelope": "client",
+    "note": "LicoUp release acceptance verifies the Secure Mesh ACP envelope and archive boundary locally. LicoTower relay governance evidence is reported by the selected gateway support matrix and does not block a client-only interoperability release."
+  },
+  "externalGatewayEvidence": {
+    "pathEnvKeys": [
+      "LICO_SECURE_MESH_ACP_GATEWAY_REPORT"
+    ],
+    "digestEnvKeys": [
+      "LICO_SECURE_MESH_ACP_GATEWAY_REPORT_SHA256"
+    ]
+  },
+  "sourceChecks": [
+    {
+      "id": "client-acp-envelope-aad-and-taxonomy",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_acp.rs",
+        "crates/licoup-native/src/core/secure_mesh_acp/tests/mod.rs"
+      ],
+      "tokens": [
+        "encode_acp_envelope_aad",
+        "seal_acp_protected_payload",
+        "open_acp_protected_payload",
+        "reject_plaintext_acp_protected_payload_relay",
+        "SecureMeshAcpPayloadClass",
+        "archive_layer",
+        "idempotency_key",
+        "policy_revision",
+        "secure_mesh_acp_payload_classes_cover_protected_taxonomy",
+        "secure_mesh_acp_envelope_aad_field_mutation_fails_open"
+      ]
+    }
+  ],
+  "nativeTestFilters": [
+    "secure_mesh_acp_payload_classes_cover_protected_taxonomy",
+    "secure_mesh_acp_envelope_aad_has_stable_digest_vector",
+    "secure_mesh_acp_envelope_aad_field_mutation_fails_open",
+    "secure_mesh_acp_pairwise_protected_payload_round_trip",
+    "secure_mesh_acp_plaintext_protected_payload_relay_is_blocked"
+  ]
+}

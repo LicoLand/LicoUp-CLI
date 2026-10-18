@@ -1,0 +1,36 @@
+{
+  "expect": { "status": "reject", "reason": "scope_denied", "check": "parent-grant" },
+  "requested": {
+    "ownerKind": "event",
+    "opaqueId": "event:parent-secret",
+    "sourceRevision": 2,
+    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "visibilityScope": "conversation",
+    "validity": "current"
+  },
+  "basis": {
+    "recipientConversationId": "conversation:child-a",
+    "recipientMembershipId": "membership:child-coordinator",
+    "revocationGeneration": 0
+  },
+  "payload": {
+    "grantId": "grant:parent-to-child-a",
+    "sourceConversationId": "conversation:parent",
+    "recipientConversationId": "conversation:child-a",
+    "recipientMembershipId": "membership:child-coordinator",
+    "sourceRefs": [
+      {
+        "ownerKind": "event",
+        "opaqueId": "event:parent-one",
+        "sourceRevision": 2,
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "visibilityScope": "conversation",
+        "validity": "current"
+      }
+    ],
+    "authorizedScopes": ["conversation"],
+    "status": "admitted",
+    "requestId": "request:grant-1",
+    "revocationGeneration": 0
+  }
+}

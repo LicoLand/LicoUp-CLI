@@ -1,0 +1,58 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.adapter.deepseek",
+  "version": "0.14.0",
+  "displayName": "DeepSeek Harness adapter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "agent-execution",
+      "major": 1,
+      "capabilities": [
+        "agent-execution.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-agent-deepseek"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.adapter.deepseek/agent-process",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.deepseek/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.deepseek/session-store-read",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "command",
+      "id": "org.licoland.adapter.deepseek/adapter-status",
+      "definition": "contributions/adapter-status.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.adapter.deepseek/purpose": "The DeepSeek Harness adapter: the Harness SDK driver, the vendor protocol that classifies one Harness JSON-RPC line exactly once below the adapter port, and the native reader that folds the Harness's own session log into usage samples. The kernel owns no part of the Harness protocol.",
+    "org.licoland.adapter.deepseek/persistentData": "none",
+    "org.licoland.adapter.deepseek/persistentDataReason": "This package owns no persisted package data of its own: it writes no data home, no cache and no store. The session artifacts it reads belong to the installed DeepSeek Harness, under that installation's own home, and the client's own usage cache remains the kernel's.",
+    "org.licoland.adapter.deepseek/externalDependency": "The session-log physical format is owned by the installed DeepSeek Harness and not by LicoUp. The package's reader implements the generation it declares beside this attribute and refuses any other generation by name; it does not need the vendor's own libraries, and it starts no Node runtime."
+  }
+}

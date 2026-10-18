@@ -1,0 +1,89 @@
+{
+  "schema": "licoup.workflow.legacy-run-fixture.v1",
+  "runs": [
+    {
+      "name": "engine-semantics-v0",
+      "snapshot": {
+        "runId": "run-legacy-v0",
+        "definitionDigest": "98aba45e642e57f50efa4dc142ae915134322ab2582a54430d314fe519a418a0",
+        "semanticsDigest": "98aba45e642e57f50efa4dc142ae915134322ab2582a54430d314fe519a418a0",
+        "status": "running",
+        "sequence": 3,
+        "input": {
+          "task": "review the fixture change"
+        },
+        "activeStates": [
+          "review"
+        ],
+        "completedStates": [],
+        "stateVisits": {
+          "review": 1
+        },
+        "joinArrivals": {},
+        "commands": {}
+      },
+      "recordedPlanKey": {
+        "definitionRevision": "98aba45e642e57f50efa4dc142ae915134322ab2582a54430d314fe519a418a0",
+        "compilerSemantics": "licoup.workflow.compiler.v1",
+        "engineSemantics": "licoup.workflow.engine.v0",
+        "loweringCapabilities": []
+      }
+    },
+    {
+      "name": "opaque-semantics-digest",
+      "snapshot": {
+        "runId": "run-legacy-opaque",
+        "definitionDigest": "98aba45e642e57f50efa4dc142ae915134322ab2582a54430d314fe519a418a0",
+        "semanticsDigest": "98aba45e642e57f50efa4dc142ae915134322ab2582a54430d314fe519a418a0",
+        "status": "waiting",
+        "sequence": 5,
+        "input": {
+          "task": "review the fixture change"
+        },
+        "activeStates": [
+          "review"
+        ],
+        "completedStates": [],
+        "stateVisits": {
+          "review": 2
+        },
+        "joinArrivals": {},
+        "commands": {}
+      },
+      "recordedPlanKey": {
+        "definitionRevision": "98aba45e642e57f50efa4dc142ae915134322ab2582a54430d314fe519a418a0",
+        "compilerSemantics": "98aba45e642e57f50efa4dc142ae915134322ab2582a54430d314fe519a418a0",
+        "engineSemantics": "licoup.workflow.engine.v1",
+        "loweringCapabilities": []
+      }
+    },
+    {
+      "name": "compiler-semantics-v0",
+      "snapshot": {
+        "runId": "run-legacy-compiler-v0",
+        "definitionDigest": "98aba45e642e57f50efa4dc142ae915134322ab2582a54430d314fe519a418a0",
+        "semanticsDigest": "98aba45e642e57f50efa4dc142ae915134322ab2582a54430d314fe519a418a0",
+        "status": "running",
+        "sequence": 4,
+        "input": {
+          "task": "review the fixture change"
+        },
+        "activeStates": [
+          "review"
+        ],
+        "completedStates": [],
+        "stateVisits": {
+          "review": 1
+        },
+        "joinArrivals": {},
+        "commands": {}
+      },
+      "recordedPlanKey": {
+        "definitionRevision": "98aba45e642e57f50efa4dc142ae915134322ab2582a54430d314fe519a418a0",
+        "compilerSemantics": "licoup.workflow.compiler.v0",
+        "engineSemantics": "licoup.workflow.engine.v1",
+        "loweringCapabilities": []
+      }
+    }
+  ]
+}

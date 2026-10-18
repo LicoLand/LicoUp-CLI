@@ -1,0 +1,57 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.feature.mcp",
+  "version": "0.14.0",
+  "displayName": "LicoUp Subagent MCP service",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "subagent-mcp",
+      "major": 1,
+      "capabilities": [
+        "mcp-server.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-subagent-mcp"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.feature.mcp/local-endpoint",
+      "scope": "127.0.0.1"
+    },
+    {
+      "capability": "org.licoland.feature.mcp/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.feature.mcp/client-data-home",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "command",
+      "id": "org.licoland.feature.mcp/service-status",
+      "definition": "contributions/service-status.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.feature.mcp/purpose": "The optional Subagent MCP service: one authenticated loopback MCP endpoint plus the stdio connector an Agent spawns, reaching delegated subagent work through the public client CLI. The kernel owns no part of it and depends on none of it.",
+    "org.licoland.feature.mcp/persistentData": "self-owned",
+    "org.licoland.feature.mcp/persistentDataReason": "This package declares no conversion because the only persisted data it owns is its own service state under client-state/subagent-mcp: the discovery document the service publishes for its connector and the OS lease that names the running generation, both rewritten by the service itself and carrying no runtime content. The formats of those two documents are private to this package and are not one of the published client-state formats a migration converts."
+  }
+}

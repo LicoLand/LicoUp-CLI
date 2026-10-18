@@ -1,0 +1,22 @@
+[package]
+name = "licoup-protocol-bindings"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+# Fixed Candidate admission delegates protocol verification to the LicoArc SDK.
+licoarc.workspace = true
+anyhow.workspace = true
+base64.workspace = true
+chacha20poly1305.workspace = true
+hkdf.workspace = true
+rand_core.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+zeroize.workspace = true

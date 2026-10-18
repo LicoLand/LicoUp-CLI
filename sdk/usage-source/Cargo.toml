@@ -1,0 +1,18 @@
+[workspace]
+
+[package]
+name = "licoup-usage-source-sdk"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "C11 usage-source SDK: the push, bounded-pull and cursor collection protocol, the host-side source binding, and the boundary normalizers."
+
+[dependencies]
+# The single source of the C11 observation shape. This SDK maps inputs onto the
+# frozen contract; it does not restate the contract, and it adds no second
+# observation type.
+licoup-extension-contracts = { path = "../../crates/licoup-extension-contracts", version = "0.3.0" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

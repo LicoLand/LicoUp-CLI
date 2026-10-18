@@ -1,0 +1,10 @@
+{
+  "expect": { "status": "accept", "type": "TaskChildAdmission", "check": "task-child" },
+  "payload": {
+    "goalId": "goal:notes",
+    "parentConversationId": "conversation:parent",
+    "speechAct": "delegation",
+    "followThroughKind": "durable",
+    "requestId": "request:admit-child-1"
+  }
+}

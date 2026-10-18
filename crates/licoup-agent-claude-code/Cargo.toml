@@ -1,0 +1,58 @@
+[package]
+name = "licoup-agent-claude-code"
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "Claude Code adapter package: the Claude Code CLI stream-json protocol and its parser"
+
+# The crate is one package's program. `protocol` is this Agent's vendor
+# vocabulary below the adapter port: the CLI's stream-json/lf-ndjson dialect,
+# the launch and effective-setting shapes it reports, the failure shape, and the
+# byte-line parser that classifies one frame exactly once, per ADR-0008. `driver`
+# is the process that speaks it: the supervised streaming-input CLI, its
+# bounded IO, its session registry and its control entries. `port` is the seam
+# the host answers, `registration` is what composition injects into
+# `licoup-agent-adapter-sdk`, and `replay` is the arm that drives the same parser
+# from a recorded transcript.
+#
+# The protocol and the driver are one package's, and the kernel links no copy of
+# either: composition names this crate's driver for the registration, the probe
+# and the turn. The two shared libraries below the composition that the driver
+# reaches are the same ones its sibling packages reach — the user-shell
+# environment and the ACP approval park registry — and both name no Agent.
+[features]
+default = []
+
+[dependencies]
+licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+# The shared progressive turn-event bus. It is a foundation primitive, not a
+# client one: a package that owns *what* one turn emits writes to the same sink
+# the host's own emitters write to, so an installed consumer reads both through
+# one path and no event is lost when the host composes no port.
+licoup-foundation = { path = "../licoup-foundation" }
+# The driver's launch and probe children run under the user's own login shell
+# environment (ADR 0007). The snapshot's one owner is here, shared with every
+# other Agent launcher; a package that kept its own copy of the capture would be
+# a second answer to what the user's environment is.
+licoup-agent-targets = { path = "../licoup-agent-targets" }
+# The ACP session transport's approval park registry. A Claude Code permission
+# request parks in the same native interaction registry every other Agent's
+# approval route reaches, so the client resolves one park through one authority;
+# the driver opens the park and reads its decision, and owns neither.
+licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+
+[[bin]]
+name = "lico-agent-claude-code"
+path = "src/bin/lico-agent-claude-code.rs"
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the package binary, which links no kernel
+# crate and reads its own package documents as data.
+[dev-dependencies]
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }

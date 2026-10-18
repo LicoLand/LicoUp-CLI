@@ -1,0 +1,16 @@
+{
+  "schema": "licoup.continuity.evaluation-unknown-cost/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "modelId": "synthetic-evaluation-model-no-owner-price",
+  "inputTokens": 1000,
+  "outputTokens": 500,
+  "taskIdentity": "task:unknown-price",
+  "versionIdentity": "v1",
+  "resourceIdentity": "res:1",
+  "expect": {
+    "unknownCost": true,
+    "candidateFullCostIsZero": false,
+    "economicallyQualified": false
+  }
+}

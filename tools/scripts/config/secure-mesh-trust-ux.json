@@ -1,0 +1,244 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.trust-ux-config.v2",
+  "productTestTargets": [
+    "apps/desktop/test/mobile_relay_service_test.dart",
+    "apps/desktop/test/secure_mesh_panel_test.dart"
+  ],
+  "sourceChecks": [
+    {
+      "id": "trust-helper-provides-cross-signing-sas-qr-and-key-change-policy",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_trust.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/authorization.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/identity.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/model.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/policy.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/record.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/signature.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/verification.rs"
+      ],
+      "tokens": [
+        "pub fn sign_device_cross_signature",
+        "pub fn verify_device_cross_signature",
+        "pub fn sign_device_trust_record",
+        "pub fn verify_device_trust_record_json",
+        "pub fn sas_decimal_chunks",
+        "pub fn qr_verification_payload",
+        "pub fn detect_identity_key_change",
+        "pub fn evaluate_device_trust_policy_json",
+        "pub fn authorize_protected_send",
+        "ProtectedSendAuthorization",
+        "ProtectedSendPayloadKind"
+      ]
+    },
+    {
+      "id": "trust-helper-tests-redacted-fingerprints-and-fail-closed-states",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_trust.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/tests/authorization.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/tests/policy.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/tests/signature.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/tests/verification.rs"
+      ],
+      "tokens": [
+        "secure_mesh_device_cross_signature_verifies_and_rejects_tamper",
+        "secure_mesh_device_qr_payload_uses_fingerprints_not_raw_keys",
+        "secure_mesh_device_key_change_is_detected",
+        "secure_mesh_device_trust_policy_json_treats_caller_verified_as_advisory_and_blocks_key_change",
+        "secure_mesh_device_trust_record_signature_binds_peer_and_expiry",
+        "secure_mesh_authorize_protected_send_blocks_unverified_key_changed_and_revoked_for_all_kinds",
+        "secure_mesh_authorize_protected_send_from_trust_record_and_rejects_observation_alone",
+        "\"identity_key_changed\""
+      ]
+    },
+    {
+      "id": "verify-before-send-single-policy-gates-product-seal-path",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_trust.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/authorization.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/signature.rs",
+        "crates/licoup-native/src/domain/mobile_relay/endpoint_trust/peer_trust.rs",
+        "crates/licoup-native/src/domain/mobile_relay/pairwise_session.rs",
+        "crates/licoup-native/src/domain/mobile_relay/tests/endpoint_trust.rs",
+        "crates/licoup-native/src/domain/mobile_relay/tests/pairing.rs"
+      ],
+      "tokens": [
+        "ensure_peer_authorized_for_protected_send",
+        "authorize_protected_send_from_trust_record",
+        "protected_send_kind_from_payload",
+        "mobile_relay_protected_send_blocks_unverified_key_changed_and_revoked_peers",
+        "out_of_band_pairing_response_rejects_substituted_peer_without_claim_proof",
+        "relay-supplied peer descriptor must not be trusted without a valid claim proof"
+      ]
+    },
+    {
+      "id": "product-controllers-do-not-call-seal-paths-directly",
+      "files": [
+        "apps/desktop/lib/src/application/features/mobile_relay/controller/secure_mesh_controller.dart",
+        "apps/desktop/lib/src/application/features/mobile_relay/controller/secure_mesh_status_controller.dart"
+      ],
+      "tokens": [
+        "evaluateDeviceTrust",
+        "_gateway.evaluateDeviceTrust",
+        "requireVerifiedDevice",
+        "allowUnverifiedReadOnly"
+      ]
+    },
+    {
+      "id": "secure-mesh-command-policy-requires-confirmation-for-device-verify",
+      "file": "crates/licoup-native/src/core/secure_mesh.rs",
+      "tokens": [
+        "\"secure_mesh.device.verify\"",
+        "\"local_effect\"",
+        "requiresUserConfirmation",
+        "secure_mesh_command_policy_allows_only_registered_commands"
+      ]
+    },
+    {
+      "id": "cli-exposes-device-trust-policy-evaluator",
+      "file": "crates/licoup-native/src/ffi/commands/secure_mesh.rs",
+      "tokens": [
+        "(\"device-trust\", \"evaluate\")",
+        "evaluate_device_trust_policy_json",
+        "secure_mesh_device_trust_evaluate_cli_reports_policy_decision"
+      ]
+    },
+    {
+      "id": "cli-usage-documents-device-trust-evaluate",
+      "file": "crates/licoup-native/src/ffi/commands/mod.rs",
+      "tokens": [
+        "path: &[\"secure-mesh\", \"device-trust\", \"evaluate\"]",
+        "caller state is advisory and cannot authorize"
+      ]
+    },
+    {
+      "id": "desktop-service-calls-shared-cli-policy-evaluator",
+      "file": "apps/desktop/lib/src/platform/mobile_relay/secure_mesh_substrate_operations.dart",
+      "tokens": [
+        "_evaluateSecureMeshDeviceTrust",
+        "'secure-mesh'",
+        "'device-trust'",
+        "'evaluate'",
+        "--require-verified-device"
+      ]
+    },
+    {
+      "id": "desktop-controller-exposes-trust-policy-for-relay-panel",
+      "file": "apps/desktop/lib/src/application/features/mobile_relay/controller/secure_mesh_controller.dart",
+      "tokens": [
+        "Future<void> evaluateDeviceTrust",
+        "get deviceTrustPolicy",
+        "requireVerifiedDevice",
+        "allowUnverifiedReadOnly"
+      ]
+    },
+    {
+      "id": "desktop-tests-keep-diagnostics-hidden-from-ordinary-ui",
+      "file": "apps/desktop/test/secure_mesh_panel_test.dart",
+      "tokens": [
+        "RelayTrustProjection(",
+        "protocolVersion: 'licomesh.secure-mesh.device-trust.v2'",
+        "find.text('device-trust-ready'), findsNothing",
+        "find.text('blocked_for_production'), findsNothing"
+      ]
+    },
+    {
+      "id": "rust-public-config-exposes-redacted-exact-trust-presentation",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_trust.rs",
+        "crates/licoup-native/src/core/secure_mesh_trust/verification.rs",
+        "crates/licoup-native/src/domain/mobile_relay/endpoint_trust/pairing_presentation.rs",
+        "crates/licoup-native/src/domain/mobile_relay/tests/endpoint_trust.rs"
+      ],
+      "tokens": [
+        "public_device_trust_presentation",
+        "safetyNumberGroups",
+        "qr_verification_payload",
+        "mobile_relay_public_config_exposes_verified_trust_presentation_without_keys"
+      ]
+    },
+    {
+      "id": "product-ui-renders-verified-and-blocked-trust-states",
+      "file": "apps/desktop/lib/src/frontend/features/mobile_relay/ui/mobile_relay_panel/trust.dart",
+      "tokens": [
+        "secure-mesh-trust-verification-card",
+        "secure-mesh-60-digit-safety-number",
+        "trustKeyChanged",
+        "trustRevoked",
+        "compareSafetyNumber"
+      ]
+    },
+    {
+      "id": "product-model-rejects-invalid-safety-number-groups",
+      "file": "apps/desktop/lib/src/contracts/mobile_relay/mobile_relay_trust_presentation.dart",
+      "tokens": [
+        "MobileRelayTrustPresentation",
+        "RegExp(r'^\\d{5}$')",
+        "blocksProtectedSend"
+      ]
+    },
+    {
+      "id": "android-release-channel-allows-shared-rust-trust-actions",
+      "file": "apps/desktop/android/app/src/debug/kotlin/land/lico/licoup/ReleaseAcceptanceChannel.kt",
+      "tokens": [
+        "secure_mesh.deviceTrust.evaluate",
+        "secure_mesh.deviceTrust.verifyQr",
+        "secure_mesh.deviceTrust.verifySas",
+        "secure_mesh.deviceTrust.rotate",
+        "secure_mesh.deviceTrust.revoke",
+        "secure_mesh.deviceTrust.recover",
+        "secure_mesh.mls.member.remove"
+      ]
+    },
+    {
+      "id": "ios-client-tests-shared-rust-trust-lifecycle",
+      "file": "apps/desktop/integration_test/mobile_relay_ios_e2e_test.dart",
+      "tokens": [
+        "secure_mesh.deviceTrust.verifyQr",
+        "secure_mesh.deviceTrust.verifySas",
+        "secure_mesh.lifecycle.serviceAction",
+        "serviceActionPolicyReady",
+        "keyChangeBlocksSensitive",
+        "revokeBlocksSensitive"
+      ]
+    },
+    {
+      "id": "selected-target-trust-reducer-is-v2-and-fail-closed",
+      "file": "tools/scripts/lib/secure-mesh-trust-ux-reducer.mjs",
+      "tokens": [
+        "licomesh.secure-mesh.trust-ux-report.v2",
+        "reduceSecureMeshTrustUxReadiness",
+        "validateSecureMeshTrustUxV2Report",
+        "embeddedAndroidPhysicalTrustReady",
+        "productionClaimSuppressed",
+        "unknownAuthorityFieldsAbsent",
+        "unsupported_not_claimed",
+        "runSecureMeshTrustUxReducerSelfTest"
+      ]
+    }
+  ],
+  "nativeTestFilters": [
+    "secure_mesh_device_cross_signature_verifies_and_rejects_tamper",
+    "secure_mesh_device_sas_is_symmetric",
+    "secure_mesh_device_qr_payload_uses_fingerprints_not_raw_keys",
+    "secure_mesh_device_key_change_is_detected",
+    "secure_mesh_device_trust_policy_json_treats_caller_verified_as_advisory_and_blocks_key_change",
+    "secure_mesh_device_trust_record_signature_binds_peer_and_expiry",
+    "secure_mesh_authorize_protected_send_blocks_unverified_key_changed_and_revoked_for_all_kinds",
+    "secure_mesh_authorize_protected_send_from_trust_record_and_rejects_observation_alone",
+    "secure_mesh_device_trust_evaluate_cli_reports_policy_decision",
+    "secure_mesh_command_policy_allows_only_registered_commands",
+    "out_of_band_pairing_response_rejects_substituted_peer_without_claim_proof",
+    "mobile_relay_protected_send_blocks_unverified_key_changed_and_revoked_peers",
+    "mobile_relay_secure_command_requires_signed_peer_trust_record",
+    "mobile_relay_secure_command_rejects_tampered_peer_trust_record"
+  ],
+  "expectedMobileNativeTrustActions": [
+    "secure_mesh.deviceTrust.evaluate",
+    "secure_mesh.deviceTrust.verifyQr",
+    "secure_mesh.deviceTrust.verifySas",
+    "secure_mesh.deviceTrust.rotate",
+    "secure_mesh.deviceTrust.revoke",
+    "secure_mesh.deviceTrust.recover"
+  ]
+}

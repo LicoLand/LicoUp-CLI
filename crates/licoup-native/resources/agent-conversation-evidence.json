@@ -1,0 +1,369 @@
+{
+  "schemaVersion": "v0.0.1:client-agent-conversation-parity-evidence-1",
+  "contractVersion": "CL-06",
+  "harnessVersion": "dispatch-lane-unified-1",
+  "toolVersionClass": "dispatch-lane-unified-1",
+  "generatedAt": "2026-08-30T16:35:31.521Z",
+  "adapters": [
+    {
+      "agentId": "antigravity",
+      "driverId": "antigravity-cli",
+      "runtimeProtocol": "antigravity-cli-argv-hook-v1",
+      "harnessVersion": "dispatch-lane-unified-1",
+      "runtimeVersionClass": "verified-antigravity-cli-argv-hook-gate",
+      "runtimeVersionDigest": "sha256:6509d6ca54a66e3eaf61dfe35308ba1dfa1e6b552ef5c4f5f861562c6811ecaf",
+      "capabilitySnapshotDigest": "sha256:55b08afea3464a42294e0196e3eb80b4d28a4b2cb2ee7eb2184ba39dcf6c4350",
+      "adapterManifestDigest": "sha256:1fc8d4865978d8ae43533ed57ad983003bc4021fbbe90bd15c7a5e037e6a98a0",
+      "releaseArtifactDigest": "sha256:c1b34a1a43fe9076248ec8613384eb6d1e24d553a2bc1d6869b02cb610cc1e48",
+      "releaseSidecarDigest": "sha256:9978a7fcbfdc16f0ee4675ca3d7fd03d5c0ee8b800947fee53dbed7a2b785450",
+      "productContinuityBindingDigest": "sha256:f2e43462a5a92e88089811cce386735289c93aebb2a00078b6cefe7b0403b748",
+      "runtimeSourceClass": "discovered-binary",
+      "registryDigest": "sha256:46b66f31ae5514e58cc26918f03839cedf69f1c11bc4d93b7626de0418c9d628",
+      "driverInventoryDigest": "sha256:bcfb341aa7332f5eb9d18edc994ec9fefc4b261000938a6a354f6bc29169f223",
+      "evidenceDigest": "sha256:4e34947e405cefe79d600ddcb2cf3990ea6f2205be5c8db71305f284d65fbb24",
+      "officialNativeLane": true,
+      "consecutivePasses": 3,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "coreChecks": {
+        "P-01": "pass",
+        "P-02": "pass",
+        "P-03": "pass",
+        "P-04": "pass",
+        "P-05": "pass",
+        "P-06": "pass",
+        "P-07": "pass",
+        "P-08": "pass",
+        "P-09": "pass",
+        "P-10": "pass"
+      },
+      "conditionalChecks": {
+        "C-01": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-02": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-03": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-04": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-05": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-06": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        }
+      }
+    },
+    {
+      "agentId": "claude-code",
+      "driverId": "claude-code-stream-json",
+      "runtimeProtocol": "claude-code-cli-stream-json",
+      "harnessVersion": "dispatch-lane-unified-1",
+      "runtimeVersionClass": "verified-claude-code-stream-json-gate",
+      "runtimeVersionDigest": "sha256:5a728a76198b6eca7f3c7cdbff43bab44b77b48c2108f7a3107d889773382629",
+      "capabilitySnapshotDigest": "sha256:0932fe09f7c8d9db0df7ce3dfd078e6fdb634adb7be37fc3f34217e7a495e391",
+      "adapterManifestDigest": "sha256:fbf36463a3119b9586e4e814f7843ae59775dbe613d910cee2a77e40b646b4da",
+      "releaseArtifactDigest": "sha256:a620d7a8a3eb7a2100babaf38a017e8dfbb90f66336de9be43acfa7b74f32b8c",
+      "releaseSidecarDigest": "sha256:2243467c1929ab98543495494f8767e68eb1a59fee9a7cf379ef2da3dbf50fad",
+      "productContinuityBindingDigest": "sha256:32daf752e2273bead8988d35d7e825fbf9eec00d35412e827a9c804764e35d4e",
+      "runtimeSourceClass": "discovered-binary",
+      "registryDigest": "sha256:577f55a64820aacdceb85f778547de7026f786f0a5e912fab0f66579db7850ae",
+      "driverInventoryDigest": "sha256:133f0299057897f0782df01a8aaec348e142efd0d421dd6d25b80b080f315067",
+      "evidenceDigest": "sha256:f12f70f0fd234dc52a50a4a655938e29989b0a087e40b4617abd649a7767d0e0",
+      "officialNativeLane": true,
+      "consecutivePasses": 3,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "coreChecks": {
+        "P-01": "pass",
+        "P-02": "pass",
+        "P-03": "pass",
+        "P-04": "pass",
+        "P-05": "pass",
+        "P-06": "pass",
+        "P-07": "pass",
+        "P-08": "pass",
+        "P-09": "pass",
+        "P-10": "pass"
+      },
+      "conditionalChecks": {
+        "C-01": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-02": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-03": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-04": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-05": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-06": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        }
+      }
+    },
+    {
+      "agentId": "codex",
+      "driverId": "codex-app-server",
+      "runtimeProtocol": "codex-app-server-stdio-jsonrpc",
+      "harnessVersion": "dispatch-lane-unified-1",
+      "runtimeVersionClass": "verified-release",
+      "runtimeVersionDigest": "sha256:67ea03c98e7726eeebd161bc3bc92d8937f412f1899790a28e4ee9b80803c4d7",
+      "capabilitySnapshotDigest": "sha256:40dd1b8cb9595f97873b2065b91000f59a77429b2241904870805df7bc813c02",
+      "adapterManifestDigest": "sha256:03dbf45578577d9f715c271b377280587c74d04a19d441e27d78c01820648e4f",
+      "releaseArtifactDigest": "sha256:f92c31fbd5b717308c52478110f3de201921185abac80adea34d6d2136aa6140",
+      "releaseSidecarDigest": "sha256:3591dacd27e44ae06ae8f7cf442def1f7c79e0a0e06903cc26cb6b751251cce3",
+      "productContinuityBindingDigest": "sha256:93781b5a7c65e661f3973f7e8bba0e31a7af229e86bcf5669274f472f1f38c4c",
+      "runtimeSourceClass": "discovered-binary",
+      "registryDigest": "sha256:a24748a585dff9325b7db163cea05be0052055f5cb7332c15555f9072854acfa",
+      "driverInventoryDigest": "sha256:ecc5195059c13bc615d743cc7a5f7be5abb3f07775924c9a2a2fb098fba7f418",
+      "evidenceDigest": "sha256:f54c2819f72f8109b7e4cfa9791cfc6b8537ac5e7719adb31d85fa7b5de0585c",
+      "officialNativeLane": true,
+      "consecutivePasses": 1,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "coreChecks": {
+        "P-01": "pass",
+        "P-02": "pass",
+        "P-03": "pass",
+        "P-04": "pass",
+        "P-05": "pass",
+        "P-06": "pass",
+        "P-07": "pass",
+        "P-08": "pass",
+        "P-09": "pass",
+        "P-10": "pass"
+      },
+      "conditionalChecks": {
+        "C-01": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-02": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-03": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-04": {
+          "nativeSupport": "supported",
+          "result": "unverified"
+        },
+        "C-05": {
+          "nativeSupport": "supported",
+          "result": "unverified"
+        },
+        "C-06": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        }
+      }
+    },
+    {
+      "agentId": "cursor",
+      "driverId": "cursor-cli",
+      "runtimeProtocol": "cursor-agent-cli-v1",
+      "harnessVersion": "dispatch-lane-unified-1",
+      "runtimeVersionClass": "verified-cursor-cli-gate",
+      "runtimeVersionDigest": "sha256:eed61c5224668c9236334c4c68936a16aecc37374b592f59e31eb50433817831",
+      "capabilitySnapshotDigest": "sha256:55b08afea3464a42294e0196e3eb80b4d28a4b2cb2ee7eb2184ba39dcf6c4350",
+      "adapterManifestDigest": "sha256:e765c100dbbe7e8c237365c8a4079fa24d7adaad04393eb517ffe0ada983d8d7",
+      "releaseArtifactDigest": "sha256:e0ce975b137ef565604d82ffbafb3575489e55d717808e0f2346cfba23124d2c",
+      "releaseSidecarDigest": "sha256:9a1f6b59820c8523102a3b9da50c5458877f9be4c5d2739424122e01b2b89e81",
+      "productContinuityBindingDigest": "sha256:e138273c10641dd232f4f977b0aa07569b9837fdf9127ca4016b092c0745f6d0",
+      "runtimeSourceClass": "discovered-binary",
+      "registryDigest": "sha256:577f55a64820aacdceb85f778547de7026f786f0a5e912fab0f66579db7850ae",
+      "driverInventoryDigest": "sha256:133f0299057897f0782df01a8aaec348e142efd0d421dd6d25b80b080f315067",
+      "evidenceDigest": "sha256:7eda4750e31e7904550cd0e079ea1a8209e3a288bc03c64391ce00613ba43a54",
+      "officialNativeLane": true,
+      "consecutivePasses": 3,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "coreChecks": {
+        "P-01": "pass",
+        "P-02": "pass",
+        "P-03": "pass",
+        "P-04": "pass",
+        "P-05": "pass",
+        "P-06": "pass",
+        "P-07": "pass",
+        "P-08": "pass",
+        "P-09": "pass",
+        "P-10": "pass"
+      },
+      "conditionalChecks": {
+        "C-01": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-02": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-03": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-04": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-05": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-06": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        }
+      }
+    },
+    {
+      "agentId": "kimi-code",
+      "driverId": "kimi-code-acp",
+      "runtimeProtocol": "kimi-code-acp-v1-stdio-ndjson",
+      "harnessVersion": "dispatch-lane-unified-1",
+      "runtimeVersionClass": "verified-kimi-code-acp-gate",
+      "runtimeVersionDigest": "sha256:297d4521d23ebab163fd778dfc3422dcb2cc216a6a0eadd535b914f20c538cd6",
+      "capabilitySnapshotDigest": "sha256:31f45b2351e274a8b0f1d5d34b4eb9e6aca7c49695469bb5bb221a27cd2c0c0c",
+      "adapterManifestDigest": "sha256:0b3a7d9ec8796edee631e500a1dacb9989403fd52fee2c8fd0473e107f451cf6",
+      "releaseArtifactDigest": "sha256:cf878f7105592bef6bb0477052b2ee453289737eb928d4ba66cf75fb24ce1505",
+      "releaseSidecarDigest": "sha256:b8f1c449f8d4034834923162d276c874be6bfe3e57aaeab02a4794bc03c83170",
+      "productContinuityBindingDigest": "sha256:8d5e0ba6108a0fc43ad97bb480dc4936b2e0efd499c1c32ae767bf12a842ee20",
+      "runtimeSourceClass": "discovered-binary",
+      "registryDigest": "sha256:46b66f31ae5514e58cc26918f03839cedf69f1c11bc4d93b7626de0418c9d628",
+      "driverInventoryDigest": "sha256:bcfb341aa7332f5eb9d18edc994ec9fefc4b261000938a6a354f6bc29169f223",
+      "evidenceDigest": "sha256:22d8a41e7032502111623df195bac312b5e5bf6e27ceb3eec3c20c443b7d7873",
+      "officialNativeLane": true,
+      "consecutivePasses": 3,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "coreChecks": {
+        "P-01": "pass",
+        "P-02": "pass",
+        "P-03": "pass",
+        "P-04": "pass",
+        "P-05": "pass",
+        "P-06": "pass",
+        "P-07": "pass",
+        "P-08": "pass",
+        "P-09": "pass",
+        "P-10": "pass"
+      },
+      "conditionalChecks": {
+        "C-01": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-02": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-03": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-04": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-05": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-06": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        }
+      }
+    },
+    {
+      "agentId": "opencode",
+      "driverId": "opencode-serve",
+      "runtimeProtocol": "opencode-serve-http-v1",
+      "harnessVersion": "dispatch-lane-unified-1",
+      "runtimeVersionClass": "verified-opencode-serve-arc-gate",
+      "runtimeVersionDigest": "sha256:652a34cab759c0fa348f107aa737df86355a49b1576834864e89ee43c059b25d",
+      "capabilitySnapshotDigest": "sha256:5fe99b7704752d583f1cc02ef144f74493e777c3d9318684e44d54b97c482d3b",
+      "adapterManifestDigest": "sha256:8c3473433bcd04260f6e34a67c6c78a1a8d33b97ca4a5ead4112d47d06b95d40",
+      "releaseArtifactDigest": "sha256:636bab6f5df5b963451c2dbcb3e9c6ef3b705b2332c368d4d3115875f3f0ace9",
+      "releaseSidecarDigest": "sha256:3a8c73dcd15b3d6bbf7695a3caeb9bc76b82a0002ed285bf2a0b7aef3d90345c",
+      "productContinuityBindingDigest": "sha256:2fe539c0a9dc5a883e850205f7ce682cf5cb6d7bee576273d7eb5e944080bc99",
+      "runtimeSourceClass": "discovered-binary",
+      "registryDigest": "sha256:46b66f31ae5514e58cc26918f03839cedf69f1c11bc4d93b7626de0418c9d628",
+      "driverInventoryDigest": "sha256:bcfb341aa7332f5eb9d18edc994ec9fefc4b261000938a6a354f6bc29169f223",
+      "evidenceDigest": "sha256:48f8e606849054a97a583b95698e632bcda69f6a2595cb104cace2e189c4609c",
+      "officialNativeLane": true,
+      "consecutivePasses": 3,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "coreChecks": {
+        "P-01": "pass",
+        "P-02": "pass",
+        "P-03": "pass",
+        "P-04": "pass",
+        "P-05": "pass",
+        "P-06": "pass",
+        "P-07": "pass",
+        "P-08": "pass",
+        "P-09": "pass",
+        "P-10": "pass"
+      },
+      "conditionalChecks": {
+        "C-01": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-02": {
+          "nativeSupport": "supported",
+          "result": "pass"
+        },
+        "C-03": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-04": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-05": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        },
+        "C-06": {
+          "nativeSupport": "unsupported",
+          "result": "unsupported-by-native"
+        }
+      }
+    }
+  ]
+}

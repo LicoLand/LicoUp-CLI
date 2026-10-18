@@ -1,0 +1,36 @@
+[package]
+name = "licoup-migrate"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "Standalone migration tool for LicoUp local data"
+
+[[bin]]
+name = "licoup-migrate"
+path = "src/main.rs"
+
+[lib]
+name = "licoup_migrate"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = "1.0"
+command-group.workspace = true
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-native = { path = "../licoup-native" }
+licoup-vault = { path = "../licoup-vault" }
+semver.workspace = true
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+base64.workspace = true
+ed25519-dalek.workspace = true
+licoup-conversation = { path = "../licoup-conversation" }
+licoup-foundation = { path = "../licoup-foundation" }
+rand_core.workspace = true
+rusqlite.workspace = true
+serde_json = "1.0"
+zip.workspace = true

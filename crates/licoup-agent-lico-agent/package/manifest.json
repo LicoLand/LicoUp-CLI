@@ -1,0 +1,57 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.adapter.lico-agent",
+  "version": "0.14.0",
+  "displayName": "Lico Agent adapter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "agent-execution",
+      "major": 1,
+      "capabilities": [
+        "agent-execution.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-agent-lico-agent"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.adapter.lico-agent/agent-process",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.lico-agent/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.lico-agent/client-data-home",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "command",
+      "id": "org.licoland.adapter.lico-agent/adapter-status",
+      "definition": "contributions/adapter-status.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.adapter.lico-agent/purpose": "The Lico Agent adapter: the lf-jsonl-jsonrpc stdio protocol that classifies one frame of the packaged runtime exactly once below the adapter port, plus the native session identity, transcript layout and active plan layout that protocol resumes by. The kernel owns no part of this protocol and depends on none of it.",
+    "org.licoland.adapter.lico-agent/persistentData": "none",
+    "org.licoland.adapter.lico-agent/persistentDataReason": "This package declares no conversion because it owns no persisted package data format of its own: it derives the session, transcript and plan locations Lico Agent already writes and converts none of them. The persisted Lico Agent conversation remains the client's own JSONL transcript, read by its current owner, and the package's release declaration converts the RPC wire rather than a store."
+  }
+}

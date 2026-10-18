@@ -1,0 +1,988 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.client-boundary-config.v1",
+  "rules": [
+    {
+      "id": "flutter-gui-no-secure-mesh-backend-implementation",
+      "description": "Application, UI, and reusable contract code must not implement Secure Mesh crypto, platform authentication, key storage, or proof internals.",
+      "roots": [
+        "apps/desktop/lib/src/application",
+        "apps/desktop/lib/src/frontend",
+        "apps/desktop/lib/src/contracts"
+      ],
+      "includeExtensions": [
+        ".dart"
+      ],
+      "forbiddenTokens": [
+        "package:crypto/crypto.dart",
+        "package:cryptography/",
+        "dart:ffi",
+        "MethodChannel",
+        "FlutterMethodChannel",
+        "SecureMeshAndroidBridge",
+        "SecureMeshIosBridge",
+        "X25519",
+        "HKDF",
+        "ChaCha20Poly1305",
+        "AES-GCM",
+        "SecureMeshContentContext",
+        "SecureMeshPairwise",
+        "SecureMeshPairwiseSession",
+        "SecureMeshPairwiseDurableStore",
+        "seal_payload_envelope",
+        "open_payload_envelope",
+        "privateKeyBase64url",
+        "signingKeyBase64url",
+        "signedPrekeyPrivateKeyBase64url",
+        "oneTimePrekeyPrivateKeyBase64url",
+        "pairingSecretBase64url",
+        "privateKeyMaterial",
+        "signingKeyMaterial",
+        "signedPrekeyPrivateKeyMaterial",
+        "oneTimePrekeyPrivateKeyMaterial",
+        "pairingSecretMaterial",
+        "secretOverrides",
+        "secretOverrideTransport",
+        "AndroidKeyStore",
+        "createConfirmDeviceCredentialIntent",
+        "setUserAuthenticationRequired(",
+        "AUTH_DEVICE_CREDENTIAL",
+        "AUTH_BIOMETRIC_STRONG",
+        "LAContext",
+        "SecItemAdd",
+        "SecAccessControlCreateWithFlags",
+        "Keychain"
+      ],
+      "allowedMatches": [
+        {
+          "file": "apps/desktop/lib/src/platform/mobile_relay/mobile_relay_secure_mesh_service.dart",
+          "tokens": [
+            "SecureMeshIosBridge"
+          ],
+          "reason": "Mobile Relay service selects the platform bridge adapter while Secure Mesh protocol and platform-auth internals remain outside Flutter feature code."
+        },
+        {
+          "file": "apps/desktop/lib/src/platform/mobile_relay/mobile_relay_service_ops.dart",
+          "tokens": [
+            "SecureMeshAndroidBridge"
+          ],
+          "reason": "Mobile Relay service operations route to the Android platform bridge adapter without implementing Secure Mesh crypto or secret-store internals."
+        },
+      {
+        "file": "apps/desktop/lib/src/contracts/generated/secure_mesh.g.dart",
+        "tokens": [
+          "privateKeyMaterial"
+        ],
+        "reason": "Generated KT and MLS response parsing contains only negative leak-rejection guards; it rejects non-redacted private key material and never consumes it."
+        }
+      ]
+    },
+    {
+      "id": "dart-services-are-bridges-not-protocol-implementations",
+      "description": "Dart services may adapt CLI and platform bridge calls, but Secure Mesh algorithms and platform auth implementations stay outside Flutter service code.",
+      "roots": [
+        "apps/desktop/lib/src/backend",
+        "apps/desktop/lib/src/contracts"
+      ],
+      "includeExtensions": [
+        ".dart"
+      ],
+      "forbiddenTokens": [
+        "package:crypto/crypto.dart",
+        "package:cryptography/",
+        "dart:ffi",
+        "X25519",
+        "HKDF",
+        "ChaCha20Poly1305",
+        "AES-GCM",
+        "SecureMeshContentContext",
+        "SecureMeshPairwise",
+        "SecureMeshPairwiseSession",
+        "SecureMeshPairwiseDurableStore",
+        "seal_payload_envelope",
+        "open_payload_envelope",
+        "privateKeyBase64url",
+        "signingKeyBase64url",
+        "signedPrekeyPrivateKeyBase64url",
+        "oneTimePrekeyPrivateKeyBase64url",
+        "pairingSecretBase64url",
+        "privateKeyMaterial",
+        "signingKeyMaterial",
+        "signedPrekeyPrivateKeyMaterial",
+        "oneTimePrekeyPrivateKeyMaterial",
+        "pairingSecretMaterial",
+        "AndroidKeyStore",
+        "createConfirmDeviceCredentialIntent",
+        "setUserAuthenticationRequired(",
+        "AUTH_DEVICE_CREDENTIAL",
+        "AUTH_BIOMETRIC_STRONG",
+        "LAContext",
+        "SecItemAdd",
+        "SecAccessControlCreateWithFlags",
+        "Keychain"
+      ],
+      "allowedMatches": [
+        {
+          "file": "apps/desktop/lib/src/platform/storage/portable_data_root.dart",
+          "tokens": [
+            "package:crypto/crypto.dart"
+          ],
+          "reason": "Portable workspace manifest hashing is a non-secret identifier digest, not Secure Mesh protocol crypto."
+        },
+      {
+        "file": "apps/desktop/lib/src/contracts/generated/secure_mesh.g.dart",
+        "tokens": [
+          "privateKeyMaterial"
+        ],
+        "reason": "Generated KT and MLS response parsing contains only negative leak-rejection guards; it rejects non-redacted private key material and never consumes it."
+        }
+      ]
+    },
+    {
+      "id": "dart-method-channel-confined-to-platform-bridge",
+      "description": "Flutter MethodChannel access for Secure Mesh stays in the explicit mobile bridge adapter.",
+      "roots": [
+        "apps/desktop/lib/src/application",
+        "apps/desktop/lib/src/frontend",
+        "apps/desktop/lib/src/backend",
+        "apps/desktop/lib/src/contracts"
+      ],
+      "includeExtensions": [
+        ".dart"
+      ],
+      "forbiddenTokens": [
+        "MethodChannel"
+      ],
+      "allowedMatches": []
+    },
+    {
+      "id": "rust-native-core-has-no-flutter-ui-dependency",
+      "description": "Rust native code owns Secure Mesh backend decisions and must not depend on Flutter or GUI toolkit concepts.",
+      "roots": [
+        "crates/licoup-native/src"
+      ],
+      "includeExtensions": [
+        ".rs"
+      ],
+      "forbiddenTokens": [
+        "FlutterMethodChannel",
+        "MethodChannel",
+        "BuildContext",
+        "MaterialApp",
+        "Cupertino",
+        "SwiftUI",
+        "NSAlert",
+        "AppKit",
+        "flutter/services.dart",
+        "package:flutter",
+        "dart:ui"
+      ],
+      "allowedMatches": []
+    },
+    {
+      "id": "android-activity-does-not-own-payload-crypto",
+      "description": "Android platform code may orchestrate physical proof collection, AndroidKeyStore wrapping, and JNI calls, but Secure Mesh payload crypto must stay in the shared Rust core.",
+      "roots": [
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup"
+      ],
+      "includeExtensions": [
+        ".kt"
+      ],
+      "forbiddenTokens": [
+        "ChaCha20-Poly1305",
+        "HmacSHA256",
+        "SecretKeySpec(derivedKey",
+        "IvParameterSpec(header.nonce",
+        "IvParameterSpec(nonce",
+        "hkdfSaltDomain",
+        "hkdfInfoDomain",
+        "contentCipherSuite"
+      ]
+    },
+    {
+      "id": "android-platform-auth-does-not-collect-lock-screen-password",
+      "description": "Android platform code must invoke the system credential prompt and must never collect lock-screen credentials in app-owned UI or payloads.",
+      "roots": [
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup"
+      ],
+      "includeExtensions": [
+        ".kt"
+      ],
+      "forbiddenTokens": [
+        "lockScreenPassword",
+        "screenLockPassword",
+        "screenPassword",
+        "devicePassword",
+        "deviceCredentialPassword",
+        "devicePasswordInput",
+        "userEnteredPassword",
+        "appLockPassword",
+        "EditText",
+        "TextInputEditText",
+        "TextField",
+        "OutlinedTextField",
+        "BasicTextField",
+        "PasswordVisualTransformation",
+        "KeyboardType.Password",
+        "PasswordTransformationMethod",
+        "TYPE_TEXT_VARIATION_PASSWORD",
+        "TYPE_NUMBER_VARIATION_PASSWORD",
+        "numberPassword",
+        "textPassword",
+        "lockScreenPin",
+        "devicePin",
+        "pinCode",
+        "android.text.InputType",
+        "setInputType",
+        "inputType",
+        ".put(\"appCredentialPromptUsed\", true)",
+        ".put(\"appPasswordPromptUsed\", true)",
+        ".put(\"appLockScreenCredentialCollection\", true)",
+        "\"appCredentialPromptUsed\" to true",
+        "\"appPasswordPromptUsed\" to true",
+        "\"appLockScreenCredentialCollection\" to true",
+        "appCredentialPromptUsed = true",
+        "appPasswordPromptUsed = true",
+        "appLockScreenCredentialCollection = true"
+      ],
+      "allowedMatches": []
+    },
+    {
+      "id": "android-mobile-relay-bridge-does-not-send-raw-e2ee-json",
+      "description": "Android may expose opaque Mobile Relay secret-store handle metadata, but it must not send endpoint private keys, pairing secrets, or relay tokens through secretOverrides JSON.",
+      "roots": [
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup"
+      ],
+      "includeExtensions": [
+        ".kt"
+      ],
+      "forbiddenTokens": [
+        "overrides.put(\"mobileRelayE2ee\"",
+        "overrides.put(\"e2ee\"",
+        "overrides.put(\"pcToken\"",
+        "overrides.put(\"mobileToken\"",
+        "overrides.put(\"pairedDevices\""
+      ],
+      "allowedMatches": []
+    },
+    {
+      "id": "ios-mobile-relay-bridge-does-not-send-raw-e2ee-json",
+      "description": "iOS may expose opaque Mobile Relay secret-store handle metadata, but it must not send endpoint private keys, pairing secrets, or relay tokens through secretOverrides JSON.",
+      "roots": [
+        "apps/desktop/ios/Runner"
+      ],
+      "includeExtensions": [
+        ".swift"
+      ],
+      "forbiddenTokens": [
+        "overrides[\"mobileRelayE2ee\"]",
+        "overrides[\"e2ee\"]",
+        "overrides[\"pcToken\"]",
+        "overrides[\"mobileToken\"]",
+        "overrides[\"pairedDevices\"]"
+      ],
+      "allowedMatches": []
+    }
+  ],
+  "sourceChecks": [
+    {
+      "id": "dart-secure-mesh-service-delegates-to-cli-and-platform-bridge",
+      "file": "apps/desktop/lib/src/platform/mobile_relay/mobile_relay_native_dispatch.dart",
+      "tokens": [
+        "abstract interface class MobileRelayNativeDispatch",
+        "final class DefaultMobileRelayNativeDispatch",
+        "SecureMeshMobileBridge bridgeForCurrentPlatform",
+        "runner.runCli(List<String>.unmodifiable(arguments))",
+        "on LicoClientRpcException",
+        "bridge.nativeJson({",
+        "Map<String, dynamic>.unmodifiable(params)",
+        "MobileRelayDispatchException('native_command_failed')",
+        "MobileRelayDispatchException('native_bridge_failed')"
+      ],
+      "forbiddenTokens": [
+        "result.stdout",
+        "result.stderr",
+        "error.toString()",
+        "exception.toString()",
+        "print(",
+        "debugPrint("
+      ]
+    },
+    {
+      "id": "dart-secure-mesh-method-channel-adapter-is-isolated",
+      "file": "apps/desktop/lib/src/platform/secure_mesh/secure_mesh_mobile_bridge.dart",
+      "tokens": [
+        "MethodChannel",
+        "nativeJson",
+        "invokeMethod<Object?>"
+      ]
+    },
+    {
+      "id": "dart-secure-mesh-android-channel-is-platform-specific",
+      "file": "apps/desktop/lib/src/platform/secure_mesh/secure_mesh_android_bridge.dart",
+      "tokens": [
+        "secureMeshAndroidChannelName",
+        "SecureMeshAndroidBridge extends SecureMeshMobileBridge",
+        "secure_mesh_android_bridge_unavailable"
+      ]
+    },
+    {
+      "id": "dart-secure-mesh-ios-channel-is-platform-specific",
+      "file": "apps/desktop/lib/src/platform/secure_mesh/secure_mesh_ios_bridge.dart",
+      "tokens": [
+        "secureMeshIosChannelName",
+        "SecureMeshIosBridge extends SecureMeshMobileBridge",
+        "secure_mesh_ios_bridge_unavailable"
+      ]
+    },
+    {
+      "id": "rust-core-owns-secure-mesh-payload-crypto",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_crypto/model.rs",
+        "crates/licoup-native/src/core/secure_mesh_crypto/public_payload.rs",
+        "crates/licoup-native/src/core/secure_mesh_crypto/key_derivation.rs"
+      ],
+      "tokens": [
+        "SecureMeshContentContext",
+        "ChaCha20Poly1305",
+        "HKDF_SALT_DOMAIN",
+        "seal_payload",
+        "open_payload"
+      ]
+    },
+    {
+      "id": "rust-mobile-ffi-forbids-raw-payload-crypto-actions",
+      "file": "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi.rs",
+      "files": [
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/action_catalog.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/dispatch_context.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/dispatch_router.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/feature_status.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/fixture_envelope.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/fixture_file.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/fixture_lifecycle.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/fixture_payload.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/fixture_trust.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/protected_operation.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/redacted_error.rs",
+        "crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/request_validation.rs"
+      ],
+      "forbiddenTokens": [
+        "contentKeyBase64url",
+        "includeBodyBase64url"
+      ]
+    },
+    {
+      "id": "rust-core-owns-secure-mesh-pairwise-state",
+      "file": "crates/licoup-native/src/core/secure_mesh_pairwise.rs",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_pairwise.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/key_ratchet.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/key_ratchet/relay_codec.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/persistence/store_model.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/session_negotiation/transcript_codec.rs",
+        "crates/licoup-native/src/core/secure_mesh_pairwise/tests/persistence_recovery.rs"
+      ],
+      "tokens": [
+        "SecureMeshPairwiseSession",
+        "SecureMeshPairwiseDurableStore",
+        "handshake_transcript_hash",
+        "initiator_key_confirmed",
+        "pairwise_key_confirmation",
+        "pending_sending_ratchet",
+        "prepare_sending_ratchet_for_send",
+        "secure_mesh_pairwise_pending_authenticated_ratchet_survives_restart",
+        "seal_payload_envelope",
+        "open_payload_envelope"
+      ]
+    },
+    {
+      "id": "rust-core-owns-platform-secret-store-contract",
+      "file": "crates/licoup-native/src/core/secure_mesh_secret_store.rs",
+      "files": [
+        "crates/licoup-native/src/core/secure_mesh_secret_store.rs",
+        "crates/licoup-native/src/platform/secure_mesh_secret_store.rs"
+      ],
+      "tokens": [
+        "pub use authorization",
+        "pub use capability",
+        "pub use platform_store",
+        "pub use port::SecureMeshSecretStore"
+      ]
+    },
+    {
+      "id": "rust-platform-secret-store-trait-is-session-aware",
+      "file": "crates/licoup-native/src/core/secure_mesh_secret_store/port.rs",
+      "tokens": [
+        "pub trait SecureMeshSecretStore",
+        "begin_authorized_session",
+        "set_secret_with_session",
+        "get_secret_with_session",
+        "delete_secret_with_session"
+      ]
+    },
+    {
+      "id": "rust-platform-secret-store-authorization-is-budgeted",
+      "file": "crates/licoup-native/src/core/secure_mesh_secret_store/authorization.rs",
+      "tokens": [
+        "SecretStoreAuthorizationRequest",
+        "SecretStoreAuthorizationSession",
+        "record_secret_store_operation",
+        "consumed_operation_count",
+        "authorization_batch_within_budget",
+        "single_system_authorization_context_verified"
+      ]
+    },
+    {
+      "id": "rust-platform-secret-store-platform-proof-is-redacted",
+      "file": "crates/licoup-native/src/platform/secure_mesh_secret_store/platform_store.rs",
+      "tokens": [
+        "PlatformSecretStore",
+        "SecretClassPersistenceProof",
+        "raw_secret_material_included: false"
+      ]
+    },
+    {
+      "id": "android-rust-secret-store-receiver-is-dedicated-bridge",
+      "file": "crates/licoup-native/src/ffi/android_ffi.rs",
+      "tokens": [
+        "secret_store_bridge: JObject",
+        "AndroidJniSecretStore::new(env, secret_store_bridge)",
+        "secret_store: Global<JObject<'static>>",
+        "self.secret_store.as_obj()"
+      ],
+      "forbiddenTokens": [
+        "activity: GlobalRef",
+        "activity: Global<JObject<'static>>",
+        "AndroidJniSecretStore::new(env, this)",
+        "self.activity.as_obj()"
+      ]
+    },
+    {
+      "id": "android-bridge-uses-system-device-auth",
+      "file": "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidUserAuthenticator.kt",
+      "tokens": [
+        "class SecureMeshAndroidUserAuthenticator",
+        "fun request(",
+        "fun status(",
+        "fun onActivityResult(",
+        "KeyguardManager",
+        "createConfirmDeviceCredentialIntent",
+        "physicalUserPresenceRequired",
+        "systemCredentialPromptAvailable",
+        "systemCredentialPromptStarted",
+        "systemCredentialPromptCompleted",
+        "systemCredentialPromptResultCodePresent",
+        "systemCredentialPromptResultCode",
+        "systemCredentialPromptResult",
+        "systemCredentialPromptReusedFromPendingRequest",
+        "pendingLatch",
+        "userActionRequired",
+        "credentialEntrySurface",
+        "android_system_credential_prompt",
+        "systemAuthenticationOnly",
+        "appLockScreenCredentialCollection",
+        "appCredentialPromptUsed",
+        "appPasswordPromptUsed",
+        "keyMaterialHandledByAuthenticationFlow",
+        "bodyRedacted"
+      ],
+      "forbiddenTokens": [
+        "lockScreenPassword",
+        "screenLockPassword",
+        "screenPassword",
+        "devicePassword",
+        "deviceCredentialPassword",
+        "devicePasswordInput",
+        "userEnteredPassword",
+        "appLockPassword",
+        "EditText",
+        "TextInputEditText",
+        "TextField",
+        "OutlinedTextField",
+        "BasicTextField",
+        "PasswordVisualTransformation",
+        "KeyboardType.Password",
+        "PasswordTransformationMethod",
+        "TYPE_TEXT_VARIATION_PASSWORD",
+        "TYPE_NUMBER_VARIATION_PASSWORD",
+        "numberPassword",
+        "textPassword",
+        "lockScreenPin",
+        "devicePin",
+        "pinCode",
+        "android.text.InputType",
+        "setInputType",
+        ".put(\"appCredentialPromptUsed\", true)",
+        ".put(\"appPasswordPromptUsed\", true)",
+        ".put(\"appLockScreenCredentialCollection\", true)",
+        "\"appCredentialPromptUsed\" to true",
+        "\"appPasswordPromptUsed\" to true",
+        "\"appLockScreenCredentialCollection\" to true",
+        "appCredentialPromptUsed = true",
+        "appPasswordPromptUsed = true",
+        "appLockScreenCredentialCollection = true"
+      ]
+    },
+    {
+      "id": "android-bridge-uses-opaque-mobile-relay-secret-store-handle",
+      "file": "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidSecretStore.kt",
+      "files": [
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidSecretStore.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidSecretContract.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidCustodyManager.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidCapability.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidCapabilityProbe.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidKeyPolicy.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidMobileRelaySecretBridge.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidEncryptedRecordStore.kt"
+      ],
+      "tokens": [
+        "class SecureMeshAndroidSecretStore",
+        "MOBILE_RELAY_STORE_CONTRACT",
+        "MOBILE_RELAY_NAMESPACE",
+        "MOBILE_RELAY_ACCOUNT_PREFIX",
+        "\"rawJsonSecretOverridesUsed\" to false",
+        "SecureMeshAndroidKeyPolicyStrategy.candidates",
+        "SecureMeshAndroidKeyAttemptFailure.STRONGBOX_UNAVAILABLE",
+        "SecureMeshAndroidCustodySelection.MemoryOnly",
+        "secureMeshAndroidCapabilityProbeJson",
+        "capabilityProbe",
+        "restartSemantics",
+        "USER_AUTH_VALIDITY_SECONDS",
+        "secureMeshAndroidSecretStoreSet",
+        "secureMeshAndroidSecretStoreGet",
+        "secureMeshAndroidSecretStoreDelete",
+        "jniCallbacksCarryDecryptedSecretBytesInProcess",
+        "statusProbeSideEffectFree"
+      ],
+      "forbiddenTokens": [
+        "overrides.put(\"pcToken\"",
+        "overrides.put(\"mobileToken\"",
+        "overrides.put(\"pairedDevices\""
+      ]
+    },
+    {
+      "id": "android-activity-delegates-mobile-relay-secret-store",
+      "file": "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/MainActivity.kt",
+      "files": [
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/MainActivity.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidCommandRouter.kt",
+        "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/SecureMeshAndroidNativeRuntime.kt"
+      ],
+      "tokens": [
+        "SecureMeshAndroidSecretStore(this, filesDir)",
+        "secretStoreBridge: SecureMeshAndroidSecretStore",
+        "secretStore.invokeWithAuthorizedCustody",
+        "nativeRuntime.invoke(",
+        "secretStore.mobileRelaySecretStoreStatus()"
+      ],
+      "forbiddenTokens": [
+        "fun secureMeshAndroidSecretStoreSet",
+        "fun secureMeshAndroidSecretStoreGet",
+        "fun secureMeshAndroidSecretStoreDelete",
+        "fun secureMeshAndroidSecretStoreAccount",
+        "fun secureMeshAndroidSecretStoreClass",
+        "fun ensureAndroidMobileRelaySecretStoreKey",
+        "ANDROID_MOBILE_RELAY_SECRET_STORE_KEY_ALIAS",
+        "ANDROID_MOBILE_RELAY_SECRET_KIND",
+        "android-mobile-relay-secrets",
+        "fun androidKeyStoreStatus",
+        "fun ensureAndroidSecureStoreKey",
+        "fun androidSecretKeyRequiresUserAuthentication",
+        "fun androidEndpointSigningKeyRequiresUserAuthentication",
+        "fun applyAndroidUserAuthenticationPolicy",
+        "fun androidDeviceCredentialIsConfigured",
+        "fun ensureAndroidEndpointSigningKey",
+        "fun androidEndpointSigningEntry",
+        "fun signAndroidEndpointChallenge",
+        "fun writeAndroidSecureStoreProof",
+        "fun writeAndroidSecureStoreRecord",
+        "fun writeAndroidSecureStoreRecordToFile",
+        "fun readAndroidSecureStoreProbeRecord",
+        "fun readAndroidSecureStoreRecordFromFile",
+        "buildAndroidSecureStoreAad",
+        "encodeAndroidSecureStorePlaintext",
+        "decodeAndroidSecureStorePlaintext",
+        "ANDROID_ENDPOINT_SIGNING_KEY_ALIAS",
+        "ANDROID_SECURE_STORE_KEY_ALIAS",
+        "ANDROID_SECURE_STORE_AAD_MAGIC",
+        "ANDROID_SECURE_STORE_PLAINTEXT_MAGIC",
+        "KeyPairGenerator.getInstance",
+        "KeyGenerator.getInstance",
+        "Cipher.getInstance(ANDROID_SECURE_STORE_CIPHER)",
+        "Signature.getInstance(ANDROID_ENDPOINT_SIGNING_ALGORITHM)"
+      ]
+    },
+    {
+      "id": "macos-rust-user-presence-uses-one-biometric-first-application-authorization",
+      "files": [
+        "crates/licoup-native/src/platform/user_presence.rs",
+        "crates/licoup-native/src/platform/secure_mesh_secret_store/macos_user_presence.rs",
+        "crates/licoup-native/src/platform/authorized_secure_record/macos_keychain.rs"
+      ],
+      "tokens": [
+        "APPLICATION_AUTHORIZATION",
+        "LAPolicy::DeviceOwnerAuthenticationWithBiometrics",
+        "password_fallback_allowed",
+        "LAError::BiometryNotAvailable",
+        "LAError::BiometryNotEnrolled",
+        "setLocalizedFallbackTitle",
+        "MacosAuthorizationContext",
+        "effect_lock",
+        "SecretStorePresenceError::authorization_required()",
+        "SecurityCapability::DataProtectionKeychain",
+        "SecurityCapability::OsUserPresence",
+        "SecurityCapability::DeviceCredential",
+        "kSecUseDataProtectionKeychain",
+        "kSecUseAuthenticationContext",
+        "kSecAccessControlUserPresence"
+      ]
+    },
+    {
+      "id": "macos-rust-secret-store-authorization-session-is-single-context",
+      "file": "crates/licoup-native/src/core/secure_mesh_secret_store/authorization.rs",
+      "tokens": [
+        "system_authorization_attempt_count",
+        "system_authorization_completed",
+        "single_system_authorization_context_verified",
+        "record_secret_store_operation",
+        "authorization_batch_within_budget",
+        "app_password_prompt_used: false"
+      ]
+    },
+    {
+      "id": "macos-rust-secret-store-interactive-selection-fails-closed",
+      "file": "crates/licoup-native/src/platform/secure_mesh_secret_store/platform_backends/macos.rs",
+      "tokens": [
+        "if request.allow_interaction() {",
+        "secure mesh macOS user-presence authorization is unavailable",
+        "with_capability_report"
+      ]
+    },
+    {
+      "id": "macos-rust-secret-store-projects-apple-keychain-capability",
+      "file": "crates/licoup-native/src/platform/secure_mesh_secret_store/capability.rs",
+      "tokens": [
+        "SecurityCapability::AppleKeychain"
+      ]
+    },
+    {
+      "id": "macos-user-presence-proof-uses-single-system-auth-context",
+      "tokens": [
+        "let context = LAContext()",
+        "context.evaluatePolicy(.deviceOwnerAuthentication",
+        "kSecUseAuthenticationContext as String",
+        "singleAuthorizationContextCreated",
+        "singleAuthorizationContextSharedByOperations",
+        "singleAuthorizationContextPolicySatisfied",
+        "interactiveWorkflowSelected",
+        "interactiveAuthorizationSucceeded",
+        "interactiveAuthorizationAttemptCount = 1",
+        "maximumInteractiveAuthorizationAttemptsPerProof: 1",
+        "promptBudgetSatisfied",
+        "zeroBackgroundPrompts",
+        "noAutomaticAuthorizationRetry",
+        "kSecUseAuthenticationUIFail",
+        "appPasswordPromptUsed: false",
+        "appCredentialPromptUsed: false",
+        "reduceCapabilityFacts",
+        "validateCapabilityReport",
+        "standardKeychainAvailable",
+        "dataProtectionKeychainAvailable",
+        "userPresenceOperationSupported",
+        "secureEnclaveOperationSupported"
+      ],
+      "files": [
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/capability/facts.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/capability/summarize.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/cli.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/constants.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/helper/codesign.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/helper/process.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/helper/run-swift.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/helper/swift-source.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/parse.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/privacy.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/proof.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/report.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/run.mjs",
+        "tools/scripts/client-secure-mesh-macos-keychain-user-presence-proof/self-test.mjs"
+      ]
+    },
+    {
+      "id": "macos-mobile-relay-composite-operations-use-operation-auth-batch",
+      "file": "crates/licoup-native/src/domain/mobile_relay/secret_custody.rs",
+      "files": [
+        "crates/licoup-native/src/domain/mobile_relay/secret_custody.rs",
+        "crates/licoup-native/src/domain/mobile_relay/secret_custody/config_store.rs",
+        "crates/licoup-native/src/domain/mobile_relay/secret_custody/presentation.rs",
+        "crates/licoup-native/src/domain/mobile_relay/secret_custody/runtime.rs"
+      ],
+      "tokens": [
+        "pub(in crate::domain::mobile_relay) struct RuntimeSecretContext",
+        "pub(in crate::domain::mobile_relay) secret_store_batch: MobileRelaySecretStoreAuthBatch",
+        "pub(in crate::domain::mobile_relay) fn shared_authorization_session",
+        "pub(in crate::domain::mobile_relay) struct MobileRelaySecretStoreAuthBatch",
+        "if self.session.is_none()",
+        "SecretStoreAuthorizationRequest::noninteractive(&self.reason, self.operation_count)",
+        "self.session = Some(store.begin_authorized_session(&request)?)",
+        "pub(in crate::domain::mobile_relay) fn load_config_with_runtime_secret_context_for_operation",
+        "MobileRelaySecretStoreAuthBatch::with_interaction(",
+        "consumed_operation_count: session.consumed_operation_count()",
+        "remaining_operation_count: session.remaining_operation_count()",
+        "authorization_batch_within_budget: session.authorization_batch_within_budget()",
+        "\"consumedOperationCount\": session.consumed_operation_count()",
+        "\"remainingOperationCount\": session.remaining_operation_count()",
+        "\"authorizationBatchWithinBudget\": session.authorization_batch_within_budget()",
+        "\"singleSystemAuthorizationContextVerified\": session.single_system_authorization_context_verified()",
+        "authorization_claim_consistent",
+        "\"appCredentialPromptUsed\": false",
+        "\"keyMaterial\": \"redacted\""
+      ],
+      "forbiddenTokens": [
+        "\"appCredentialPromptUsed\": true",
+        "\"keyMaterialExported\": true"
+      ]
+    },
+    {
+      "id": "licoarc-badtower-acceptance-keeps-a-strict-non-authoritative-station-surface",
+      "files": [
+        "tools/scripts/client-licoarc-badtower-acceptance.mjs",
+        "tools/scripts/lib/licoarc-badtower-acceptance-report.mjs",
+        "tools/scripts/lib/licoarc-v1-bundle-validator.mjs",
+        "tools/scripts/lib/licoarc-badtower-candidate-binding.mjs"
+      ],
+      "tokens": [
+        "licoup.licoarc-badtower.acceptance.v1",
+        "freshEndpointCount",
+        "positiveExchange",
+        "roundTrip",
+        "stationPlaintextAbsent",
+        "nonConformantEnvelopeRejected",
+        "transportHintsNonAuthoritative",
+        "exactFiveOuterFields",
+        "validateLicoArcV1BundleBytes",
+        "candidateBindingsReady",
+        "createBadTowerStationEnvironment"
+      ],
+      "forbiddenTokens": [
+        "endpointContentIncluded: true",
+        "ciphertextIncluded: true",
+        "keyMaterialIncluded: true",
+        "machineIdentityIncluded: true",
+        "rawRuntimeDataIncluded: true"
+      ]
+    },
+    {
+      "id": "native-stdio-rpc-entry-is-bounded-and-panic-redacted",
+      "file": "crates/licoup-native/src/bin/licoup.rs",
+      "tokens": [
+        "licoup.stdio.v1",
+        "RPC command terminated unexpectedly"
+      ]
+    },
+    {
+      "id": "native-stdio-rpc-preserves-one-redacted-workflow",
+      "file": "crates/licoup-native/src/bin/licoup/stdio_rpc.rs",
+      "files": [
+        "crates/licoup-native/src/bin/licoup/stdio_rpc.rs",
+        "crates/licoup-native/src/bin/licoup/stdio_rpc/context.rs",
+        "crates/licoup-native/src/bin/licoup/stdio_rpc/error.rs",
+        "crates/licoup-native/src/bin/licoup/stdio_rpc/response.rs",
+        "crates/licoup-native/src/bin/licoup/stdio_rpc/server.rs"
+      ],
+      "tokens": [
+        "PortableDataDirOverrideGuard",
+        "workflow_mismatch",
+        "authorization_required",
+        "authorization_failed",
+        "request_too_large",
+        "response_too_large",
+        "streaming_command_unsupported"
+      ]
+    },
+    {
+      "id": "macos-agent-service-reuses-one-native-stdio-workflow",
+      "file": "apps/desktop/lib/src/platform/native_client/agent_service_stdio_rpc.dart",
+      "files": [
+        "apps/desktop/lib/src/platform/native_client/agent_service_stdio_rpc.dart",
+        "apps/desktop/lib/src/platform/native_client/agent_service_stdio_rpc/client.dart",
+        "apps/desktop/lib/src/platform/native_client/agent_service_stdio_rpc/command_round_trip.dart",
+        "apps/desktop/lib/src/platform/native_client/agent_service_stdio_rpc/protocol.dart",
+        "apps/desktop/lib/src/platform/native_client/agent_service_stdio_rpc/session.dart",
+        "apps/desktop/lib/src/platform/native_client/agent_service_stdio_rpc/session_manager.dart"
+      ],
+      "tokens": [
+        "licoup.stdio.v1",
+        "_workflowId = newStdioRpcWorkflowId()",
+        "_operations.serialize",
+        "ensureSession()",
+        "A write may reach native code",
+        "stdioRpcMaxFrameBytes",
+        "stdioRpcMaxStderrBytes",
+        "Future<void> dispose()"
+      ],
+      "forbiddenTokens": [
+        "response['error']['message']",
+        "response[\"error\"][\"message\"]"
+      ]
+    },
+    {
+      "id": "macos-agent-service-preserves-stable-authorization-required",
+      "file": "apps/desktop/lib/src/platform/native_client/native_cli_ports.dart",
+      "tokens": [
+        "class LicoClientRpcException implements Exception",
+        "const LicoClientRpcException(this.code)",
+        "final String code",
+        "bool get authorizationRequired => code == 'authorization_required'",
+        "return 'licoup authorization is required.'",
+        "return 'licoup RPC request failed (code: $code).'"
+      ],
+      "forbiddenTokens": [
+        "final String message",
+        "this.message",
+        "error.toString()",
+        "stderr",
+        "stdout"
+      ]
+    },
+    {
+      "id": "mobile-relay-background-auth-pauses-until-user-gesture",
+      "file": "apps/desktop/lib/src/application/features/mobile_relay/controller/mobile_relay_controller.dart",
+      "tokens": [
+        "bool get authorizationRequired => _authorizationRequired",
+        "_timer = Timer.periodic(interval, (_) => unawaited(pollOnce()))",
+        "Future<void> pollOnce({bool showProgress = false})",
+        "else if (_authorizationRequired)",
+        "final rawResult = await _client.syncCommands(",
+        "allowInteraction: showProgress",
+        "on MobileRelayAuthorizationRequired",
+        "_authorizationRequired = true",
+        "Mobile relay is waiting for local authorization; sync manually.",
+        "errorCode: 'mobile_relay_authorization_required'"
+      ],
+      "forbiddenTokens": [
+        "allowInteraction: true",
+        "Timer.periodic(interval, (_) => unawaited(pollOnce(showProgress: true)))"
+      ]
+    },
+    {
+      "id": "android-forbids-raw-payload-ffi-actions",
+      "file": "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/MainActivity.kt",
+      "forbiddenTokens": [
+        "contentKeyBase64url",
+        "includeBodyBase64url"
+      ]
+    },
+    {
+      "id": "ios-bridge-uses-keychain-and-local-auth",
+      "file": "apps/desktop/ios/Runner/SecureMeshIosBridge+SecretStore.swift",
+      "tokens": [
+        "SecItemAdd",
+        "SecAccessControlCreateWithFlags",
+        ".userPresence",
+        "kSecAttrAccessibleWhenUnlockedThisDeviceOnly",
+        "kSecUseAuthenticationContext",
+        "mobileRelayE2eeSecretStore",
+        "rawJsonSecretOverridesUsed",
+        "appPasswordPromptUsed",
+        "nativeFfiCarriesInProcessSecretMaterial",
+        "secretMaterialCrossesFlutterMethodChannel",
+        "mobileRelaySecretStoreBackend",
+        "mobileRelaySecretStoreCallbackAccount",
+        "pairwiseSessionSnapshot"
+      ],
+      "forbiddenTokens": [
+        "overrides[\"pcToken\"]",
+        "overrides[\"mobileToken\"]",
+        "overrides[\"pairedDevices\"]",
+        "\"appPasswordPromptUsed\": true",
+        "\"appCredentialPromptUsed\": true",
+        "appPasswordPromptUsed = true",
+        "appCredentialPromptUsed = true"
+      ]
+    },
+    {
+      "id": "ios-bridge-uses-system-local-auth",
+      "file": "apps/desktop/ios/Runner/SecureMeshIosBridge+LocalAuth.swift",
+      "tokens": [
+        "import LocalAuthentication",
+        "LAContext",
+        "SecAccessControlCreateWithFlags",
+        ".userPresence",
+        "kSecUseAuthenticationUIFail",
+        "kSecUseAuthenticationContext",
+        "credentialEntrySurface",
+        "ios_system_local_auth_prompt",
+        "systemCredentialPromptResult",
+        "appCredentialPromptUsed",
+        "protectedKeychainValueReturnedToAppMemory",
+        "rawSecretMaterialIncluded"
+      ],
+      "forbiddenTokens": [
+        "\"appPasswordPromptUsed\": true",
+        "\"appCredentialPromptUsed\": true",
+        "appPasswordPromptUsed = true",
+        "appCredentialPromptUsed = true"
+      ]
+    },
+    {
+      "id": "ios-bridge-wires-rust-callback-secret-store",
+      "file": "apps/desktop/ios/Runner/SecureMeshIosBridge.swift",
+      "tokens": [
+        "mobileRelaySecretStoreBackend",
+        "ios-keychain",
+        "secure_mesh.ios.userPresenceProof",
+        "lico_secure_mesh_json_with_secret_store",
+        "LicoSecureMeshSecretStoreCallbacks",
+        "iosSecretStoreSetCallback",
+        "iosSecretStoreGetCallback",
+        "iosSecretStoreDeleteCallback",
+        "iosCallbackReadsUseAuthenticationContext",
+        "iosCallbackReadsUseSharedLAContext",
+        "iosSingleSystemAuthorizationContextVerified",
+        "iosCallbackAuthContextAttachedToAllReads",
+        "iosCallbackAuthContextAttachedToAllOperations",
+        "secretStoreAuthorization",
+        "systemAuthorizationAttemptCount",
+        "authorizationBatchPromptBudgetReady",
+        "authorizationBatchWithinBudget",
+        "appPasswordPromptUsed",
+        "nativeFfiCarriesInProcessSecretMaterial",
+        "secretMaterialCrossesFlutterMethodChannel"
+      ]
+    },
+    {
+      "id": "ios-bridge-uses-single-system-auth-context",
+      "file": "apps/desktop/ios/Runner/SecureMeshIosBridge.swift",
+      "tokens": [
+        "let context = LAContext()",
+        "context.touchIDAuthenticationAllowableReuseDuration",
+        "authorizationBatchOperationBudget",
+        "allowableReuseDurationSeconds",
+        "singleSystemAuthorizationContextVerified",
+        "authContextAttachedToAllOperations",
+        "iosCallbackAuthContextAttachedToAllOperations",
+        "sharedSystemAuthorizationContextRequired",
+        "sharedSystemAuthorizationContextAvailable",
+        "systemAuthorizationAttemptCount",
+        "systemAuthorizationCompleted",
+        "authorizationBatchPromptBudgetReady",
+        "authorizationBatchOperationCount",
+        "authorizationBatchConsumedOperationCount",
+        "authorizationBatchRemainingOperationCount",
+        "authorizationBatchWithinBudget",
+        "appPasswordPromptUsedPresent",
+        "appCredentialPromptUsedPresent"
+      ],
+      "forbiddenTokens": [
+        "\"appPasswordPromptUsed\": true",
+        "\"appCredentialPromptUsed\": true",
+        "appPasswordPromptUsed = true",
+        "appCredentialPromptUsed = true"
+      ]
+    }
+  ]
+}

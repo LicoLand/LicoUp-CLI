@@ -1,0 +1,75 @@
+[package]
+name = "licoup-agent-hermes"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "Hermes Agent adapter package: the persistent ACP frame dialect, its process half and its registration"
+
+# The crate is one package's program. `parser` is this Agent's vendor protocol
+# below the adapter port: the persistent ACP frame interpretation that classifies
+# one LF-delimited JSON line exactly once, per ADR-0008, and the normalized
+# transitions Hermes reports for a completed or failed turn. `dialect` answers
+# the shared ACP transport's port from that parser, `driver` is the launch and
+# probe contract that transport runs plus one bounded turn over it,
+# `registration` is what composition injects into `licoup-agent-adapter-sdk`, and
+# `replay` is the arm that drives the same reducer from a recorded transcript.
+#
+# The kernel links no part of this crate's protocol. Composition names the crate
+# for its dialect registration, its registration constant, its driver and its
+# replay arm; nothing here reaches back into a client crate, and the driver reads
+# its frames from `parser` rather than keeping a second copy.
+[features]
+default = []
+# The recorded-transcript replay arm. It is a feature rather than `cfg(test)`
+# because the arm is driven from the host's test build, which links this crate
+# as a dependency — and `cfg(test)` is false for a dependency, so a `cfg(test)`
+# arm is compiled out of exactly the build that calls it.
+test-support = ["licoup-agent-drivers/test-support"]
+
+[dependencies]
+licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+# The shared ACP transport engines and the port they read one Agent's frame
+# dialect through. This package owns Hermes' half of that dialect; it owns no
+# part of the engine, and the engine names no Agent.
+licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+# The process supervisor, the bounded reader and the ACP envelope codec the
+# shared transport and this package's probe stand on. They are the host's shared
+# half and name no Agent, so the package composes them directly instead of
+# declaring a seam for a fact the foundation already owns.
+licoup-foundation = { path = "../licoup-foundation" }
+# The SSH target contract a turn may be bound to, and the user login-shell
+# environment every CLI Agent launch observes. Both are the inventory's own
+# published contracts rather than the client's, and this package reads them
+# directly for the same reason: a seam nothing answers would describe a route
+# that does not exist.
+licoup-agent-targets = { path = "../licoup-agent-targets" }
+# The canonical turn vocabulary the Gateway turn reduces its observation to.
+# It is the conversation authority's own published state machine, below every
+# client crate, so the package reads the same `TurnState`/`TurnEvent` pair the
+# host's lane does rather than declaring a second one.
+licoup-conversation = { path = "../licoup-conversation" }
+# The Gateway's JSON-RPC turn names each request it sends, and the history page
+# timestamps the gateway reports. Both are ordinary value types the package
+# owns at its own boundary.
+uuid.workspace = true
+anyhow.workspace = true
+time.workspace = true
+serde_json.workspace = true
+
+[[bin]]
+name = "lico-agent-hermes"
+path = "src/bin/lico-agent-hermes.rs"
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the package binary, which reads its own
+# package documents as data.
+[dev-dependencies]
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-agent-drivers = { path = "../licoup-agent-drivers", features = ["test-support"] }
+# The package's own integration test drives the replay arm, so the test build
+# enables the feature that compiles it. It is a self-dependency because
+# `dev-dependencies` features apply to the test targets and nothing else.
+licoup-agent-hermes = { path = ".", features = ["test-support"] }

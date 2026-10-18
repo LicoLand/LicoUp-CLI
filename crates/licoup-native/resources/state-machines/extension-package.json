@@ -1,0 +1,40 @@
+{
+  "machines": [
+    {
+      "id": "extension.package",
+      "rust_module": "extension_package",
+      "states": [
+        { "id": "available" },
+        { "id": "downloaded" },
+        { "id": "verified" },
+        { "id": "local-approved" },
+        { "id": "staged" },
+        { "id": "installed" }
+      ],
+      "events": [
+        "observe-available",
+        "observe-downloaded",
+        "observe-verified",
+        "observe-local-approved",
+        "observe-staged",
+        "observe-installed"
+      ],
+      "initial": "available",
+      "terminal": [],
+      "transitions": [
+        { "from_state": "available", "event": "observe-available", "to_state": "available" },
+        { "from_state": "available", "event": "observe-downloaded", "to_state": "downloaded" },
+        { "from_state": "downloaded", "event": "observe-downloaded", "to_state": "downloaded" },
+        { "from_state": "downloaded", "event": "observe-verified", "to_state": "verified" },
+        { "from_state": "downloaded", "event": "observe-local-approved", "to_state": "local-approved" },
+        { "from_state": "verified", "event": "observe-verified", "to_state": "verified" },
+        { "from_state": "verified", "event": "observe-staged", "to_state": "staged" },
+        { "from_state": "local-approved", "event": "observe-local-approved", "to_state": "local-approved" },
+        { "from_state": "local-approved", "event": "observe-staged", "to_state": "staged" },
+        { "from_state": "staged", "event": "observe-staged", "to_state": "staged" },
+        { "from_state": "staged", "event": "observe-installed", "to_state": "installed" },
+        { "from_state": "installed", "event": "observe-installed", "to_state": "installed" }
+      ]
+    }
+  ]
+}

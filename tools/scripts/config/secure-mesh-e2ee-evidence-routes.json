@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.e2ee-evidence-routes.v2",
+  "authorityProofTemplate": {
+    "envKeys": [
+      "LICO_SECURE_CLIENT_MESH_E2EE_AUTHORITY_PROOF_TEMPLATE"
+    ],
+    "ref": "build/reports/secure-client-mesh-e2ee/authority-proof-template.json"
+  },
+  "diagnosticRefs": {
+    "stationAcceptance": "build/reports/licoarc-badtower-acceptance.json",
+    "physicalEvidenceManifest": "build/reports/secure-mesh-physical-evidence-manifest.json"
+  },
+  "routes": {
+    "pairwise/content crypto audit": {
+      "refs": [
+        "build/reports/secure-mesh-pairwise-content-crypto-audit.json"
+      ],
+      "commands": [
+        "npm run client:verify:secure-mesh-pairwise-content-audit",
+        "npm run client:verify:secure-mesh",
+        "npm run client:native:test"
+      ]
+    },
+    "platform secret-store binding": {
+      "refs": [
+        "build/reports/secure-mesh-platform-secret-store-matrix.json"
+      ],
+      "commands": [
+        "npm run client:verify:secure-mesh-platform-secret-store-matrix",
+        "npm run client:test:android:native"
+      ]
+    },
+    "physical device matrix": {
+      "refs": [
+        "build/reports/secure-mesh-physical-device-matrix.json",
+        "build/reports/secure-mesh-physical-evidence-manifest.json"
+      ],
+      "commands": [
+        "npm run client:verify:secure-mesh-windows-implementation",
+        "npm run client:verify:secure-mesh-physical-device-matrix",
+        "npm run client:verify:secure-mesh-physical-evidence-manifest",
+        "npm run client:run:android",
+        "npm run client:run:ios"
+      ]
+    },
+    "Lico Arc BadTower interoperability": {
+      "refs": [
+        "build/reports/licoarc-badtower-acceptance.json"
+      ],
+      "commands": [
+        "npm run client:verify:licoarc-badtower-acceptance",
+        "npm run client:verify:secure-mesh-pairwise-content-audit"
+      ]
+    },
+    "encrypted file handoff": {
+      "refs": [
+        "build/reports/secure-mesh-encrypted-file-handoff.json"
+      ],
+      "commands": [
+        "npm run client:verify:secure-mesh-encrypted-file-handoff",
+        "npm run client:verify:secure-mesh"
+      ]
+    },
+    "trust UX": {
+      "refs": [
+        "build/reports/secure-mesh-trust-ux.json"
+      ],
+      "commands": [
+        "npm run client:verify:secure-mesh-trust-ux",
+        "npm run client:verify:architecture"
+      ]
+    },
+    "release proof bundle": {
+      "refs": [
+        "build/reports/secure-mesh-release-proof-bundle.json"
+      ],
+      "commands": [
+        "npm run client:verify:secure-mesh-windows-implementation",
+        "npm run client:verify:secure-mesh-release-proof-bundle",
+        "npm run client:verify:update-release"
+      ]
+    }
+  }
+}

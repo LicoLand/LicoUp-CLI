@@ -1,0 +1,29 @@
+{
+  "expect": { "status": "accept", "type": "GoalCompletionTransition", "check": "completion-transition" },
+  "progress": {
+    "goalId": "goal:notes",
+    "revision": 3,
+    "lifecycle": "achieved",
+    "control": "enabled",
+    "criterionEvidenceRefs": [],
+    "activeExecutionRefs": [],
+    "blockers": []
+  },
+  "payload": {
+    "transitionId": "transition:goal:notes:achieved",
+    "goalId": "goal:notes",
+    "fromLifecycle": "verifying",
+    "toLifecycle": "achieved",
+    "goalRevision": 3,
+    "authorityKind": "goal-evaluation",
+    "evaluationRef": {
+      "ownerKind": "goal",
+      "opaqueId": "goal:notes",
+      "sourceRevision": 3,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "visibilityScope": "goal",
+      "validity": "current"
+    },
+    "notificationId": "notice:goal:notes:achieved"
+  }
+}

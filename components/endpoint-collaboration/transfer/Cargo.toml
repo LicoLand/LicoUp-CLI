@@ -1,0 +1,22 @@
+[workspace]
+
+[package]
+name = "licoup-endpoint-collaboration-transfer"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+publish = false
+description = "Device-transfer ownership inventory (org.licoland.feature.collaboration): classifies one real full-data-root archive into managed payloads, external references and nonportable credential requirements, and can never activate an identity."
+
+[dependencies]
+# The full-data-root archive owner. It already inventories the logical data root,
+# refuses non-portable paths and reports the credential-custody limit; this
+# component classifies that inventory instead of walking a root a second time.
+licoup-foundation = { path = "../../../crates/licoup-foundation" }
+# The client-state location owner, so the declared table names the areas the
+# owners actually write rather than a copy of their spelling.
+licoup-client-state = { path = "../../../crates/licoup-client-state" }
+anyhow = "1.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -1,0 +1,15 @@
+LicoUp release source: staged entry for the analytics package's native program.
+
+The analytics package declares a process runtime: one native program that serves
+the C11 usage profile (`usage.publish`, `usage.query`, `usage.describe`) to the
+client and performs the metrics conversion this package's release declaration
+names. The release stage places that compiled program at this path before
+`tools/scripts/client-release-package-index.mjs build` packages this directory
+into the package payload.
+
+Until it does, this file is the staged entry the committed package declares: the
+manifest names a process runtime with no runtimeRef, the release declaration
+declares a native executable entry, and the packaging tooling refuses an entry
+whose name or first two bytes mark it as a script. Nothing in the repository
+executes this file; it exists so the declared native entry is present and the
+payload packages deterministically from a checkout.

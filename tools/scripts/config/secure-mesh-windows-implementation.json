@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.windows-implementation-config.v1",
+  "sourceChecks": [
+    {
+      "id": "windows-x64-builder-is-target-bound-and-arm64-fails-closed",
+      "file": "apps/desktop/scripts/package-client/cli-policy.mjs",
+      "tokens": [
+        "windowsX64TargetId: \"windows-x64\"",
+        "options.targetId !== packageClientRuntime.windowsX64TargetId",
+        "x86_64-pc-windows-msvc",
+        "windows_arm64_flutter_upstream_unavailable"
+      ]
+    },
+    {
+      "id": "windows-manifest-binds-pe-facts-and-source-state",
+      "file": "apps/desktop/scripts/package-client/windows-manifest.mjs",
+      "tokens": [
+        "writeWindowsPlatformManifest",
+        "inspectWindowsPeFile",
+        "sourceStateDigest: options.releaseSourceStateDigest",
+        "sha256File"
+      ]
+    },
+    {
+      "id": "windows-portable-manifest-binds-release-source",
+      "file": "apps/desktop/scripts/package-client/portable-manifest.mjs",
+      "tokens": [
+        "captureReleaseSourceState",
+        "assertReleaseSourceStateStable",
+        "sourceStateDigest: sourceBinding.digest"
+      ]
+    },
+    {
+      "id": "windows-pe-verifier-parses-machine-type",
+      "file": "tools/scripts/lib/windows-pe-facts.mjs",
+      "tokens": [
+        "0x8664",
+        "0xaa64",
+        "windows_pe_machine_unsupported",
+        "windows_pe_not_pe32_plus",
+        "windows_pe_file_changed_while_reading"
+      ]
+    },
+    {
+      "id": "windows-bundle-verifier-binds-source-digest-and-pe-facts",
+      "file": "apps/desktop/scripts/verify-windows-client-bundle.mjs",
+      "tokens": [
+        "windows-x64",
+        "inspectWindowsPeFile",
+        "sha256File",
+        "source digest is invalid"
+      ]
+    },
+    {
+      "id": "windows-native-secret-store-stays-unverified-and-fail-closed",
+      "file": "crates/licoup-native/src/platform/secure_mesh_secret_store/platform_backends/windows.rs",
+      "tokens": [
+        "windows-credential-manager",
+        "pub(super) fn supported() -> bool",
+        "fail_closed::begin_authorized_session",
+        "fail_closed::get_secret_with_session"
+      ],
+      "forbiddenTokens": ["keyring::"]
+    },
+    {
+      "id": "unmeasured-native-secret-store-rejects-every-io-shape",
+      "file": "crates/licoup-native/src/platform/secure_mesh_secret_store/platform_backends/fail_closed.rs",
+      "tokens": [
+        "lacks measured platform user authorization",
+        "set_secret_with_session",
+        "get_secret_with_session",
+        "delete_secret_with_session"
+      ]
+    },
+    {
+      "id": "windows-native-smoke-proves-secret-lifecycle-and-redaction",
+      "file": "tests/smoke/windows-native-smoke.mjs",
+      "tokens": [
+        "secret-store-self-test",
+        "memory-only-ephemeral",
+        "sharedSecretClassRoundTripPassed",
+        "sharedSecretClassPersistenceReady, false",
+        "rePairRekeyRequired",
+        "portableConfigPrivateMaterialRedacted",
+        "ordinaryFileSecretArtifactCount"
+      ]
+    },
+    {
+      "id": "windows-file-security-uses-owner-only-native-acl",
+      "file": "tests/verify-windows-file-security-boundary.mjs",
+      "tokens": [
+        "explicit-owner-only-native-dacl-helper",
+        "windowsAclStatus",
+        "icacls"
+      ]
+    }
+  ]
+}

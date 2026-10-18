@@ -1,0 +1,26 @@
+[package]
+name = "licoup-agent-adapter-sdk"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+# The generated parser-lifecycle machine derives `Serialize`/`Deserialize`, the
+# same seam every crate that compiles a machine through the shared code
+# generator carries.
+serde.workspace = true
+serde_json.workspace = true
+# The privacy-minimal skill-call projection fingerprints a raw invocation id
+# rather than persisting it.
+sha2.workspace = true
+
+[build-dependencies]
+# The parser lifecycle machine is declared in this crate's own
+# `resources/state-machines/parser-lifecycle.json` and compiled by the shared
+# code generator, exactly as `licoup-secure-mesh` compiles the machines it owns.
+licoup-state-machine-codegen = { path = "../licoup-state-machine-codegen" }

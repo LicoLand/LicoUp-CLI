@@ -1,0 +1,31 @@
+{
+  "machines": [
+    {
+      "id": "agent.copilot-protocol",
+      "rust_module": "copilot_protocol",
+      "states": [
+        { "id": "await-initialize", "rust_name": "AwaitInitialize" },
+        { "id": "await-session", "rust_name": "AwaitSession" },
+        { "id": "await-config", "rust_name": "AwaitConfig" },
+        { "id": "await-prompt", "rust_name": "AwaitPrompt" },
+        { "id": "finished", "rust_name": "Finished" }
+      ],
+      "events": ["initialized", "request-config", "request-prompt", "prompt-completed", "fail"],
+      "initial": "await-initialize",
+      "terminal": ["finished"],
+      "transitions": [
+        { "from_state": "await-initialize", "event": "initialized", "to_state": "await-session" },
+        { "from_state": "await-session", "event": "request-config", "to_state": "await-config" },
+        { "from_state": "await-session", "event": "request-prompt", "to_state": "await-prompt" },
+        { "from_state": "await-config", "event": "request-config", "to_state": "await-config" },
+        { "from_state": "await-config", "event": "request-prompt", "to_state": "await-prompt" },
+        { "from_state": "await-prompt", "event": "prompt-completed", "to_state": "finished" },
+        { "from_state": "await-initialize", "event": "fail", "to_state": "finished" },
+        { "from_state": "await-session", "event": "fail", "to_state": "finished" },
+        { "from_state": "await-config", "event": "fail", "to_state": "finished" },
+        { "from_state": "await-prompt", "event": "fail", "to_state": "finished" },
+        { "from_state": "finished", "event": "fail", "to_state": "finished" }
+      ]
+    }
+  ]
+}

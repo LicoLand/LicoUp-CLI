@@ -1,0 +1,42 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.example.echo",
+  "version": "1.0.0",
+  "displayName": "Example Echo Agent",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      "0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "agent-execution",
+      "major": 1,
+      "capabilities": [
+        "org.licoland.example/stream"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "agent.py",
+    "runtimeRef": "user:python3"
+  },
+  "activation": "on-demand",
+  "requires": [
+    {
+      "packageId": "org.licoland.core",
+      "range": "^0.3"
+    }
+  ],
+  "optionalRequires": [],
+  "permissions": [],
+  "contributions": [],
+  "extensions": {
+    "org.licoland.example/purpose": "Contract sample: a minimal Agent that streams text and needs no model, no tool call, no session resume and no usage reporting."
+  }
+}

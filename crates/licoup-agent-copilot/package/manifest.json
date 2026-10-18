@@ -1,0 +1,57 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.adapter.copilot",
+  "version": "0.14.0",
+  "displayName": "Copilot adapter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "agent-execution",
+      "major": 1,
+      "capabilities": [
+        "agent-execution.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-agent-copilot"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.adapter.copilot/agent-process",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.copilot/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.copilot/client-data-home",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "command",
+      "id": "org.licoland.adapter.copilot/adapter-status",
+      "definition": "contributions/adapter-status.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.adapter.copilot/purpose": "The Copilot adapter: Copilot's ACP declaration and the frame dialect that classifies one Copilot ACP line exactly once below the adapter port. The shared ACP reducer, framing and session semantics stay shared and belong to no Agent; the client still executes a Copilot turn through them until the agent-execution route is answered.",
+    "org.licoland.adapter.copilot/persistentData": "none",
+    "org.licoland.adapter.copilot/persistentDataReason": "This package declares no conversion because it owns no persisted package data of its own: it writes no data home, no cache and no store. Copilot's own session records belong to the installed Copilot client, and the client's own conversation store remains the kernel's."
+  }
+}

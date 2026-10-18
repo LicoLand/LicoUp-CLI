@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.report-redaction-config.v1",
+  "reportOutputs": {
+    "default": "build/reports/secure-mesh-report-redaction.json",
+    "releaseProofInputs": "build/reports/secure-mesh-release-input-report-redaction.json"
+  },
+  "modes": {
+    "default": {
+      "requiredRefs": [
+        "build/reports/secure-mesh-pairwise-content-crypto-audit.json",
+        "build/reports/secure-mesh-pairwise-content-vector-corpus.json",
+        "build/reports/secure-mesh-platform-secret-store-matrix.json",
+        "build/reports/secure-mesh-android-platform-crypto-acceptance.json",
+        "build/reports/secure-mesh-physical-device-matrix.json",
+        "build/reports/licoarc-badtower-acceptance.json",
+        "build/reports/secure-mesh-encrypted-file-handoff.json",
+        "build/reports/secure-mesh-trust-ux.json",
+        "build/reports/secure-mesh-macos-keychain-user-presence-proof.json",
+        "build/reports/secure-mesh-release-cli-proof-macos.json",
+        "build/client-cli-vm/ubuntu-arm64/secure-mesh-release-cli-proof.json",
+        "build/client-cli-vm/ubuntu-arm64/secure-mesh-linux-adaptive-custody-proof.json",
+        "build/client-cli-vm/ubuntu-arm64/secure-mesh-linux-package-update-proof.json",
+        "build/reports/secure-mesh-windows-implementation.json",
+        "build/reports/secure-mesh-physical-evidence-manifest.json",
+        "build/reports/secure-mesh-release-proof-bundle.json",
+        "build/reports/secure-client-mesh-e2ee-evidence-bundle.json",
+        "build/reports/android-physical-install-launch.json",
+        "build/reports/client-update-release-channel.json"
+      ],
+      "optionalRefs": [
+        "build/reports/secure-mesh-pairwise-content-review-signoff.json",
+        "build/reports/secure-client-mesh-e2ee/authority-proof-template.json",
+        "build/reports/secure-mesh-acp-relay-governed-baseline.json",
+        "build/reports/secure-mesh-acp-archive-release-proof.json",
+        "build/reports/secure-mesh-macos-capabilities.json",
+        "build/reports/client-artifact-verification-receipts.json",
+        "build/client-cli-vm/ubuntu-arm64/secure-mesh-linux-vm-package-receipt.json",
+        "build/client-cli-vm/ubuntu-arm64/secure-mesh-linux-node-matrix.json"
+      ],
+      "deferredGraphRefs": []
+    },
+    "releaseProofInputs": {
+      "requiredRefs": [
+        "build/reports/client-update-release-channel.json",
+        "build/reports/secure-mesh-physical-device-matrix.json",
+        "build/reports/secure-mesh-pairwise-content-crypto-audit.json",
+        "build/reports/secure-mesh-platform-secret-store-matrix.json",
+        "build/reports/secure-mesh-android-platform-crypto-acceptance.json",
+        "build/reports/licoarc-badtower-acceptance.json",
+        "build/reports/android-physical-install-launch.json",
+        "build/reports/secure-mesh-physical-evidence-manifest.json",
+        "build/reports/secure-mesh-windows-implementation.json"
+      ],
+      "optionalRefs": [
+        "build/reports/secure-client-mesh-e2ee/authority-proof-template.json",
+        "build/reports/secure-mesh-macos-capabilities.json",
+        "build/reports/client-artifact-verification-receipts.json",
+        "build/client-cli-vm/ubuntu-arm64/secure-mesh-linux-vm-package-receipt.json",
+        "build/client-cli-vm/ubuntu-arm64/secure-mesh-linux-node-matrix.json"
+      ],
+      "deferredGraphRefs": [
+        "build/reports/secure-mesh-release-proof-bundle.json",
+        "build/reports/secure-client-mesh-e2ee-evidence-bundle.json"
+      ]
+    }
+  }
+}

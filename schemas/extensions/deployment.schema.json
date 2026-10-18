@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://licoland.com/schemas/extensions/deployment.schema.json",
+  "title": "LicoUp deployment facts",
+  "description": "What one installation actually has, as the host publishes it: the profile it was installed from, each known package's four independent facts, and the availability of each capability. Available, installed, enabled and active are separate on purpose — there is no single `ready`, and a local import is installed without ever having been in a directory.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "corePackage", "packages", "capabilities"],
+  "properties": {
+    "schema": {
+      "const": "licoup.deployment.v1"
+    },
+    "profile": {
+      "enum": ["minimal-local", "standard", "gateway", "peer", "analytics"],
+      "description": "The recipe this installation started from. A profile is an initial selection, not a permanent prohibition: the user may change it or add packages at any time. The workflow and flywheel are kernel capabilities, so no profile selects them."
+    },
+    "corePackage": {
+      "$ref": "#/$defs/namespacedName",
+      "description": "The minimal trusted host: canonical conversation, the Assistant, the workflow and flywheel, the extension host with package management, the base usage journal, the declarative interface primitives, the generic PTY/CLI adapter with Agent Hub configuration registration, key custody, and update and migration admission. Its capabilities cannot be trimmed away, and it may not require a package that can."
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "source", "available", "installed", "enabled", "active"],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/namespacedName"
+          },
+          "version": {
+            "$ref": "#/$defs/semver"
+          },
+          "source": {
+            "enum": ["local-import", "local-directory", "official-directory", "third-party-directory"],
+            "description": "Where it came from. A local import needs no directory and no account, and being unpublished is not being illegal."
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Present in a directory. `installed` does not imply this."
+          },
+          "installed": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Installed and not disabled. Enabled is not started: activation stays lazy."
+          },
+          "active": {
+            "type": "boolean",
+            "description": "An instance of this package is running."
+          },
+          "lifecycle": {
+            "enum": ["available", "downloaded", "verified", "local-approved", "staged", "installed"],
+            "description": "`verified` (a publisher signature was checked) and `local-approved` (the user bound trust to specific content) are two different trust facts, and neither is more installed than the other."
+          },
+          "instanceLifecycles": {
+            "type": "array",
+            "description": "One package version may produce several instances with different permissions. Their states are separate from the package's.",
+            "items": {
+              "enum": ["discovered", "preparing", "active", "draining", "stopped", "failed", "quarantined"]
+            }
+          },
+          "declinedOptional": {
+            "type": "array",
+            "description": "Optional dependencies that were declared and deliberately not installed. Reported so the user can decide; never resolved silently.",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/namespacedName"
+            }
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "owner", "core", "availability"],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/namespacedName",
+            "description": "The namespaced capability, such as `model-gateway.v1`."
+          },
+          "owner": {
+            "$ref": "#/$defs/namespacedName",
+            "description": "The package that must be present for this capability to work at all. One capability may be offered by several packages; this names the one the default distribution provides."
+          },
+          "core": {
+            "type": "boolean",
+            "description": "True when the kernel carries it, so every distribution has it."
+          },
+          "availability": {
+            "enum": ["served", "installed-not-enabled", "not-installed", "not-in-distribution"],
+            "description": "Every value other than `served` is a legal configuration and a catalogue fact. An operation that needs an unavailable capability is refused as an unavailable capability, never as a malformed request."
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "namespacedName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+(?:[./-][A-Za-z0-9_-]+)*$",
+      "maxLength": 160
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$",
+      "maxLength": 64
+    }
+  }
+}

@@ -1,0 +1,14 @@
+[package]
+name = "licoup-application"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Protocol-neutral application contract types for LicoUp: typed failures, namespaced fields and shared JSON shapes."
+
+# Protocol-neutral by construction: only serialization is allowed here. The
+# dependency-boundary test in this crate's tests/ enforces it.
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true

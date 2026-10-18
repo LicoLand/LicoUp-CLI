@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.physical-evidence-config.v2",
+  "reportOutput": "build/reports/secure-mesh-physical-evidence-manifest.json",
+  "linkedReports": {
+    "androidPlatformCrypto": "build/reports/secure-mesh-android-platform-crypto-acceptance.json",
+    "androidInstallLaunch": "build/reports/android-physical-install-launch.json",
+    "stationAcceptance": "build/reports/licoarc-badtower-acceptance.json",
+    "ubuntuVmSecretStore": "build/client-cli-vm/ubuntu-arm64/mobile-relay-secret-store-self-test.json",
+    "macosReleaseCliProof": "build/reports/secure-mesh-release-cli-proof-macos.json",
+    "macosUserPresenceProof": "build/reports/secure-mesh-macos-keychain-user-presence-proof.json",
+    "ubuntuReleaseCliProof": "build/client-cli-vm/ubuntu-arm64/secure-mesh-release-cli-proof.json",
+    "ubuntuLinuxAdaptiveCustodyProof": "build/client-cli-vm/ubuntu-arm64/secure-mesh-linux-adaptive-custody-proof.json",
+    "ubuntuLinuxPackageUpdateProof": "build/client-cli-vm/ubuntu-arm64/secure-mesh-linux-package-update-proof.json",
+    "ubuntuLinuxVmPackageReceipt": "build/client-cli-vm/ubuntu-arm64/secure-mesh-linux-vm-package-receipt.json",
+    "ubuntuLinuxNodeMatrix": "build/client-cli-vm/ubuntu-arm64/secure-mesh-linux-node-matrix.json",
+    "platformSecretStore": "build/reports/secure-mesh-platform-secret-store-matrix.json",
+    "physicalDeviceMatrix": "build/reports/secure-mesh-physical-device-matrix.json",
+    "encryptedFileHandoff": "build/reports/secure-mesh-encrypted-file-handoff.json",
+    "trustUx": "build/reports/secure-mesh-trust-ux.json",
+    "windowsImplementation": "build/reports/secure-mesh-windows-implementation.json",
+    "updateReleaseChannel": "build/reports/client-update-release-channel.json"
+  },
+  "freshnessWindows": {
+    "androidPlatformCryptoSeconds": 86400
+  },
+  "evidenceCommands": {
+    "android": [
+      "npm run client:verify:licoarc-badtower-acceptance",
+      "npm run client:test:android:native",
+      "npm run client:build -- --platform android",
+      "node tools/scripts/client-android-physical-install-launch.mjs --install --launch --apk build/apps/desktop/android/release/app-release.apk"
+    ],
+    "ios": [
+      "npm run client:verify:licoarc-badtower-acceptance",
+      "npm run client:verify:mobile-simulator-closure:ios"
+    ],
+    "macos": [
+      "npm run client:verify:licoarc-badtower-acceptance",
+      "npm run client:verify:secure-mesh-macos-keychain-user-presence",
+      "npm run client:verify:secure-mesh-release-cli-proof",
+      "npm run client:verify:macos-bundle"
+    ],
+    "windows": [
+      "npm run client:verify:licoarc-badtower-acceptance",
+      "npm run client:verify:windows-file-security",
+      "npm run client:verify:secure-mesh-windows-implementation"
+    ],
+    "linux": [
+      "npm run client:verify:licoarc-badtower-acceptance",
+      "npm run client:cli:vm:verify -- --distro ubuntu",
+      "npm run client:cli:vm:linux-product -- --distro ubuntu",
+      "npm run client:verify:secure-mesh-linux-adaptive-custody",
+      "npm run client:verify:secure-mesh-linux-package-update"
+    ]
+  }
+}

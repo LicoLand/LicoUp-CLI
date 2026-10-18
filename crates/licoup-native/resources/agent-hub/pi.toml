@@ -1,0 +1,76 @@
+id = "pi"
+binary_names = ["pi"]
+official_docs = "https://github.com/badlogic/pi-mono"
+
+[[channels]]
+id = "npm"
+kind = "npm"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 10
+official_recommended = true
+licoup_verified = true
+requires_manager = "npm"
+elevation = "none"
+scope = "user"
+package_coordinate = "@mariozechner/pi-coding-agent"
+official_source = "https://www.npmjs.com/package/@mariozechner/pi-coding-agent"
+version_policy = "latest-stable"
+install_argv = ["npm", "install", "-g", "@mariozechner/pi-coding-agent"]
+update_argv = ["npm", "install", "-g", "@mariozechner/pi-coding-agent"]
+uninstall_argv = ["npm", "uninstall", "-g", "@mariozechner/pi-coding-agent"]
+verify_argv = ["pi", "--version"]
+
+[[channels]]
+id = "homebrew"
+kind = "homebrew"
+oses = ["macos", "linux"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = true
+licoup_verified = true
+requires_manager = "homebrew"
+elevation = "none"
+scope = "user"
+package_coordinate = "pi-coding-agent"
+package_form = "formula"
+official_source = "https://formulae.brew.sh/formula/pi-coding-agent"
+version_policy = "latest-stable"
+install_argv = ["brew", "install", "pi-coding-agent"]
+update_argv = ["brew", "upgrade", "pi-coding-agent"]
+uninstall_argv = ["brew", "uninstall", "pi-coding-agent"]
+verify_argv = ["pi", "--version"]
+
+[[channels]]
+id = "winget"
+kind = "winget"
+oses = ["windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = false
+licoup_verified = false
+requires_manager = "winget"
+elevation = "none"
+scope = "user"
+selectable = false
+unsupported_reason = "no-official-package-coordinate"
+package_coordinate = "pi-coding-agent"
+official_source = "https://github.com/badlogic/pi-mono"
+version_policy = "latest-stable"
+
+[[channels]]
+id = "official-artifact"
+kind = "official-artifact"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 30
+official_recommended = false
+licoup_verified = false
+requires_manager = "none"
+elevation = "none"
+scope = "user"
+selectable = false
+unsupported_reason = "npm-is-official-distribution"
+package_coordinate = "pi-coding-agent"
+official_source = "https://github.com/badlogic/pi-mono"
+version_policy = "latest-stable"

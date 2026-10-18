@@ -1,0 +1,37 @@
+{
+  "schema": "licoup.continuity.evaluation-pairing/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "note": "Paired task:paired ratio is 1.0. Unpaired baseline spend must not make the candidate look cheaper.",
+  "correctPairedRatio": 1.0,
+  "correctEconomicallyQualified": false,
+  "rows": [
+    {
+      "role": "candidate",
+      "measuredFullCost": 10.0,
+      "acceptedOutcome": true,
+      "serialLatencyMs": 10,
+      "taskIdentity": "task:paired",
+      "versionIdentity": "v1",
+      "resourceIdentity": "res:1"
+    },
+    {
+      "role": "baseline",
+      "measuredFullCost": 10.0,
+      "acceptedOutcome": true,
+      "serialLatencyMs": 10,
+      "taskIdentity": "task:paired",
+      "versionIdentity": "v1",
+      "resourceIdentity": "res:1"
+    },
+    {
+      "role": "baseline",
+      "measuredFullCost": 1000.0,
+      "acceptedOutcome": true,
+      "serialLatencyMs": 10,
+      "taskIdentity": "task:unpaired-baseline",
+      "versionIdentity": "v1",
+      "resourceIdentity": "res:1"
+    }
+  ]
+}

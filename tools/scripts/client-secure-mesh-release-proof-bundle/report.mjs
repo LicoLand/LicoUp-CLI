@@ -1,0 +1,143 @@
+import {
+  physicalEvidenceManifestReportPath,
+  physicalMatrixReportPath,
+  releaseProofConfig,
+  SECURE_CLIENT_MESH_E2EE_EVIDENCE_REF_REPORT_SCHEMA_VERSION,
+  SECURE_CLIENT_MESH_PRODUCTION_BLOCKERS,
+  SECURE_CLIENT_MESH_PRODUCTION_SOURCE_OF_TRUTH,
+  sourceChecks,
+  updateReleaseReportPath,
+} from "./config.mjs";
+import { VERIFIER_REF } from "./constants.mjs";
+import { buildReleaseProofSummary } from "./report-summary.mjs";
+
+export function buildReleaseProofReport({
+  ok,
+  blocker,
+  checkedAt,
+  scopeEvidence,
+  sourceResults,
+  updateReleaseVerifier,
+  physicalEvidenceManifestVerifier,
+  updateReleaseReport,
+  physicalMatrixReport,
+  physicalMatrixContractReadiness,
+  physicalEvidenceManifest,
+  physicalEvidenceManifestContractReadiness,
+  windowsImplementation,
+  reportRedactionVerifier,
+  reportRedactionProof,
+  redactionFreshnessSelfTest,
+  physicalEvidenceManifestReadinessSelfTest,
+  releaseProofContractReadinessSelfTest,
+  clientLicoArcCryptoInputsReadinessSelfTest,
+  releaseInputFreshness,
+  releaseInputFreshnessSelfTest,
+  clientLicoArcCryptoInputs,
+  androidPhysicalInstallLaunchReport,
+  remainingGates,
+  productionReady
+}) {
+  const summary = buildReleaseProofSummary({
+    ok,
+    sourceResults,
+    updateReleaseVerifier,
+    physicalEvidenceManifestVerifier,
+    reportRedactionVerifier,
+    updateReleaseReport,
+    releaseInputFreshness,
+    releaseInputFreshnessSelfTest,
+    physicalEvidenceManifest,
+    physicalEvidenceManifestReadinessSelfTest,
+    releaseProofContractReadinessSelfTest,
+    physicalMatrixContractReadiness,
+    physicalEvidenceManifestContractReadiness,
+    reportRedactionProof,
+    redactionFreshnessSelfTest,
+    clientLicoArcCryptoInputs,
+    clientLicoArcCryptoInputsReadinessSelfTest,
+    physicalMatrixReport,
+    androidPhysicalInstallLaunchReport,
+    ubuntuLinuxPackageUpdateReady: physicalEvidenceManifest.ubuntuLinuxPackageUpdateReady === true,
+    windowsLocalImplementationReady:
+      windowsImplementation.ready === true &&
+      physicalEvidenceManifest.windowsLocalImplementationReady === true,
+    windowsNativeHostEvidenceReady:
+      physicalEvidenceManifest.windowsNativeHostEvidenceReady === true,
+    productionReady,
+    remainingGates
+  });
+
+  return {
+    ok,
+    schemaVersion: "licomesh.secure-mesh.release-proof-bundle-report.v1",
+    evidenceRefSchemaVersion: SECURE_CLIENT_MESH_E2EE_EVIDENCE_REF_REPORT_SCHEMA_VERSION,
+    verifier: VERIFIER_REF,
+    generatedBy: VERIFIER_REF,
+    generatedAt: checkedAt,
+    checkedAt,
+    sourceOfTruth: SECURE_CLIENT_MESH_PRODUCTION_SOURCE_OF_TRUTH,
+    blocker,
+    diagnosticStatus: "incomplete",
+    productionReady,
+    releaseReady: false,
+    evidenceKind: "redacted-release-proof-bundle-gap-report",
+    redacted: true,
+    rawPrivateMaterialIncluded: false,
+    rawPlaintextIncluded: false,
+    rawPublicWireBytesIncluded: false,
+    reportLeakScan: true,
+    releaseProofConfig: {
+      ref: releaseProofConfig.configRef,
+      schemaVersion: releaseProofConfig.schemaVersion,
+      inputReportCount: Object.keys(releaseProofConfig.inputReports).length,
+      verifierCommandCount: Object.keys(releaseProofConfig.verifierCommands).length,
+      freshnessWindowCount: Object.keys(releaseProofConfig.freshnessWindows).length,
+      sourceCheckCount: sourceChecks.length
+    },
+    ...scopeEvidence,
+    contractBinding: {
+      sourceOfTruth: SECURE_CLIENT_MESH_PRODUCTION_SOURCE_OF_TRUTH,
+      canonicalBlocker: blocker,
+      canonicalBlockerCount: SECURE_CLIENT_MESH_PRODUCTION_BLOCKERS.length
+    },
+    sourceResults,
+    updateReleaseVerifier,
+    physicalEvidenceManifestVerifier,
+    releaseProofEvidence: {
+      updateReleaseReport: updateReleaseReportPath,
+      ...updateReleaseReport,
+      physicalMatrixReport: physicalMatrixReportPath,
+      physicalMatrix: physicalMatrixReport,
+      physicalMatrixContractReadiness,
+      physicalEvidenceManifestReport: physicalEvidenceManifestReportPath,
+      physicalEvidenceManifest,
+      physicalEvidenceManifestContractReadiness,
+      windowsImplementation,
+      reportRedactionVerifier,
+      reportRedactionProof,
+      redactionFreshnessSelfTest,
+      physicalEvidenceManifestReadinessSelfTest,
+      releaseProofContractReadinessSelfTest,
+      clientLicoArcCryptoInputsReadinessSelfTest,
+      releaseInputFreshness,
+      releaseInputFreshnessSelfTest,
+      clientLicoArcCryptoInputs,
+      androidPhysicalInstallLaunch: androidPhysicalInstallLaunchReport
+    },
+    requiredProductionProofClasses: [
+      "consumer-verifiable update manifest and purpose-separated verification keys",
+      "signed revocation, downgrade-rejection, and rollback safety evidence",
+      "downgrade rejection on release-built clients",
+      "Windows installer or portable replacement execution proof, or accepted fail-closed Windows security blocker",
+      "Ubuntu/Linux package or update proof",
+      "Android physical install and launch evidence",
+      "physical Secure Mesh matrix linked by redacted manifest",
+      "strict Lico Arc BadTower interoperability acceptance for two fresh endpoints",
+      "endpoint-authenticated round trip, station plaintext absence, non-conformant rejection, non-authoritative transport hints, and exact five-field outer envelope",
+      "client Rust and platform cryptography reports with redacted review evidence",
+      "cross-report redaction scan over release evidence inputs"
+    ],
+    summary
+  };
+}

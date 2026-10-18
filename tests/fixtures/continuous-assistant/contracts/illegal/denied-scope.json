@@ -1,0 +1,12 @@
+{
+  "expect": { "status": "reject", "reason": "scope_denied", "check": "scope" },
+  "authorizedScopes": ["conversation"],
+  "payload": {
+    "ownerKind": "event",
+    "opaqueId": "event:other",
+    "sourceRevision": 1,
+    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "visibilityScope": "goal",
+    "validity": "current"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.example.state-converter",
+  "version": "1.0.0",
+  "displayName": "Example state converter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "native-converter",
+      "major": 1
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/licoup-sample-state-converter"
+  },
+  "conversion": {
+    "kind": "native-executable",
+    "entry": "bin/licoup-sample-state-converter",
+    "sourceFormats": [
+      "licoup-state-0.1.0",
+      "licoup-state-0.1.1"
+    ],
+    "targetFormat": "licoup-state-0.3.0"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [],
+  "contributions": [],
+  "extensions": {
+    "org.licoland.example/purpose": "Contract sample: the smallest complete converter package. It declares one native conversion inside its own payload, reads the persisted format the client requires, and asks for no runtime, no permission and no dependency."
+  }
+}

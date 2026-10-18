@@ -1,0 +1,108 @@
+{
+  "title": "ModelSelectionMatrix",
+  "version": 1,
+  "status": "hand-written document contract, validated against the producer's own output; not a generated bridge family",
+  "producer": {
+    "crate": "licoup-model-catalog",
+    "module": "selection_matrix",
+    "renderer": "selection_matrix_document",
+    "composedBy": "crates/licoup-native/src/domain/targets.rs",
+    "validatedBy": "crates/licoup-native/tests/cli_command_contract_cases.rs"
+  },
+  "consumer": {
+    "contract": "apps/desktop/lib/src/contracts/model_selection.dart",
+    "projection": "apps/desktop/lib/src/presentation/models/model_selection_projection.dart"
+  },
+  "maximumEntries": 512,
+  "maximumReasonBytes": 256,
+  "scopes": ["direct", "workflow"],
+  "dimensions": {
+    "support": {
+      "question": "Is this Agent/provider/model combination usable at all on this host?",
+      "states": {
+        "supported": "A declared canonical identity resolves for the combination.",
+        "unsupported": "Nothing declares the combination. This is a catalogue statement, not a policy one.",
+        "unknown": "The host cannot establish whether the combination is usable. Never rendered as supported or unsupported."
+      }
+    },
+    "availability": {
+      "question": "Did a live source on this machine report the model, and when?",
+      "states": {
+        "observed": "A live source reported the model at observedAtUnixMs.",
+        "unobserved": "No live source reported it. This is not a negative claim about the model."
+      }
+    },
+    "credentials": {
+      "question": "Does this host hold a usable credential for the serving provider?",
+      "states": {
+        "present": "The owner states a credential for the recorded provider.",
+        "absent": "The owner states no credential for the recorded provider.",
+        "unknown": "The host cannot establish the credential state. Never read as absent."
+      }
+    },
+    "execution": {
+      "question": "May this Agent run under the effective policy, right now, for this scope?",
+      "owner": "The effective admission policy, composed above the catalogue and stated per scope. Absent an owner, every scope stays undetermined.",
+      "scopeStates": {
+        "allowed": "The policy owner admits the Agent for this scope now.",
+        "blocked": "The policy owner refuses the Agent for this scope now.",
+        "undetermined": "No owner stated an outcome. Fail-closed, and never rendered as allowed."
+      },
+      "note": "Direct and workflow turns are decided separately: the same Agent may be allowed in one scope and blocked in the other, and each outcome carries the scope it was decided for together with its own reason."
+    }
+  },
+  "invariants": [
+    "Every dimension carries its own state and reason; no dimension is ever collapsed into a single readiness label.",
+    "Both scopes are always present and are never merged, averaged or substituted for one another.",
+    "An unknown or undetermined state is never rendered as ready, allowed, present or observed.",
+    "An observation that could not be taken is reported as unobserved; it is never an empty available set.",
+    "No reason is empty: a state without a reason cannot be inspected."
+  ],
+  "document": {
+    "schemaVersion": 1,
+    "scopes": ["direct", "workflow"],
+    "agent": "kimi-code",
+    "generation": "8f14e45fceea167a5a36dedd4bea2543",
+    "observedAtUnixMs": 1726000000000,
+    "entries": [
+      {
+        "agent": "kimi-code",
+        "model": "k3-256k",
+        "canonicalId": "moonshotai/kimi-k3",
+        "canonicalDisplayName": "Kimi K3",
+        "evidence": "observed",
+        "support": { "state": "supported", "reason": "declared_identity" },
+        "availability": {
+          "state": "observed",
+          "reason": "observed_by_live_source",
+          "observedAtUnixMs": 1726000000000
+        },
+        "credentials": { "state": "unknown", "reason": "provider_credential_unknown" },
+        "providers": ["kimi-for-coding"],
+        "scopes": [
+          { "scope": "direct", "state": "allowed", "reason": "direct_request_admitted" },
+          { "scope": "workflow", "state": "blocked", "reason": "workflow_policy_disallows_agent" }
+        ]
+      },
+      {
+        "agent": "kimi-code",
+        "model": "mystery-preview",
+        "canonicalId": null,
+        "canonicalDisplayName": null,
+        "evidence": "observed",
+        "support": { "state": "unknown", "reason": "observed_without_declared_identity" },
+        "availability": {
+          "state": "observed",
+          "reason": "observed_by_live_source",
+          "observedAtUnixMs": 1726000000000
+        },
+        "credentials": { "state": "unknown", "reason": "provider_not_recorded" },
+        "providers": [],
+        "scopes": [
+          { "scope": "direct", "state": "undetermined", "reason": "selection_policy_owner_absent" },
+          { "scope": "workflow", "state": "undetermined", "reason": "selection_policy_owner_absent" }
+        ]
+      }
+    ]
+  }
+}

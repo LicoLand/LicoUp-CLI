@@ -1,0 +1,7 @@
+{
+  "schema": "licoup.ui-contribution.v1",
+  "id": "org.licoland.adapter.copilot/adapter-status",
+  "kind": "command",
+  "title": "Copilot adapter status",
+  "actionRef": "org.licoland.adapter.copilot/adapter/status"
+}

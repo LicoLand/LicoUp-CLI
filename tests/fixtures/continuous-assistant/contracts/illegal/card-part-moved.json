@@ -1,0 +1,15 @@
+{
+  "expect": { "status": "reject", "reason": "identity_conflict", "check": "card-moved" },
+  "previous": {
+    "parentConversationId": "conversation:parent",
+    "eventId": "event:card-a",
+    "sequence": 4,
+    "partId": "part:card-a"
+  },
+  "payload": {
+    "parentConversationId": "conversation:parent",
+    "eventId": "event:card-a",
+    "sequence": 4,
+    "partId": "part:card-other"
+  }
+}

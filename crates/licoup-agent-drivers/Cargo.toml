@@ -1,0 +1,71 @@
+[package]
+name = "licoup-agent-drivers"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[features]
+default = []
+# The two seams the host's own test builds drive: the protocol-selector
+# vocabulary this crate re-exports from `licoup-agent-runtime`, and the
+# artifact digest the host's suites compare runtime binaries with. They are
+# features rather than `cfg(test)` because a `cfg(test)` seam is compiled out
+# of every crate that is a dependency, and `licoup-native` — whose suite drives
+# both — is exactly such a consumer.
+test-support = []
+
+[dependencies]
+# The shared adapter contract: the byte-line ingress contract, the adapter
+# declaration, the transition vocabulary and the parser-set port the
+# composition answers. This crate reads the port; it never implements a
+# parser.
+licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+# The work-context vocabulary and the `NativeProtocolAdapter` contract every
+# adapter in this seam is bound through. This crate owns the seam, never a
+# protocol: what an Agent's protocol IS arrives through the port the
+# composition injects.
+licoup-agent-runtime = { path = "../licoup-agent-runtime" }
+# The Agent inventory port the host's own lane is reached through. The seam
+# reads that port's type and the composition supplies its value; the inventory
+# never names this crate.
+licoup-agent-targets = { path = "../licoup-agent-targets" }
+# The host's own Agent adapter registry: the record of which adapter reaches
+# which Agent, which is host vocabulary and not any Agent's protocol.
+licoup-agent-adapters = { path = "../licoup-agent-adapters" }
+# The one dispatch policy every driver execution is bounded by. It is
+# vocabulary shared by the host and the drivers, not an engine.
+licoup-application = { path = "../licoup-application" }
+# Process, path and bounded-command primitives. They are the host's own
+# machinery, below every Agent.
+licoup-foundation = { path = "../licoup-foundation" }
+# The durable binding row the host reads before it reaches an Agent. Reading it
+# is the seam's job; the adapter it is handed to is not.
+licoup-conversation = { path = "../licoup-conversation" }
+# The digest the local service resolves an executable by, and the hasher the
+# artifact seam behind `test-support` compares runtime binaries with.
+sha2.workspace = true
+# The local service control plane's bounded HTTP/SSE client and its process,
+# path, port and clock vocabulary.
+anyhow.workspace = true
+fs2.workspace = true
+time.workspace = true
+ureq.workspace = true
+url.workspace = true
+uuid.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[build-dependencies]
+# The two ACP session-protocol machines this crate's own transport engines
+# replay are declared in this crate's `resources/state-machines/` and compiled
+# by the shared code generator, exactly as `licoup-agent-adapter-sdk` compiles
+# the machine it owns. A machine whose configuration stayed behind with code
+# that did not would generate nothing and fail to resolve.
+licoup-state-machine-codegen = { path = "../licoup-state-machine-codegen" }
+
+[dev-dependencies]
+# The crate's own suites build raw driver results, which the moved
+# normalization used to take by name.
+sha2.workspace = true

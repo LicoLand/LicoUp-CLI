@@ -1,0 +1,57 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.adapter.kimi",
+  "version": "0.1.0",
+  "displayName": "Kimi Code adapter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "agent-execution",
+      "major": 1,
+      "capabilities": [
+        "agent-execution.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-agent-kimi"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.adapter.kimi/agent-process",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.kimi/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.kimi/client-data-home",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "command",
+      "id": "org.licoland.adapter.kimi/adapter-status",
+      "definition": "contributions/adapter-status.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.adapter.kimi/purpose": "The Kimi Code adapter: the ACP driver half and the vendor frame dialect that classifies one Kimi ACP line exactly once below the adapter port, plus the launch metadata the shared ACP engine runs. The kernel owns no part of Kimi Code and depends on none of it.",
+    "org.licoland.adapter.kimi/persistentData": "none",
+    "org.licoland.adapter.kimi/persistentDataReason": "This package declares no conversion because it owns no persisted package data of its own: it writes no data home, no cache and no store. The Kimi Code session records it reads belong to the installed Kimi Code client, and the client's own conversation store remains the kernel's."
+  }
+}

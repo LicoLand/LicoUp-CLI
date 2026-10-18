@@ -1,0 +1,7 @@
+{
+  "schema": "licoup.ui-contribution.v1",
+  "id": "org.licoland.adapter.deepseek/adapter-status",
+  "kind": "command",
+  "title": "DeepSeek Harness adapter status",
+  "actionRef": "org.licoland.adapter.deepseek/adapter/status"
+}

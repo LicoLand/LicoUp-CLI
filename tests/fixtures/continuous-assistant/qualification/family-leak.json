@@ -1,0 +1,12 @@
+{
+  "schema": "licoup.continuity.qualification-observations-draft/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "sharedFamily": "family:leaked-across-splits",
+  "developmentSplit": "development",
+  "heldoutSplit": "heldout",
+  "expect": {
+    "result": "unqualified",
+    "reasonsInclude": ["FamilySplitLeak"]
+  }
+}

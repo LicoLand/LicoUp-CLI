@@ -1,0 +1,17 @@
+{
+  "schema": "licoup.continuity.evaluation-identity/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "responsibilityId": "responsibility:evaluation",
+  "candidateIdentity": {
+    "modelDigest": "model:digest-evaluation-a",
+    "reasoningDigest": "reasoning:digest-evaluation-a",
+    "promptDigest": "prompt:digest-evaluation-a",
+    "skillDigest": "skill:digest-evaluation-a",
+    "contextPolicyDigest": "context:digest-evaluation-a",
+    "toolContractDigest": "tools:digest-evaluation-a",
+    "adapterRuntimeDigest": "adapter:digest-evaluation-a",
+    "datasetVersion": "dataset:family-evaluation-a",
+    "policyRevision": "draft-1"
+  }
+}

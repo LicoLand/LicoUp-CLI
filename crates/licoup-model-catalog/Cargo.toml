@@ -1,0 +1,27 @@
+[package]
+name = "licoup-model-catalog"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Model identity, pricing and routing catalogue with a cached registry snapshot"
+
+[dependencies]
+anyhow.workspace = true
+# The path, atomic-write and display-name primitives this catalogue stands on:
+# the registry cache is one private portable file, and model names are shared
+# vocabulary below every consumer.
+licoup-foundation = { path = "../licoup-foundation", version = "0.3.0" }
+# The registry catalog is downloaded as a gzipped tar of TOML documents.
+flate2.workspace = true
+tar.workspace = true
+toml.workspace = true
+# The embedded pricing catalog is JSON, and the two catalogs are hashed.
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+# Official pricing pages are parsed and the registry archive is fetched over
+# bounded HTTPS.
+regex.workspace = true
+ureq.workspace = true
+url.workspace = true

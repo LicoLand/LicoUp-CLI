@@ -1,0 +1,245 @@
+[package]
+name = "licoup-native"
+version = "0.3.0"
+edition = "2024"
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[features]
+default = []
+# Hermetic work-context constructors for integration tests. Not production.
+test-support = []
+# Explicit non-production topology support. Release profiles are rejected in `lib.rs`.
+secure-mesh-acceptance-mock-kt = []
+
+[lib]
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[dependencies]
+lico-catalog-convergence = { path = "../lico-catalog-convergence" }
+licoup-foundation = { path = "../licoup-foundation" }
+licoup-protocol-bindings = { path = "../licoup-protocol-bindings" }
+licoup-client-state = { path = "../licoup-client-state" }
+licoup-statistics = { path = "../licoup-statistics" }
+licoup-agent-targets = { path = "../licoup-agent-targets" }
+licoup-model-catalog = { path = "../licoup-model-catalog" }
+licoup-endpoint-core = { path = "../licoup-endpoint-core" }
+licoup-platform-bridges = { path = "../licoup-platform-bridges" }
+licoup-agent-adapters = { path = "../licoup-agent-adapters" }
+licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+# The host side of Agent execution: the adapter registry, adapter execution,
+# the work-context seam and the protocol engines. This host composes it and
+# answers its ports; the crate never reaches back into the host.
+licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+# The Codex adapter package. Composition names it for its parser
+# registration and its turn-event port while the extension host's binary
+# route is completed by the agent-execution port.
+licoup-agent-codex = { path = "../licoup-agent-codex" }
+# The Claude Code adapter package. Composition names it for its parser
+# registration and its replay arm while the extension host's binary route is
+# completed by the agent-execution port, and the client's Claude Code process
+# half reads the protocol from it rather than keeping a second copy.
+licoup-agent-claude-code = { path = "../licoup-agent-claude-code" }
+# The Copilot adapter package. Composition names it for its parser
+# registration, its ACP frame dialect and its driver declaration while the
+# extension host's binary route is completed by the agent-execution port.
+licoup-agent-copilot = { path = "../licoup-agent-copilot" }
+# The Pi adapter package. Composition names it for its parser registration and
+# its turn-event port while the extension host's binary route is completed by
+# the agent-execution port.
+licoup-agent-pi = { path = "../licoup-agent-pi" }
+# The Antigravity adapter package. Composition names it for its parser
+# registration and its ports while the extension host's binary route is
+# completed by the agent-execution port.
+licoup-agent-antigravity = { path = "../licoup-agent-antigravity" }
+# The Cursor adapter package. Composition names it for its parser
+# registration while the extension host's binary route is completed by the
+# agent-execution port the package declares.
+licoup-agent-cursor = { path = "../licoup-agent-cursor" }
+# The DeepSeek Harness adapter package. Composition names it for its parser
+# registration, its replay arm and the session-log reader that replaced the
+# Node worker, while the extension host's binary route is completed by the
+# agent-execution port.
+licoup-agent-deepseek = { path = "../licoup-agent-deepseek" }
+# The Kimi Code adapter package. Composition names it for its ACP frame
+# dialect, its parser registration and its replay arm while the extension
+# host's binary route is completed by the agent-execution port.
+licoup-agent-kimi = { path = "../licoup-agent-kimi", features = ["test-support"] }
+# The Hermes adapter package. Composition names it for its persistent ACP frame
+# dialect, its parser registration and its replay arm while the client still
+# composes Hermes' process half.
+licoup-agent-hermes = { path = "../licoup-agent-hermes", features = ["test-support"] }
+# The Kilo Code adapter package. Composition names it for its parser
+# registration, its endpoint policy and its host ports while the extension
+# host's binary route is completed by the agent-execution port.
+licoup-agent-kilo = { path = "../licoup-agent-kilo" }
+# The Lico Agent adapter package. Composition names it for its parser
+# registration, its replay arm and its RPC driver — the launch, the supervised
+# stdio exchange and the sealed Plan profile — while this host answers the two
+# ports that driver asks: whether a new execution is admitted, and the platform
+# sandbox primitive its Plan turns run under.
+licoup-agent-lico-agent = { path = "../licoup-agent-lico-agent" }
+licoup-agent-openclaw = { path = "../licoup-agent-openclaw" }
+# The OpenCode adapter package. Composition names it for its serve driver — the
+# declaration, the session protocol, the turn and its endpoint policy — and this
+# host answers the ports that driver asks: the serve engine, the consumer its
+# events reach and the admission decision its turn may not make for itself.
+licoup-agent-opencode = { path = "../licoup-agent-opencode" }
+licoup-agent-runtime = { path = "../licoup-agent-runtime" }
+licoup-application = { path = "../licoup-application" }
+licoup-project = { path = "../licoup-project" }
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+# The C11 usage-source SDK: the third-party source shapes the base usage journal
+# admits. Downward only — the SDK maps inputs onto the published contract and
+# never depends on the kernel.
+licoup-usage-source-sdk = { path = "../../sdk/usage-source" }
+licoup-workflow = { path = "../licoup-workflow" }
+# The durable strategy database, extracted from this host so the host no longer
+# owns workflow persistence or the routing/admission contracts the store reads.
+licoup-workflow-store = { path = "../licoup-workflow-store" }
+# The extracted workflow execution owner. This host composes it and answers its
+# ports; the crate never reaches back into the host.
+licoup-workflow-runtime = { path = "../licoup-workflow-runtime" }
+licoup-conversation = { path = "../licoup-conversation" }
+licoup-private-gateway = { path = "../licoup-private-gateway" }
+licoup-public-gateway = { path = "../licoup-public-gateway", default-features = false }
+licoup-vault = { path = "../licoup-vault" }
+anyhow.workspace = true
+thiserror.workspace = true
+base64.workspace = true
+chacha20poly1305.workspace = true
+command-group.workspace = true
+hkdf.workspace = true
+hmac.workspace = true
+jni.workspace = true
+mime_guess.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+semver.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+fs2.workspace = true
+interprocess.workspace = true
+icu_segmenter.workspace = true
+libcrux-ml-kem.workspace = true
+libcrux-sha3.workspace = true
+libcrux-traits.workspace = true
+libc.workspace = true
+trash.workspace = true
+openmls.workspace = true
+openmls_basic_credential.workspace = true
+openmls_memory_storage.workspace = true
+openmls_rust_crypto.workspace = true
+openmls_traits.workspace = true
+rusqlite.workspace = true
+log.workspace = true
+env_logger.workspace = true
+time.workspace = true
+ureq.workspace = true
+url.workspace = true
+uuid.workspace = true
+toml.workspace = true
+ed25519-dalek.workspace = true
+rand_core.workspace = true
+regex.workspace = true
+x25519-dalek.workspace = true
+zeroize.workspace = true
+tar.workspace = true
+flate2.workspace = true
+zip.workspace = true
+
+[build-dependencies]
+licoup-state-machine-codegen = { path = "../licoup-state-machine-codegen" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = "0.6.2"
+core-foundation = "0.10.1"
+core-foundation-sys = "0.8.7"
+objc2 = "0.6.4"
+objc2-foundation = { version = "0.3.2", features = ["NSString"] }
+objc2-local-authentication = "0.3.2"
+security-framework = { version = "3.7.0", features = ["OSX_10_15"] }
+security-framework-sys = { version = "2.17.0", features = ["OSX_10_15"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dbus-secret-service = { version = "4.1.0", features = ["crypto-rust"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Diagnostics_ToolHelp",
+  "Win32_System_Threading",
+] }
+
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.27", default-features = false, features = ["fs", "user", "signal", "socket"] }
+
+[dev-dependencies]
+# The two-endpoint peer-ingress suite drives the pinned SDK's own endpoint and
+# state entries directly, exactly as the platform adapters do behind the
+# `licoup-protocol-bindings` boundary.
+licoarc.workspace = true
+licoup-conversation = { path = "../licoup-conversation", features = ["test-counters"] }
+# The scan-isolation seam and the packaged driver fixtures the target fixtures
+# read travel behind an explicit feature, because `cfg(test)` is false for a
+# dependency.
+licoup-agent-targets = { path = "../licoup-agent-targets", features = ["test-support"] }
+licoup-agent-drivers = { path = "../licoup-agent-drivers", features = ["test-support"] }
+# The Copilot package's replay arm drives the shared ACP reducer, so this host's
+# test build asks the package for the surface that arm is compiled behind —
+# exactly as it asks `licoup-agent-drivers` above for the reducer itself.
+licoup-agent-copilot = { path = "../licoup-agent-copilot", features = ["test-support"] }
+licoup-private-gateway = { path = "../licoup-private-gateway" }
+licoup-foundation = { path = "../licoup-foundation", features = ["test-support"] }
+trybuild = { path = "../trybuild" }
+criterion = "0.5"
+rand_chacha = "0.3"
+# Bench-only async runtime: production target builds without tokio; benches
+# drive the async backend lanes under criterion.
+tokio = { version = "1", features = ["rt", "sync", "macros"] }
+
+[[bench]]
+name = "native_backend"
+harness = false
+
+[[bin]]
+name = "licoup-cli"
+path = "src/bin/licoup.rs"
+
+
+
+[[bin]]
+name = "lico-agent"
+path = "src/bin/lico-agent.rs"
+
+[[bin]]
+name = "lico-secure-mesh-kt-mock"
+path = "src/bin/lico-secure-mesh-kt-mock.rs"
+required-features = ["secure-mesh-acceptance-mock-kt"]
+
+[[test]]
+name = "continuity_host"
+path = "tests/continuity_host.rs"
+required-features = ["test-support"]
+
+[[test]]
+name = "continuity_native"
+path = "tests/continuity_native.rs"
+required-features = ["test-support"]
+
+# The two-endpoint peer-ingress suite mounts the exact `peer_ingress` and
+# `endpoint_transport` production sources and drives them through real SDK
+# protected records; the fixed Candidate arrives only as an explicit
+# `LICOARC_AUTHORITY_BUNDLE` input.
+[[test]]
+name = "peer_ingress"
+path = "tests/peer_ingress/main.rs"
+
+# Real untrusted-extension process isolation: the suite starts real programs
+# under the production `IsolatedProcessCarrier`, so it reads its fixtures from
+# the repository root and is declared here rather than inside the crate.
+[[test]]
+name = "extension_isolation"
+path = "../../tests/integration/extension_isolation/main.rs"

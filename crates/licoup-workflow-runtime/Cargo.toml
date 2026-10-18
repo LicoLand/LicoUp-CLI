@@ -1,0 +1,28 @@
+[package]
+name = "licoup-workflow-runtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+anyhow.workspace = true
+fs2.workspace = true
+# The Canonical Conversation crate owns the durable conversation records this
+# runtime reads for its actor bindings. It never reaches back into the runtime.
+licoup-conversation = { path = "../licoup-conversation" }
+licoup-foundation = { path = "../licoup-foundation" }
+# The selection owner holds the candidate vocabulary and the routing policy the
+# runtime's evolution seam asks. Selection sits below workflow, so the runtime
+# reads it directly instead of reaching up into the kernel.
+licoup-model-catalog = { path = "../licoup-model-catalog" }
+licoup-workflow = { path = "../licoup-workflow" }
+# The durable store is the runtime's only persistence owner. The runtime holds
+# the store contract in one direction: pure machine ← store ← runtime.
+licoup-workflow-store = { path = "../licoup-workflow-store" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+uuid.workspace = true
+zip.workspace = true

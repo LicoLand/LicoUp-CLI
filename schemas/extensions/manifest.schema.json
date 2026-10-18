@@ -1,0 +1,647 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://licoland.com/schemas/extensions/manifest.schema.json",
+  "title": "LicoUp extension package manifest",
+  "description": "What a package says about itself before the host runs anything. It carries no artifact digest and no signature: those are produced from the bytes by packaging and by the update mechanism. `requires` is the install closure; `optionalRequires` enables extra capability only when the user already has it, and never installs anything by itself. `compatibility` is the package's own list of supported client versions: the kernel loads a package only when that list covers the running client, and `hostProtocol` is the separate wire contract range. `conversion` is the package's own claim about the persisted formats it owns: the published source formats it reads, the target format it produces and the native entry inside its payload that performs the move. It is absent from a package that owns no format, and a package that was asked for a conversion it does not declare is refused.",
+  "description": "What a package says about itself before the host runs anything. It carries no artifact digest and no signature: those are produced from the bytes by packaging and by the update mechanism. `requires` is the install closure; `optionalRequires` enables extra capability only when the user already has it, and never installs anything by itself. `compatibility` is the package's own list of supported client versions: the kernel loads a package only when that list covers the running client, and `hostProtocol` is the separate wire contract range. `runtime.mode` is the package category: `process`, `declarative` and `service` are carried by something the host starts or bridges, while `data` is carried by nothing and contributes only the typed `resources` it declares.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "displayName",
+    "hostProtocol",
+    "compatibility",
+    "profiles",
+    "runtime",
+    "activation",
+    "requires",
+    "optionalRequires",
+    "permissions"
+  ],
+  "properties": {
+    "schema": {
+      "const": "licoup.extension-package.v1"
+    },
+    "id": {
+      "$ref": "#/$defs/namespacedName",
+      "description": "The namespaced package identity, for example `org.licoland.adapter.generic`."
+    },
+    "version": {
+      "$ref": "#/$defs/semver",
+      "description": "The package's own version. Each package version is independent of the SDK version, the host ABI, the data schemas and the renderer profile."
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "hostProtocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["major", "minimumMinor"],
+      "description": "The host wire protocol range this package needs. A different major refuses this package and nothing else.",
+      "properties": {
+        "major": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minimumMinor": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clientVersions"],
+      "description": "The client versions this package says it supports. It is not `hostProtocol`, which is the wire contract range negotiated per connection, and it is not the package's own version: a package version that differs from the client is not itself a refusal. The host admits a package at install and at activation only when this list covers the running client.",
+      "properties": {
+        "clientVersions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Each entry is a bare major version (`\"1\"`) or a semantic-version range (`\">=0.3.0, <0.5.0\"`). An empty list supports no client, so a package that declares none is admitted by nothing.",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      }
+    },
+    "conversion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "entry", "sourceFormats", "targetFormat"],
+      "description": "The native format conversion this package owns. The field is optional: a package that owns no persisted format carries nothing here, so an absent field is complete. A package that was asked for a conversion and declares none is refused by the caller that required it, with the package and the required source format named. The declaration names format identities, never a client version: which client builds may load the package is `compatibility`, and this field says which formats it converts. The vocabulary is the one the release index publishes for its per-package `converter` entry.",
+      "properties": {
+        "kind": {
+          "const": "native-executable",
+          "description": "The only converter kind this contract publishes: a program inside the package payload, run directly by its host. A converter that needs an interpreter would borrow a runtime the package does not carry, so no other kind is expressible."
+        },
+        "entry": {
+          "$ref": "#/$defs/converterEntry"
+        },
+        "sourceFormats": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "description": "The published source formats this converter reads. An empty list converts nothing, so it is refused rather than read as `no source is supported`.",
+          "items": {
+            "$ref": "#/$defs/formatIdentity"
+          }
+        },
+        "targetFormat": {
+          "$ref": "#/$defs/formatIdentity"
+        }
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 0,
+      "description": "The narrow method profiles this package serves. A profile id this host does not publish is preserved and refused for its own operations only. A `data` package serves no profile at all: it declares resources, not a program, so its list is empty.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "major"],
+        "properties": {
+          "id": {
+            "description": "One of the published profiles, or an id a newer host published. An id this host does not know is preserved, refuses nothing, and grants nothing.",
+            "anyOf": [
+              {
+                "$ref": "#/$defs/publishedProfile"
+              },
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              }
+            ]
+          },
+          "major": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "capabilities": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/namespacedName"
+            }
+          }
+        }
+      }
+    },
+    "runtime": {
+      "description": "How the package is carried. A `user:` runtime reference names an interpreter or tool the user installed, which the host reuses and never removes. `data` is the category for a package the host never starts: it has no entry, no `runtimeRef`, no descriptor and no endpoint, and a data runtime that carries any other field is refused rather than read as a program.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "entry"],
+          "properties": {
+            "mode": {
+              "const": "process"
+            },
+            "entry": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            },
+            "runtimeRef": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "descriptor"],
+          "properties": {
+            "mode": {
+              "const": "declarative"
+            },
+            "descriptor": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "endpointRef"],
+          "properties": {
+            "mode": {
+              "const": "service"
+            },
+            "endpointRef": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode"],
+          "properties": {
+            "mode": {
+              "const": "data"
+            }
+          }
+        }
+      ]
+    },
+    "activation": {
+      "enum": ["on-demand", "explicit"],
+      "description": "`on-demand` starts the package when a call needs it; `explicit` starts it only when the user asks, and is the conservative default when the field is absent. A data package is never started, so the field describes no behavior for it."
+    },
+    "requires": {
+      "type": "array",
+      "description": "Installed together with this package. This decides the install closure and nothing else; it does not enter a development task graph.",
+      "items": {
+        "$ref": "#/$defs/dependency"
+      }
+    },
+    "optionalRequires": {
+      "type": "array",
+      "description": "Enabled when already present. Never installed on this package's account, and never a reason to refuse the package.",
+      "items": {
+        "$ref": "#/$defs/dependency"
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "description": "What the package asks for. A request is not a grant and there is no field here for one; the host decides, and a first install or a widened scope needs the user's consent.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["capability", "scope"],
+        "properties": {
+          "capability": {
+            "$ref": "#/$defs/namespacedName"
+          },
+          "scope": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        }
+      }
+    },
+    "contributions": {
+      "type": "array",
+      "description": "Interface contributions, each described by a `licoup.ui-contribution.v1` resource.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "id", "definition"],
+        "properties": {
+          "kind": {
+            "enum": ["settings", "command", "navigation", "metric-panel", "resource-view"]
+          },
+          "id": {
+            "$ref": "#/$defs/namespacedName"
+          },
+          "definition": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        }
+      }
+    },
+    "resources": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "The typed data resources this package contributes. Two resources with one identity are one resource declared twice and are refused: the host compares resource identities, not whole declarations. Each declaration repeats the shape identifier its kind publishes, and no kind is free-form: the fields a declaration may carry are exactly the ones published for that kind. A package that declares one resource is a `data` package and is refused if it is also carried by a program. `definition` names a file inside the package, and a definition that is missing, absolute or outside the package is refused before publication. A composition component binds only host primitives and host actions this manifest declares in `hostPrimitives` and `hostActions`.",
+      "items": {
+        "$ref": "#/$defs/dataResource"
+      }
+    },
+    "hostPrimitives": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "The compiled host primitives this package's resources may bind. A name this client generation does not compile is refused, and a composition component binding a primitive outside this set is refused before the package is published.",
+      "items": {
+        "$ref": "#/$defs/hostPrimitive"
+      }
+    },
+    "hostActions": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "description": "The host-registered actions this package's resources may invoke, each a namespaced action identity. A composition component naming an action outside this set is refused. The declaration grants no authority: the host owns the action's effect and decides it when the action is invoked.",
+      "items": {
+        "$ref": "#/$defs/namespacedName"
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "description": "The package's own namespaced attributes. A host that does not understand one preserves it and never rules on it.",
+      "propertyNames": {
+        "$ref": "#/$defs/namespacedName"
+      },
+      "additionalProperties": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "runtime": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "const": "data"
+              }
+            },
+            "required": ["mode"]
+          }
+        },
+        "required": ["runtime"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "profiles": {
+            "type": "array",
+            "maxItems": 0
+          }
+        }
+      },
+      "else": {
+        "type": "object",
+        "properties": {
+          "profiles": {
+            "type": "array",
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "resources": {
+            "type": "array",
+            "minItems": 1
+          }
+        },
+        "required": ["resources"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "runtime": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "const": "data"
+              }
+            },
+            "required": ["mode"]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "namespacedName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+(?:[./-][A-Za-z0-9_-]+)*$",
+      "maxLength": 160
+    },
+    "converterEntry": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^(?:[A-Za-z0-9_-]+\\.)*[A-Za-z0-9_-]+(?:/(?:[A-Za-z0-9_-]+\\.)*[A-Za-z0-9_-]+)+$",
+      "description": "A converter entry inside the package payload: a relative path with at least one directory component and no empty, `.` or `..` segment. An entry outside the payload is not this package's entry, and the release declaration refuses the same shapes."
+    },
+    "formatIdentity": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+      "description": "A published format identity: lowercase alphanumeric words joined by `.` or `-`, such as `licoup.conversation.v1`. It is an identity rather than an ordering, and it is never a client version."
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$",
+      "maxLength": 64
+    },
+    "publishedProfile": {
+      "type": "string",
+      "enum": ["agent-execution", "model-provider", "usage-metric", "package-deployment", "declarative-ui"]
+    },
+    "hostPrimitive": {
+      "type": "string",
+      "description": "A host primitive compiled into this client generation. A package chooses among them; it never brings its own.",
+      "enum": ["form", "table", "chart", "progress", "text", "action"]
+    },
+    "localeTag": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 35,
+      "description": "A bounded locale tag: a two or three letter language subtag followed by at most three alphanumeric subtags, such as `en`, `zh-CN` or `pt-BR`.",
+      "pattern": "^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$"
+    },
+    "fontFamily": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "A font family name the package covers. Leading and trailing whitespace and control characters are refused, so a name is the name the host looks up.",
+      "pattern": "^\\S(?:[^\\u0000-\\u001F\\u007F]*\\S)?$"
+    },
+    "resourceDefinition": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "The file inside the package that carries the resource, as a relative path. The host reads it from the installed content: an absolute path, a platform separator, a parent-directory segment or a missing file is refused.",
+      "pattern": "^[^/\\\\\\u0000]+(?:/[^/\\\\\\u0000]+)*$",
+      "not": {
+        "pattern": "(?:^|/)\\.\\.(?:/|$)"
+      }
+    },
+    "compositionComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "primitive"],
+      "properties": {
+        "component": {
+          "$ref": "#/$defs/namespacedName"
+        },
+        "primitive": {
+          "$ref": "#/$defs/hostPrimitive"
+        },
+        "actionRef": {
+          "$ref": "#/$defs/namespacedName",
+          "description": "The host action this component may invoke. It must be one the manifest declares in `hostActions`; the host owns the action's authority."
+        }
+      }
+    },
+    "themeResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "definition", "format", "tokens"],
+      "properties": {
+        "kind": {
+          "const": "theme"
+        },
+        "id": {
+          "$ref": "#/$defs/namespacedName"
+        },
+        "definition": {
+          "$ref": "#/$defs/resourceDefinition"
+        },
+        "format": {
+          "const": "licoup.data.theme.v1"
+        },
+        "tokens": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "description": "The design token identities this theme supplies.",
+          "items": {
+            "$ref": "#/$defs/namespacedName"
+          }
+        }
+      }
+    },
+    "layoutResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "definition", "format", "regions"],
+      "properties": {
+        "kind": {
+          "const": "layout"
+        },
+        "id": {
+          "$ref": "#/$defs/namespacedName"
+        },
+        "definition": {
+          "$ref": "#/$defs/resourceDefinition"
+        },
+        "format": {
+          "const": "licoup.data.layout.v1"
+        },
+        "regions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "description": "The client shell region identities this layout addresses.",
+          "items": {
+            "$ref": "#/$defs/namespacedName"
+          }
+        }
+      }
+    },
+    "styleResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "definition", "format", "targets"],
+      "properties": {
+        "kind": {
+          "const": "style"
+        },
+        "id": {
+          "$ref": "#/$defs/namespacedName"
+        },
+        "definition": {
+          "$ref": "#/$defs/resourceDefinition"
+        },
+        "format": {
+          "const": "licoup.data.style.v1"
+        },
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "description": "The visual target identities this style addresses.",
+          "items": {
+            "$ref": "#/$defs/namespacedName"
+          }
+        }
+      }
+    },
+    "fontResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "definition", "format", "families"],
+      "properties": {
+        "kind": {
+          "const": "font"
+        },
+        "id": {
+          "$ref": "#/$defs/namespacedName"
+        },
+        "definition": {
+          "$ref": "#/$defs/resourceDefinition"
+        },
+        "format": {
+          "const": "licoup.data.font.v1"
+        },
+        "families": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "description": "The font family names the package supplies.",
+          "items": {
+            "$ref": "#/$defs/fontFamily"
+          }
+        }
+      }
+    },
+    "languageResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "definition", "format", "locales"],
+      "properties": {
+        "kind": {
+          "const": "language"
+        },
+        "id": {
+          "$ref": "#/$defs/namespacedName"
+        },
+        "definition": {
+          "$ref": "#/$defs/resourceDefinition"
+        },
+        "format": {
+          "const": "licoup.data.language.v1"
+        },
+        "locales": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "description": "The locale tags the package supplies strings for.",
+          "items": {
+            "$ref": "#/$defs/localeTag"
+          }
+        }
+      }
+    },
+    "compositionResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "definition", "format", "components"],
+      "properties": {
+        "kind": {
+          "const": "composition"
+        },
+        "id": {
+          "$ref": "#/$defs/namespacedName"
+        },
+        "definition": {
+          "$ref": "#/$defs/resourceDefinition"
+        },
+        "format": {
+          "const": "licoup.data.composition.v1"
+        },
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "description": "The components this composition binds to host primitives and host actions.",
+          "items": {
+            "$ref": "#/$defs/compositionComponent"
+          }
+        }
+      }
+    },
+    "dataResource": {
+      "description": "One typed data resource. The `kind` decides the shape: a theme carries tokens, a layout regions, a style targets, a font families, a language locale tags and a composition components.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/themeResource"
+        },
+        {
+          "$ref": "#/$defs/layoutResource"
+        },
+        {
+          "$ref": "#/$defs/styleResource"
+        },
+        {
+          "$ref": "#/$defs/fontResource"
+        },
+        {
+          "$ref": "#/$defs/languageResource"
+        },
+        {
+          "$ref": "#/$defs/compositionResource"
+        }
+      ]
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageId", "range"],
+      "properties": {
+        "packageId": {
+          "$ref": "#/$defs/namespacedName"
+        },
+        "range": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      }
+    }
+  }
+}

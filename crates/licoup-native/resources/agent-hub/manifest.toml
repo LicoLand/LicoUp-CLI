@@ -1,0 +1,113 @@
+schema_version = "v0.0.2:client-agent-hub-manifest-1"
+host_scope = "desktop"
+plugin_management_boundary = "adapter-plugins-only"
+adaptation_tags = ["deep", "partial", "pending-evaluation"]
+channel_kinds = ["homebrew", "npm", "winget", "official-artifact"]
+
+[[agents]]
+id = "codex"
+label = "Codex CLI"
+adaptation = "deep"
+protocol = "codex-app-server-stdio-jsonrpc"
+license = "Apache-2.0"
+summary = "Codex CLI is a coding agent from OpenAI that runs locally on your computer."
+homepage = "https://developers.openai.com/codex"
+requires_login = true
+connection_modes = ["local"]
+file = "codex.toml"
+
+[[agents]]
+id = "cursor"
+label = "Cursor CLI"
+adaptation = "deep"
+protocol = "cursor-agent-cli-v1"
+license = "proprietary"
+summary = "Cursor is a coding agent for building ambitious software. Use it to understand your codebase, plan and build features, fix bugs, review changes, and work with the tools you already use."
+homepage = "https://cursor.com"
+requires_login = true
+connection_modes = ["local"]
+file = "cursor.toml"
+
+[[agents]]
+id = "opencode"
+label = "OpenCode"
+adaptation = "deep"
+protocol = "opencode-serve-http-v1"
+license = "MIT"
+summary = "OpenCode is an open source agent that helps you write code in your terminal, IDE, or desktop."
+homepage = "https://opencode.ai"
+requires_login = true
+connection_modes = ["local"]
+file = "opencode.toml"
+
+[[agents]]
+id = "claude-code"
+label = "Claude Code"
+adaptation = "deep"
+protocol = "claude-code-cli-stream-json"
+license = "proprietary"
+summary = "Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows"
+homepage = "https://claude.com/product/claude-code"
+requires_login = true
+connection_modes = ["local"]
+file = "claude-code.toml"
+
+[[agents]]
+id = "pi"
+label = "Pi Agent"
+adaptation = "deep"
+protocol = "pi-rpc-stdio-jsonl"
+license = "MIT"
+summary = "Pi is a minimal agent harness. Adapt Pi to your workflows, not the other way around."
+homepage = "https://pi.dev"
+requires_login = true
+connection_modes = ["local"]
+file = "pi.toml"
+
+[[agents]]
+id = "openclaw"
+label = "OpenClaw"
+adaptation = "deep"
+protocol = "openclaw-acp-stdio-jsonrpc"
+license = "MIT"
+summary = "The AI that really does things."
+homepage = "https://openclaw.ai"
+requires_login = true
+connection_modes = ["local", "virtual-machine"]
+file = "openclaw.toml"
+
+[[agents]]
+id = "hermes"
+label = "Hermes Agent"
+adaptation = "deep"
+protocol = "hermes-acp-stdio-jsonrpc"
+license = "MIT"
+summary = "The self-improving AI agent built by Nous Research."
+homepage = "https://hermes-agent.nousresearch.com"
+requires_login = true
+connection_modes = ["local", "virtual-machine"]
+file = "hermes.toml"
+
+[[agents]]
+id = "antigravity"
+label = "Antigravity"
+adaptation = "partial"
+protocol = "antigravity-cli-argv-hook-v1"
+license = "proprietary"
+summary = "Experience liftoff with the next-gen agent platform."
+homepage = "https://antigravity.google"
+requires_login = true
+connection_modes = ["local"]
+file = "antigravity.toml"
+
+[[agents]]
+id = "deepseek-harness"
+label = "DeepSeek Harness"
+adaptation = "pending-evaluation"
+protocol = "deepseek-harness-sdk-stdio-jsonrpc"
+license = "MIT"
+summary = "DeepSeek Harness is an open-source agent harness. Everything is a plugin."
+homepage = "https://deepseek.com/harness/en/"
+requires_login = true
+connection_modes = ["local"]
+file = "deepseek-harness.toml"

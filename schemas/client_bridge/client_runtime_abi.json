@@ -1,0 +1,16 @@
+{
+  "abiVersion": 1,
+  "layoutIdentity": "licoup.client-runtime.abi.v1.generation-index",
+  "operations": [
+    "runtime.create",
+    "runtime.destroy",
+    "future.poll",
+    "future.complete",
+    "future.cancel",
+    "future.free",
+    "subscription.drain",
+    "subscription.cancel",
+    "subscription.free",
+    "shared_buffer.free"
+  ]
+}

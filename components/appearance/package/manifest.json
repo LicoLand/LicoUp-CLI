@@ -1,0 +1,38 @@
+{
+  "activation": "on-demand",
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "contributions": [],
+  "conversion": {
+    "entry": "bin/licoup-appearance-convert",
+    "kind": "native-executable",
+    "sourceFormats": [
+      "licoup-state-0.1.1"
+    ],
+    "targetFormat": "licoup-state-0.3.0"
+  },
+  "displayName": "LicoUp appearance resource converter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "id": "org.licoland.converter.appearance",
+  "optionalRequires": [],
+  "permissions": [],
+  "profiles": [
+    {
+      "id": "native-converter",
+      "major": 1
+    }
+  ],
+  "requires": [],
+  "runtime": {
+    "entry": "bin/licoup-appearance-convert",
+    "mode": "process"
+  },
+  "schema": "licoup.extension-package.v1",
+  "version": "0.1.0"
+}

@@ -1,0 +1,10 @@
+[package]
+name = "licoup-agent-adapters"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+licoup-agent-runtime = { path = "../licoup-agent-runtime" }

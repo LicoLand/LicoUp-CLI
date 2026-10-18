@@ -1,0 +1,27 @@
+[workspace]
+
+[package]
+name = "licoup-analytics"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+publish = false
+description = "Optional analytics and usage-source package (org.licoland.feature.analytics): observation index, authority policy, professional metric catalog and declarative panels over the core's retained metering facts."
+
+[dependencies]
+# The C11 input mapping both sides of the wire share.
+licoup-usage-source-sdk = { path = "../../sdk/usage-source" }
+# The C11/C13 contract shapes this component consumes and re-publishes.
+licoup-extension-contracts = { path = "../../crates/licoup-extension-contracts" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[build-dependencies]
+# The package's declarative transition authority, compiled from
+# resources/state-machines/ rather than restated in Rust.
+licoup-state-machine-codegen = { path = "../../crates/licoup-state-machine-codegen" }
+
+[[test]]
+name = "usage_sources"
+path = "../../tests/integration/usage_sources/main.rs"

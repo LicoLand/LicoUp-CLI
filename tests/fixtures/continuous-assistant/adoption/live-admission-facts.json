@@ -1,0 +1,9 @@
+{
+  "schema": "licoup.continuity.live-admission-facts-draft/v1",
+  "evidenceLabel": "synthetic-test-evidence",
+  "authorityKind": "test-evidence",
+  "sourceKind": "synthetic-test-boundary",
+  "sourceId": "test:adoption-boundary",
+  "policyRevision": "draft-1",
+  "realModelQualification": "unknown"
+}

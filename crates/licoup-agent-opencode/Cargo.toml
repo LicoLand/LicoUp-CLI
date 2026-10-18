@@ -1,0 +1,59 @@
+[package]
+name = "licoup-agent-opencode"
+version = "0.14.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "OpenCode adapter package: the serve HTTP/SSE protocol and its frame interpretation"
+
+# The crate is one package's program. `parser` is this Agent's vendor protocol
+# below the adapter port: the `opencode serve` HTTP documents and the SSE event
+# frames that classify one OpenCode line exactly once, per ADR-0008. `driver` is
+# the Agent's own half of one turn — the session-open protocol, the request
+# shaping, the stream classification, the capability probe and the result the
+# shared engine reports. `policy` is the endpoint contract the Agent owns.
+# `registration` is what composition injects into `licoup-agent-adapter-sdk`,
+# `replay` is the arm that drives the same parser from a recorded transcript,
+# `port` names the seams the host answers, and `host` is what a host installs.
+#
+# The kernel links no part of this crate's protocol. Composition names the crate
+# for its parser registration and its replay arm while the extension host's
+# binary route is completed by the agent-execution port; nothing here reaches
+# back into a client crate. The `serve` process supervision, the HTTP and SSE
+# reader and the active-turn control registry stay the client's shared
+# local-service engine, so this package asks for them through `port::serve`
+# rather than reimplementing them. The one engine entry it calls directly is the
+# shared active-turn registry's control answer, which needs no translation and
+# is already fail-closed for a session it does not hold.
+[features]
+default = []
+
+[dependencies]
+licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+# The shared ACP driver vocabulary this Agent's declaration, result and failure
+# types are stated in, and the shared serve vocabulary its policy speaks. The
+# engine itself — starting the process, reading HTTP, framing SSE, admitting an
+# active turn — arrives through `port::serve`, and the one engine entry the
+# package calls directly is the active-turn registry's control answer, which
+# needs no host translation.
+licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+# The ACP protocol generation this Agent's capability answer reports, and the
+# raw-execution vocabulary the package's test host records through.
+licoup-foundation = { path = "../licoup-foundation" }
+serde_json.workspace = true
+# The workspace-query routing one serve request carries, and the turn identity
+# one execution is stamped with.
+url.workspace = true
+uuid.workspace = true
+
+[[bin]]
+name = "lico-agent-opencode"
+path = "src/bin/lico-agent-opencode.rs"
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the package binary, which links no kernel
+# crate and reads its own package documents as data.
+[dev-dependencies]
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }

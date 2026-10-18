@@ -1,0 +1,80 @@
+[
+  {
+    "jsonrpc": "2.0",
+    "method": "extension.ready",
+    "params": {
+      "profiles": [
+        "agent-execution"
+      ]
+    }
+  },
+  {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "protocol": {
+        "major": 1,
+        "minimumMinor": 0
+      },
+      "maxFrameBytes": 65536,
+      "profiles": [
+        "agent-execution"
+      ]
+    }
+  },
+  {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "result": {
+      "id": "dev.example.agent.sdk.minimal",
+      "instanceKind": "executable",
+      "inputKinds": [
+        "text"
+      ],
+      "capabilities": [
+        "dev.example.agent/stream"
+      ],
+      "interfaceVersion": "1.0.0",
+      "usage": "unavailable",
+      "cancel": "unsupported",
+      "resume": "unsupported"
+    }
+  },
+  {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "result": {
+      "invocationRef": "sample-invocation-1",
+      "outcome": "accepted"
+    }
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "agent.event",
+    "params": {
+      "invocationRef": "sample-invocation-1",
+      "sequence": 1,
+      "kind": "text",
+      "body": "plain text that looks like a reply\nand a second line 雪"
+    }
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "agent.event",
+    "params": {
+      "invocationRef": "sample-invocation-1",
+      "sequence": 2,
+      "kind": "terminal",
+      "body": {
+        "outcome": "succeeded"
+      }
+    }
+  },
+  {
+    "jsonrpc": "2.0",
+    "id": 4,
+    "result": {
+      "outcome": "stopped"
+    }
+  }
+]

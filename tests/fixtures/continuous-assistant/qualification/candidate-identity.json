@@ -1,0 +1,17 @@
+{
+  "schema": "licoup.continuity.qualification-identity-draft/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "responsibilityId": "responsibility:delegation",
+  "candidateIdentity": {
+    "modelDigest": "model:digest-synthetic-a",
+    "reasoningDigest": "reasoning:digest-synthetic-a",
+    "promptDigest": "prompt:digest-synthetic-a",
+    "skillDigest": "skill:digest-synthetic-a",
+    "contextPolicyDigest": "context:digest-synthetic-a",
+    "toolContractDigest": "tools:digest-synthetic-a",
+    "adapterRuntimeDigest": "adapter:digest-synthetic-a",
+    "datasetVersion": "dataset:family-synthetic-a",
+    "policyRevision": "draft-1"
+  }
+}

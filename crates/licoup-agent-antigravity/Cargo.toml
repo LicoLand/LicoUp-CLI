@@ -1,0 +1,70 @@
+[package]
+name = "licoup-agent-antigravity"
+version = "0.14.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "Antigravity adapter package: the Antigravity CLI driver, its Agent Hooks receipt and its PTY protocol"
+
+# The crate is one package's program. `driver` is this Agent's execution half:
+# the vendor CLI launch, its supervision, the authorization gate, the hook bridge
+# installation and the outcome one turn reports. `parser` is this Agent's vendor
+# protocol below the adapter port: the official Agent Hooks receipt reader, the
+# PTY stdout parser and the terminal classification that together decide what one
+# Antigravity turn produced, classified once, per ADR-0008. `port` is the seam
+# the host answers, `registration` is what composition injects into
+# `licoup-agent-adapter-sdk`, `hook` is the native receipt writer the Agent Hooks
+# configuration starts, and `replay` is the arm that drives the same parser from
+# a recorded transcript.
+#
+# The kernel links no part of this crate's protocol. Composition names the crate
+# for its registration and its `driver` while the extension host's binary route
+# is completed by the agent-execution port; nothing here reaches back into a
+# client crate.
+[features]
+default = []
+
+[dependencies]
+licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+# The shared Subagent-mesh bindings a launch applies: the caller context the
+# connector later presents, and the portable data root it locates. They are the
+# mesh's own rules, not this Agent's, so the launch reads them rather than
+# retyping the variable names and the identifier rule.
+licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+# The login-shell environment every Agent launch observes. The snapshot is the
+# inventory's, below every Agent, so a launch reads it rather than capturing a
+# second one.
+licoup-agent-targets = { path = "../licoup-agent-targets" }
+# The shared ANSI stripper: the PTY lane's escape-sequence removal is the same
+# implementation every Agent's PTY lane uses, so a control sequence is stripped
+# once by one owner rather than re-implemented per Agent.
+licoup-foundation = { path = "../licoup-foundation" }
+serde.workspace = true
+serde_json.workspace = true
+# The vendor brain directory is removed through the platform trash rather than
+# deleted, so an authorized cleanup stays recoverable.
+trash.workspace = true
+
+# The Antigravity turn runs in its own process group and is interrupted as one
+# tree; the signal vocabulary is the platform's and is unix-only, like the lane
+# that uses it.
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.27", default-features = false, features = ["signal"] }
+
+[[bin]]
+name = "lico-agent-antigravity"
+path = "src/bin/lico-agent-antigravity.rs"
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the package binary, which links no kernel
+# crate and reads its own package documents as data.
+#
+# The login-shell snapshot's test seam is asked for here for the same reason the
+# host's own test build asks for it: a fixture executable is steered through its
+# inherited environment, and the production snapshot deliberately replaces that
+# environment, so the driver suite pins the launch snapshot to the fixture's.
+[dev-dependencies]
+licoup-agent-targets = { path = "../licoup-agent-targets", features = ["test-support"] }
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }

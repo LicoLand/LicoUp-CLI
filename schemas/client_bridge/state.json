@@ -1,0 +1,40 @@
+{
+  "title": "ClientState",
+  "version": 1,
+  "maxDocumentBytes": 16777216,
+  "collections": [
+    "settings",
+    "targets",
+    "target-discovery-cache",
+    "pairings",
+    "skills",
+    "pins",
+    "identities",
+    "conversation-archive-profiles",
+    "agent-usage-reports",
+    "skill-usage",
+    "collaboration-plugins",
+    "local-server-assemblies",
+    "local-server-assembly-cleanup",
+    "local-server-assembly-transaction",
+    "mcp-install-transactions"
+  ],
+  "operations": [
+    "get",
+    "set",
+    "admit"
+  ],
+  "failureCodes": [
+    "invalid_collection",
+    "invalid_document",
+    "state_operation_failed",
+    "migration_lock_unavailable",
+    "migration_ledger_invalid",
+    "state_newer_than_binary",
+    "migration_frontier_incomplete",
+    "migration_step_failed",
+    "migration_postcondition_failed",
+    "update_handoff_mismatch",
+    "unsupported_state_shape"
+  ]
+}
