@@ -1,0 +1,92 @@
+{
+  "title": "PackageBridge",
+  "version": 1,
+  "maxRequestBytes": 1048576,
+  "maxArchiveBytes": 268435456,
+  "maxRegistrations": 32,
+  "maxInstances": 64,
+  "operations": [
+    "package.catalog",
+    "package.install.plan",
+    "package.install.confirm",
+    "package.install.apply",
+    "package.import",
+    "package.enable",
+    "package.disable",
+    "package.uninstall.preview",
+    "package.uninstall.drain",
+    "package.uninstall.collect",
+    "package.recover",
+    "package.update.preview",
+    "package.update.apply",
+    "package.activate",
+    "package.resource.select"
+  ],
+  "sources": [
+    "local-import",
+    "local-directory",
+    "official-directory",
+    "third-party-directory"
+  ],
+  "lifecycles": [
+    "available",
+    "downloaded",
+    "verified",
+    "local-approved",
+    "staged",
+    "installed"
+  ],
+  "instanceLifecycles": [
+    "discovered",
+    "preparing",
+    "active",
+    "draining",
+    "stopped",
+    "failed",
+    "quarantined"
+  ],
+  "remainingWorkChoices": [
+    "wait",
+    "cancel"
+  ],
+  "registrationOwners": [
+    "login-item",
+    "claude-code-mcp",
+    "cursor-mcp",
+    "antigravity-mcp",
+    "codex-plugin"
+  ],
+  "maintenanceOperations": [
+    "update-apply",
+    "activation"
+  ],
+  "preservedFacts": [
+    "history",
+    "credentials",
+    "protocol-state"
+  ],
+  "failureCodes": [
+    "package_archive_unavailable",
+    "package_archive_not_a_file",
+    "package_archive_too_large",
+    "package_manifest_missing",
+    "package_manifest_invalid",
+    "package_client_incompatible",
+    "package_version_already_installed",
+    "package_not_installed",
+    "package_install_plan_stale",
+    "package_install_confirmation_stale",
+    "package_uninstall_has_dependents",
+    "package_uninstall_in_flight",
+    "package_uninstall_not_drained",
+    "package_instance_still_active",
+    "package_registration_invalid",
+    "package_registration_release_inputs_missing",
+    "package_registration_approval_stale",
+    "package_registration_release_failed",
+    "package_registration_owner_unavailable",
+    "package_maintenance_decision_unreadable",
+    "package_maintenance_work_in_flight",
+    "package_maintenance_admission_closed"
+  ]
+}

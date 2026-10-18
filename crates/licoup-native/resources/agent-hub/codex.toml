@@ -1,0 +1,110 @@
+id = "codex"
+binary_names = ["codex"]
+official_docs = "https://github.com/openai/codex"
+
+[[channels]]
+id = "homebrew"
+kind = "homebrew"
+oses = ["macos"]
+architectures = ["aarch64", "x86_64"]
+priority = 10
+official_recommended = true
+licoup_verified = true
+requires_manager = "homebrew"
+elevation = "none"
+scope = "user"
+package_coordinate = "codex"
+package_form = "cask"
+official_source = "https://github.com/openai/codex"
+version_policy = "latest-stable"
+install_argv = ["brew", "install", "--cask", "codex"]
+update_argv = ["brew", "upgrade", "--cask", "codex"]
+uninstall_argv = ["brew", "uninstall", "--cask", "codex"]
+verify_argv = ["codex", "--version"]
+
+[[channels]]
+id = "npm"
+kind = "npm"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = true
+licoup_verified = true
+requires_manager = "npm"
+elevation = "none"
+scope = "user"
+package_coordinate = "@openai/codex"
+official_source = "https://www.npmjs.com/package/@openai/codex"
+version_policy = "latest-stable"
+install_argv = ["npm", "install", "-g", "@openai/codex"]
+update_argv = ["npm", "install", "-g", "@openai/codex"]
+uninstall_argv = ["npm", "uninstall", "-g", "@openai/codex"]
+verify_argv = ["codex", "--version"]
+
+[[channels]]
+id = "winget"
+kind = "winget"
+oses = ["windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 10
+official_recommended = true
+licoup_verified = true
+requires_manager = "winget"
+elevation = "none"
+scope = "user"
+package_coordinate = "OpenAI.Codex"
+official_source = "https://github.com/openai/codex"
+version_policy = "latest-stable"
+install_argv = ["winget", "install", "-e", "--id", "OpenAI.Codex", "--accept-package-agreements", "--accept-source-agreements"]
+update_argv = ["winget", "upgrade", "-e", "--id", "OpenAI.Codex", "--accept-package-agreements", "--accept-source-agreements"]
+uninstall_argv = ["winget", "uninstall", "-e", "--id", "OpenAI.Codex"]
+verify_argv = ["codex", "--version"]
+
+[[channels]]
+id = "official-artifact"
+kind = "official-artifact"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 30
+official_recommended = true
+licoup_verified = true
+requires_manager = "none"
+elevation = "none"
+scope = "user"
+package_coordinate = "codex-standalone"
+official_source = "https://github.com/openai/codex"
+version_policy = "vendor-latest"
+install_argv = ["tar", "-xzf", "{artifact}", "-C", "{staging}"]
+update_argv = ["tar", "-xzf", "{artifact}", "-C", "{staging}"]
+uninstall_argv = ["rm", "{install}"]
+verify_argv = ["{install}", "--version"]
+
+[channels.artifact]
+origin_host = "github.com"
+url_template = "https://github.com/openai/codex/releases/latest/download/codex-package-{vendorArch}-{vendorOs}.tar.gz"
+# The vendor answers a release-asset request with a redirect to the host that
+# serves the bytes, so this recipe names that host instead of widening its
+# origin. The first request still has to reach github.com itself.
+redirect_hosts = ["release-assets.githubusercontent.com"]
+[channels.artifact.integrity]
+algorithm = "sha256"
+digest_url_template = "https://github.com/openai/codex/releases/latest/download/codex-package_SHA256SUMS"
+[channels.artifact.vendor_os]
+macos = "apple-darwin"
+linux = "unknown-linux-musl"
+windows = "pc-windows-msvc"
+[channels.artifact.vendor_arch]
+aarch64 = "aarch64"
+x86_64 = "x86_64"
+
+# Where this channel installs its executable, and how. The placement step
+# below is the only thing that writes there, uninstall removes that path, and
+# verify runs it, so none of them depend on a name PATH happens to answer.
+[channels.install]
+argv = ["install", "-m", "0755", "{staging}/bin/codex", "{install}"]
+[channels.install.binary]
+macos = "codex"
+linux = "codex"
+[channels.install.dir]
+macos = "{home}/.local/bin"
+linux = "{home}/.local/bin"

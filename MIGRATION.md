@@ -7,11 +7,11 @@ declared `[[test]]`/`[[bin]]` path keeps resolving. All paths below are
 relative to the monorepo root `/Users/unka/DevSpace/LicoLand/LicoUp`; they copy
 to the same relative path in this repository.
 
-> Status: scaffold only. The workspace manifest is final; the source copy waits
-> for the in-flight crate-split landing inside LicoUp (the working tree there
-> currently deletes `crates/licoup-gateway-core/` and edits member manifests).
-> Copy sources only after that branch lands, then regenerate this file's
-> verification block.
+> Status: landed. Sources copied from LicoUp `f9e509fd1` on
+> `feature/base-extraction-gateways` (tree clean). `cargo check --workspace
+> --locked`, `cargo check -p licoup-native --tests --locked`,
+> `components/analytics cargo check --tests --locked` and `cargo fmt --all --
+> --check` all pass. See §6 for the copy delta beyond the original manifest.
 
 ## 1. Moves — verbatim copies
 
@@ -152,7 +152,7 @@ Move:
 | `schemas/conversation_protocol/` | yes | `tools/scripts/protocol-codegen/generate-conversation-protocol.mjs` generates Rust (`licoup-conversation`). |
 | `schemas/extensions/` | yes | `licoup-extension-contracts` contract source. |
 | `schemas/subagent_mcp/` | yes | `licoup-public-gateway` `lico-subagent-mcp` service. |
-| `schemas/client_bridge/` | **stays in Desktop** | The bridge contract is Desktop's; see §3.2 for the generated-Rust half. |
+| `schemas/client_bridge/` | **vendored copy here too** | Contract authority stays Desktop (§3.2), but moved Rust sources embed/read the files at build/test time — `licoup-platform-bridges/src/abi.rs` `include_str!`s `client_runtime_abi.json`; `licoup-native` tests `include_str!`/`read_to_string` `secure_mesh.json`, `manifest.json`, `package.json`, `model_selection.json`. All 9 files copied as a read-only-in-spirit vendored set until §5.2 lands a pinned-revision drift check. See §6 delta D1. |
 
 ### 1.8 CI / workflow sources
 
@@ -189,13 +189,13 @@ Line 7 imports `clientProductVersion` from
 `apps/desktop/scripts/package-client/build/native.mjs`, which in turn reads the
 product-version authority `tools/client-version.json`. Neither path exists here.
 
-Required change in this repo: source the version from a CLI-owned file
-(proposal: `tools/cli-version.json`, or reuse the workspace
-`workspace.package.version = "0.3.0"`) and drop the `apps/` import. Keep the
-`LICO_CLIENT_PRODUCT_VERSION` env-var contract — `crates/licoup-native/build.rs`
-consumes it — but rename the decision to the maintainer: is the embedded
-"product version" of `licoup-cli` the crate version or still the Desktop
-product version? **Decision needed (§5).**
+**Applied:** the `apps/` import is gone. `cargo-client.mjs` now reads
+`tools/cli-version.json` (new, CLI-owned, same manifest shape; seeded with
+`productVersion 0.3.0`, matching `workspace.package.version`). The
+`LICO_CLIENT_PRODUCT_VERSION` env-var contract is unchanged —
+`crates/licoup-native/build.rs` consumes it. The remaining decision for the
+maintainer: is the embedded "product version" of `licoup-cli` the crate version
+or still the Desktop product version? **Decision needed (§5).**
 
 ### 3.2 Bridge contract codegen — `schemas/client_bridge` ↔ `crates/licoup-native/src/ffi/generated/`
 
@@ -302,16 +302,26 @@ product docs stay in Desktop). This repo authors its own `AGENTS.md`/
 ## 4. Verification checklist (run after the copy)
 
 1. `cargo metadata --locked` — every member resolves; `sdk/usage-source` and
-   `components/*` stay standalone.
+   `components/*` stay standalone. **PASS (44 members; standalone workspaces
+   also resolve `--locked`).**
 2. `cargo test --workspace --no-run` — the two `[[test]]` targets at
    `../../tests/integration/{extension_isolation,usage_sources}/main.rs` resolve.
+   **Partially verified:** `cargo check -p licoup-native --tests --locked` and
+   `components/analytics cargo check --tests --locked` both pass, so both
+   external `[[test]]` targets compile. Full `--no-run` was not executed
+   (compile-clean is this lane's bar, not test execution).
 3. `cargo publish --dry-run -p licoup-vault -p licoup-statistics
    -p licoup-private-gateway -p licoup-public-gateway` — path+version deps
-   hold for the publishable family.
+   hold for the publishable family. **NOT RUN** (deferred — publish is gated
+   anyway).
 4. `node tools/scripts/cargo-client.mjs build --bin licoup-cli` — after the
-   §3.1 rewire.
+   §3.1 rewire. **NOT RUN** (`cargo check -p licoup-native` covers compile;
+   the runner's Node harness smoke is deferred).
 5. `rg -l "apps/|packages/|schemas/client_bridge" tools/ tests/ crates/` — zero
    hits outside an allow-list of intentional cross-repo references.
+   **Residual hits exist** in copied tests/tools that assert on Desktop paths
+   (`apps/`, `packages/`, `docs/modules`, `docs/RUNBOOK.md` etc.) — expected
+   per §3.4 note; listed in §6.
 
 ## 5. Open questions for the maintainer
 
@@ -328,6 +338,191 @@ product docs stay in Desktop). This repo authors its own `AGENTS.md`/
 5. **Tooling runtime**: keep the moved `.mjs` fleet Node-driven with a local
    `package.json`, or port the Rust-facing subset to a `justfile`?
 6. **`schemas/` destination confirm**: `extensions/` + `subagent_mcp/` move here
-   (consumers moved); `client_bridge/` stays. OK?
+   (consumers moved); `client_bridge/` — resolved differently than proposed:
+   vendored copy here for compile/test inputs, Desktop remains the contract
+   authority (§1.7, delta D1). OK?
 7. **AGENTS/CONTRIBUTING**: author fresh minimal guides here, or adapt the
    monorepo's during the copy?
+
+## 6. Copy delta — manifest gaps found during the copy
+
+The copy extended the manifest where moved sources required paths the manifest
+did not list. Nothing was deleted from these lists; each delta names why the
+path is required.
+
+### D1 `schemas/client_bridge/` — all 9 files (vendored)
+
+Required to compile/test moved Rust sources:
+
+- `crates/licoup-platform-bridges/src/abi.rs:5` —
+  `include_str!("../../../schemas/client_bridge/client_runtime_abi.json")`
+  (hard `cargo check` blocker; fixed the first build failure).
+- `crates/licoup-native/src/ffi/secure_mesh_mobile_ffi/tests/contract.rs` —
+  `include_str!`s `secure_mesh.json` (test target).
+- `crates/licoup-native/tests/{cli_command_contract_cases.rs,
+  package_route_registry.rs, package_lifecycle/commands.rs}` — read
+  `model_selection.json`, `package.json`, `manifest.json` at test runtime.
+
+Ownership is unchanged: Desktop owns the contract (§3.2); this is the vendored
+copy the §3.2(c) recommendation already implies. Edits must still land in
+Desktop first.
+
+### D2 `tools/scripts/config/` — 16 files
+
+`tools/scripts/config/secure-mesh-*.json` (15) are the runtime configs consumed
+by the moved `client-secure-mesh-*` tools;
+`tools/scripts/config/agent-conversation-verification-models.toml` is read by
+the moved `tools/scripts/lib/agent-conversation-verification-models.mjs`. The
+remaining config files (`client-artifact-verification-receipts*`,
+`client-release-acceptance*`, `readme-fast-files.json`) stay in Desktop.
+
+### D3 `tools/scripts/` additional entries required by moved code
+
+| File | Pulled in by |
+| --- | --- |
+| `migration-crate-tests.mjs` | Invoked (`node(...)`) by the moved regression groups `rust-catalog-convergence`/`rust-platform`; it is the cargo-test runner for the moved `licoup-migrate` crate. |
+| `client-gate-policy.mjs` | `import`ed by moved `tests/contract/client/model-pricing.test.mjs` (`CLIENT_GATE_LANES`, `classifyClientGatePaths`). Pure policy-data module. |
+| `client-test-artifacts.mjs` | `import`ed by moved `tools/scripts/lib/test-artifact-lifecycle.test.mjs`. |
+| `client-module-regression.mjs` | `import`ed by moved `tools/regression/client-module-regression-tests/support.mjs` (the module-regression runner for the rust lane). |
+| `client-toolchain-env.mjs` | `import`ed by `client-module-regression.mjs`. |
+| `tools/cli-version.json` (new) | §3.1 rewire of `cargo-client.mjs`. |
+
+### D4 `tools/scripts/lib/` — exact copied subset
+
+The `lib/` copy is the import closure of the moved scripts/tests (computed, not
+guessed): `agent-conversation-release-binding.mjs`,
+`agent-conversation-verification-models{,.test}.mjs`,
+`bounded-child-process.mjs`, `cargo-test-filter-runner{,.test}.mjs`,
+`client-release-artifact-digest{,/constants,/helpers,/path,/read,/tree}.mjs`,
+`client-release-target-evidence.mjs`, `client-source-state-digest.mjs`,
+`licoarc-badtower-acceptance-report.mjs`, `licoarc-badtower-candidate-binding.mjs`,
+`licoarc-v1-bundle-validator.mjs`, `linux-tar-resource-bounds.mjs`,
+`macos-bundle-integrity.mjs`, `privacy-test-fixtures.mjs`,
+`release-closure-challenge.mjs`, `review-signoff-verifier.mjs`,
+`safe-report-io.mjs`, `sanitize-error.mjs`, `secure-client-contract.mjs`,
+`secure-client-mesh-authority-proof.mjs`,
+`secure-client-mesh-e2ee-ref-report.mjs`,
+`secure-client-mesh-e2ee-route-plan.mjs`,
+`secure-client-mesh-evidence-contract.mjs`,
+`secure-client-mesh-release-contract.mjs`, `secure-mesh-*-config.mjs` (12),
+`secure-mesh-android-capabilities.mjs`, `secure-mesh-capability-report.mjs`,
+`secure-mesh-linux-evidence{,/…}.mjs` (6), `secure-mesh-linux-node.mjs`,
+`secure-mesh-linux-secret-service-capability.mjs`,
+`secure-mesh-physical-report-coverage.mjs`,
+`secure-mesh-trust-ux-reducer.mjs`, `source-check-bundle.mjs`,
+`test-artifact-lifecycle{,.test,/…}.mjs` (11).
+
+Stayed in Desktop: `android-*`, `better-plan-evidence-ledger*`,
+`client-package-compatibility`, `client-release-dependency-receipts`,
+`client-release-package-payload`, `client-release-targets`,
+`macos-app-lifecycle`, `project-temporary-directory-lifecycle*`,
+`release-tool-environment`, `repository-sensitive-file-policy`,
+`secure-mesh-client-boundary-config`, `source-bound-policy-snapshot`,
+`update-signing-keychain`, `windows-pe-facts`.
+
+### D5 `tools/regression/` — the catalog machinery beyond `groups/rust-*.mjs`
+
+`client-module-catalog.mjs` imports **all** eight group files
+(`flutter.mjs`, `regression.mjs`, `bridge-packaging-release.mjs` included — they
+are inert module-definition data), and the moved regression tests transitively
+need `helpers.mjs`, `order.mjs`, `client-module-selection.mjs`,
+`client-module-execution.mjs`, `client-regression-batching.mjs`,
+`client-regression-compatibility.mjs`, `client-regression-metadata.mjs`,
+`client-regression-metrics.mjs`, `client-regression-report.mjs`,
+`client-regression-toolchain-stats/{rust,flutter}.mjs`,
+`client-regression-entries/**` (also `import`ed directly by moved
+`client-upstream-agent-probe.mjs`) and
+`client-module-regression-tests/{support,rust-selection,secure-mesh-ownership,
+conversation-ownership,platform-driver-ownership}.mjs`. All copied.
+
+Stayed in Desktop: `client-contract-selection.mjs`,
+`client-node-test-attribution-reporter.mjs`,
+`client-module-regression-tests/{catalog-integrity,flutter-selection,
+runner-safety}.mjs`.
+
+The catalog's flutter/packaging group files were copied unchanged even though
+they name Desktop-only paths: they are data needed for the catalog to
+assemble. Whether the CLI-side catalog should drop non-CLI groups (and whether
+`catalog-integrity.mjs`/`runner-safety.mjs` should then move too) is a Desktop
+slim-down + tooling-runtime decision (§5.5).
+
+### D6 `docs/` subset (§3.9 "copy-time" clause)
+
+`docs/protocols/` (all — `lico-subagent-mcp.test.mjs` reads
+`subagent-mcp.md[.zh-CN]`), `docs/architecture/` (all — every document is
+crate/native-facing; `tools/architecture-graph` also publishes here),
+`docs/adrs/` (all — `assistant-workflow-contract.test.mjs` reads
+0003/0004/0005; the ADR set is kept whole so numbering stays coherent),
+`docs/modules/endpoint-collaboration.md` (module doc for the moved
+`components/endpoint-collaboration`; read by three moved `endpoint-*` tests).
+
+Residual known-broken refs inside moved tests/tools (Desktop-owned docs:
+`docs/RUNBOOK.md`, `docs/CLOSURE.md`, `docs/plans/`, `docs/functionality/`,
+`apps/`, `packages/`): intentional per §3.4 — they pin the *parity* between
+moved sources and Desktop surfaces, and are flagged for the follow-on lanes.
+
+### D7 `tests/contract/client/` — applied classification (69 moved / 51 stayed + 2 dirs)
+
+Moved the 69 tests whose primary artifact is a moved source (see the `git log`
+file list; rule from §3.4 plus the manifest's explicit examples). Judgment
+calls beyond the manifest examples:
+
+- Moved (feature is native/agent/protocol, reads a staying path only
+  incidentally): `agent-scan-paths`, `agent-usage-codex-source-bundle`,
+  `local-data-egress-boundary`, `native-stdio-rpc-source-bundle`,
+  `conversation-attachment-wire`, `endpoint-device-entry-join`,
+  `agent-conversation-parity-reducer{,-source-bundle}`,
+  `acp-verification-settings`, `continuous-assistant-{adoption,evaluation,
+  integration,scenarios}` (run `tests/product-e2e/cli/**` + cargo targets),
+  `e2ee-evidence-bundle`, `linux-node-matrix`, `linux-vm-package-receipt`,
+  `macos-keychain-user-presence`, `pairwise-content-audit`,
+  `secure-mesh-release-proof-bundle` source bundles (target moved
+  `client-secure-mesh-*` tools), `client-state-migration{,-diagnostic}`
+  (target moved `client-state-migration*` tools + crate + fixtures),
+  `client-state-source-bundle`, `client-update-source-bundle`,
+  `file-security-source-bundle`, `client-gate-policy`-consuming
+  `model-pricing`.
+- Stayed (artifact is Desktop-owned even where the test greps a moved path):
+  `cli-command-admission-source-bundle` (per manifest), bridge-contract parity
+  tests — `client-state-contract`, `secure-mesh-contract`,
+  `continuous-assistant-contract`, `typed-client-error-chain`,
+  `unified-conversation-backend`, `adaptive-flywheel-strategy`,
+  `client-bridge-generation` (load `schemas/client_bridge/*` as the contract
+  under test), `client-architecture-*` (assert `apps/desktop` module rules),
+  `client-gate-policy`, `client-regression-batching`,
+  `client-toolchain-runner-source-bundle`, `agent-auth-status` (targets
+  non-moved `client-agent-auth-status` tool), `client-agent-regression-entries`
+  (targets the entries registry, copied only as a transitive dep),
+  `cli-vm-source-bundle`, `android-physical-install-launch-source-bundle`,
+  `artifact-verification-receipts-source-bundle`,
+  `release-acceptance-source-bundle`, `readme-fast-path`,
+  `repository-identity-policy`, `macos-release-candidate`, `client-build`,
+  `client-promotion`, `client-weekly-release`, `package-client/`,
+  `verify-client-plan/`, plus the manifest's stated stays.
+
+### D8 Repo-identity tooling required by `.githooks/`
+
+The copied `.githooks/{commit-msg,pre-commit,pre-push}` exec
+`tools/scripts/repository-identity-policy.mjs` — discovered when the first
+commit attempt failed `MODULE_NOT_FOUND`. Copied with it:
+`tools/scripts/repository-rulesets.mjs` (referenced as a managed path) and
+`tools/scripts/lib/repository-sensitive-file-policy.mjs` (its only import).
+These are repo-governance tools; §1.6's classification placed them in the
+Desktop lane, but the §1.1 hooks copy makes them load-bearing here.
+
+Install note: the identity gate derives the canonical GitHub identity from the
+already-configured `user.email`, so `repository-identity-policy.mjs install`
+cannot bootstrap an unconfigured checkout. The local checkout's git config was
+set to the same canonical identity the source repo carries
+(`user.name`/`user.email` = GitHub noreply form, `core.hooksPath=.githooks`);
+the commit was made unsigned (`--no-gpg-sign`) because GitVault owner rules are
+not yet configured in this repo — both expected at this stage.
+
+### D9 Root/additional files
+
+`tools/cli-version.json` (new, §3.1). `Cargo.lock` copied verbatim — `cargo
+metadata --locked` and `cargo check --workspace --locked` both pass, so it was
+NOT regenerated. `rust-toolchain.toml` already matched. Member manifests that
+carried `repository = ".../LicoUp.git"` (15 files incl.
+`sdk/usage-source/Cargo.toml`) were re-pointed to `LicoUp-CLI.git` to match the
+staged root manifest.

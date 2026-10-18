@@ -1,0 +1,19 @@
+schema_version = "lico.agent-cli-registration.v1"
+
+# Generic CLI/PTY fallback for catalog agents that have no dedicated
+# RuntimeAdapter. Dedicated *_driver adapters stay highest capability and
+# win in runtime_lane_for_agent before this table is consulted.
+
+[[agents]]
+id = "grok"
+label = "Grok CLI"
+command = "grok"
+args = []
+stream_mode = "pty"
+
+[[agents]]
+id = "command-code"
+label = "Command Code CLI"
+command = "command-code"
+args = []
+stream_mode = "pty"

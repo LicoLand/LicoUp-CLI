@@ -1,0 +1,95 @@
+error[E0599]: no function or associated item named `default` found for struct `SecretStoreConsumedPresence` in the current scope
+ --> tests/ui/macos_presence_capability_forgery.rs:9:34
+  |
+9 |     SecretStoreConsumedPresence::default()
+  |                                  ^^^^^^^ function or associated item not found in `SecretStoreConsumedPresence`
+  |
+  = help: items from traits can only be used if the trait is implemented and in scope
+  = note: the following trait defines an item `default`, perhaps you need to implement it:
+          candidate #1: `Default`
+
+error[E0599]: no method named `clone` found for struct `SecretStoreConsumedPresence` in the current scope
+  --> tests/ui/macos_presence_capability_forgery.rs:13:19
+   |
+13 |     let _ = value.clone();
+   |                   ^^^^^ method not found in `SecretStoreConsumedPresence`
+   |
+   = help: items from traits can only be used if the trait is implemented and in scope
+   = note: the following trait defines an item `clone`, perhaps you need to implement it:
+           candidate #1: `Clone`
+
+error[E0599]: no function or associated item named `new` found for struct `SecretStoreConsumedPresence` in the current scope
+  --> tests/ui/macos_presence_capability_forgery.rs:17:34
+   |
+17 |     SecretStoreConsumedPresence::new()
+   |                                  ^^^ function or associated item not found in `SecretStoreConsumedPresence`
+
+error[E0451]: field `0` of struct `SecretStoreConsumedPresence` is private
+  --> tests/ui/macos_presence_capability_forgery.rs:22:9
+   |
+22 |         0: panic!("private consumed-presence field"),
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ private field
+
+error[E0599]: no function or associated item named `default` found for struct `SecretStorePresenceGrant` in the current scope
+  --> tests/ui/macos_presence_capability_forgery.rs:27:31
+   |
+27 |     SecretStorePresenceGrant::default()
+   |                               ^^^^^^^ function or associated item not found in `SecretStorePresenceGrant`
+   |
+   = help: items from traits can only be used if the trait is implemented and in scope
+   = note: the following trait defines an item `default`, perhaps you need to implement it:
+           candidate #1: `Default`
+
+error[E0599]: no method named `clone` found for struct `SecretStorePresenceGrant` in the current scope
+  --> tests/ui/macos_presence_capability_forgery.rs:31:19
+   |
+31 |     let _ = value.clone();
+   |                   ^^^^^ method not found in `SecretStorePresenceGrant`
+   |
+   = help: items from traits can only be used if the trait is implemented and in scope
+   = note: the following trait defines an item `clone`, perhaps you need to implement it:
+           candidate #1: `Clone`
+
+error[E0599]: no function or associated item named `new` found for struct `SecretStorePresenceGrant` in the current scope
+  --> tests/ui/macos_presence_capability_forgery.rs:35:31
+   |
+35 |     SecretStorePresenceGrant::new()
+   |                               ^^^ function or associated item not found in `SecretStorePresenceGrant`
+
+error[E0451]: field `0` of struct `SecretStorePresenceGrant` is private
+  --> tests/ui/macos_presence_capability_forgery.rs:40:9
+   |
+40 |         0: panic!("private presence-grant field"),
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ private field
+
+error[E0599]: no function or associated item named `default` found for struct `MacosAuthorizedPresence` in the current scope
+  --> tests/ui/macos_presence_capability_forgery.rs:45:30
+   |
+45 |     MacosAuthorizedPresence::default()
+   |                              ^^^^^^^ function or associated item not found in `MacosAuthorizedPresence`
+   |
+   = help: items from traits can only be used if the trait is implemented and in scope
+   = note: the following trait defines an item `default`, perhaps you need to implement it:
+           candidate #1: `Default`
+
+error[E0599]: no method named `clone` found for struct `MacosAuthorizedPresence` in the current scope
+  --> tests/ui/macos_presence_capability_forgery.rs:49:19
+   |
+49 |     let _ = value.clone();
+   |                   ^^^^^ method not found in `MacosAuthorizedPresence`
+   |
+   = help: items from traits can only be used if the trait is implemented and in scope
+   = note: the following trait defines an item `clone`, perhaps you need to implement it:
+           candidate #1: `Clone`
+
+error[E0599]: no function or associated item named `new` found for struct `MacosAuthorizedPresence` in the current scope
+  --> tests/ui/macos_presence_capability_forgery.rs:53:30
+   |
+53 |     MacosAuthorizedPresence::new()
+   |                              ^^^ function or associated item not found in `MacosAuthorizedPresence`
+
+error[E0451]: field `0` of struct `MacosAuthorizedPresence` is private
+  --> tests/ui/macos_presence_capability_forgery.rs:58:9
+   |
+58 |         0: panic!("private authorized-presence field"),
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ private field

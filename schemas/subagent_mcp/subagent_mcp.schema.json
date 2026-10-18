@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://licoland.com/schemas/subagent_mcp/subagent_mcp.schema.json",
+  "title": "LicoUp Subagent MCP Public Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocolRevision", "server", "tools", "receiptSchema"],
+  "properties": {
+    "protocolRevision": { "const": "2025-06-18" },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "lico-up-subagents" },
+        "version": { "const": "0.14.0" }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "lico_subagents_list" },
+        { "const": "lico_subagent_probe" },
+        { "const": "lico_subagent_delegate" },
+        { "const": "lico_subagent_continue" },
+        { "const": "lico_subagent_cancel" }
+      ],
+      "minItems": 5,
+      "maxItems": 5
+    },
+    "receiptSchema": { "const": "licoup.subagent.receipt.v3" }
+  }
+}

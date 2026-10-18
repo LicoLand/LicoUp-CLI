@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.e2ee-report-scope-config.v2",
+  "authority": "external-client",
+  "scopeEvidenceFreshnessSeconds": 604800,
+  "claimAuthorities": {
+    "independentCryptoReviewClaims": "independent-audit",
+    "stationInteroperabilityClaims": "external-client"
+  },
+  "reports": {
+    "build/reports/secure-mesh-pairwise-content-crypto-audit.json": {
+      "blocker": "pairwise/content crypto audit",
+      "claims": [
+        "clientRuntimeClaims",
+        "independentCryptoReviewClaims"
+      ],
+      "evidenceType": "redacted-static-native-test-and-vector-corpus-client-runtime-evidence"
+    },
+    "build/reports/secure-mesh-platform-secret-store-matrix.json": {
+      "blocker": "platform secret-store binding",
+      "claims": [
+        "clientRuntimeClaims",
+        "platformSecretStoreClaims"
+      ],
+      "evidenceType": "redacted-platform-secret-store-runtime-binding-gap-evidence"
+    },
+    "build/reports/secure-mesh-physical-device-matrix.json": {
+      "blocker": "physical device matrix",
+      "claims": [
+        "physicalDeviceClaims"
+      ],
+      "evidenceType": "redacted-physical-device-matrix-gap-evidence"
+    },
+    "build/reports/secure-mesh-physical-evidence-manifest.json": {
+      "blocker": "physical device matrix",
+      "claims": [
+        "physicalDeviceClaims"
+      ],
+      "evidenceType": "redacted-physical-evidence-manifest-gap-evidence"
+    },
+    "build/reports/licoarc-badtower-acceptance.json": {
+      "blocker": "Lico Arc BadTower interoperability",
+      "claims": [
+        "clientRuntimeClaims",
+        "stationInteroperabilityClaims"
+      ],
+      "evidenceType": "redacted-licoarc-badtower-interoperability-acceptance"
+    },
+    "build/reports/secure-mesh-encrypted-file-handoff.json": {
+      "blocker": "encrypted file handoff",
+      "claims": [
+        "clientRuntimeClaims",
+        "encryptedFileHandoffClaims"
+      ],
+      "evidenceType": "redacted-native-file-codec-cli-ffi-and-policy-gap-evidence"
+    },
+    "build/reports/secure-mesh-trust-ux.json": {
+      "blocker": "trust UX",
+      "claims": [
+        "trustUxClaims"
+      ],
+      "evidenceType": "redacted-static-trust-ux-gap-evidence"
+    },
+    "build/reports/secure-mesh-release-proof-bundle.json": {
+      "blocker": "release proof bundle",
+      "claims": [
+        "releaseArtifactClaims"
+      ],
+      "evidenceType": "redacted-release-proof-bundle-gap-evidence"
+    }
+  }
+}

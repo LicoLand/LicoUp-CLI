@@ -1,0 +1,53 @@
+{
+  "machines": [
+    {
+      "id": "extension.instance",
+      "rust_module": "extension_instance",
+      "states": [
+        { "id": "discovered" },
+        { "id": "preparing" },
+        { "id": "active" },
+        { "id": "draining" },
+        { "id": "stopped" },
+        { "id": "failed" },
+        { "id": "quarantined" }
+      ],
+      "events": [
+        "observe-discovered",
+        "observe-preparing",
+        "observe-active",
+        "observe-draining",
+        "observe-stopped",
+        "observe-failed",
+        "observe-quarantined"
+      ],
+      "initial": "discovered",
+      "terminal": [],
+      "transitions": [
+        { "from_state": "discovered", "event": "observe-discovered", "to_state": "discovered" },
+        { "from_state": "discovered", "event": "observe-preparing", "to_state": "preparing" },
+        { "from_state": "discovered", "event": "observe-stopped", "to_state": "stopped" },
+        { "from_state": "discovered", "event": "observe-failed", "to_state": "failed" },
+        { "from_state": "discovered", "event": "observe-quarantined", "to_state": "quarantined" },
+        { "from_state": "preparing", "event": "observe-preparing", "to_state": "preparing" },
+        { "from_state": "preparing", "event": "observe-active", "to_state": "active" },
+        { "from_state": "preparing", "event": "observe-stopped", "to_state": "stopped" },
+        { "from_state": "preparing", "event": "observe-failed", "to_state": "failed" },
+        { "from_state": "preparing", "event": "observe-quarantined", "to_state": "quarantined" },
+        { "from_state": "active", "event": "observe-active", "to_state": "active" },
+        { "from_state": "active", "event": "observe-draining", "to_state": "draining" },
+        { "from_state": "active", "event": "observe-failed", "to_state": "failed" },
+        { "from_state": "active", "event": "observe-quarantined", "to_state": "quarantined" },
+        { "from_state": "draining", "event": "observe-draining", "to_state": "draining" },
+        { "from_state": "draining", "event": "observe-stopped", "to_state": "stopped" },
+        { "from_state": "draining", "event": "observe-failed", "to_state": "failed" },
+        { "from_state": "stopped", "event": "observe-stopped", "to_state": "stopped" },
+        { "from_state": "failed", "event": "observe-failed", "to_state": "failed" },
+        { "from_state": "failed", "event": "observe-stopped", "to_state": "stopped" },
+        { "from_state": "failed", "event": "observe-quarantined", "to_state": "quarantined" },
+        { "from_state": "quarantined", "event": "observe-quarantined", "to_state": "quarantined" },
+        { "from_state": "quarantined", "event": "observe-stopped", "to_state": "stopped" }
+      ]
+    }
+  ]
+}

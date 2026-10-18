@@ -1,0 +1,15 @@
+[package]
+name = "licoup-vault"
+version = "0.1.0"
+edition = "2024"
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "LicoUp credential vault: the LLM API-key lease contract, inventory schema and the custody port a runtime consumes."
+
+[dependencies]
+anyhow.workspace = true
+licoup-foundation = { path = "../licoup-foundation", version = "0.3.0" }
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true

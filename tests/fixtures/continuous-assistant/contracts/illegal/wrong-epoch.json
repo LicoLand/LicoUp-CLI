@@ -1,0 +1,15 @@
+{
+  "expect": { "status": "reject", "reason": "designation_changed", "check": "versions" },
+  "basis": {
+    "conversationId": "conversation:group",
+    "revision": 4,
+    "designationEpoch": 2
+  },
+  "payload": {
+    "conversationId": "conversation:group",
+    "sourceEventRefs": [],
+    "observedRevision": 4,
+    "designationEpoch": 0,
+    "requestId": "request:epoch"
+  }
+}

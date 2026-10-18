@@ -1,0 +1,56 @@
+[package]
+name = "licoup-agent-kimi"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "Kimi Code adapter package: the Kimi ACP driver half and its frame dialect"
+
+# The crate is one package's program. `parser` is this Agent's vendor protocol
+# below the adapter port: the Kimi ACP frame interpretation that classifies one
+# LF-delimited JSON line exactly once, per ADR-0008. `dialect` answers the
+# shared ACP transport's port from that parser, `driver` is the Kimi half of one
+# ACP execution (the launch metadata and the two bounded entry points the shared
+# engine runs), `registration` is what composition injects into
+# `licoup-agent-adapter-sdk`, `replay` is the arm that drives the same dialect
+# from a recorded transcript, and `port` names the seam the host answers.
+#
+# The kernel links no part of this crate's protocol. Composition names the crate
+# for its dialect registration and its replay arm while the extension host's
+# binary route is completed by the agent-execution port; nothing here reaches
+# back into a client crate.
+[features]
+default = []
+# The recorded-transcript replay arm. It is a feature rather than `cfg(test)`
+# because the arm is driven from the host's test build, which links this crate
+# as a dependency — and `cfg(test)` is false for a dependency, so a `cfg(test)`
+# arm is compiled out of exactly the build that calls it. The host enables
+# `licoup-agent-kimi/test-support` from its own `test-support` feature.
+test-support = ["licoup-agent-drivers/test-support"]
+
+[dependencies]
+licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+# The shared ACP engine and the port its transport reads one Agent's frame
+# dialect through. This package owns Kimi's half of that dialect; it owns no
+# part of the engine, and the engine names no Agent.
+licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+# The ACP envelope codec every ACP dialect decodes through.
+licoup-foundation = { path = "../licoup-foundation" }
+serde_json.workspace = true
+
+[[bin]]
+name = "lico-agent-kimi"
+path = "src/bin/lico-agent-kimi.rs"
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the package binary, which links no kernel
+# crate and reads its own package documents as data.
+[dev-dependencies]
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-agent-drivers = { path = "../licoup-agent-drivers", features = ["test-support"] }
+# The package's own integration test drives the replay arm, so the test build
+# enables the feature that compiles it. It is a self-dependency because
+# `dev-dependencies` features apply to the test targets and nothing else.
+licoup-agent-kimi = { path = ".", features = ["test-support"] }

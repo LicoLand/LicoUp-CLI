@@ -1,0 +1,33 @@
+{
+  "lockNames": [
+    ".cargo-lock",
+    ".cargo-build-lock"
+  ],
+  "compilerDirectories": [
+    ".fingerprint",
+    "build",
+    "deps",
+    "examples",
+    "incremental",
+    "native",
+    "tmp"
+  ],
+  "compilerFiles": [
+    ".future-incompat-report.json",
+    ".rustc_info.json"
+  ],
+  "compilerSuffixes": [
+    ".a",
+    ".d",
+    ".dylib",
+    ".dll",
+    ".exe",
+    ".lib",
+    ".o",
+    ".pdb",
+    ".rlib",
+    ".rmeta",
+    ".so",
+    ".wasm"
+  ]
+}

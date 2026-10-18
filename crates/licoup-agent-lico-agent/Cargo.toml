@@ -1,0 +1,62 @@
+[package]
+name = "licoup-agent-lico-agent"
+version = "0.14.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "Lico Agent adapter package: the stdio JSONL RPC protocol, its session identity and its plan layout"
+
+# The crate is one package's program. `parser` is this Agent's protocol below
+# the adapter port: the `lf-jsonl-jsonrpc` channel, where one LF-delimited JSON
+# frame becomes one effect exactly once, per ADR-0008. `session` is the RPC
+# session identity, the transcript layout and the active plan layout that
+# protocol's `--session-id`/`--resume`/`--plan-path` contract defines, `driver`
+# is the Agent's own half of one turn — the launch, the supervised stdio
+# exchange, the sealed Plan profile and the capability probe — `registration` is
+# what composition injects into `licoup-agent-adapter-sdk`, `replay` is the arm
+# that drives the same parser from a recorded transcript, and `port` names the
+# seams the host answers.
+#
+# The kernel links no part of this crate's protocol. Composition names the crate
+# for its parser registration and its replay arm while the extension host's
+# binary route is completed by the agent-execution port; nothing here reaches
+# back into a client crate. The process supervision, workspace bound and raw byte
+# record are foundation primitives, the login-shell environment and the Agent
+# core's profile and transcript vocabulary are `licoup-agent-targets`', and the
+# platform sandbox primitive arrives through `port::sandbox`.
+[features]
+default = []
+
+[dependencies]
+licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+# The portable data root and the private-directory primitive the RPC session
+# store and the active plan file are opened through. The layout is this
+# package's; the hardening rule is shared, so the package cannot open a session
+# directory a neighbouring owner would refuse.
+licoup-foundation = { path = "../licoup-foundation" }
+# The Lico-owned Agent core: the profile vocabulary a `--profile` argument names
+# and the persisted-transcript reader a resume is checked against, plus the login
+# shell environment every Agent launch starts from. The core stays its own
+# owner's; this package reads it rather than keeping a second copy.
+licoup-agent-targets = { path = "../licoup-agent-targets" }
+serde_json.workspace = true
+# The native session identity is a UUID the packaged program resumes by, so the
+# rule that mints one is the protocol's own.
+uuid.workspace = true
+
+[[bin]]
+name = "lico-agent-lico-agent"
+path = "src/bin/lico-agent-lico-agent.rs"
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the package binary, which links no kernel
+# crate and reads its own package documents as data.
+[dev-dependencies]
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+# The readiness-handshake tests pin the launch environment snapshot their fake
+# agent is steered through. That seam travels behind an explicit feature because
+# `cfg(test)` is false for a dependency, so this package's test build asks for
+# it exactly as the client's own test build does.
+licoup-agent-targets = { path = "../licoup-agent-targets", features = ["test-support"] }

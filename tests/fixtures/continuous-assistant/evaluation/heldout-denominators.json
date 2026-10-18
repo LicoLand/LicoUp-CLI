@@ -1,0 +1,72 @@
+{
+  "schema": "licoup.continuity.evaluation-denominators/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "responsibilityId": "responsibility:evaluation",
+  "expect": {
+    "falseTakeoverErrors": 1,
+    "falseTakeoverOpportunities": 4,
+    "missedCommitmentErrors": 2,
+    "missedCommitmentOpportunities": 4,
+    "coverageAbstentions": 1,
+    "coverageOpportunities": 8
+  },
+  "families": [
+    {
+      "id": "fam:neg:0",
+      "split": "heldout",
+      "subgroup": "en",
+      "polarity": "negative",
+      "judgment": "correct"
+    },
+    {
+      "id": "fam:neg:1",
+      "split": "heldout",
+      "subgroup": "zh-CN",
+      "polarity": "negative",
+      "judgment": "falseTakeover"
+    },
+    {
+      "id": "fam:neg:2",
+      "split": "heldout",
+      "subgroup": "coding",
+      "polarity": "negative",
+      "judgment": "correct"
+    },
+    {
+      "id": "fam:neg:3",
+      "split": "heldout",
+      "subgroup": "non-coding",
+      "polarity": "negative",
+      "judgment": "correct"
+    },
+    {
+      "id": "fam:pos:0",
+      "split": "heldout",
+      "subgroup": "en",
+      "polarity": "positive",
+      "judgment": "correct"
+    },
+    {
+      "id": "fam:pos:1",
+      "split": "heldout",
+      "subgroup": "zh-CN",
+      "polarity": "positive",
+      "judgment": "missedCommitment"
+    },
+    {
+      "id": "fam:pos:2",
+      "split": "heldout",
+      "subgroup": "coding",
+      "polarity": "positive",
+      "judgment": "abstain"
+    },
+    {
+      "id": "fam:pos:3",
+      "split": "heldout",
+      "subgroup": "compound-or-returning",
+      "polarity": "positive",
+      "judgment": "correct"
+    }
+  ]
+}

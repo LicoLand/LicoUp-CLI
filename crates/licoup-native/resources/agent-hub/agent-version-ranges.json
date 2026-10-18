@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "v0.0.1:client-agent-version-ranges-1",
+  "note": [
+    "One row per Agent whose installed version this Host probes. A row declares",
+    "the version domains its own probe reports and the ranges that admit or are",
+    "refused. A row with no supported range declares no bound: this repository",
+    "states no vendor minimum it has not verified, so a bound is added together",
+    "with the evidence for it, and until then only a version the probe cannot",
+    "compare is refused."
+  ],
+  "ranges": [
+    {
+      "agentId": "codex",
+      "schemes": ["semver"],
+      "supported": [],
+      "unsupported": []
+    },
+    {
+      "agentId": "cursor",
+      "schemes": ["date-hash", "semver"],
+      "supported": [],
+      "unsupported": []
+    },
+    {
+      "agentId": "opencode",
+      "schemes": ["semver"],
+      "supported": [],
+      "unsupported": []
+    },
+    {
+      "agentId": "claude-code",
+      "schemes": ["semver"],
+      "supported": [],
+      "unsupported": []
+    },
+    {
+      "agentId": "pi",
+      "schemes": ["semver"],
+      "supported": [],
+      "unsupported": []
+    },
+    {
+      "agentId": "openclaw",
+      "schemes": ["semver"],
+      "supported": [],
+      "unsupported": []
+    },
+    {
+      "agentId": "hermes",
+      "schemes": ["semver"],
+      "supported": [],
+      "unsupported": []
+    },
+    {
+      "agentId": "antigravity",
+      "schemes": ["semver"],
+      "supported": [],
+      "unsupported": []
+    },
+    {
+      "agentId": "deepseek-harness",
+      "schemes": ["semver"],
+      "supported": [],
+      "unsupported": []
+    }
+  ]
+}

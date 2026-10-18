@@ -1,0 +1,309 @@
+{
+  "schemaVersion": "lico.agent-adapter-tier-projection.v1",
+  "derivation": "first-class requires complete human-reviewed replay scenario coverage and passing native e2e evidence; otherwise best-effort",
+  "sources": [
+    "apps/desktop/test/fixtures/adapter-replay",
+    "agent-conversation-evidence.json"
+  ],
+  "adapters": [
+    {
+      "agentId": "openclaw",
+      "tier": "best-effort",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": false,
+        "e2eEvidencePresent": false
+      }
+    },
+    {
+      "agentId": "claude-code",
+      "tier": "first-class",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": true,
+        "e2eEvidencePresent": true
+      }
+    },
+    {
+      "agentId": "codex",
+      "tier": "first-class",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": true,
+        "e2eEvidencePresent": true
+      }
+    },
+    {
+      "agentId": "antigravity",
+      "tier": "first-class",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": true,
+        "e2eEvidencePresent": true
+      }
+    },
+    {
+      "agentId": "opencode",
+      "tier": "first-class",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": true,
+        "e2eEvidencePresent": true
+      }
+    },
+    {
+      "agentId": "copilot",
+      "tier": "best-effort",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": false,
+        "e2eEvidencePresent": false
+      }
+    },
+    {
+      "agentId": "kilo-code",
+      "tier": "best-effort",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": false,
+        "e2eEvidencePresent": false
+      }
+    },
+    {
+      "agentId": "cursor",
+      "tier": "first-class",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": true,
+        "e2eEvidencePresent": true
+      }
+    },
+    {
+      "agentId": "hermes",
+      "tier": "best-effort",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": false,
+        "e2eEvidencePresent": false
+      }
+    },
+    {
+      "agentId": "kimi-code",
+      "tier": "first-class",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": true,
+        "e2eEvidencePresent": true
+      }
+    },
+    {
+      "agentId": "pi",
+      "tier": "best-effort",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": false,
+        "e2eEvidencePresent": false
+      }
+    },
+    {
+      "agentId": "deepseek-harness",
+      "tier": "best-effort",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": false,
+        "e2eEvidencePresent": false
+      }
+    },
+    {
+      "agentId": "lico-agent",
+      "tier": "best-effort",
+      "derivedFrom": {
+        "replayCovered": true,
+        "replayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "reviewedReplayScenarios": [
+          "normal-turn",
+          "user-cancel",
+          "agent-error",
+          "streaming-interruption",
+          "native-resume"
+        ],
+        "e2eCovered": false,
+        "e2eEvidencePresent": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "schema": "licoup.continuity.qualification-economy-draft/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "unknownModelId": "synthetic-model-no-owner-price",
+  "expect": {
+    "nativeSuccessDifference": 0.5,
+    "unpairedNativeAverageWouldBe": 0.25
+  },
+  "pairs": [
+    {
+      "family": "family:econ:0",
+      "candidate": {
+        "measuredFullCost": 0.80,
+        "serialLatencyMs": 120,
+        "correctionCount": 1,
+        "acceptedOutcome": true
+      },
+      "baseline": {
+        "measuredFullCost": 1.00,
+        "serialLatencyMs": 80,
+        "correctionCount": 1,
+        "acceptedOutcome": true
+      },
+      "nativeDirect": {
+        "measuredFullCost": 50.0,
+        "serialLatencyMs": 5,
+        "acceptedOutcome": false
+      }
+    },
+    {
+      "family": "family:econ:1",
+      "candidate": {
+        "measuredFullCost": 0.70,
+        "serialLatencyMs": 200,
+        "correctionCount": 0,
+        "acceptedOutcome": true
+      },
+      "baseline": {
+        "measuredFullCost": 1.10,
+        "serialLatencyMs": 90,
+        "correctionCount": 2,
+        "acceptedOutcome": true
+      },
+      "nativeDirect": {
+        "measuredFullCost": 40.0,
+        "serialLatencyMs": 6,
+        "acceptedOutcome": true
+      }
+    }
+  ],
+  "excludedNatives": [
+    {
+      "measuredFullCost": 999.0,
+      "serialLatencyMs": 1,
+      "acceptedOutcome": true,
+      "taskIdentity": "task:unmatched",
+      "versionIdentity": "v2",
+      "resourceIdentity": "res:other"
+    },
+    {
+      "measuredFullCost": 7.0,
+      "serialLatencyMs": 2,
+      "acceptedOutcome": true,
+      "taskIdentity": "task:0",
+      "versionIdentity": "v2",
+      "resourceIdentity": "res:1"
+    }
+  ],
+  "unknownPriceCase": {
+    "inputTokens": 1000,
+    "outputTokens": 500,
+    "modelId": "synthetic-model-no-owner-price"
+  }
+}

@@ -1,0 +1,39 @@
+[package]
+name = "licoup-mobile-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+# The mobile entry is linked as a library by the Android and iOS native builds;
+# the desktop client keeps its own `licoup-native` executor and never links
+# this crate's mobile surface.
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[dependencies]
+# Endpoint identity/custody and the durable protocol delivery vocabulary this
+# entry speaks. The port types and the accepted protocol version are the same
+# ones the pinned SDK boundary already declares; the mobile core adds no second
+# protocol meaning.
+licoup-endpoint-core = { path = "../licoup-endpoint-core" }
+licoup-protocol-bindings = { path = "../licoup-protocol-bindings" }
+# The Canonical Conversation authority. Group list/create, membership,
+# message dispatch and event paging read and write through this owner; the
+# mobile core keeps no second group lifecycle.
+licoup-conversation = { path = "../licoup-conversation" }
+# The bounded client resource policy the mobile read model pages by, and the
+# privately written client state root the settings port is answered from.
+licoup-client-state = { path = "../licoup-client-state" }
+licoup-foundation = { path = "../licoup-foundation" }
+# The same-process ABI identity this entry registers, beside the desktop
+# runtime identity in the same crate.
+licoup-platform-bridges = { path = "../licoup-platform-bridges" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+# Reads the workspace manifests the dependency-closure fixture walks. Build-only.
+toml.workspace = true

@@ -1,0 +1,7 @@
+{
+  "schema": "licoup.ui-contribution.v1",
+  "id": "org.licoland.feature.mcp/service-status",
+  "kind": "command",
+  "title": "Subagent MCP service status",
+  "actionRef": "org.licoland.feature.mcp/service/status"
+}

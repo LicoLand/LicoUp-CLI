@@ -1,0 +1,81 @@
+{
+  "title": "SecureMeshBridge",
+  "version": 1,
+  "protocolVersion": "licomesh.secure-mesh.v1",
+  "maxRequestBytes": 1048576,
+  "maxDepth": 32,
+  "maxNodes": 16384,
+  "maxCollectionEntries": 4096,
+  "maxStringBytes": 262144,
+  "actions": [
+    "secure_mesh.status",
+    "secure_mesh.kt.configureAuthority",
+    "secure_mesh.kt.publicationRequest",
+    "secure_mesh.kt.revocationRequest",
+    "secure_mesh.kt.provision",
+    "secure_mesh.kt.gossip",
+    "secure_mesh.kt.selfMonitor",
+    "secure_mesh.kt.status",
+    "secure_mesh.mls.status",
+    "secure_mesh.mls.participant.ensure",
+    "secure_mesh.mls.keyPackage.create",
+    "secure_mesh.mls.group.create",
+    "secure_mesh.mls.member.add",
+    "secure_mesh.mls.member.remove",
+    "secure_mesh.mls.group.join",
+    "secure_mesh.mls.commit.process",
+    "secure_mesh.mls.payload.seal",
+    "secure_mesh.mls.payload.open",
+    "secure_mesh.command.execute",
+    "secure_mesh.deviceTrust.evaluate",
+    "secure_mesh.deviceTrust.verifyQr",
+    "secure_mesh.deviceTrust.verifySas",
+    "secure_mesh.deviceTrust.rotate",
+    "secure_mesh.deviceTrust.revoke",
+    "secure_mesh.deviceTrust.recover",
+    "secure_mesh.lifecycle.serviceAction",
+    "secure_mesh.file.route",
+    "secure_mesh.file.receiveDestination",
+    "secure_mesh.file.receiveConfirmation",
+    "secure_mesh.file.handoffProof",
+    "secure_mesh.approval.request",
+    "secure_mesh.approval.fanout",
+    "secure_mesh.approval.respond",
+    "secure_mesh.approval.inbox",
+    "secure_mesh.approval.adapterCapability"
+  ],
+  "failureCodes": [
+    "unsupported_action",
+    "invalid_payload",
+    "forbidden_secret_material",
+    "native_operation_failed"
+  ],
+  "fileStatuses": [
+    "drafting",
+    "evaluating",
+    "awaiting_confirmation",
+    "confirmed",
+    "rejected",
+    "failed"
+  ],
+  "approvalStatuses": [
+    "pending",
+    "resolved",
+    "expired",
+    "failed"
+  ],
+  "approvalDecisions": [
+    "allow",
+    "deny",
+    "none"
+  ],
+  "forbiddenFields": [
+    "privateKey",
+    "privateKeyMaterial",
+    "secret",
+    "seed",
+    "token",
+    "credential",
+    "absolutePath"
+  ]
+}

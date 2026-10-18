@@ -1,0 +1,445 @@
+{
+  "schema": "licoup.continuity.m3-scenarios/v1",
+  "cases": [
+    {
+      "id": "CA-F01",
+      "category": "fault",
+      "title": "before_state_commit",
+      "expectedBehavior": "all-or-none proposal, cursor and outbox",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "interrupt_before_commit",
+        "observe_all_or_none"
+      ],
+      "assertion": {
+        "originalPath": "/fault/before_state_commit",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "before_state_commit",
+      "testName": "ca_ca_f01"
+    },
+    {
+      "id": "CA-F02",
+      "category": "fault",
+      "title": "after_state_commit_before_handoff",
+      "expectedBehavior": "recover durable wake",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "commit",
+        "reopen_bound",
+        "recover_same_operation_no_replay_start"
+      ],
+      "assertion": {
+        "originalPath": "/fault/after_state_commit_before_handoff",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "after_state_commit_before_handoff",
+      "testName": "ca_ca_f02"
+    },
+    {
+      "id": "CA-F03",
+      "category": "fault",
+      "title": "after_dispatch_claim_before_native_start",
+      "expectedBehavior": "query dispatch fact, no guessed retry",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "fail_start",
+        "observe_claim_without_start",
+        "recover_once",
+        "second_attend_no_guessed_retry"
+      ],
+      "assertion": {
+        "originalPath": "/fault/after_dispatch_claim_before_native_start",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "after_dispatch_claim_before_native_start",
+      "testName": "ca_ca_f03"
+    },
+    {
+      "id": "CA-F04",
+      "category": "fault",
+      "title": "after_external_effect_before_receipt",
+      "expectedBehavior": "reconcile execution-unknown before replay",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "execute_effect",
+        "lose_receipt",
+        "replay_refused",
+        "reopen_no_replay"
+      ],
+      "assertion": {
+        "originalPath": "/fault/after_external_effect_before_receipt",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "after_external_effect_before_receipt",
+      "testName": "ca_ca_f04"
+    },
+    {
+      "id": "CA-F05",
+      "category": "fault",
+      "title": "after_receipt_before_goal_update",
+      "expectedBehavior": "reuse known result, stable logical identity",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "receipt_then_goal_update_interrupt",
+        "retry_same_settlement",
+        "reuse_receipt_identity"
+      ],
+      "assertion": {
+        "originalPath": "/fault/after_receipt_before_goal_update",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "after_receipt_before_goal_update",
+      "testName": "ca_ca_f05"
+    },
+    {
+      "id": "CA-F06",
+      "category": "fault",
+      "title": "observer_detach",
+      "expectedBehavior": "no cancellation",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "observer_detach_while_work_continues",
+        "observer_reattach",
+        "observe_zero_cancel"
+      ],
+      "assertion": {
+        "originalPath": "/fault/observer_detach",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "observer_detach",
+      "testName": "ca_ca_f06"
+    },
+    {
+      "id": "CA-F07",
+      "category": "fault",
+      "title": "native_eof_without_success",
+      "expectedBehavior": "typed terminal or interruption, not fabricated success",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "adapter_eof_without_success",
+        "typed_terminal_not_success"
+      ],
+      "assertion": {
+        "originalPath": "/fault/native_eof_without_success",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "native_eof_without_success",
+      "testName": "ca_ca_f07"
+    },
+    {
+      "id": "CA-F08",
+      "category": "fault",
+      "title": "designation_changed_during_inference",
+      "expectedBehavior": "stale epoch cannot commit new work",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "replace_assistant",
+        "stale_epoch_commit"
+      ],
+      "assertion": {
+        "originalPath": "/fault/designation_changed_during_inference",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "designation_changed_during_inference",
+      "testName": "ca_ca_f08"
+    },
+    {
+      "id": "CA-F09",
+      "category": "fault",
+      "title": "agreement_revision_changed_during_inference",
+      "expectedBehavior": "reject stale proposal",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "revise_agreement",
+        "stale_proposal"
+      ],
+      "assertion": {
+        "originalPath": "/fault/agreement_revision_changed_during_inference",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "agreement_revision_changed_during_inference",
+      "testName": "ca_ca_f09"
+    },
+    {
+      "id": "CA-F10",
+      "category": "fault",
+      "title": "acl_revoked_after_context_assembly",
+      "expectedBehavior": "deny dispatch and invalidate derived context",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "assemble",
+        "revoke_acl",
+        "deny_dispatch"
+      ],
+      "assertion": {
+        "originalPath": "/fault/acl_revoked_after_context_assembly",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "acl_revoked_after_context_assembly",
+      "testName": "ca_ca_f10"
+    },
+    {
+      "id": "CA-F11",
+      "category": "fault",
+      "title": "duplicate_callback",
+      "expectedBehavior": "one logical advancement",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "duplicate_callback",
+        "one_artifact_identity",
+        "no_extra_effects"
+      ],
+      "assertion": {
+        "originalPath": "/fault/duplicate_callback",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "duplicate_callback",
+      "testName": "ca_ca_f11"
+    },
+    {
+      "id": "CA-F12",
+      "category": "fault",
+      "title": "cancel_races_late_result",
+      "expectedBehavior": "preserve actual effect and reconcile cancel",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "request_cancel",
+        "late_result",
+        "observe_late_text_and_cancel_requested"
+      ],
+      "assertion": {
+        "originalPath": "/fault/cancel_races_late_result",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "cancel_races_late_result",
+      "testName": "ca_ca_f12"
+    },
+    {
+      "id": "CA-F13",
+      "category": "fault",
+      "title": "host_sleep_timer_backlog",
+      "expectedBehavior": "coalesce and refresh facts",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "sleep_backlog",
+        "coalesce_one_logical_review"
+      ],
+      "assertion": {
+        "originalPath": "/fault/host_sleep_timer_backlog",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "host_sleep_timer_backlog",
+      "testName": "ca_ca_f13"
+    },
+    {
+      "id": "CA-F14",
+      "category": "fault",
+      "title": "deleted_source_in_old_summary",
+      "expectedBehavior": "deny rehydration from revoked source",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "revoke_source",
+        "deny_rehydrate"
+      ],
+      "assertion": {
+        "originalPath": "/fault/deleted_source_in_old_summary",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "deleted_source_in_old_summary",
+      "testName": "ca_ca_f14"
+    },
+    {
+      "id": "CA-F15",
+      "category": "fault",
+      "title": "parallel_writer_attempt",
+      "expectedBehavior": "at most one native session writer",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "claim_second_writer"
+      ],
+      "assertion": {
+        "originalPath": "/fault/parallel_writer_attempt",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "parallel_writer_attempt",
+      "testName": "ca_ca_f15"
+    },
+    {
+      "id": "CA-F16",
+      "category": "fault",
+      "title": "qualification_revoked_before_admission",
+      "expectedBehavior": "reject unqualified automated route",
+      "initialFacts": [],
+      "inputs": [],
+      "covers": [
+        "REQ-04-001"
+      ],
+      "forbiddenEffects": [
+        "未批准的对外披露",
+        "伪造执行或验收事实"
+      ],
+      "actions": [
+        "automatic_wake_without_qualification"
+      ],
+      "assertion": {
+        "originalPath": "/fault/qualification_revoked_before_admission",
+        "observeKey": "faultBoundaryHeld",
+        "op": "eq",
+        "value": true
+      },
+      "boundary": "qualification_revoked_before_admission",
+      "testName": "ca_ca_f16"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+[package]
+name = "licoup-client-state"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Portable private client-state collections, snapshots and activity log"
+
+[dependencies]
+# The private-file access and portable data root every collection write stands on.
+licoup-foundation = { path = "../licoup-foundation", version = "0.3.0" }
+anyhow.workspace = true
+fs2.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+# The store reads and replaces collection documents one file descriptor at a
+# time, which needs the platform open flags.
+nix = { version = "0.27", default-features = false, features = ["fs", "user", "signal", "socket"] }

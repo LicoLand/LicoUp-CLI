@@ -1,0 +1,6 @@
+{
+  "schema": "licoup.continuity.adoption-policy-draft/v1",
+  "enabled": true,
+  "stage": "offline",
+  "realModelQualification": "unknown"
+}

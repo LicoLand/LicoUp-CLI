@@ -1,0 +1,20 @@
+{
+  "schema": "licoup.continuity.evaluation-observations/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "responsibilityId": "responsibility:evaluation",
+  "datasetFamilySplit": "heldout",
+  "recipe": {
+    "negativeFamilies": 300,
+    "positiveFamilies": 300,
+    "falseTakeovers": 0,
+    "missedCommitments": 0,
+    "abstentions": 600,
+    "familyPrefix": "fam:eval-abstain"
+  },
+  "expect": {
+    "result": "unqualified",
+    "falseTakeoverErrors": 0,
+    "reasonsInclude": ["AllAbstain", "CoverageBelowMinimum"]
+  }
+}

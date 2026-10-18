@@ -1,0 +1,28 @@
+{
+  "expect": { "status": "accept", "type": "Matter" },
+  "payload": {
+    "id": "matter:docs",
+    "conversationId": "conversation:group",
+    "revision": 3,
+    "label": "Release notes",
+    "associationRefs": [
+      {
+        "ownerKind": "event",
+        "opaqueId": "event:fixture-one",
+        "sourceRevision": 1,
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "visibilityScope": "conversation",
+        "validity": "current"
+      }
+    ],
+    "createdEvent": {
+      "ownerKind": "event",
+      "opaqueId": "event:fixture-one",
+      "sourceRevision": 1,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "visibilityScope": "conversation",
+      "validity": "current"
+    },
+    "status": "open"
+  }
+}

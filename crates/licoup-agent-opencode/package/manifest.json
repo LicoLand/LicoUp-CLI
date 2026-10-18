@@ -1,0 +1,57 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.adapter.opencode",
+  "version": "0.14.0",
+  "displayName": "OpenCode adapter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "agent-execution",
+      "major": 1,
+      "capabilities": [
+        "agent-execution.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-agent-opencode"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.adapter.opencode/agent-process",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.opencode/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.opencode/client-data-home",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "command",
+      "id": "org.licoland.adapter.opencode/adapter-status",
+      "definition": "contributions/adapter-status.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.adapter.opencode/purpose": "The OpenCode adapter: the `opencode serve` HTTP and SSE protocol that classifies one OpenCode document exactly once below the adapter port, its frame dialect, its registration and its recorded-transcript replay arm. The kernel owns no part of the OpenCode protocol.",
+    "org.licoland.adapter.opencode/persistentData": "none",
+    "org.licoland.adapter.opencode/persistentDataReason": "This package declares no conversion because it owns no persisted package data of its own: it writes no data home, no cache and no store. The OpenCode session records it reads belong to the installed OpenCode client, under that installation's own home, and the client's own conversation store remains the kernel's."
+  }
+}

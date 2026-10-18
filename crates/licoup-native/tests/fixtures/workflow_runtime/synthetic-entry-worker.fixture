@@ -1,0 +1,118 @@
+{
+  "schema": "licoup.adaptive-flywheel.workflow.v1",
+  "metadata": {
+    "id": "fixture-entry-worker",
+    "name": "Fixture Entry Worker",
+    "version": "1.0.0",
+    "description": "Synthetic import fixture with a declared entry slot and one worker slot."
+  },
+  "limits": {
+    "maxParallelism": 8,
+    "maxWorksetItems": 256,
+    "maxAttempts": 3
+  },
+  "actorSlots": [
+    {
+      "id": "entry",
+      "kind": "actor",
+      "label": "Entry",
+      "required": true,
+      "sessionPolicy": "new",
+      "entry": true
+    },
+    {
+      "id": "worker-a",
+      "kind": "actor",
+      "label": "Worker A",
+      "required": true,
+      "sessionPolicy": "new"
+    }
+  ],
+  "runtimes": [],
+  "worksets": [
+    {
+      "id": "tasks",
+      "itemBinding": "id",
+      "predecessorField": "prerequisites"
+    }
+  ],
+  "initial": "authorize",
+  "states": [
+    {
+      "id": "authorize",
+      "kind": "authorization",
+      "label": "Authorize exact semantics"
+    },
+    {
+      "id": "plan",
+      "kind": "actor",
+      "label": "Plan work",
+      "instruction": "Return JSON with worksets.tasks for the worker slot.",
+      "binding": "entry",
+      "retry": { "maxAttempts": 2, "transientOnly": true }
+    },
+    {
+      "id": "task-frontier",
+      "kind": "workset",
+      "label": "Run ready tasks",
+      "instruction": "Execute this ready task and return bounded evidence.",
+      "binding": "worker-a",
+      "workset": "tasks",
+      "retry": { "maxAttempts": 2, "transientOnly": true }
+    },
+    {
+      "id": "complete",
+      "kind": "succeed",
+      "label": "Complete"
+    },
+    {
+      "id": "blocked",
+      "kind": "blocked",
+      "label": "Blocked"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "authorization-granted",
+      "from": "authorize",
+      "to": "plan",
+      "event": "success",
+      "mode": "flow"
+    },
+    {
+      "id": "authorization-denied",
+      "from": "authorize",
+      "to": "blocked",
+      "event": "failure",
+      "mode": "flow"
+    },
+    {
+      "id": "plan-ready",
+      "from": "plan",
+      "to": "task-frontier",
+      "event": "success",
+      "mode": "flow"
+    },
+    {
+      "id": "plan-failed",
+      "from": "plan",
+      "to": "blocked",
+      "event": "failure",
+      "mode": "flow"
+    },
+    {
+      "id": "tasks-complete",
+      "from": "task-frontier",
+      "to": "complete",
+      "event": "success",
+      "mode": "flow"
+    },
+    {
+      "id": "tasks-failed",
+      "from": "task-frontier",
+      "to": "blocked",
+      "event": "failure",
+      "mode": "flow"
+    }
+  ]
+}

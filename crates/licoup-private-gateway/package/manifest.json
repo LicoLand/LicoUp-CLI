@@ -1,0 +1,47 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.feature.gateway",
+  "version": "0.3.0",
+  "displayName": "LicoUp Gateway Runtime",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "model-gateway",
+      "major": 1,
+      "capabilities": [
+        "model-gateway.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-gateway"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.feature.gateway/local-endpoint",
+      "scope": "127.0.0.1"
+    },
+    {
+      "capability": "org.licoland.feature.gateway/client-data-home",
+      "scope": "self"
+    }
+  ],
+  "contributions": [],
+  "extensions": {
+    "org.licoland.feature.gateway/purpose": "The optional Private Gateway Runtime: one loopback endpoint that routes client-protocol model requests to the configured providers and records its own usage journal. The kernel owns no part of it and depends on none of it; the login item that starts it at login is registered only while this package is installed.",
+    "org.licoland.feature.gateway/persistentData": "self-owned",
+    "org.licoland.feature.gateway/persistentDataReason": "This package declares no conversion because the only persisted data it owns is its own usage journal under the private gateway state directory, whose format (licoup.llm-gateway-usage.v1) only the gateway program reads and rewrites and which is not one of the published client-state formats a migration converts. That journal is preserved across uninstall like every other document the data home keeps, and the autostart marker and readiness overlay that share the directory are written by the kernel's own owners rather than by this package."
+  }
+}

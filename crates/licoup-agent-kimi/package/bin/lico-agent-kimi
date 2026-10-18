@@ -1,0 +1,10 @@
+LicoUp release source: staged entry for the compiled lico-agent-kimi executable.
+
+The release stage places the binary built from `cargo build --bin lico-agent-kimi`
+at this path before `tools/scripts/client-release-package-index.mjs build` packages
+this directory into the package payload. Until that happens the file is the staged
+entry the committed package declares: the manifest names a process runtime with no
+runtimeRef, the release declaration declares a native executable entry, and the
+packaging tooling refuses an entry whose name or first two bytes mark it as a script.
+Nothing in the repository executes this file; it exists so the declared native entry
+is present and the payload packages deterministically from a checkout.

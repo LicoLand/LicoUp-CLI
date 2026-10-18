@@ -1,0 +1,16 @@
+{
+  "schema": "licoup.extension-sample-vector.v1",
+  "synthetic": true,
+  "description": "Authored protocol test vectors, not a captured user session. Each string is one wire frame without its terminating newline; reconstruct a stream by joining with newline and appending one final newline. The event vector covers the minimal notification contract, not all RPC responses.",
+  "requestLines": [
+    "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"extension.initialize\",\"params\":{\"protocol\":{\"major\":1,\"minimumMinor\":0},\"maxFrameBytes\":65536}}",
+    "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"agent.describe\",\"params\":{}}",
+    "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"agent.execute\",\"params\":{\"invocationRef\":\"sample-invocation-1\",\"input\":\"hello from the sample transcript\"}}",
+    "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"extension.shutdown\",\"params\":{}}"
+  ],
+  "eventLines": [
+    "{\"jsonrpc\":\"2.0\",\"method\":\"extension.ready\",\"params\":{\"profiles\":[\"agent-execution\"]}}",
+    "{\"jsonrpc\":\"2.0\",\"method\":\"agent.event\",\"params\":{\"invocationRef\":\"sample-invocation-1\",\"sequence\":1,\"kind\":\"text\",\"body\":\"hello from the sample transcript\"}}",
+    "{\"jsonrpc\":\"2.0\",\"method\":\"agent.event\",\"params\":{\"invocationRef\":\"sample-invocation-1\",\"sequence\":2,\"kind\":\"terminal\",\"body\":{\"outcome\":\"succeeded\"}}}"
+  ]
+}

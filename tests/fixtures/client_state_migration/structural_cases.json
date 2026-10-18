@@ -1,0 +1,21 @@
+[
+  {"name":"nullable display name","from":"display_name TEXT NOT NULL","to":"display_name TEXT","rows":"INSERT INTO principals VALUES ('null-principal','human',NULL,NULL,1);"},
+  {"name":"missing kind check","from":"CHECK(kind IN ('human','agent'))","to":""},
+  {"name":"weakened check","from":"CHECK(kind IN ('human','agent'))","to":"CHECK(kind IN ('human','agent') OR 1)"},
+  {"name":"case-sensitive check literal","from":"CHECK(kind IN ('human','agent'))","to":"CHECK(kind IN ('HUMAN','AGENT'))"},
+  {"name":"required extra column","from":"display_name TEXT NOT NULL","to":"required_value TEXT NOT NULL, display_name TEXT NOT NULL"},
+  {"name":"missing insert default","from":"archived INTEGER NOT NULL DEFAULT 0","to":"archived INTEGER NOT NULL"},
+  {"name":"changed insert default","from":"archived INTEGER NOT NULL DEFAULT 0","to":"archived INTEGER NOT NULL DEFAULT 1"},
+  {"name":"strengthened optional column","from":"agent_id TEXT,","to":"agent_id TEXT NOT NULL,"},
+  {"name":"on update action","from":"principal_id TEXT NOT NULL REFERENCES principals(id)","to":"principal_id TEXT NOT NULL REFERENCES principals(id) ON UPDATE CASCADE"},
+  {"name":"on delete action","from":"principal_id TEXT NOT NULL REFERENCES principals(id)","to":"principal_id TEXT NOT NULL REFERENCES principals(id) ON DELETE CASCADE"},
+  {"name":"deferred foreign key","from":"principal_id TEXT NOT NULL REFERENCES principals(id)","to":"principal_id TEXT NOT NULL REFERENCES principals(id) DEFERRABLE INITIALLY DEFERRED"},
+  {"name":"primary key conflict action","from":"id TEXT PRIMARY KEY, kind","to":"id TEXT PRIMARY KEY ON CONFLICT REPLACE, kind"},
+  {"name":"primary key removed","from":"id TEXT PRIMARY KEY, kind","to":"id TEXT, kind"},
+  {"name":"identity collation","from":"id TEXT PRIMARY KEY, kind","to":"id TEXT COLLATE NOCASE PRIMARY KEY, kind"},
+  {"name":"event sequence uniqueness","from":"UNIQUE(conversation_id, sequence)","to":"CHECK(1)"},
+  {"name":"additional uniqueness","from":"display_name TEXT NOT NULL","to":"display_name TEXT NOT NULL UNIQUE"},
+  {"name":"disabled active edge","from":"WHERE state IN ('claimed','running','cancel-requested','reconciliation-required');","to":"WHERE state IN ('claimed','running','cancel-requested','reconciliation-required') AND 0;"},
+  {"name":"additional write trigger","sql":"CREATE TRIGGER deny_principal BEFORE INSERT ON principals BEGIN SELECT RAISE(ABORT,'synthetic refusal'); END;"},
+  {"name":"malformed upgrade-created deliveries","sql":"CREATE TABLE IF NOT EXISTS subagent_dispatch_deliveries(claim_id TEXT, kind TEXT, conversation_id TEXT, recipient_membership_id TEXT, state TEXT, terminal_state TEXT, payload TEXT, attempt_count INTEGER, created_at INTEGER, updated_at INTEGER, delivered_at INTEGER, admitted_turn_id TEXT);","before":true}
+]

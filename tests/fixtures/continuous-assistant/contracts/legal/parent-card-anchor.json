@@ -1,0 +1,9 @@
+{
+  "expect": { "status": "accept", "type": "ParentCardAnchor" },
+  "payload": {
+    "parentConversationId": "conversation:parent",
+    "eventId": "event:card-a",
+    "sequence": 4,
+    "partId": "part:card-a"
+  }
+}

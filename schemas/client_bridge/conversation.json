@@ -1,0 +1,1321 @@
+{
+  "title": "ConversationBridge",
+  "version": 1,
+  "maxRequestBytes": 1048576,
+  "defaultEventPageSize": 20,
+  "maxEventPageSize": 100,
+  "actions": [
+    "conversation.create",
+    "conversation.rename",
+    "conversation.archive",
+    "conversation.clear",
+    "conversation.strategy.set",
+    "conversation.list",
+    "conversation.get",
+    "conversation.events.page",
+    "conversation.events.search",
+    "conversation.event.append",
+    "conversation.message.post",
+    "conversation.dispatch.after-post",
+    "conversation.event.part.append",
+    "conversation.event.finalize",
+    "conversation.membership.add",
+    "conversation.membership.access.set",
+    "conversation.membership.leave",
+    "conversation.export",
+    "conversation.import",
+    "conversation.assistant.set",
+    "conversation.profile.update",
+    "conversation.profile.get",
+    "conversation.profile.candidates",
+    "conversation.subagent.edge"
+  ],
+  "principalKinds": [
+    "human",
+    "agent"
+  ],
+  "membershipAccess": [
+    "owner",
+    "member"
+  ],
+  "membershipStatuses": [
+    "active",
+    "left"
+  ],
+  "turnStates": [
+    "pending",
+    "claimed",
+    "running",
+    "waiting-for-human",
+    "succeeded",
+    "failed",
+    "interrupted",
+    "cancelled"
+  ],
+  "eventKinds": [
+    "message",
+    "membership-changed",
+    "availability",
+    "conversation-reset"
+  ],
+  "eventPartKinds": [
+    "text",
+    "reasoning",
+    "tool-call",
+    "tool-result",
+    "artifact",
+    "diagnostic",
+    "metadata",
+    "image"
+  ],
+  "failureCodes": [
+    "invalid_request",
+    "conversation_not_found",
+    "membership_not_found",
+    "event_author_not_active",
+    "event_already_finalized",
+    "migration_required",
+    "migration_failed",
+    "runtime_unavailable",
+    "unsupported_action",
+    "profile_intent_invalid",
+    "profile_intent_limit",
+    "profile_revision_stale",
+    "profile_candidate_rejected",
+    "conversation_revision_stale",
+    "conversation_clear_blocked",
+    "local_owner_required"
+  ],
+  "continuousAssistant": {
+    "schemaId": "lico.continuous-assistant.v1",
+    "version": 1,
+    "spanEncoding": "utf8-byte-range",
+    "maxPageSize": 50,
+    "maxOrientationItems": 32,
+    "maxRefs": 64,
+    "maxIdBytes": 128,
+    "maxLabelBytes": 256,
+    "maxReasonBytes": 128,
+    "maxDigestBytes": 128,
+    "decisionLayers": [
+      "semantic-proposal",
+      "admission",
+      "effects"
+    ],
+    "effectClasses": [
+      "none",
+      "unknown"
+    ],
+    "commands": [
+      "apply-interpretation",
+      "correct-association",
+      "revise-agreement",
+      "propose-criterion-change",
+      "pause-goal",
+      "resume-goal",
+      "request-cancel",
+      "accept-evidence",
+      "close-goal",
+      "replace-assistant",
+      "admit-task-child",
+      "list-pending-completion-notices",
+      "ack-completion-notices",
+      "resolve-completion-notice"
+    ],
+    "ports": [
+      "continuity-read",
+      "interpretation",
+      "continuity-commit",
+      "context-composition",
+      "native-work-context",
+      "goal-evaluation",
+      "follow-up",
+      "qualification",
+      "discovered-knowledge"
+    ],
+    "m1Leaves": [
+      "durable-state",
+      "cognition-context",
+      "native-work-context",
+      "qualification",
+      "presentation"
+    ],
+    "failureCodes": [
+      "invalid_request",
+      "stale_revision",
+      "designation_changed",
+      "scope_denied",
+      "source_unavailable",
+      "source_revoked",
+      "agreement_conflict",
+      "invalid_span",
+      "idempotency_conflict",
+      "qualification_unknown",
+      "qualification_stale",
+      "budget_exhausted",
+      "unsupported_capability",
+      "native_binding_lost",
+      "native_isolation_unverified",
+      "writer_busy",
+      "reconciliation_required",
+      "approval_required",
+      "identity_conflict",
+      "premature_closure"
+    ],
+    "recoveryClasses": [
+      "correct_request",
+      "recompute_proposal",
+      "reconcile_effects",
+      "review_or_wait",
+      "obtain_approval"
+    ],
+    "failureStages": [
+      "continuity/parse",
+      "continuity/admission",
+      "continuity/commit",
+      "continuity/effects",
+      "continuity/native",
+      "continuity/qualification"
+    ],
+    "enums": {
+      "MatterStatus": [
+        "open",
+        "archived"
+      ],
+      "AgreementScope": [
+        "conversation",
+        "matter",
+        "goal"
+      ],
+      "AgreementOrigin": [
+        "user-explicit",
+        "source-fact",
+        "agent-inference"
+      ],
+      "SourceOwnerKind": [
+        "event",
+        "part",
+        "span",
+        "agreement",
+        "goal",
+        "artifact",
+        "knowledge"
+      ],
+      "SourceValidity": [
+        "current",
+        "stale",
+        "revoked",
+        "unknown"
+      ],
+      "VisibilityScope": [
+        "conversation",
+        "matter",
+        "goal"
+      ],
+      "SpeechAct": [
+        "question",
+        "exploration",
+        "delegation",
+        "correction",
+        "approval",
+        "pause",
+        "cancellation",
+        "reference",
+        "quotation",
+        "hypothetical"
+      ],
+      "MatterSubject": [
+        "new",
+        "existing",
+        "resumed",
+        "compound",
+        "unresolved"
+      ],
+      "GoalLifecycle": [
+        "active",
+        "waiting",
+        "verifying",
+        "achieved",
+        "cancelled",
+        "superseded"
+      ],
+      "GoalControl": [
+        "enabled",
+        "paused",
+        "cancel-requested"
+      ],
+      "OracleKind": [
+        "machine",
+        "judgment",
+        "user"
+      ],
+      "EvidenceResult": [
+        "pass",
+        "fail",
+        "unknown"
+      ],
+      "VerificationKind": [
+        "deterministic",
+        "judgment",
+        "user-acceptance"
+      ],
+      "ContextTransition": [
+        "continue",
+        "compact",
+        "fork",
+        "new",
+        "rehydrate"
+      ],
+      "WorkContextStatus": [
+        "bound",
+        "legacy",
+        "lost",
+        "replaced"
+      ],
+      "CapabilitySupport": [
+        "supported",
+        "unsupported",
+        "unverified",
+        "temporarily-unavailable"
+      ],
+      "QualificationResult": [
+        "qualified",
+        "unqualified",
+        "unknown",
+        "stale"
+      ],
+      "DatasetSplit": [
+        "development",
+        "calibration",
+        "heldout"
+      ],
+      "FollowThroughKind": [
+        "none",
+        "immediate",
+        "durable"
+      ],
+      "TaskListingKind": [
+        "root",
+        "child-task"
+      ],
+      "ParentGrantStatus": [
+        "admitted",
+        "revoked",
+        "exhausted"
+      ],
+      "ClosureAuthorityKind": [
+        "goal-evaluation",
+        "user-acceptance"
+      ],
+      "FailureCode": [
+        "invalid_request",
+        "stale_revision",
+        "designation_changed",
+        "scope_denied",
+        "source_unavailable",
+        "source_revoked",
+        "agreement_conflict",
+        "invalid_span",
+        "idempotency_conflict",
+        "qualification_unknown",
+        "qualification_stale",
+        "budget_exhausted",
+        "unsupported_capability",
+        "native_binding_lost",
+        "native_isolation_unverified",
+        "writer_busy",
+        "reconciliation_required",
+        "approval_required",
+        "identity_conflict",
+        "premature_closure"
+      ],
+      "FailureStage": [
+        "continuity/parse",
+        "continuity/admission",
+        "continuity/commit",
+        "continuity/effects",
+        "continuity/native",
+        "continuity/qualification"
+      ],
+      "RecoveryClass": [
+        "correct_request",
+        "recompute_proposal",
+        "reconcile_effects",
+        "review_or_wait",
+        "obtain_approval"
+      ],
+      "EffectClass": [
+        "none",
+        "unknown"
+      ],
+      "DecisionLayer": [
+        "semantic-proposal",
+        "admission",
+        "effects"
+      ]
+    },
+    "structs": {
+      "Utf8ByteSpan": {
+        "fields": [
+          {
+            "name": "startByte",
+            "type": "u64"
+          },
+          {
+            "name": "endByte",
+            "type": "u64"
+          }
+        ]
+      },
+      "SourceRef": {
+        "fields": [
+          {
+            "name": "ownerKind",
+            "type": "enum:SourceOwnerKind"
+          },
+          {
+            "name": "opaqueId",
+            "type": "id"
+          },
+          {
+            "name": "partId",
+            "type": "optional:id"
+          },
+          {
+            "name": "span",
+            "type": "optional:struct:Utf8ByteSpan"
+          },
+          {
+            "name": "sourceRevision",
+            "type": "i64"
+          },
+          {
+            "name": "digest",
+            "type": "digest"
+          },
+          {
+            "name": "visibilityScope",
+            "type": "enum:VisibilityScope"
+          },
+          {
+            "name": "validity",
+            "type": "enum:SourceValidity"
+          }
+        ]
+      },
+      "WriteEnvelope": {
+        "fields": [
+          {
+            "name": "conversationId",
+            "type": "id"
+          },
+          {
+            "name": "sourceEventRefs",
+            "type": "array:struct:SourceRef"
+          },
+          {
+            "name": "observedRevision",
+            "type": "i64"
+          },
+          {
+            "name": "designationEpoch",
+            "type": "i64"
+          },
+          {
+            "name": "requestId",
+            "type": "id"
+          }
+        ]
+      },
+      "CommitBasis": {
+        "fields": [
+          {
+            "name": "conversationId",
+            "type": "id"
+          },
+          {
+            "name": "revision",
+            "type": "i64"
+          },
+          {
+            "name": "designationEpoch",
+            "type": "i64"
+          },
+          {
+            "name": "assistantMembershipId",
+            "type": "optional:id"
+          }
+        ]
+      },
+      "Matter": {
+        "fields": [
+          {
+            "name": "id",
+            "type": "id"
+          },
+          {
+            "name": "conversationId",
+            "type": "id"
+          },
+          {
+            "name": "revision",
+            "type": "i64"
+          },
+          {
+            "name": "label",
+            "type": "label"
+          },
+          {
+            "name": "associationRefs",
+            "type": "array:struct:SourceRef"
+          },
+          {
+            "name": "createdEvent",
+            "type": "struct:SourceRef"
+          },
+          {
+            "name": "status",
+            "type": "enum:MatterStatus"
+          }
+        ]
+      },
+      "MatterAssociation": {
+        "fields": [
+          {
+            "name": "matterId",
+            "type": "id"
+          },
+          {
+            "name": "sourceRef",
+            "type": "struct:SourceRef"
+          },
+          {
+            "name": "associationRevision",
+            "type": "i64"
+          },
+          {
+            "name": "proposedBy",
+            "type": "id"
+          },
+          {
+            "name": "reasonCode",
+            "type": "reason"
+          },
+          {
+            "name": "supersedes",
+            "type": "optional:i64"
+          }
+        ]
+      },
+      "Agreement": {
+        "fields": [
+          {
+            "name": "id",
+            "type": "id"
+          },
+          {
+            "name": "scope",
+            "type": "enum:AgreementScope"
+          },
+          {
+            "name": "statementRef",
+            "type": "struct:SourceRef"
+          },
+          {
+            "name": "origin",
+            "type": "enum:AgreementOrigin"
+          },
+          {
+            "name": "effectiveRevision",
+            "type": "i64"
+          },
+          {
+            "name": "supersedes",
+            "type": "optional:i64"
+          },
+          {
+            "name": "validFrom",
+            "type": "i64"
+          },
+          {
+            "name": "validUntil",
+            "type": "optional:i64"
+          },
+          {
+            "name": "revocationGeneration",
+            "type": "i64"
+          }
+        ]
+      },
+      "Criterion": {
+        "fields": [
+          {
+            "name": "id",
+            "type": "id"
+          },
+          {
+            "name": "descriptionRef",
+            "type": "struct:SourceRef"
+          },
+          {
+            "name": "required",
+            "type": "bool"
+          },
+          {
+            "name": "oracleKind",
+            "type": "enum:OracleKind"
+          },
+          {
+            "name": "artifactVersionRule",
+            "type": "reason"
+          },
+          {
+            "name": "freshnessRule",
+            "type": "reason"
+          },
+          {
+            "name": "evaluatorPolicy",
+            "type": "reason"
+          }
+        ]
+      },
+      "GoalContract": {
+        "fields": [
+          {
+            "name": "id",
+            "type": "id"
+          },
+          {
+            "name": "matterId",
+            "type": "id"
+          },
+          {
+            "name": "sourceIntentRefs",
+            "type": "array:struct:SourceRef"
+          },
+          {
+            "name": "contractRevision",
+            "type": "i64"
+          },
+          {
+            "name": "expectedResult",
+            "type": "label"
+          },
+          {
+            "name": "criteria",
+            "type": "array:struct:Criterion"
+          },
+          {
+            "name": "scopeRefs",
+            "type": "array:struct:SourceRef"
+          },
+          {
+            "name": "responsibleRoleRef",
+            "type": "id"
+          },
+          {
+            "name": "resourceEnvelopeRef",
+            "type": "id"
+          },
+          {
+            "name": "acceptanceMethod",
+            "type": "reason"
+          },
+          {
+            "name": "createdEvent",
+            "type": "struct:SourceRef"
+          }
+        ]
+      },
+      "EvidenceRef": {
+        "fields": [
+          {
+            "name": "source",
+            "type": "struct:SourceRef"
+          },
+          {
+            "name": "issuer",
+            "type": "id"
+          },
+          {
+            "name": "subjectVersion",
+            "type": "i64"
+          },
+          {
+            "name": "criterionId",
+            "type": "id"
+          },
+          {
+            "name": "observedAt",
+            "type": "i64"
+          },
+          {
+            "name": "result",
+            "type": "enum:EvidenceResult"
+          },
+          {
+            "name": "verificationKind",
+            "type": "enum:VerificationKind"
+          },
+          {
+            "name": "scope",
+            "type": "enum:VisibilityScope"
+          },
+          {
+            "name": "validity",
+            "type": "enum:SourceValidity"
+          }
+        ]
+      },
+      "GoalProgress": {
+        "fields": [
+          {
+            "name": "goalId",
+            "type": "id"
+          },
+          {
+            "name": "revision",
+            "type": "i64"
+          },
+          {
+            "name": "lifecycle",
+            "type": "enum:GoalLifecycle"
+          },
+          {
+            "name": "control",
+            "type": "enum:GoalControl"
+          },
+          {
+            "name": "criterionEvidenceRefs",
+            "type": "array:struct:EvidenceRef"
+          },
+          {
+            "name": "activeExecutionRefs",
+            "type": "array:id"
+          },
+          {
+            "name": "blockers",
+            "type": "array:reason"
+          },
+          {
+            "name": "nextAttention",
+            "type": "optional:union:NextAttention"
+          },
+          {
+            "name": "closureRef",
+            "type": "optional:struct:SourceRef"
+          }
+        ]
+      },
+      "WorkContext": {
+        "fields": [
+          {
+            "name": "conversationId",
+            "type": "id"
+          },
+          {
+            "name": "membershipId",
+            "type": "id"
+          },
+          {
+            "name": "matterId",
+            "type": "id"
+          },
+          {
+            "name": "generation",
+            "type": "i64"
+          },
+          {
+            "name": "privateBindingRef",
+            "type": "id"
+          },
+          {
+            "name": "capabilitySnapshotRef",
+            "type": "id"
+          },
+          {
+            "name": "sourceManifestRef",
+            "type": "id"
+          },
+          {
+            "name": "status",
+            "type": "enum:WorkContextStatus"
+          },
+          {
+            "name": "writerClaim",
+            "type": "optional:id"
+          },
+          {
+            "name": "lastReconciled",
+            "type": "i64"
+          }
+        ]
+      },
+      "CommitmentProposal": {
+        "fields": [
+          {
+            "name": "matterId",
+            "type": "optional:id"
+          },
+          {
+            "name": "subject",
+            "type": "enum:MatterSubject"
+          },
+          {
+            "name": "expectedResult",
+            "type": "label"
+          },
+          {
+            "name": "criteria",
+            "type": "array:struct:Criterion"
+          },
+          {
+            "name": "createGoal",
+            "type": "bool"
+          }
+        ]
+      },
+      "AgreementProposal": {
+        "fields": [
+          {
+            "name": "scope",
+            "type": "enum:AgreementScope"
+          },
+          {
+            "name": "statementRef",
+            "type": "struct:SourceRef"
+          },
+          {
+            "name": "origin",
+            "type": "enum:AgreementOrigin"
+          }
+        ]
+      },
+      "InterpretationProposal": {
+        "fields": [
+          {
+            "name": "envelope",
+            "type": "struct:WriteEnvelope"
+          },
+          {
+            "name": "matterAssociations",
+            "type": "array:struct:MatterAssociation"
+          },
+          {
+            "name": "speechAct",
+            "type": "enum:SpeechAct"
+          },
+          {
+            "name": "commitmentProposals",
+            "type": "array:struct:CommitmentProposal"
+          },
+          {
+            "name": "agreementProposals",
+            "type": "array:struct:AgreementProposal"
+          },
+          {
+            "name": "capabilityNeeds",
+            "type": "array:reason"
+          },
+          {
+            "name": "uncertaintyReasons",
+            "type": "array:reason"
+          },
+          {
+            "name": "requestedReads",
+            "type": "array:struct:SourceRef"
+          },
+          {
+            "name": "taskChildAdmission",
+            "type": "optional:struct:TaskChildAdmission"
+          }
+        ]
+      },
+      "AssistantTurnResponse": {
+        "fields": [
+          {
+            "name": "replyText",
+            "type": "string"
+          },
+          {
+            "name": "interpretationProposal",
+            "type": "struct:InterpretationProposal"
+          }
+        ]
+      },
+      "ContextManifest": {
+        "fields": [
+          {
+            "name": "invocationId",
+            "type": "id"
+          },
+          {
+            "name": "sources",
+            "type": "array:struct:SourceRef"
+          },
+          {
+            "name": "agreementRevisions",
+            "type": "array:i64"
+          },
+          {
+            "name": "aclGeneration",
+            "type": "i64"
+          },
+          {
+            "name": "revocationGeneration",
+            "type": "i64"
+          },
+          {
+            "name": "recipientBinding",
+            "type": "id"
+          },
+          {
+            "name": "tokenEstimate",
+            "type": "u64"
+          },
+          {
+            "name": "selectionReasonCodes",
+            "type": "array:reason"
+          },
+          {
+            "name": "contextTransition",
+            "type": "enum:ContextTransition"
+          }
+        ]
+      },
+      "Wake": {
+        "fields": [
+          {
+            "name": "logicalWakeId",
+            "type": "id"
+          },
+          {
+            "name": "goalId",
+            "type": "id"
+          },
+          {
+            "name": "causeRefs",
+            "type": "array:struct:SourceRef"
+          },
+          {
+            "name": "dueAt",
+            "type": "optional:i64"
+          },
+          {
+            "name": "reviewPolicy",
+            "type": "reason"
+          },
+          {
+            "name": "goalRevision",
+            "type": "i64"
+          },
+          {
+            "name": "epoch",
+            "type": "i64"
+          },
+          {
+            "name": "hostGeneration",
+            "type": "i64"
+          },
+          {
+            "name": "claim",
+            "type": "optional:id"
+          },
+          {
+            "name": "settlement",
+            "type": "optional:reason"
+          }
+        ]
+      },
+      "CandidateIdentity": {
+        "fields": [
+          {
+            "name": "modelDigest",
+            "type": "digest"
+          },
+          {
+            "name": "reasoningDigest",
+            "type": "digest"
+          },
+          {
+            "name": "promptDigest",
+            "type": "digest"
+          },
+          {
+            "name": "skillDigest",
+            "type": "digest"
+          },
+          {
+            "name": "contextPolicyDigest",
+            "type": "digest"
+          },
+          {
+            "name": "toolContractDigest",
+            "type": "digest"
+          },
+          {
+            "name": "adapterRuntimeDigest",
+            "type": "digest"
+          },
+          {
+            "name": "datasetVersion",
+            "type": "digest"
+          },
+          {
+            "name": "policyRevision",
+            "type": "digest"
+          }
+        ]
+      },
+      "ParentCardAnchor": {
+        "fields": [
+          {
+            "name": "parentConversationId",
+            "type": "id"
+          },
+          {
+            "name": "eventId",
+            "type": "id"
+          },
+          {
+            "name": "sequence",
+            "type": "i64"
+          },
+          {
+            "name": "partId",
+            "type": "optional:id"
+          }
+        ]
+      },
+      "GoalCompletionTransition": {
+        "fields": [
+          {
+            "name": "transitionId",
+            "type": "id"
+          },
+          {
+            "name": "goalId",
+            "type": "id"
+          },
+          {
+            "name": "fromLifecycle",
+            "type": "enum:GoalLifecycle"
+          },
+          {
+            "name": "toLifecycle",
+            "type": "enum:GoalLifecycle"
+          },
+          {
+            "name": "goalRevision",
+            "type": "i64"
+          },
+          {
+            "name": "authorityKind",
+            "type": "enum:ClosureAuthorityKind"
+          },
+          {
+            "name": "evaluationRef",
+            "type": "struct:SourceRef"
+          },
+          {
+            "name": "notificationId",
+            "type": "id"
+          }
+        ]
+      },
+      "ParentGrantBasis": {
+        "fields": [
+          {
+            "name": "recipientConversationId",
+            "type": "id"
+          },
+          {
+            "name": "recipientMembershipId",
+            "type": "id"
+          },
+          {
+            "name": "revocationGeneration",
+            "type": "i64"
+          }
+        ]
+      },
+      "ContextCompositionRequest": {
+        "fields": [
+          {
+            "name": "conversationId",
+            "type": "id"
+          },
+          {
+            "name": "recipientMembershipId",
+            "type": "id"
+          },
+          {
+            "name": "authorizedScopes",
+            "type": "array:enum:VisibilityScope"
+          },
+          {
+            "name": "revocationGeneration",
+            "type": "i64"
+          },
+          {
+            "name": "after",
+            "type": "optional:id"
+          },
+          {
+            "name": "limit",
+            "type": "u64"
+          }
+        ]
+      },
+      "ParentContextGrant": {
+        "fields": [
+          {
+            "name": "grantId",
+            "type": "id"
+          },
+          {
+            "name": "sourceConversationId",
+            "type": "id"
+          },
+          {
+            "name": "recipientConversationId",
+            "type": "id"
+          },
+          {
+            "name": "recipientMembershipId",
+            "type": "id"
+          },
+          {
+            "name": "sourceRefs",
+            "type": "array:struct:SourceRef"
+          },
+          {
+            "name": "authorizedScopes",
+            "type": "array:enum:VisibilityScope"
+          },
+          {
+            "name": "status",
+            "type": "enum:ParentGrantStatus"
+          },
+          {
+            "name": "requestId",
+            "type": "id"
+          },
+          {
+            "name": "revocationGeneration",
+            "type": "i64"
+          }
+        ]
+      },
+      "TaskChildAdmission": {
+        "fields": [
+          {
+            "name": "goalId",
+            "type": "id"
+          },
+          {
+            "name": "parentConversationId",
+            "type": "id"
+          },
+          {
+            "name": "speechAct",
+            "type": "enum:SpeechAct"
+          },
+          {
+            "name": "followThroughKind",
+            "type": "enum:FollowThroughKind"
+          },
+          {
+            "name": "observedChildConversationId",
+            "type": "optional:id"
+          },
+          {
+            "name": "observedCardAnchor",
+            "type": "optional:struct:ParentCardAnchor"
+          },
+          {
+            "name": "requestId",
+            "type": "id"
+          }
+        ]
+      },
+      "TaskConversationRelation": {
+        "fields": [
+          {
+            "name": "goalId",
+            "type": "id"
+          },
+          {
+            "name": "parentConversationId",
+            "type": "id"
+          },
+          {
+            "name": "childConversationId",
+            "type": "id"
+          },
+          {
+            "name": "cardAnchor",
+            "type": "struct:ParentCardAnchor"
+          },
+          {
+            "name": "listingKind",
+            "type": "enum:TaskListingKind"
+          },
+          {
+            "name": "followThroughKind",
+            "type": "enum:FollowThroughKind"
+          },
+          {
+            "name": "completionTransition",
+            "type": "optional:struct:GoalCompletionTransition"
+          },
+          {
+            "name": "revision",
+            "type": "i64"
+          },
+          {
+            "name": "createdEvent",
+            "type": "struct:SourceRef"
+          }
+        ]
+      },
+      "QualificationRecord": {
+        "fields": [
+          {
+            "name": "responsibilityId",
+            "type": "id"
+          },
+          {
+            "name": "candidateIdentity",
+            "type": "struct:CandidateIdentity"
+          },
+          {
+            "name": "datasetFamilySplit",
+            "type": "enum:DatasetSplit"
+          },
+          {
+            "name": "observationCount",
+            "type": "u64"
+          },
+          {
+            "name": "policyRevision",
+            "type": "digest"
+          },
+          {
+            "name": "result",
+            "type": "enum:QualificationResult"
+          },
+          {
+            "name": "expiresAt",
+            "type": "optional:i64"
+          },
+          {
+            "name": "revoked",
+            "type": "bool"
+          }
+        ]
+      },
+      "NativeCapabilitySnapshot": {
+        "fields": [
+          {
+            "name": "exactResume",
+            "type": "enum:CapabilitySupport"
+          },
+          {
+            "name": "fork",
+            "type": "enum:CapabilitySupport"
+          },
+          {
+            "name": "compact",
+            "type": "enum:CapabilitySupport"
+          },
+          {
+            "name": "steer",
+            "type": "enum:CapabilitySupport"
+          },
+          {
+            "name": "cancel",
+            "type": "enum:CapabilitySupport"
+          },
+          {
+            "name": "tools",
+            "type": "enum:CapabilitySupport"
+          },
+          {
+            "name": "isolatedContext",
+            "type": "enum:CapabilitySupport"
+          },
+          {
+            "name": "parallelContexts",
+            "type": "enum:CapabilitySupport"
+          }
+        ]
+      },
+      "ContinuityFailure": {
+        "fields": [
+          {
+            "name": "code",
+            "type": "enum:FailureCode"
+          },
+          {
+            "name": "stage",
+            "type": "enum:FailureStage"
+          },
+          {
+            "name": "recovery",
+            "type": "enum:RecoveryClass"
+          },
+          {
+            "name": "effectClass",
+            "type": "enum:EffectClass"
+          },
+          {
+            "name": "decisionLayer",
+            "type": "enum:DecisionLayer"
+          },
+          {
+            "name": "retryable",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    "unions": {
+      "NextAttention": {
+        "tag": "kind",
+        "variants": {
+          "active-execution": [
+            {
+              "name": "executionRef",
+              "type": "id"
+            }
+          ],
+          "dispatchable-step": [
+            {
+              "name": "stepRef",
+              "type": "id"
+            }
+          ],
+          "wait": [
+            {
+              "name": "triggerRef",
+              "type": "id"
+            },
+            {
+              "name": "reviewPolicy",
+              "type": "reason"
+            },
+            {
+              "name": "responsibleParty",
+              "type": "id"
+            },
+            {
+              "name": "resumptionRef",
+              "type": "optional:id"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

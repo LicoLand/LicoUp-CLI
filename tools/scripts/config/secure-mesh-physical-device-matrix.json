@@ -1,0 +1,208 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.physical-device-matrix-config.v2",
+  "sourceChecks": [
+    {
+      "id": "android-platform-crypto-acceptance-is-client-owned-and-redacted",
+      "file": "tools/scripts/client-android-native-tests.mjs",
+      "tokens": [
+        "secure-mesh-android-platform-crypto-acceptance.json",
+        "licomesh.secure-mesh.android-platform-crypto-acceptance.v1",
+        "platformCryptoAcceptanceReady",
+        "platformCustodyContractReady",
+        "platformAuthorizationContractReady",
+        "rustFfiActionContractReady",
+        "mlsMemberRemoveReleaseActionReady",
+        "unknownReleaseActionsFailClosed",
+        "nativeTestClassCount"
+      ]
+    },
+    {
+      "id": "android-install-launch-validates-platform-custody",
+      "files": [
+        "tools/scripts/client-android-physical-install-launch.mjs",
+        "tools/scripts/client-android-physical-install-launch/device/classify.mjs",
+        "tools/scripts/client-android-physical-install-launch/runtime/status.mjs",
+        "tools/scripts/client-android-physical-install-launch/report/build.mjs"
+      ],
+      "tokens": [
+        "androidPhysicalDeviceProof",
+        "androidAdbTransportAuthorized",
+        "androidPhysicalDeviceProofReady",
+        "ANDROID_AUTHENTICATED_PAIRWISE_RUNTIME_STATUS",
+        "runtimeStatusRedacted",
+        "rawPayloadExportSurfaceAbsent"
+      ]
+    },
+    {
+      "id": "ios-bridge-publishes-redacted-platform-crypto-status",
+      "file": "apps/desktop/ios/Runner/SecureMeshIosBridge.swift",
+      "tokens": [
+        "writeRuntimeStatus",
+        "ios-runtime-status.json",
+        "writeRuntimeStatusMethod",
+        "nativeJsonMethod"
+      ]
+    },
+    {
+      "id": "ios-client-tests-shared-rust-crypto-lifecycle",
+      "file": "apps/desktop/integration_test/mobile_relay_ios_e2e_test.dart",
+      "tokens": [
+        "secure_mesh.lifecycle.serviceAction",
+        "serviceActionPolicyReady",
+        "secure_mesh.deviceTrust.verifySas"
+      ]
+    },
+    {
+      "id": "licoarc-badtower-acceptance-exercises-strict-interoperability",
+      "file": "tools/scripts/client-licoarc-badtower-acceptance.mjs",
+      "tokens": [
+        "licoup.licoarc-badtower.acceptance.v1",
+        "freshEndpointCount",
+        "positiveExchange",
+        "roundTrip",
+        "stationPlaintextAbsent",
+        "nonConformantEnvelopeRejected",
+        "transportHintsNonAuthoritative",
+        "exactFiveOuterFields"
+      ]
+    },
+    {
+      "id": "windows-local-implementation-is-redacted-and-host-gated",
+      "file": "tools/scripts/client-secure-mesh-windows-implementation.mjs",
+      "tokens": [
+        "redacted-windows-conservative-custody-boundary",
+        "persistent_custody_unverified",
+        "memory-only-ephemeral",
+        "windowsLocalBlockersCleared",
+        "nativeHostEvidencePending",
+        "dpapiOrWindowsHelloProofReady: false",
+        "productionReady",
+        "releaseReady"
+      ]
+    },
+    {
+      "id": "physical-evidence-config-links-current-client-reports",
+      "file": "tools/scripts/config/secure-mesh-physical-evidence.json",
+      "tokens": [
+        "licomesh.secure-mesh.physical-evidence-config.v2",
+        "licoarc-badtower-acceptance.json",
+        "secure-mesh-android-platform-crypto-acceptance.json",
+        "android-physical-install-launch.json",
+        "secure-mesh-platform-secret-store-matrix.json",
+        "secure-mesh-physical-device-matrix.json",
+        "secure-mesh-encrypted-file-handoff.json",
+        "secure-mesh-trust-ux.json",
+        "secure-mesh-windows-implementation.json"
+      ]
+    },
+    {
+      "id": "shared-physical-report-coverage-owns-ready-gates",
+      "file": "tools/scripts/lib/secure-mesh-physical-report-coverage.mjs",
+      "tokens": [
+        "androidPlatformCryptoCoverage",
+        "stationAcceptanceCoverage",
+        "platformSecretStoreCustodyCoverage",
+        "windowsImplementationReady",
+        "ANDROID_PLATFORM_CRYPTO_NATIVE_TEST_CLASS_COUNT"
+      ]
+    },
+    {
+      "id": "physical-evidence-manifest-consumes-station-and-platform-crypto",
+      "file": "tools/scripts/client-secure-mesh-physical-evidence-manifest.mjs",
+      "tokens": [
+        "stationAcceptanceCoverage",
+        "androidPlatformCrypto",
+        "physicalEvidenceChainReady",
+        "platform secret-store proof classes",
+        "Lico Arc BadTower interoperability proof classes",
+        "secure-mesh-physical-report-coverage.mjs"
+      ]
+    },
+    {
+      "id": "physical-device-matrix-consumes-station-and-platform-crypto",
+      "file": "tools/scripts/client-secure-mesh-physical-device-matrix.mjs",
+      "tokens": [
+        "stationAcceptanceReady",
+        "androidPlatformCrypto",
+        "androidPlatformSecretStoreReadyForSummary",
+        "iosPlatformSecretStoreReadyForSummary",
+        "physicalEvidenceChainReadyForSummary",
+        "secure-mesh-physical-report-coverage.mjs"
+      ]
+    }
+  ],
+  "physicalMatrix": [
+    {
+      "scenario": "pairing-and-trust",
+      "requiredPlatforms": [
+        "android",
+        "iphone",
+        "macos",
+        "windows",
+        "ubuntu-linux"
+      ],
+      "status": "missing",
+      "requiredAssertions": [
+        "QR, SAS, or fingerprint verification succeeds on physical devices.",
+        "Unverified peers fail closed for sensitive sends.",
+        "Key-change warning blocks sensitive operations.",
+        "Revoked endpoints cannot use command, result, file, prekey, or group payloads."
+      ]
+    },
+    {
+      "scenario": "command-result",
+      "requiredPlatforms": [
+        "android-to-desktop",
+        "desktop-to-android",
+        "iphone-to-desktop",
+        "desktop-to-iphone"
+      ],
+      "status": "missing",
+      "requiredAssertions": [
+        "Durable pairwise envelopes or MLS exporter keys are used.",
+        "Wrong recipient, replay, stale envelope, and restart cases pass.",
+        "The station remains non-authoritative while endpoints authenticate the exchange."
+      ]
+    },
+    {
+      "scenario": "file-handoff",
+      "requiredPlatforms": [
+        "android-to-desktop-to-iphone",
+        "iphone-to-desktop-to-android"
+      ],
+      "status": "missing",
+      "requiredAssertions": [
+        "Manifest and chunks remain encrypted.",
+        "Second phone receives endpoint-specific resealed ciphertext.",
+        "Approved receive root is required.",
+        "Client cryptography keeps file metadata and content out of the relay envelope surface."
+      ]
+    },
+    {
+      "scenario": "licoarc-badtower-interoperability",
+      "requiredPlatforms": [
+        "fresh-licoup-endpoints",
+        "badtower-station"
+      ],
+      "status": "missing",
+      "requiredAssertions": [
+        "Two fresh endpoints complete a positive encrypted round trip.",
+        "The station stores no endpoint plaintext and transport hints remain non-authoritative.",
+        "Non-conformant envelopes are rejected and the Lico Arc outer envelope has exactly five fields."
+      ]
+    },
+    {
+      "scenario": "desktop-release-platforms",
+      "requiredPlatforms": [
+        "macos",
+        "windows",
+        "ubuntu-linux"
+      ],
+      "status": "missing",
+      "requiredAssertions": [
+        "Release-built clients pass trust, command/result, and file handoff checks.",
+        "Signed update, downgrade rejection, rollback, installer or package proof, and publication receipt are linked from the release proof bundle."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "expect": { "status": "accept", "type": "ContextManifest" },
+  "payload": {
+    "invocationId": "invocation:1",
+    "sources": [
+      {
+        "ownerKind": "event",
+        "opaqueId": "event:fixture-one",
+        "sourceRevision": 1,
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "visibilityScope": "conversation",
+        "validity": "current"
+      }
+    ],
+    "agreementRevisions": [2],
+    "aclGeneration": 1,
+    "revocationGeneration": 0,
+    "recipientBinding": "membership:assistant",
+    "tokenEstimate": 800,
+    "selectionReasonCodes": ["current-input", "current-agreement"],
+    "contextTransition": "continue"
+  }
+}

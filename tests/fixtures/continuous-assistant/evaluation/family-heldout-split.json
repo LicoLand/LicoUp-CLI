@@ -1,0 +1,15 @@
+{
+  "schema": "licoup.continuity.evaluation-family-split/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "disjoint": true,
+  "note": "Complete conversation families stay in one split. Adjacent turns are not randomly split.",
+  "developmentFamilies": ["fam:dev:alpha", "fam:dev:beta"],
+  "calibrationFamilies": ["fam:cal:alpha"],
+  "heldoutFamilies": ["fam:hold:alpha", "fam:hold:beta", "fam:hold:gamma"],
+  "leakFamily": "fam:hold:alpha",
+  "isolatedVersion": {
+    "field": "datasetVersion",
+    "to": "dataset:family-evaluation-b"
+  }
+}

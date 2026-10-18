@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "capabilities": [
+    {
+      "id": "protocol.authenticated_encryption",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": false,
+      "prerequisites": []
+    },
+    {
+      "id": "protocol.complete_aad_binding",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": false,
+      "prerequisites": ["protocol.authenticated_encryption"]
+    },
+    {
+      "id": "protocol.endpoint_identity_authentication",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": false,
+      "prerequisites": ["protocol.authenticated_encryption"]
+    },
+    {
+      "id": "protocol.verify_before_send",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": false,
+      "prerequisites": ["protocol.endpoint_identity_authentication"]
+    },
+    {
+      "id": "protocol.replay_duplicate_rejection",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": false,
+      "prerequisites": ["protocol.complete_aad_binding"]
+    },
+    {
+      "id": "protocol.expiry_rollback_rejection",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": false,
+      "prerequisites": ["protocol.replay_duplicate_rejection"]
+    },
+    {
+      "id": "protocol.ratchet_forward_secrecy",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": false,
+      "prerequisites": ["protocol.endpoint_identity_authentication"]
+    },
+    {
+      "id": "protocol.encrypted_relay_headers",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": false,
+      "prerequisites": ["protocol.complete_aad_binding"]
+    },
+    {
+      "id": "protocol.authenticated_padding",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": false,
+      "prerequisites": [
+        "protocol.authenticated_encryption",
+        "protocol.encrypted_relay_headers"
+      ]
+    },
+    {
+      "id": "protocol.plaintext_fallback_forbidden",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": false,
+      "prerequisites": []
+    },
+    {
+      "id": "protocol.secure_session_foundation",
+      "scope": "protocol_session",
+      "mandatory": true,
+      "derived": true,
+      "prerequisites": [
+        "protocol.authenticated_encryption",
+        "protocol.complete_aad_binding",
+        "protocol.endpoint_identity_authentication",
+        "protocol.verify_before_send",
+        "protocol.replay_duplicate_rejection",
+        "protocol.expiry_rollback_rejection",
+        "protocol.ratchet_forward_secrecy",
+        "protocol.encrypted_relay_headers",
+        "protocol.authenticated_padding",
+        "protocol.plaintext_fallback_forbidden"
+      ]
+    },
+    {
+      "id": "custody.memory_only_ephemeral",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": true,
+      "prerequisites": []
+    },
+    {
+      "id": "custody.os_secure_store",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.memory_only_ephemeral"]
+    },
+    {
+      "id": "custody.software_backed",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.non_exportable",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.device_bound",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.unlocked_device_required",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.os_user_presence",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.unlocked_device_required"]
+    },
+    {
+      "id": "custody.device_credential",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.os_user_presence"]
+    },
+    {
+      "id": "custody.strong_biometric",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.os_user_presence"]
+    },
+    {
+      "id": "custody.authentication_validity_window",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.os_user_presence"]
+    },
+    {
+      "id": "custody.enrollment_change_invalidation",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.strong_biometric"]
+    },
+    {
+      "id": "custody.hardware_backed",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": [
+        "custody.non_exportable",
+        "custody.device_bound"
+      ]
+    },
+    {
+      "id": "custody.hardware_enforced_user_authentication",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": [
+        "custody.hardware_backed",
+        "custody.os_user_presence"
+      ]
+    },
+    {
+      "id": "custody.android_keystore",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.apple_keychain",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.linux_secret_service",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.data_protection_keychain",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": [
+        "custody.apple_keychain",
+        "custody.device_bound",
+        "custody.unlocked_device_required"
+      ]
+    },
+    {
+      "id": "custody.tee",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": ["custody.hardware_backed"]
+    },
+    {
+      "id": "custody.strongbox",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": [
+        "custody.android_keystore",
+        "custody.hardware_backed"
+      ]
+    },
+    {
+      "id": "custody.secure_enclave",
+      "scope": "local_custody",
+      "mandatory": false,
+      "derived": false,
+      "prerequisites": [
+        "custody.apple_keychain",
+        "custody.hardware_backed"
+      ]
+    }
+  ]
+}

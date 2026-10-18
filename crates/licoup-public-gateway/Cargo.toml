@@ -1,0 +1,57 @@
+[package]
+name = "licoup-public-gateway"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "LicoUp Public Gateway: the public-facing optional services — the service-neutral MCP engine, the subagent MCP service and the Telegram communication channel."
+
+# The crate is two layers. `wire` and `server` are the service-neutral MCP
+# engine: framing, initialization, tool listing and calls, with no subagent
+# catalog, no spawned process and no endpoint. The `service` payload is the
+# optional subagent MCP package: the five-tool subagent application, the stdio
+# connector, the authenticated loopback service and its lifecycle. Building
+# without the default feature yields the neutral engine alone, so a consumer
+# of the engine never links the optional payload. `telegram` is the
+# communication-channel stack behind the optional Telegram channel package.
+# The kernel links this library for channel custody and status; the package
+# processes it ships are what stay optional.
+[features]
+default = ["service"]
+service = []
+
+[dependencies]
+anyhow = "1.0"
+fs2 = "0.4"
+licoup-foundation = { path = "../licoup-foundation", version = "0.3.0" }
+libc = "0.2"
+rand_core = { version = "0.6", features = ["getrandom"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+# The serving process measures its own bytes against the digest the launcher
+# approved, so the payload that comes up is provably the approved one.
+sha2 = "0.10"
+ureq = { version = "2.10", features = ["json"] }
+uuid = { version = "1.11", features = ["v4"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Security_Authorization",
+  "Win32_Storage_FileSystem",
+  "Win32_System_SystemServices",
+  "Win32_System_Threading",
+] }
+
+[[bin]]
+name = "lico-subagent-mcp"
+path = "src/main.rs"
+required-features = ["service"]
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the optional service binary, which links
+# no kernel crate and reads its own package documents as data.
+[dev-dependencies]
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }

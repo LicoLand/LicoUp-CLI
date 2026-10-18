@@ -1,0 +1,15 @@
+[workspace]
+
+[package]
+name = "licoup-endpoint-collaboration"
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+publish = false
+description = "Optional endpoint collaboration package (org.licoland.feature.endpoint-collaboration): the boundary vocabulary and availability contract for installable cross-device collaboration over the kernel's custody, conversation and authority ports."
+
+[dependencies]
+# The consumer-owned port declaration this package implements: custody, durable
+# state, clock and carrier, with no SDK type in its signature.
+licoup-endpoint-core = { path = "../../crates/licoup-endpoint-core" }

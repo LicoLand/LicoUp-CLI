@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lico://client-bridge/client-error/v1",
+  "title": "ClientError",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "fields"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "fields": {
+      "type": "array"
+    }
+  },
+  "version": 1,
+  "fields": [
+    {
+      "name": "code",
+      "type": "enum",
+      "values": [
+        "invalid_request",
+        "agent_identifier_missing",
+        "agent_message_missing",
+        "agent_message_input_limit",
+        "agent_runtime_unsupported",
+        "native_agent_runtime_profile_unavailable",
+        "native_agent_executable_unavailable",
+        "agent_conversation_dispatch_failed",
+        "stream_protocol_failed",
+        "terminal_result_invalid",
+        "command_failed",
+        "data_home_operation_failed",
+        "data_home_operation_requires_dedicated_process",
+        "data_home_confirmation_required",
+        "data_home_copy_failed",
+        "data_home_copy_unsupported_entry",
+        "data_home_destination_exists",
+        "data_home_destination_invalid",
+        "data_home_destination_nested",
+        "data_home_destination_unavailable",
+        "data_home_environment_selected",
+        "data_home_previous_root_cleanup_failed",
+        "data_home_previous_root_marker_cleanup_failed",
+        "data_home_previous_root_invalid",
+        "data_home_previous_root_unavailable",
+        "data_home_recovery_autostart_failed",
+        "data_home_recovery_cleanup_failed",
+        "data_home_recovery_not_available",
+        "data_home_recovery_not_required",
+        "data_home_relocation_recovery_required",
+        "data_home_selection_changed",
+        "data_home_source_unavailable",
+        "command_panicked",
+        "response_too_large",
+        "request_too_large",
+        "invalid_json",
+        "invalid_protocol",
+        "invalid_request_id",
+        "invalid_workflow_id",
+        "invalid_method",
+        "invalid_args",
+        "invalid_portable_data_dir",
+        "invalid_params",
+        "invalid_collection",
+        "invalid_document",
+        "state_operation_failed",
+        "selection_matrix_unavailable",
+        "selection_policy_unavailable",
+        "selection_policy_invalid_revision",
+        "selection_policy_already_adopted",
+        "selection_policy_predecessor_unexpected",
+        "selection_policy_revision_conflict",
+        "selection_policy_not_adopted",
+        "selection_policy_supersede_stale",
+        "selection_policy_not_in_force",
+        "selection_policy_predecessor_unknown",
+        "workflow_mismatch",
+        "command_usage",
+        "streaming_command_unsupported",
+        "authorization_required",
+        "authorization_failed",
+        "process_local_shutdown_failed",
+        "private_input_transport_required",
+        "cli_command_missing",
+        "cli_command_unknown",
+        "cli_operation_unsupported",
+        "cli_required_argument_missing",
+        "cli_argument_unexpected",
+        "cli_option_unknown",
+        "cli_required_option_missing",
+        "cli_option_value_missing",
+        "cli_option_duplicate",
+        "cli_option_constraint_violation",
+        "cli_json_invalid",
+        "cli_argument_count_exceeded",
+        "cli_argument_bytes_exceeded"
+      ]
+    },
+    {
+      "name": "stage",
+      "type": "enum",
+      "values": [
+        "request/validation",
+        "cli/admission",
+        "discovery/adapter",
+        "discovery/driver",
+        "process/launch",
+        "conversation/dispatch",
+        "conversation/stream_receive",
+        "conversation/terminal_result",
+        "stdio_rpc/response"
+      ]
+    },
+    {
+      "name": "component",
+      "type": "enum",
+      "values": [
+        "stdio_rpc",
+        "runtime_adapter",
+        "runtime_process",
+        "conversation_runtime",
+        "native_cli"
+      ]
+    },
+    {
+      "name": "retryable",
+      "type": "boolean"
+    },
+    {
+      "name": "recovery",
+      "type": "enum",
+      "values": [
+        "correct_request",
+        "use_cli_help",
+        "correct_command_arguments",
+        "provide_valid_json",
+        "reduce_command_arguments",
+        "select_supported_adapter",
+        "install_or_retry_runtime",
+        "preserve_draft_and_retry",
+        "review_terminal_result",
+        "retry_or_review_request"
+      ]
+    },
+    {
+      "name": "presentationArgs",
+      "type": "bounded_string_map",
+      "maxEntries": 4,
+      "maxKeyBytes": 32,
+      "maxValueBytes": 96,
+      "allowedKeys": [
+        "agentLabel",
+        "field",
+        "resultKind",
+        "runtimeLabel",
+        "sequence"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "licomesh.secure-mesh.acp-archive-release-proof-config.v1",
+  "reportOutput": "build/reports/secure-mesh-acp-archive-release-proof.json",
+  "sourceChecks": [
+    {
+      "id": "semantic-archive-privacy-defaults-hide-raw",
+      "file": "crates/licoup-native/src/domain/conversation/event_semantics.rs",
+      "tokens": [
+        "privacy_defaults",
+        "\"defaultView\": \"thread\"",
+        "\"hideRawInDefaultView\": true",
+        "\"hideAuditInDefaultView\": true",
+        "\"redactPaths\": true",
+        "\"redactTokens\": true",
+        "\"redactFullCommandPayloads\": true"
+      ]
+    },
+    {
+      "id": "semantic-archive-markdown-keeps-diagnostics-explicit",
+      "file": "crates/licoup-native/src/domain/conversation_semantic/markdown.rs",
+      "tokens": [
+        "Default view: **thread**",
+        "## Raw evidence (diagnostics)"
+      ]
+    },
+    {
+      "id": "flutter-models-preserve-layer-separation",
+      "files": [
+        "apps/desktop/lib/src/contracts/agent_conversation_models.dart",
+        "apps/desktop/lib/src/contracts/agent_conversation_semantic.dart",
+        "apps/desktop/lib/src/contracts/agent_conversation_session.dart"
+      ],
+      "tokens": [
+        "AgentSemanticConversation",
+        "threadMessages",
+        "executionMessages",
+        "hasDiagnostics",
+        "rawEvidence"
+      ]
+    },
+    {
+      "id": "workspace-hides-raw-behind-diagnostics",
+      "files": [
+        "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_workspace.dart",
+        "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_message_view.dart"
+      ],
+      "tokens": [
+        "_ConversationDiagnosticsPanel",
+        "conversation-diagnostics",
+        "hasDiagnostics",
+        "rawEvidence"
+      ]
+    },
+    {
+      "id": "architecture-enforces-semantic-layers",
+      "files": [
+        "apps/desktop/scripts/verify-client-architecture.mjs",
+        "apps/desktop/scripts/client-architecture/checks/native/conversation-domain.mjs",
+        "apps/desktop/scripts/client-architecture/checks/composition.mjs"
+      ],
+      "tokens": [
+        "native semantic conversation must use one thin root and nine explicitly dependent leaves",
+        "semantic conversation leaves must retain separate model, assembly, projection, privacy, validation, rendering, and IO authorities",
+        "Flutter conversation models must preserve semantic layers without flattening authority",
+        "workspace must render shared semantic layers without per-provider UI forks",
+        "conversationSemanticLeaves",
+        "conversationSemanticSources"
+      ]
+    },
+    {
+      "id": "acp-archive-layer-is-protected-payload-class",
+      "file": "crates/licoup-native/src/core/secure_mesh_acp.rs",
+      "tokens": [
+        "ArchiveLayer",
+        "archive_layer",
+        "is_protected",
+        "reject_plaintext_acp_protected_payload_relay"
+      ]
+    },
+    {
+      "id": "release-cli-proof-covers-file-receive-without-auto-open",
+      "file": "tools/scripts/client-secure-mesh-release-cli-proof.mjs",
+      "tokens": [
+        "fileReceiveConfirmationReady",
+        "autoPreviewEnabled",
+        "autoIngestionEnabled",
+        "fileRouteReady",
+        "fileReceiveDestinationReady"
+      ]
+    }
+  ],
+  "nativeTestFilters": [
+    "adapters_emit_semantic_layers_with_raw_evidence_refs",
+    "secure_mesh_acp_payload_classes_cover_protected_taxonomy",
+    "secure_mesh_acp_plaintext_protected_payload_relay_is_blocked"
+  ]
+}

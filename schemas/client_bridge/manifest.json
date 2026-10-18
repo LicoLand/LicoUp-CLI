@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "families": [
+    {
+      "id": "client_error",
+      "status": "active",
+      "schema": "schemas/client_bridge/client_error.schema.json",
+      "rustOutput": "crates/licoup-native/src/ffi/generated/client_error.rs",
+      "dartOutput": "apps/desktop/lib/src/contracts/generated/client_error.g.dart"
+    },
+    {
+      "id": "state",
+      "status": "active",
+      "schema": "schemas/client_bridge/state.json",
+      "rustOutput": "crates/licoup-native/src/ffi/generated/client_state.rs",
+      "dartOutput": "apps/desktop/lib/src/contracts/generated/client_state.g.dart"
+    },
+    {
+      "id": "secure_mesh",
+      "status": "active",
+      "schema": "schemas/client_bridge/secure_mesh.json",
+      "rustOutput": "crates/licoup-native/src/ffi/generated/secure_mesh.rs",
+      "dartOutput": "apps/desktop/lib/src/contracts/generated/secure_mesh.g.dart"
+    },
+    {
+      "id": "conversation",
+      "status": "active",
+      "schema": "schemas/client_bridge/conversation.json",
+      "rustOutput": "crates/licoup-native/src/ffi/generated/conversation.rs",
+      "dartOutput": "apps/desktop/lib/src/contracts/generated/conversation.g.dart"
+    },
+    {
+      "id": "strategy",
+      "status": "active",
+      "schema": "schemas/client_bridge/strategy.json",
+      "rustOutput": "crates/licoup-native/src/ffi/generated/strategy.rs",
+      "dartOutput": "apps/desktop/lib/src/contracts/generated/strategy.g.dart"
+    },
+    {
+      "id": "package",
+      "status": "active",
+      "schema": "schemas/client_bridge/package.json",
+      "rustOutput": "crates/licoup-native/src/ffi/generated/package.rs",
+      "dartOutput": "apps/desktop/lib/src/contracts/generated/package.g.dart"
+    },
+    {
+      "id": "adapter_plugin",
+      "status": "planned",
+      "schema": "schemas/client_bridge/adapter_plugin.json",
+      "rustOutput": "crates/licoup-native/src/ffi/generated/adapter_plugin.rs",
+      "dartOutput": "apps/desktop/lib/src/contracts/generated/adapter_plugin.g.dart"
+    },
+    {
+      "id": "agent_usage",
+      "status": "planned",
+      "schema": "schemas/client_bridge/agent_usage.json",
+      "rustOutput": "crates/licoup-native/src/ffi/generated/agent_usage.rs",
+      "dartOutput": "apps/desktop/lib/src/contracts/generated/agent_usage.g.dart"
+    }
+  ]
+}

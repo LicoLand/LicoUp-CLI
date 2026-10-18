@@ -1,0 +1,87 @@
+id = "cursor"
+binary_names = ["cursor-agent"]
+official_docs = "https://cursor.com/docs/cli/installation"
+
+[[channels]]
+id = "homebrew"
+kind = "homebrew"
+oses = ["macos"]
+architectures = ["aarch64", "x86_64"]
+priority = 10
+official_recommended = true
+licoup_verified = true
+requires_manager = "homebrew"
+elevation = "none"
+scope = "user"
+package_coordinate = "cursor-cli"
+package_form = "cask"
+official_source = "https://downloads.cursor.com"
+version_policy = "latest-stable"
+install_argv = ["brew", "install", "--cask", "cursor-cli"]
+update_argv = ["brew", "upgrade", "--cask", "cursor-cli"]
+uninstall_argv = ["brew", "uninstall", "--cask", "cursor-cli"]
+verify_argv = ["cursor-agent", "--version"]
+
+[[channels]]
+id = "npm"
+kind = "npm"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = false
+licoup_verified = false
+requires_manager = "npm"
+elevation = "none"
+scope = "user"
+selectable = false
+unsupported_reason = "no-official-package-coordinate"
+package_coordinate = "cursor-agent"
+official_source = "https://cursor.com/docs/cli/installation"
+version_policy = "latest-stable"
+
+[[channels]]
+id = "winget"
+kind = "winget"
+oses = ["windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = false
+licoup_verified = false
+requires_manager = "winget"
+elevation = "none"
+scope = "user"
+selectable = false
+unsupported_reason = "no-official-package-coordinate"
+package_coordinate = "cursor-cli"
+official_source = "https://cursor.com/docs/cli/installation"
+version_policy = "latest-stable"
+
+[[channels]]
+id = "official-artifact"
+kind = "official-artifact"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 30
+official_recommended = true
+licoup_verified = true
+requires_manager = "none"
+elevation = "none"
+scope = "user"
+package_coordinate = "agent-cli-package.tar.gz"
+official_source = "https://downloads.cursor.com"
+version_policy = "vendor-latest"
+install_argv = ["tar", "-xzf", "{artifact}", "-C", "{staging}"]
+update_argv = ["cursor-agent", "update"]
+uninstall_argv = ["rm", "{install}"]
+verify_argv = ["cursor-agent", "--version"]
+
+[channels.artifact]
+origin_host = "downloads.cursor.com"
+url_template = "https://downloads.cursor.com/lab/{version}/{vendorOs}/{vendorArch}/agent-cli-package.tar.gz"
+[channels.artifact.vendor_os]
+macos = "darwin"
+linux = "linux"
+windows = "windows"
+[channels.artifact.vendor_arch]
+aarch64 = "arm64"
+x86_64 = "x64"

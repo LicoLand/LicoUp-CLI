@@ -1,0 +1,37 @@
+[package]
+# The Gateway package's own programs.
+#
+# `package/manifest.json` declares `runtime.entry = "bin/lico-gateway"`, and the
+# two binary targets here are what that declaration points at. The kernel
+# declares neither: a client build carries no gateway process, so the package
+# that owns the payload owns the targets that build it.
+#
+# The crate sits above both of its dependencies. It links the host for the ports
+# the runtime consumes (`licoup-native`) and the runtime itself
+# (`licoup-private-gateway`); the credential contract comes from
+# `licoup-vault`, which the kernel already links. This package
+# is where those are joined into the program the login item and the client's
+# sidecar manager both start.
+name = "licoup-private-gateway-entry"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "lico-gateway"
+path = "src/bin/lico-gateway.rs"
+
+# The legacy name runs the same runtime. Installs that still look for it find a
+# program rather than a missing file.
+[[bin]]
+name = "lico-llm-gateway"
+path = "src/bin/lico-llm-gateway.rs"
+
+[dependencies]
+licoup-foundation = { path = "../../licoup-foundation" }
+licoup-private-gateway = { path = ".." }
+licoup-native = { path = "../../licoup-native" }
+licoup-vault = { path = "../../licoup-vault" }
+serde_json.workspace = true

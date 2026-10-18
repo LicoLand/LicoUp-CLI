@@ -1,0 +1,42 @@
+[package]
+name = "licoup-agent-codex"
+version = "0.14.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "Codex adapter package: the Codex app-server driver and its vendor protocol"
+
+# The crate is one package's program. `parser` and `app_server` are this Agent's
+# vendor protocol below the adapter port: the app-server JSON-RPC vocabulary and
+# the byte-line parser that classifies it once, per ADR-0008. `port` is the seam
+# the host answers, `registration` is what composition injects into
+# `licoup-agent-adapter-sdk`, and `replay` is the arm that drives the same parser
+# from a recorded transcript.
+#
+# The kernel links no part of this crate's protocol. Composition names the crate
+# for its registration while the extension host's binary route is completed by
+# the agent-execution port; nothing here reaches back into a client crate.
+[features]
+default = []
+
+[dependencies]
+licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+# The shared bounded-process owner a read-only observation asks for; the package
+# supervises no child of its own and this is the same bounded runner the client
+# uses, so an observation cannot outlive its bound.
+licoup-foundation = { path = "../licoup-foundation" }
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+
+[[bin]]
+name = "lico-agent-codex"
+path = "src/bin/lico-agent-codex.rs"
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the package binary, which links no kernel
+# crate and reads its own package documents as data.
+[dev-dependencies]
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }

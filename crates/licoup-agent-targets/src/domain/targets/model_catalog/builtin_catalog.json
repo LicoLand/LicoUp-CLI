@@ -1,0 +1,289 @@
+{
+  "last_updated": "2026-09-13",
+  "description": "Built-in per-agent model -> reasoning effort reference table. Rows are curated from official vendor documentation and override scanned reasoningEfforts for matching models. A model present in a scan but missing here keeps its scanned data; rows for models not present in a scan are never injected. An empty reasoningEfforts array means the vendor officially documents no configurable effort levels for that model. Order is ascending strength and becomes the picker order.",
+  "agents": {
+    "codex": {
+      "models": [
+        {
+          "name": "gpt-5.6-sol",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
+          "source": "https://github.com/openai/codex/blob/main/codex-rs/models-manager/models.json"
+        },
+        {
+          "name": "gpt-5.6-terra",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
+          "source": "https://github.com/openai/codex/blob/main/codex-rs/models-manager/models.json"
+        },
+        {
+          "name": "gpt-5.6-luna",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://github.com/openai/codex/blob/main/codex-rs/models-manager/models.json"
+        },
+        {
+          "name": "gpt-5.5",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh"],
+          "source": "https://github.com/openai/codex/blob/main/codex-rs/models-manager/models.json"
+        },
+        {
+          "name": "gpt-5.4",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh"],
+          "source": "https://github.com/openai/codex/blob/main/codex-rs/models-manager/models.json"
+        },
+        {
+          "name": "gpt-5.4-mini",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh"],
+          "source": "https://github.com/openai/codex/blob/main/codex-rs/models-manager/models.json"
+        },
+        {
+          "name": "gpt-5.2",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh"],
+          "source": "https://github.com/openai/codex/blob/main/codex-rs/models-manager/models.json"
+        }
+      ],
+      "notes": "gpt-5.3-codex-spark is a text-only research preview; OpenAI documents no effort levels for it, so scanned data passes through."
+    },
+    "claude-code": {
+      "models": [
+        {
+          "name": "claude-fable-5-1",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://code.claude.com/docs/en/model-config"
+        },
+        {
+          "name": "claude-opus-5",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://code.claude.com/docs/en/model-config"
+        },
+        {
+          "name": "claude-fable-5",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://code.claude.com/docs/en/model-config"
+        },
+        {
+          "name": "claude-opus-4-8",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://code.claude.com/docs/en/model-config"
+        },
+        {
+          "name": "claude-opus-4-7",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://code.claude.com/docs/en/model-config"
+        },
+        {
+          "name": "claude-opus-4-6",
+          "reasoningEfforts": ["low", "medium", "high", "max"],
+          "source": "https://code.claude.com/docs/en/model-config"
+        },
+        {
+          "name": "claude-sonnet-5",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://code.claude.com/docs/en/model-config"
+        },
+        {
+          "name": "claude-sonnet-4-6",
+          "reasoningEfforts": ["low", "medium", "high", "max"],
+          "source": "https://code.claude.com/docs/en/model-config"
+        },
+        {
+          "name": "claude-haiku-4-5",
+          "aliases": ["claude-haiku-4-5-20251001"],
+          "reasoningEfforts": [],
+          "source": "https://code.claude.com/docs/en/model-config (models not listed do not support effort)"
+        }
+      ]
+    },
+    "cursor": {
+      "models": [
+        {
+          "name": "gpt-5.6-sol",
+          "reasoningEfforts": [],
+          "source": "https://forum.cursor.com/t/155648 (staff: High and Extra High are GPT-5.4 reasoning effort levels; selector Low/Medium/High/Extra High)"
+        },
+        {
+          "name": "gpt-5.6-terra",
+          "reasoningEfforts": [],
+          "source": "https://forum.cursor.com/t/155648"
+        },
+        {
+          "name": "gpt-5.6-luna",
+          "reasoningEfforts": [],
+          "source": "https://forum.cursor.com/t/155648"
+        },
+        {
+          "name": "gpt-5.5",
+          "reasoningEfforts": [],
+          "source": "https://forum.cursor.com/t/155648"
+        },
+        {
+          "name": "gpt-5.4",
+          "reasoningEfforts": [],
+          "source": "https://forum.cursor.com/t/155648"
+        }
+      ],
+      "notes": "Cursor Agent CLI fuses thinking intensity and context into the model selector (for example Fable 5 1M Medium). The picker has no independent reasoning-effort column."
+    },
+    "copilot": {
+      "models": [
+        {
+          "name": "claude-sonnet-4.6",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference (max is the highest-depth tier for Anthropic models)"
+        },
+        {
+          "name": "claude-sonnet-5",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        },
+        {
+          "name": "claude-opus-4.6",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        },
+        {
+          "name": "claude-opus-4.7",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        },
+        {
+          "name": "claude-opus-4.8",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        },
+        {
+          "name": "claude-fable-5",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        },
+        {
+          "name": "gpt-5.4",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        },
+        {
+          "name": "gpt-5.5",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        },
+        {
+          "name": "gpt-5.6-luna",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        },
+        {
+          "name": "gpt-5.6-sol",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        },
+        {
+          "name": "gpt-5.6-terra",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        },
+        {
+          "name": "gpt-5.3-codex",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh"],
+          "source": "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        }
+      ],
+      "notes": "Copilot documents a global enum (low/medium/high/xhigh/max, max for Anthropic models) with the runtime picker filtering per model; rows encode that global policy. Gemini/MAI/Kimi models are documented as not supporting configurable reasoning and pass through scanned data."
+    },
+    "kimi-code": {
+      "models": [
+        {
+          "name": "k3",
+          "aliases": ["kimi-k3"],
+          "reasoningEfforts": ["low", "high", "max"],
+          "source": "https://www.kimi.com/code/docs/en/kimi-code/models"
+        },
+        {
+          "name": "kimi-for-coding",
+          "aliases": ["kimi-k2.7-code"],
+          "reasoningEfforts": [],
+          "source": "https://www.kimi.com/code/docs/en/kimi-code/models (Thinking always on, no levels)"
+        },
+        {
+          "name": "kimi-for-coding-highspeed",
+          "aliases": ["kimi-k2.7-code-highspeed"],
+          "reasoningEfforts": [],
+          "source": "https://www.kimi.com/code/docs/en/kimi-code/models (Thinking always on, no levels)"
+        },
+        {
+          "name": "kimi-k2.6",
+          "reasoningEfforts": [],
+          "source": "https://platform.kimi.ai/docs/models (thinking.type enabled/disabled only)"
+        }
+      ]
+    },
+    "antigravity": {
+      "models": [
+        {
+          "name": "gemini-3.1-pro",
+          "aliases": ["gemini-3.1-pro-preview"],
+          "reasoningEfforts": [],
+          "source": "Antigravity exposes effort as distinct model variants, not a configurable reasoning-effort option"
+        },
+        {
+          "name": "gemini-3.5-flash",
+          "reasoningEfforts": [],
+          "source": "Antigravity exposes effort as distinct model variants, not a configurable reasoning-effort option"
+        }
+      ],
+      "notes": "Antigravity has no independent reasoning-effort picker; High and Medium remain part of native model variant names."
+    },
+    "openclaw": {
+      "models": [
+        {
+          "name": "deepseek-v4-pro",
+          "reasoningEfforts": ["xhigh", "max"],
+          "source": "https://docs.openclaw.ai/tools/thinking"
+        },
+        {
+          "name": "deepseek-v4-flash",
+          "reasoningEfforts": ["xhigh", "max"],
+          "source": "https://docs.openclaw.ai/tools/thinking"
+        },
+        {
+          "name": "kimi-k3",
+          "aliases": ["k3"],
+          "reasoningEfforts": ["max"],
+          "source": "https://docs.openclaw.ai/tools/thinking"
+        },
+        {
+          "name": "gpt-5.6-sol",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
+          "source": "https://docs.openclaw.ai/tools/thinking"
+        },
+        {
+          "name": "gpt-5.6-terra",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max", "ultra"],
+          "source": "https://docs.openclaw.ai/tools/thinking"
+        },
+        {
+          "name": "gpt-5.6-luna",
+          "reasoningEfforts": ["low", "medium", "high", "xhigh", "max"],
+          "source": "https://docs.openclaw.ai/tools/thinking"
+        }
+      ]
+    },
+    "hermes": {
+      "models": [],
+      "notes": "Hermes documents a global enum (none/minimal/low/medium/high/xhigh/max/ultra, default medium) with no per-model static matrix; scanned data passes through."
+    },
+    "pi": {
+      "models": [],
+      "notes": "Pi declares per-model thinkingLevelMap inside its own bundled catalogs; scanned data passes through."
+    },
+    "opencode": {
+      "models": [],
+      "notes": "OpenCode computes variants per provider family at runtime; no official static per-model list. Scanned data passes through."
+    },
+    "kilo-code": {
+      "models": [],
+      "notes": "Kilo Code refreshes its catalog from models.dev hourly and declines to maintain a static list; scanned data passes through."
+    },
+    "code": {
+      "models": [],
+      "notes": "VS Code Copilot model line is account- and update-dependent; scanned data passes through."
+    }
+  }
+}

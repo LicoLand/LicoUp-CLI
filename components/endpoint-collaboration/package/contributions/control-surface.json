@@ -1,0 +1,15 @@
+{
+  "schema": "licoup.declarative-control-surface.v1",
+  "id": "org.licoland.feature.endpoint-collaboration/control-surface",
+  "capability": "endpoint.collaboration.v1",
+  "protocol": "licoup.mobile-relay-command.v1",
+  "mapsOnto": "existing-command-routes",
+  "executesNothing": true,
+  "outboundEntry": {
+    "route": "mobile.commands.create",
+    "secureRoute": "mobile.commands.createSecure",
+    "syncRoute": "mobile.commands.sync"
+  },
+  "guardedBy": "endpoint.collaboration.v1",
+  "notes": "Names the kernel command routes this capability's outbound traffic leaves through. The mapping declares fields and starts nothing: the host's own command family owns dispatch, and the endpoint collaboration boundary owns whether the outbound send is permitted at all."
+}

@@ -1,0 +1,33 @@
+# LicoUp conversation verification models
+# schema: licoup.agent-conversation-verification-models.v1
+#
+# Single source of truth for Agent → Model, provider, and effort used by:
+#   - ACP / conversation parity gates
+#   - same-session / product conversation gates
+#   - client-agent-conversation-verify / product-e2e
+#
+# Ordinary verification uses maintained model, provider, and independent
+# reasoning-effort selections. The Release acceptance route sends one Hi per
+# model and accepts the Agent's actual reply without a response-format request.
+#
+# Maintain only this file when changing verification selectors.
+# Runtime loads it once (module cache). No environment selector overrides.
+
+schema_version = "licoup.agent-conversation-verification-models.v1"
+
+[models]
+# agent-id = "wire-or-alias model id passed to the agent / gate"
+"claude-code" = "haiku"
+antigravity = "gemini-3.8-flash-low"
+codex = "gpt-6-luna"
+cursor = "composer-2.5"
+"deepseek-harness" = "deepseek-flash"
+"kimi-code" = "kimi-code/kimi-for-coding"
+"kilo-code" = "Kilo Auto Free"
+
+[providers]
+"deepseek-harness" = "deepseek-official"
+
+[reasoning_efforts]
+codex = "low"
+"deepseek-harness" = "low"

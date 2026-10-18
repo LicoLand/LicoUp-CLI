@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://licoland.com/schemas/extensions/usage.schema.json",
+  "title": "LicoUp usage observation",
+  "description": "One observation from one usage source. The source, the instance and the authority are bound by the host at the transport, never asserted here. Correction raises `revision`; `retract` withdraws this observation and nothing else. An unknown metric carries no number, because a zero would be a claim that nothing happened.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "observationId",
+    "revision",
+    "operation",
+    "sourceEpoch",
+    "scopeRef",
+    "observedAt",
+    "metrics"
+  ],
+  "properties": {
+    "schema": {
+      "const": "licoup.usage-observation.v1"
+    },
+    "observationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Stable within one source epoch. A strictly higher revision replaces a lower one; equal or lower revisions never do."
+    },
+    "operation": {
+      "enum": ["upsert", "retract"],
+      "description": "`upsert` reports or revises; `retract` withdraws this observation. A retraction cannot offset another source's usage."
+    },
+    "sourceEpoch": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "description": "Reset and replay defence. A new epoch starts new cumulative series."
+    },
+    "scopeRef": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "description": "An invocation or an authorized aggregate read range, issued by the host. It is what keeps a producer from attaching itself to another user's run."
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC as the producer saw it. An anomalous clock is preserved as the source's own fact and never overrides the host's monotonic clock."
+    },
+    "intervalStart": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The start of the window, or of the cumulative series. Two cumulative readings are comparable only within one epoch, one metric and one origin."
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Namespaced metric to reading. At least one on an upsert, and none on a retraction.",
+      "propertyNames": {
+        "$ref": "#/$defs/namespacedName"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["value", "unit", "temporality", "quality"],
+        "properties": {
+          "value": {
+            "type": ["string", "null"],
+            "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$",
+            "maxLength": 40,
+            "description": "Exact decimal text, never a JSON number, so no consumer can round it. Null when the quality is unknown."
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "temporality": {
+            "enum": ["delta", "cumulative", "gauge", "absolute"]
+          },
+          "quality": {
+            "enum": ["reported", "estimated", "unknown"],
+            "description": "What the producer says about its own value. A producer reporting `reported` gains no settlement authority from saying so."
+          },
+          "includes": {
+            "type": "array",
+            "uniqueItems": true,
+            "description": "Metrics this reading already contains, so a total is never added to its own subset.",
+            "items": {
+              "$ref": "#/$defs/namespacedName"
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "quality": {
+                  "const": "unknown"
+                }
+              },
+              "required": ["quality"]
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "value": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "currency", "quality"],
+      "description": "An estimate or a report, never an assertion about the user's budget.",
+      "properties": {
+        "amount": {
+          "type": ["string", "null"],
+          "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$",
+          "maxLength": 40,
+          "description": "Exact decimal text. Binary floating point never enters a ledger."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO 4217."
+        },
+        "quality": {
+          "enum": ["reported", "estimated", "unknown"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "quality": {
+                "const": "unknown"
+              }
+            },
+            "required": ["quality"]
+          },
+          "then": {
+            "properties": {
+              "amount": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "amount": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "const": "upsert"
+          }
+        },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "metrics": {
+            "minProperties": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "metrics": {
+            "maxProperties": 0
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "namespacedName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+(?:[./-][A-Za-z0-9_-]+)*$",
+      "maxLength": 160
+    }
+  }
+}

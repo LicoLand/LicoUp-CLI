@@ -1,0 +1,35 @@
+[workspace]
+
+[package]
+name = "licoup-appearance"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+publish = false
+description = "Appearance resource converter (org.licoland.converter.appearance): the native owner of the appearance slice of the persisted client-state format, declared through the package conversion contract."
+
+[[bin]]
+name = "licoup-appearance-convert"
+path = "src/main.rs"
+
+[dependencies]
+# The client's own migration owner. This package declares the conversion and runs that
+# owner over one data root; it keeps no conversion algorithm and no second writer.
+licoup-native = { path = "../../crates/licoup-native" }
+# The published package conversion contract this package declares itself through.
+licoup-extension-contracts = { path = "../../crates/licoup-extension-contracts" }
+anyhow = "1.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+# The private-state writers the suites seed a synthetic root with, so a fixture is
+# written the way the client's own owner writes one.
+licoup-foundation = { path = "../../crates/licoup-foundation" }
+
+# RUSTSEC-2026-0173 (proc-macro-error2 unmaintained): this component is its own
+# workspace, so the root workspace's resolution does not reach it and the pinned
+# hax-lib revision is declared here as well. Same source, same revision.
+[patch.crates-io]
+hax-lib = { git = "https://github.com/hacspec/hax.git", rev = "8f9cb576e58f6cc7e9ed249a7d4439b0f7ed0da7" }

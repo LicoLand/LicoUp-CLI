@@ -1,0 +1,55 @@
+[package]
+name = "licoup-agent-pi"
+version = "0.14.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+description = "Pi adapter package: the Pi RPC driver, its process half and its vendor protocol"
+
+# The crate is one package's program. `parser` and `driver` are this Agent's
+# vendor protocol below the adapter port: the Pi RPC JSONL vocabulary, the
+# byte-line parser that classifies it once, per ADR-0008, and the process half
+# that runs one `pi --mode rpc` turn over it. `port` is the seam the host
+# answers, `registration` is what composition injects into
+# `licoup-agent-adapter-sdk`, and `replay` is the arm that drives the same
+# parser from a recorded transcript.
+#
+# The kernel links no part of this crate's protocol and keeps no Pi driver
+# module of its own: composition names this crate for the registration it
+# injects, for the probe and the execution it composes, and for the turn-event
+# port it answers. Nothing here reaches back into a client crate.
+[features]
+default = []
+
+[dependencies]
+licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+# The user login-shell environment snapshot every Agent CLI launch observes. It
+# is a launch fact of the machine rather than a client fact this package asks
+# its host for, so it is a dependency rather than a port — exactly as
+# `licoup-agent-openclaw` reads the same snapshot and the absolute-path
+# predicate beside it.
+licoup-agent-targets = { path = "../licoup-agent-targets" }
+# The parked-interaction registry a Pi dialog is registered in, the supervised
+# child every Pi launch spawns, the bounded stdin writer the RPC channel is
+# written through and the raw-execution observer its bytes are recorded by are
+# all foundation primitives, so the package reaches the same single
+# implementation the host does rather than keeping second copies of its own.
+licoup-foundation = { path = "../licoup-foundation" }
+serde_json.workspace = true
+uuid.workspace = true
+
+[[bin]]
+name = "lico-agent-pi"
+path = "src/bin/lico-agent-pi.rs"
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the package binary, which links no kernel
+# crate and reads its own package documents as data.
+[dev-dependencies]
+licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+# The driver suite waits for a parked interaction route through the foundation
+# registry's own waiting primitive, which travels behind that crate's
+# `test-support` surface because `cfg(test)` is false for a dependency.
+licoup-foundation = { path = "../licoup-foundation", features = ["test-support"] }

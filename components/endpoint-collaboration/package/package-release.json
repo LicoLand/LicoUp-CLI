@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "licoup.package-release.v1",
+  "packageId": "org.licoland.feature.endpoint-collaboration",
+  "packageVersion": "0.3.0",
+  "clientCompatibility": {
+    "kind": "range",
+    "range": ">=0.3.0, <1.0.0"
+  }
+}

@@ -1,0 +1,16 @@
+[package]
+name = "licoup-project"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+# The private-directory rules every durable owner stands on.
+licoup-foundation = { path = "../licoup-foundation" }
+anyhow.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true

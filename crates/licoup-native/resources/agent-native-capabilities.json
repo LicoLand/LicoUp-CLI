@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "v0.0.1:client-agent-native-capabilities-1",
+  "agents": [
+    {
+      "agentId": "openclaw",
+      "capabilities": ["cli", "acp", "gateway"]
+    },
+    {
+      "agentId": "claude-code",
+      "capabilities": ["cli"]
+    },
+    {
+      "agentId": "codex",
+      "capabilities": ["desktop", "cli", "app-server"]
+    },
+    {
+      "agentId": "antigravity",
+      "capabilities": ["desktop", "cli"]
+    },
+    {
+      "agentId": "opencode",
+      "capabilities": ["cli", "local-server"]
+    },
+    {
+      "agentId": "copilot",
+      "capabilities": ["cli", "acp"]
+    },
+    {
+      "agentId": "kilo-code",
+      "capabilities": ["cli", "local-server"]
+    },
+    {
+      "agentId": "cursor",
+      "capabilities": ["desktop", "cli"]
+    },
+    {
+      "agentId": "hermes",
+      "capabilities": ["cli", "acp", "tui-gateway"]
+    },
+    {
+      "agentId": "kimi-code",
+      "capabilities": ["cli", "acp", "web-server"]
+    },
+    {
+      "agentId": "pi",
+      "capabilities": ["cli", "rpc"]
+    },
+    {
+      "agentId": "deepseek-harness",
+      "capabilities": ["cli", "rpc"]
+    },
+    {
+      "agentId": "lico-agent",
+      "capabilities": ["cli", "rpc"]
+    }
+  ],
+  "quotaSources": [
+    {
+      "agentId": "codex",
+      "provider": "codex"
+    },
+    {
+      "agentId": "cursor",
+      "provider": "cursor"
+    },
+    {
+      "agentId": "antigravity",
+      "provider": "antigravity"
+    },
+    {
+      "agentId": "kimi-code",
+      "provider": "kimi-code"
+    }
+  ]
+}

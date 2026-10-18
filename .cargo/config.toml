@@ -1,0 +1,9 @@
+[build]
+target-dir = "build/crates/licoup-native/target"
+
+# The fixed LicoArc SDK is a revision-pinned git source whose read credentials
+# live in the platform credential helper. Cargo's built-in git client cannot
+# authenticate with that helper (HTTP 401), so git dependencies are fetched
+# with the git CLI, which can.
+[net]
+git-fetch-with-cli = true

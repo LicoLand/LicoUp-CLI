@@ -1,0 +1,7 @@
+{
+  "schema": "licoup.ui-contribution.v1",
+  "id": "org.licoland.adapter.opencode/adapter-status",
+  "kind": "command",
+  "title": "OpenCode adapter status",
+  "actionRef": "org.licoland.adapter.opencode/adapter/status"
+}

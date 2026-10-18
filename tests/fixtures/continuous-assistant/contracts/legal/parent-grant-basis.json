@@ -1,0 +1,8 @@
+{
+  "expect": { "status": "accept", "type": "ParentGrantBasis" },
+  "payload": {
+    "recipientConversationId": "conversation:child-a",
+    "recipientMembershipId": "membership:child-coordinator",
+    "revocationGeneration": 0
+  }
+}

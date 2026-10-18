@@ -1,0 +1,19 @@
+{
+  "expect": { "status": "accept", "type": "Agreement" },
+  "payload": {
+    "id": "agreement:tone",
+    "scope": "matter",
+    "statementRef": {
+      "ownerKind": "event",
+      "opaqueId": "event:fixture-two",
+      "sourceRevision": 2,
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "visibilityScope": "matter",
+      "validity": "current"
+    },
+    "origin": "user-explicit",
+    "effectiveRevision": 2,
+    "validFrom": 1,
+    "revocationGeneration": 0
+  }
+}

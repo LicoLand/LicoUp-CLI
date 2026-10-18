@@ -1,0 +1,7 @@
+#!/bin/sh
+# The repository identity policy. Attribution metadata is refused when a commit
+# message is composed, by the machine's own hook, not by a repository script.
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+exec node "$repo_root/tools/scripts/repository-identity-policy.mjs" commit-msg "$1"

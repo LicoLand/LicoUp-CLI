@@ -1,0 +1,40 @@
+[package]
+name = "licoup-agent-targets"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[features]
+default = []
+# The facts an out-of-crate test build states its expectations against travel
+# behind an explicit feature, because `cfg(test)` is false for a dependency and
+# a `--lib` build compiles no test code. Native's test build enables it so its
+# own scan fixtures keep their isolation seam.
+test-support = []
+
+[dependencies]
+anyhow.workspace = true
+# The path, IO, process, environment and user-shell primitives every scan on
+# this machine stands on.
+licoup-foundation = { path = "../licoup-foundation" }
+# The portable client-state store the discovery cache and the target-route
+# records are written through.
+licoup-client-state = { path = "../licoup-client-state" }
+# The DeepSeek Harness adapter package owns the provider catalogue a default
+# installation starts from; the registry here merges it rather than executing a
+# Node probe to discover it.
+licoup-agent-deepseek = { path = "../licoup-agent-deepseek" }
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+# The launchd autostart label reads the effective user id, and the packaged
+# scan-path manifest is a TOML document.
+libc.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+# The scan and cache fixtures use explicit unique identifiers so a test never
+# collides with another test's persisted records.
+uuid.workspace = true

@@ -1,0 +1,49 @@
+{
+  "expect": { "status": "reject", "reason": "identity_conflict", "check": "task-relation" },
+  "previous": {
+    "goalId": "goal:notes",
+    "parentConversationId": "conversation:parent",
+    "childConversationId": "conversation:child-a",
+    "cardAnchor": {
+      "parentConversationId": "conversation:parent",
+      "eventId": "event:card-a",
+      "sequence": 4,
+      "partId": "part:card-a"
+    },
+    "listingKind": "child-task",
+    "followThroughKind": "durable",
+    "revision": 1,
+    "createdEvent": {
+      "ownerKind": "event",
+      "opaqueId": "event:card-a",
+      "partId": "part:card-a",
+      "sourceRevision": 4,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "visibilityScope": "conversation",
+      "validity": "current"
+    }
+  },
+  "payload": {
+    "goalId": "goal:notes",
+    "parentConversationId": "conversation:parent",
+    "childConversationId": "conversation:child-retry",
+    "cardAnchor": {
+      "parentConversationId": "conversation:parent",
+      "eventId": "event:card-a",
+      "sequence": 4,
+      "partId": "part:card-a"
+    },
+    "listingKind": "child-task",
+    "followThroughKind": "durable",
+    "revision": 2,
+    "createdEvent": {
+      "ownerKind": "event",
+      "opaqueId": "event:card-a",
+      "partId": "part:card-a",
+      "sourceRevision": 4,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "visibilityScope": "conversation",
+      "validity": "current"
+    }
+  }
+}

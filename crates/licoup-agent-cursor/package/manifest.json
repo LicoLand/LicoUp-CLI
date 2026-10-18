@@ -1,0 +1,57 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.adapter.cursor",
+  "version": "0.14.0",
+  "displayName": "Cursor adapter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "agent-execution",
+      "major": 1,
+      "capabilities": [
+        "agent-execution.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-agent-cursor"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.adapter.cursor/agent-process",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.cursor/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.cursor/client-data-home",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "command",
+      "id": "org.licoland.adapter.cursor/adapter-status",
+      "definition": "contributions/adapter-status.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.adapter.cursor/purpose": "The Cursor adapter: the Cursor Agent CLI turn dialect and the vendor wire vocabulary that classifies one strict-NDJSON line exactly once below the adapter port. The Subagent MCP caller surface an installed Cursor client returns for a delegated turn is classified here, where its wire frame is read. The kernel owns no part of Cursor and depends on none of it.",
+    "org.licoland.adapter.cursor/persistentData": "none",
+    "org.licoland.adapter.cursor/persistentDataReason": "This package declares no conversion because it owns no persisted package data of its own: it writes no data home, no cache and no store. The Cursor chat records and the hosted usage ledger the client monitors belong to the installed Cursor client, and the client's own conversation store remains the kernel's."
+  }
+}

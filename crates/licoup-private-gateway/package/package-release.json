@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "licoup.package-release.v1",
+  "packageId": "org.licoland.feature.gateway",
+  "packageVersion": "0.3.0",
+  "clientCompatibility": {
+    "kind": "range",
+    "range": ">=0.3.0, <1.0.0"
+  },
+  "converter": {
+    "kind": "native-executable",
+    "entry": "bin/lico-gateway",
+    "sourceFormat": "openai-chat-completions.v1",
+    "targetFormat": "licoup.conversation.v1"
+  }
+}

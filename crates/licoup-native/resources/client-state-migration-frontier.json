@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "v0.0.1:client-state-migration-frontier-1",
+  "sourceFrontierId": "licoup-state-0.1.1",
+  "frontierId": "licoup-state-0.3.0",
+  "domains": [
+    { "domainId": "adaptive-flywheel", "startupScope": "core", "durability": "durable", "targetSchemaVersion": 2, "steps": [{ "stepId": "adaptive-flywheel.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }, { "stepId": "adaptive-flywheel.workflow-routing-to-2", "fromSchemaVersion": 1, "toSchemaVersion": 2 }] },
+    { "domainId": "agent-tab-order", "startupScope": "feature", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "agent-tab-order.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] },
+    { "domainId": "agent-tool-allowlist", "startupScope": "feature", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "agent-tool-allowlist.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] },
+    { "domainId": "appearance-presentation", "startupScope": "feature", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "appearance-presentation.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] },
+    { "domainId": "canonical-conversation", "startupScope": "core", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "canonical-conversation.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] },
+    { "domainId": "client-state", "startupScope": "core", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "client-state.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] },
+    { "domainId": "current-view", "startupScope": "feature", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "current-view.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] },
+    { "domainId": "gateway-credential-custody", "startupScope": "core", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "gateway-credential-custody.classic-to-data-protection", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] },
+    { "domainId": "mobile-home-layout", "startupScope": "feature", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "mobile-home-layout.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] },
+    { "domainId": "mobile-relay", "startupScope": "feature", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "mobile-relay.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] },
+    { "domainId": "skill-hub-preferences", "startupScope": "feature", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "skill-hub-preferences.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] },
+    { "domainId": "workspace-manifest", "startupScope": "core", "durability": "durable", "targetSchemaVersion": 1, "steps": [{ "stepId": "workspace-manifest.absent-to-1", "fromSchemaVersion": 0, "toSchemaVersion": 1 }] }
+  ]
+}

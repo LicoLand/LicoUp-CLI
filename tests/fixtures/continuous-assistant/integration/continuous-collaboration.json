@@ -1,0 +1,197 @@
+{
+  "schema": "licoup.continuity.journey/v1",
+  "id": "CA-J001",
+  "status": "not_run",
+  "purpose": "父对话与真实任务子对话中交错非编码、专业能力、问答、纠正和故障恢复。",
+  "permission_policy": "Only admitted local/synthetic work; no external sending unless separately authorized.",
+  "steps": [
+    {
+      "seq": 1,
+      "kind": "user",
+      "input": "帮我筹备团队分享；资料齐后整理讲义，发出前给我看。",
+      "expected": "建立非编码Goal、资料等待和User验收。",
+      "assertion_names": [
+        "/goal/has_next_attention"
+      ]
+    },
+    {
+      "seq": 2,
+      "kind": "user",
+      "input": "报名信息最好能自动汇总。",
+      "expected": "关联活动事项，探索能力，不自行扩张对外权限。",
+      "assertion_names": [
+        "/matter/association_preserved"
+      ]
+    },
+    {
+      "seq": 3,
+      "kind": "user",
+      "input": "先别写程序，用我们现有的表格。",
+      "expected": "限定本事项约定并停止尚未接纳的编码路线。",
+      "assertion_names": [
+        "/agreement/scope_is_matter"
+      ]
+    },
+    {
+      "seq": 4,
+      "kind": "evidence",
+      "input": "资料A版本1已到达。",
+      "expected": "接纳来源与版本，仍欠B资料。",
+      "assertion_names": [
+        "/goal/not_closed"
+      ]
+    },
+    {
+      "seq": 5,
+      "kind": "user",
+      "input": "顺便解释一下正态分布。",
+      "expected": "干净即时上下文，不混入活动私人资料。",
+      "assertion_names": [
+        "/context/no_unrelated_private_content"
+      ]
+    },
+    {
+      "seq": 6,
+      "kind": "runtime",
+      "input": "表格模板由专家Membership返回。",
+      "expected": "产物关联活动Matter且保留真实作者。",
+      "assertion_names": [
+        "/artifact/author_preserved"
+      ]
+    },
+    {
+      "seq": 7,
+      "kind": "fault",
+      "input": "UI observer detached。",
+      "expected": "不生成cancel，不改变Goal责任。",
+      "assertion_names": [
+        "/effects/no_cancel"
+      ]
+    },
+    {
+      "seq": 8,
+      "kind": "fault",
+      "input": "host interrupted after durable progress commit。",
+      "expected": "旧回合事实中断；outbox与目标状态一致。",
+      "assertion_names": [
+        "/state/no_orphan_goal"
+      ]
+    },
+    {
+      "seq": 9,
+      "kind": "time",
+      "input": "经过三天，本机恢复。",
+      "expected": "合并到期复查，先对账再推进。",
+      "assertion_names": [
+        "/recovery/no_duplicate_effect"
+      ]
+    },
+    {
+      "seq": 10,
+      "kind": "user",
+      "input": "上次讲义还缺什么？",
+      "expected": "返回活动Matter，显示真实资料B等待。",
+      "assertion_names": [
+        "/context/restored_relevant_agreements"
+      ]
+    },
+    {
+      "seq": 11,
+      "kind": "evidence",
+      "input": "资料B版本1到达，A已更新版本2。",
+      "expected": "使用A v2，旧摘要和旧验证不能代替当前版本。",
+      "assertion_names": [
+        "/context/current_source_versions"
+      ]
+    },
+    {
+      "seq": 12,
+      "kind": "runtime",
+      "input": "草稿形成，作者和产物版本明确。",
+      "expected": "目标等待User验收，不能自行发给团队。",
+      "assertion_names": [
+        "/goal/waiting_for_user"
+      ]
+    },
+    {
+      "seq": 13,
+      "kind": "user",
+      "input": "不要改写嘉宾的原话，其他部分可以精炼。",
+      "expected": "修订当前讲义约定并使旧提案失效。",
+      "assertion_names": [
+        "/agreement/correction_effective"
+      ]
+    },
+    {
+      "seq": 14,
+      "kind": "runtime",
+      "input": "基于旧约定的提案迟到。",
+      "expected": "拒绝旧决定覆盖，不丢失真实已产生结果。",
+      "assertion_names": [
+        "/state/stale_proposal_rejected"
+      ]
+    },
+    {
+      "seq": 15,
+      "kind": "user",
+      "input": "这次活动推迟，资料保留，先别继续催人。",
+      "expected": "暂停后续跟进，保留资料，不自动删除或假取消已发送内容。",
+      "assertion_names": [
+        "/control/future_followups_paused"
+      ]
+    },
+    {
+      "seq": 16,
+      "kind": "time",
+      "input": "旧review_due再次到达。",
+      "expected": "确定性过滤，不调用模型重复催办。",
+      "assertion_names": [
+        "/effects/no_paid_wake"
+      ]
+    },
+    {
+      "seq": 17,
+      "kind": "user",
+      "input": "恢复准备，只在本地完成终稿。",
+      "expected": "恢复目标；不扩大对外发送权限。",
+      "assertion_names": [
+        "/scope/local_only"
+      ]
+    },
+    {
+      "seq": 18,
+      "kind": "runtime",
+      "input": "终稿v3和所需引用检查返回。",
+      "expected": "核实产物与条件版本；准备验收。",
+      "assertion_names": [
+        "/evidence/subject_version_matches"
+      ]
+    },
+    {
+      "seq": 19,
+      "kind": "user",
+      "input": "这份通过，不用发出去，交付到这里结束。",
+      "expected": "依据新的明确结果边界和验收关闭，保留发送未执行事实。",
+      "assertion_names": [
+        "/goal/achieved_with_user_acceptance"
+      ]
+    },
+    {
+      "seq": 20,
+      "kind": "runtime",
+      "input": "迟到运行事件。",
+      "expected": "已达成Goal保持吸收终态。",
+      "assertion_names": [
+        "/state/terminal_monotonic"
+      ]
+    }
+  ],
+  "final_invariants": [
+    "一个父对话与真实任务子对话",
+    "原始用户事件只存一次",
+    "没有强制模式切换或用户手动重开Session",
+    "只有实际验收与有效证据可闭环",
+    "没有未批准外传",
+    "专业作者不被重写"
+  ]
+}
