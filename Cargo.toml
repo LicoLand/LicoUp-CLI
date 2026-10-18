@@ -1,0 +1,136 @@
+[workspace]
+members = [
+    "crates/lico-catalog-convergence",
+    "crates/licoup-state-machine-codegen",
+    "crates/licoup-foundation",
+    "crates/licoup-agent-targets",
+    "crates/licoup-model-catalog",
+    "crates/licoup-protocol-bindings",
+    "crates/licoup-client-state",
+    "crates/licoup-agent-adapter-sdk",
+    "crates/licoup-agent-drivers",
+    "crates/licoup-agent-codex",
+    "crates/licoup-agent-claude-code",
+    "crates/licoup-agent-copilot",
+    "crates/licoup-agent-pi",
+    "crates/licoup-agent-antigravity",
+    "crates/licoup-agent-cursor",
+    "crates/licoup-agent-deepseek",
+    "crates/licoup-agent-kimi",
+    "crates/licoup-agent-hermes",
+    "crates/licoup-agent-kilo",
+    "crates/licoup-agent-lico-agent",
+    "crates/licoup-agent-openclaw",
+    "crates/licoup-agent-opencode",
+    "crates/licoup-endpoint-core",
+    "crates/licoup-platform-bridges",
+    "crates/licoup-agent-adapters",
+    "crates/licoup-agent-runtime",
+    "crates/licoup-project",
+    "crates/licoup-application",
+    "crates/licoup-collaboration",
+    "crates/licoup-extension-contracts",
+    "crates/licoup-workflow",
+    "crates/licoup-workflow-runtime",
+    "crates/licoup-workflow-store",
+    "crates/licoup-vault",
+    "crates/licoup-statistics",
+    "crates/licoup-private-gateway",
+    "crates/licoup-private-gateway/entry",
+    "crates/licoup-mobile-core",
+    "crates/licoup-conversation",
+    "crates/licoup-public-gateway",
+    "crates/licoup-public-gateway/entry",
+    "crates/licoup-migrate",
+    "crates/licoup-native",
+    "crates/trybuild",
+]
+resolver = "3"
+# The C11 usage-source SDK is a path dependency of the kernel and keeps its own
+# standalone workspace and lock on purpose: it is the third-party boundary, not
+# a kernel crate. Excluding it from this workspace is what lets both be true.
+exclude = ["sdk/usage-source"]
+
+[workspace.package]
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.95.0"
+repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+license = "AGPL-3.0-or-later"
+
+[workspace.dependencies]
+# One canonical version per shared dependency. Members reference these via
+# `workspace = true`; keep direct-dependency generations in one place.
+anyhow = "1.0"
+base64 = "0.22"
+chacha20poly1305 = { version = "0.10", features = ["std"] }
+command-group = "5.0.1"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+env_logger = "0.11"
+flate2 = "1.0"
+fs2 = "0.4"
+hkdf = "0.12"
+hmac = "0.12"
+icu_segmenter = { version = "2", features = ["compiled_data", "lstm"] }
+interprocess = "2.4"
+jni = "0.22"
+libc = "0.2"
+# Fixed LicoArc stable-core SDK for the Candidate integrated in L03 (D22/5.7).
+# The package is not published to any registry and its repository is private, so
+# a revision-pinned git source is the reproducible fixed input; an adjacent
+# directory path dependency would not be reproducible outside this machine.
+licoarc = { package = "licoarc-rust", git = "https://github.com/LicoLand/LicoArc-Rust.git", rev = "244ce7186cac1690c18f091dbe02df36a0860ef4" }
+libcrux-ml-kem = { version = "=0.0.11", default-features = false, features = [
+    "alloc",
+    "incremental",
+    "mlkem1024",
+] }
+libcrux-sha3 = "=0.0.11"
+libcrux-traits = "=0.0.9"
+log = "0.4"
+mime_guess = "2.0"
+openmls = { git = "https://github.com/openmls/openmls.git", rev = "e0b21a70a55a9014b8de2772b36bf3d638adad51", features = ["openmls_rust_crypto"] }
+openmls_basic_credential = { git = "https://github.com/openmls/openmls.git", rev = "e0b21a70a55a9014b8de2772b36bf3d638adad51" }
+openmls_memory_storage = { git = "https://github.com/openmls/openmls.git", rev = "e0b21a70a55a9014b8de2772b36bf3d638adad51", features = ["persistence"] }
+openmls_rust_crypto = { git = "https://github.com/openmls/openmls.git", rev = "e0b21a70a55a9014b8de2772b36bf3d638adad51" }
+openmls_traits = { git = "https://github.com/openmls/openmls.git", rev = "e0b21a70a55a9014b8de2772b36bf3d638adad51" }
+rand_core = { version = "0.6", features = ["getrandom"] }
+regex = "1.11"
+rusqlite = { version = "0.40", features = ["bundled", "fallible_uint"] }
+semver = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+subtle = "2.6"
+tar = "0.4"
+thiserror = "2.0"
+time = { version = "0.3", features = ["formatting", "parsing"] }
+toml = "0.8"
+trash = "5.2"
+ureq = { version = "2.10", features = ["json"] }
+url = "2.5"
+uuid = { version = "1.11", features = ["v4", "serde"] }
+x25519-dalek = { version = "2.0", features = ["static_secrets", "zeroize"] }
+zeroize = "1.8"
+zip = { version = "9.0.3", default-features = false, features = ["deflate"] }
+# The DeepSeek Harness records a session as a concatenated Zstandard container,
+# one independently decodable frame per durable batch. The DeepSeek adapter
+# package reads that artifact natively, so the decoder is a real dependency of
+# the package rather than of the kernel.
+zstd = "0.13"
+
+# RUSTSEC-2026-0173 (proc-macro-error2 unmaintained) resolution: hax-lib
+# 0.3.7 on crates.io still vendors proc-macro-error2, and no newer release
+# exists (verified 2026-08-24). Upstream removed the dependency in commit
+# 8f9cb576e58f6cc7e9ed249a7d4439b0f7ed0da7 (hacspec/hax, version stays
+# "=0.3.7"), so the crates.io source is patched to that pinned revision.
+# Revisit when hax publishes a release with the fix.
+[patch.crates-io]
+hax-lib = { git = "https://github.com/hacspec/hax.git", rev = "8f9cb576e58f6cc7e9ed249a7d4439b0f7ed0da7" }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

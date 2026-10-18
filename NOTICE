@@ -1,0 +1,20 @@
+LicoUp CLI Open Source Notice
+
+Copyright (C) LicoLand contributors.
+
+LicoUp CLI is free software licensed under the GNU Affero General Public
+License, version 3. A complete copy of that license is distributed with the
+application as "LicoUp License.txt".
+
+The preferred source form, build scripts, and modification instructions are
+published with the corresponding official LicoUp CLI release at:
+
+https://github.com/LicoLand/LicoUp-CLI
+
+The application also contains third-party open-source software. The generated
+"Third-Party Notices.txt" file distributed with the application contains the
+licenses and attribution notices supplied by those dependencies.
+
+LicoUp is provided without warranty to the extent permitted by the applicable
+license. Apple, macOS, and related marks are trademarks of Apple Inc. LicoUp is
+not affiliated with or endorsed by Apple Inc.
