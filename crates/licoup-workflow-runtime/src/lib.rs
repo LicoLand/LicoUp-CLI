@@ -1,8 +1,13 @@
 //! Event-driven workflow execution: durable admission, routing, node
 //! execution and the graph driver.
 //!
-//! The runtime was the kernel host's own module. It is now its own crate, and
-//! its dependencies point one way:
+//! The generic execution machinery — capability adapters, the node facade,
+//! the continuous driver, and the in-process drive bookkeeping — is owned by
+//! `acativa::runtime` and re-exported here under the same module paths. What
+//! this crate owns is the LicoUp composition on top of it: the strategy
+//! service's `execute` vocabulary, the Assistant preflight and package
+//! importer, the Membership-profile port surface, and the evolution seams
+//! that read the host's catalog.
 //!
 //! ```text
 //!   licoup-native  ──►  licoup-workflow-runtime  ──►  licoup-workflow-store  ──►  licoup-workflow
@@ -12,16 +17,14 @@
 //! Nothing here reaches back into the host. Everything the runtime needs from
 //! above arrives through [`ports`]: the host installs its answers once at its
 //! crate root, and a process that installs none runs fail-closed.
-//!
-//! Runtime leaves are intentionally separate from the durable store: adapters
-//! may perform external work, while store transactions only persist state,
-//! commands, and post-commit intent.
 
-pub mod adapter;
+// Generic execution machinery, re-exported under the established module
+// paths so `licoup_workflow_runtime::adapter::*` (and driver/node) keep
+// resolving for this crate and its consumers.
+pub use acativa::runtime::{adapter, driver, node};
+
 mod assistant;
-pub mod driver;
 pub mod evolution;
-pub mod node;
 mod package;
 pub mod ports;
 mod service;
@@ -30,7 +33,7 @@ mod service;
 // are re-exported at this path because the runtime is their first reader.
 pub use licoup_workflow_store::{control, routing};
 
-pub use adapter::{
+pub use acativa::runtime::adapter::{
     AdapterError, AdapterExecutionStatus, CancelOutcome, CooperativeDrainAdapter,
     NodeCapabilityAdapter, NodeInvocation, PauseOutcome, ResumeOutcome,
     SingleWriterSessionRegistry, SteerOutcome, SyntheticCapabilityAdapter,

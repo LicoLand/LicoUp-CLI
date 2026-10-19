@@ -19,16 +19,20 @@
 //! that make accepted state and delivery intent recoverable across a process
 //! restart.
 
+// The control contract (operations, scopes, grants, admission verdicts) and
+// the routing vocabulary (channels, subscriptions, queues) are the engine's
+// durable contracts; this crate keeps the module paths so `crate::control::*`
+// and `crate::routing::*` resolve for the welded durable implementations.
+pub use acativa::store::{control, routing};
+
 mod admission;
 mod commit;
 #[cfg(test)]
 mod conformance;
-pub mod control;
 mod controlled;
 #[cfg(test)]
 mod dispatch_composition;
 mod queue;
-pub mod routing;
 mod store;
 mod subscriptions;
 

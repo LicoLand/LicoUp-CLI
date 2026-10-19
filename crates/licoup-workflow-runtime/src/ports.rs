@@ -11,14 +11,13 @@
 //! The rest of the module is the port surface itself: the runtime declares
 //! what it needs, and the kernel host that composes it supplies the
 //! implementations once, at its crate root. Nothing here names a host module.
-use anyhow::{Result, anyhow, ensure};
+use anyhow::{Result, anyhow};
 use licoup_conversation::{Membership, MembershipAccess, MembershipProfileSnapshot, ProfileIntent};
 use licoup_workflow::{BindingValue, RunCommand, RuntimeKind};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
-use std::fmt::{Display, Formatter};
 use std::path::Path;
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -487,192 +486,12 @@ pub trait ModelFactsPort: Send + Sync {
     fn bundled_guide_skill_id(&self) -> Option<&'static str>;
 }
 
-/// The numeric Graph usage ledger.
-///
-/// Every projection this port carries is rebuilt from typed run, binding and
-/// command fields by the caller; input and output bodies never cross the seam.
-pub trait UsageLedgerPort: Send + Sync {
-    fn begin_graph_run(&self, payload: &Value) -> Result<()>;
-    fn record_graph_command(&self, payload: &Value) -> Result<()>;
-    fn workflow_report(&self, payload: &Value) -> Result<Value>;
-}
-
-/// One runtime the host resolved for one requirement.
-///
-/// The runtime never learns the executable path or the resolution root: it
-/// carries the handle back to the same port for the effect, and the identity a
-/// permit is bound to is the fingerprint the host published.
-pub trait ResolvedRuntime: Send + Sync {
-    fn fingerprint(&self) -> &str;
-    /// The handle as `Any`, so the port that issued it recovers its own
-    /// resolution without this crate naming that type.
-    fn as_any(&self) -> &dyn std::any::Any;
-}
-
-/// The host's effect seam: runtime resolution, sandbox admission, actor and
-/// script execution, lane dispatch and the owned-run stop record.
-pub trait EffectPort: Send + Sync {
-    /// The discovered runtime descriptors, already in their wire shape.
-    fn runtime_descriptors(&self) -> Vec<Value>;
-
-    /// The compatible runtime id for one requirement, when one is installed.
-    fn compatible_runtime_id(&self, kind: RuntimeKind, version_requirement: &str)
-    -> Option<String>;
-
-    /// Resolve one exact runtime for a requirement.
-    fn resolve_runtime(
-        &self,
-        runtime_id: &str,
-        kind: RuntimeKind,
-        version_requirement: &str,
-    ) -> Result<Arc<dyn ResolvedRuntime>>;
-
-    /// The stable fingerprint of one actor identity under a model and effort.
-    fn actor_fingerprint(
-        &self,
-        value_id: &str,
-        model: &str,
-        reasoning_effort: &str,
-    ) -> Result<String>;
-
-    /// The capability probe answer for one actor identity, in the probe owner's
-    /// own wire shape.
-    ///
-    /// Capability discovery is a host concern with a typed seam, so a binding
-    /// check does not have to borrow the conversation lane's generic operation
-    /// dispatcher to ask one question. A caller reads the answer as the probe
-    /// owner published it.
-    fn actor_capabilities(&self, value_id: &str) -> Result<Value>;
-
-    /// Refuse a workspace outside the strategy sandbox policy.
-    fn admit_strategy_cwd(&self, cwd: &str) -> Result<()>;
-
-    /// Execute one script command under a consumed permit.
-    fn execute_script(
-        &self,
-        command: &RunCommand,
-        authorization_digest: &str,
-        runtime: &Arc<dyn ResolvedRuntime>,
-        revision_content: &Path,
-        runtime_state_root: &Path,
-        permit: &mut StrategyEffectPermit,
-    ) -> Result<Value>;
-
-    /// Execute one actor command under a consumed permit.
-    fn execute_actor(
-        &self,
-        command: &RunCommand,
-        authorization_digest: &str,
-        binding: &BindingValue,
-        permit: &mut StrategyEffectPermit,
-        cwd: Option<&str>,
-    ) -> Result<Value>;
-
-    /// The predecessor locator a fallback carries for the failed command.
-    fn predecessor_locator(&self, facts: &Value) -> Value;
-
-    /// One operation through the host's own conversation lane.
-    fn dispatch_lane_operation(&self, operation: &str, params: &Value) -> Result<Value>;
-
-    /// A fresh correlation id for one stop request.
-    fn new_correlation_id(&self) -> String;
-
-    /// Record one owned-run stop outcome in the durable local record.
-    fn record_run_stop(
-        &self,
-        portable_root: &Path,
-        correlation_id: &str,
-        confirmed: bool,
-    ) -> Result<()>;
-}
-
-/// One effect permit: the exact command, authorization and effect identity the
-/// host issued it for.
-///
-/// The permit is data, not authority. Issuing it proves only that the runtime
-/// assembled the three identities; the port that consumes it re-checks them
-/// against its own resolution before any external work happens.
-#[derive(Clone, Debug)]
-pub struct StrategyEffectPermit {
-    command_id: String,
-    authorization_digest: String,
-    effect_fingerprint: String,
-    consumed: bool,
-}
-
-impl StrategyEffectPermit {
-    pub fn issue(
-        command_id: &str,
-        authorization_digest: &str,
-        effect_fingerprint: &str,
-    ) -> Result<Self> {
-        ensure!(
-            !command_id.is_empty()
-                && authorization_digest.len() == 64
-                && effect_fingerprint.len() == 64,
-            "strategy_permit_invalid"
-        );
-        Ok(Self {
-            command_id: command_id.to_owned(),
-            authorization_digest: authorization_digest.to_owned(),
-            effect_fingerprint: effect_fingerprint.to_owned(),
-            consumed: false,
-        })
-    }
-
-    /// Consume the permit for exactly the effect it was issued for. A second
-    /// consume, or a command that does not match the issued identities, fails
-    /// instead of running anything.
-    pub fn consume(
-        &mut self,
-        command: &RunCommand,
-        authorization_digest: &str,
-        effect_fingerprint: &str,
-    ) -> Result<()> {
-        ensure!(!self.consumed, "strategy_permit_consumed");
-        ensure!(
-            self.command_id == command.id
-                && self.authorization_digest == authorization_digest
-                && self.effect_fingerprint == effect_fingerprint,
-            "strategy_permit_stale"
-        );
-        self.consumed = true;
-        Ok(())
-    }
-}
-
-/// The conversation-dispatch error one actor turn port may report.
-///
-/// The port carries its own error rather than the adapter registry's: the
-/// runtime acts on the fact that the lane could not be reached, not on the
-/// adapter's taxonomy, and the adapter owner supplies the detail the runtime
-/// only quotes back into its own bounded failure.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ActorTurnError {
-    detail: String,
-}
-
-impl ActorTurnError {
-    /// One refused or incomplete dispatch, with the owner's own detail.
-    pub fn dispatch_failed(detail: impl Into<String>) -> Self {
-        Self {
-            detail: detail.into(),
-        }
-    }
-
-    /// The owner's detail, quoted into the runtime's bounded failure.
-    pub fn detail(&self) -> &str {
-        &self.detail
-    }
-}
-
-impl Display for ActorTurnError {
-    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.detail)
-    }
-}
-
-impl std::error::Error for ActorTurnError {}
+// The numeric usage ledger, the resolved-runtime handle, the effect seam, the
+// effect permit and the turn-dispatch error are the engine's port vocabulary;
+// they arrive unchanged so host-side implementors bind the same contract.
+pub use acativa::runtime::ports::{
+    ActorTurnError, EffectPort, ResolvedRuntime, StrategyEffectPermit, UsageLedgerPort,
+};
 
 /// One committed route receipt for a candidate decision.
 ///
@@ -1253,7 +1072,11 @@ mod port_stability {
 
     /// Every public item this module declares, as `kind name`.
     ///
-    /// Removing a name is as much a surface change as adding one.
+    /// Removing a name is as much a surface change as adding one. The engine's
+    /// shared port vocabulary — `EffectPort`, `UsageLedgerPort`,
+    /// `ResolvedRuntime`, `StrategyEffectPermit`, `ActorTurnError` — is
+    /// declared once in `acativa::runtime::ports` and re-exported here, so the
+    /// record below names only what this file itself publishes.
     const PUBLISHED_PORT_ITEMS: &[&str] = &[
         "fn host_ports",
         "fn install_host_ports",
@@ -1261,17 +1084,12 @@ mod port_stability {
         "fn project_profile_snapshots",
         "fn rank_candidates",
         "fn route_receipt",
-        "struct ActorTurnError",
         "struct CandidateFilters",
         "struct HostPorts",
         "struct PriceFacts",
-        "struct StrategyEffectPermit",
         "struct TargetFacts",
-        "trait EffectPort",
         "trait ModelFactsPort",
         "trait ProfileSnapshotAuthority",
-        "trait ResolvedRuntime",
-        "trait UsageLedgerPort",
         "type SharedSnapshotAuthority",
     ];
 
@@ -1280,25 +1098,10 @@ mod port_stability {
     /// and no re-export is owed for them.
     const UNPUBLISHED_PORT_ITEMS: &[&str] = &["RequestScopedAuthority"];
 
-    /// Every trait method, in declaration order.
+    /// Every trait method, in declaration order, for the traits this file
+    /// itself declares. The engine-owned traits keep their own frozen record
+    /// in `acativa`'s port module.
     const FROZEN_TRAIT_METHODS: &[(&str, &[&str])] = &[
-        (
-            "EffectPort",
-            &[
-                "runtime_descriptors",
-                "compatible_runtime_id",
-                "resolve_runtime",
-                "actor_fingerprint",
-                "actor_capabilities",
-                "admit_strategy_cwd",
-                "execute_script",
-                "execute_actor",
-                "predecessor_locator",
-                "dispatch_lane_operation",
-                "new_correlation_id",
-                "record_run_stop",
-            ],
-        ),
         (
             "ModelFactsPort",
             &[
@@ -1316,11 +1119,6 @@ mod port_stability {
                 "coding_score",
                 "skill_names",
             ],
-        ),
-        ("ResolvedRuntime", &["fingerprint", "as_any"]),
-        (
-            "UsageLedgerPort",
-            &["begin_graph_run", "record_graph_command", "workflow_report"],
         ),
     ];
 
@@ -2145,7 +1943,7 @@ mod port_stability {
         assert!(
             ports
                 .effect
-                .resolve_runtime("witness", RuntimeKind::Node, ">=0")
+                .resolve_runtime("witness", RuntimeKind::new("node"), ">=0")
                 .is_ok(),
         );
         drop(

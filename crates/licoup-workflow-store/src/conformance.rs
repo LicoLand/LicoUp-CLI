@@ -1118,7 +1118,7 @@ fn compiler_class_table_accepts_only_total_routing() {
         }
         workflow.runtimes = vec![RuntimeRequirement {
             id: "py".into(),
-            kind: RuntimeKind::Python,
+            kind: RuntimeKind::new("python"),
             version_requirement: String::new(),
         }];
         workflow.actor_slots.push(runtime_slot());
