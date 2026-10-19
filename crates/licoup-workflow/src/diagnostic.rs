@@ -357,3 +357,13 @@ pub struct PreflightDiagnostic {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub column: Option<u64>,
 }
+
+impl From<acativa::workflow::diagnostic::PreflightDiagnostic> for PreflightDiagnostic {
+    /// The engine's diagnostic record is a strict field-and-variant subset of
+    /// this one (`membershipId` is the only extra, and it is optional), so the
+    /// wire form carries the conversion.
+    fn from(diagnostic: acativa::workflow::diagnostic::PreflightDiagnostic) -> Self {
+        let wire = serde_json::to_value(&diagnostic).expect("an engine diagnostic always encodes");
+        serde_json::from_value(wire).expect("engine diagnostics are a strict subset of this record")
+    }
+}

@@ -3,6 +3,22 @@
 version = 4
 
 [[package]]
+name = "acativa"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "flate2",
+ "nix 0.27.1",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror",
+ "uuid",
+ "zip",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2758,6 +2774,7 @@ dependencies = [
 name = "licoup-workflow"
 version = "0.3.0"
 dependencies = [
+ "acativa",
  "anyhow",
  "serde",
  "serde_json",
@@ -2768,6 +2785,7 @@ dependencies = [
 name = "licoup-workflow-runtime"
 version = "0.3.0"
 dependencies = [
+ "acativa",
  "anyhow",
  "fs2",
  "licoup-conversation",
@@ -2786,6 +2804,7 @@ dependencies = [
 name = "licoup-workflow-store"
 version = "0.3.0"
 dependencies = [
+ "acativa",
  "anyhow",
  "licoup-foundation",
  "licoup-workflow",

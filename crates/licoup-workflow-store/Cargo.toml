@@ -7,6 +7,7 @@ license.workspace = true
 publish = false
 
 [dependencies]
+acativa = { path = "../../../Acativa/crates/acativa", version = "0.1.0" }
 anyhow.workspace = true
 licoup-foundation = { path = "../licoup-foundation" }
 licoup-workflow = { path = "../licoup-workflow" }

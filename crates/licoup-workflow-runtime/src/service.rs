@@ -3,16 +3,14 @@ use serde_json::{Map, Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 
 use licoup_workflow_store::{
     CommittedTransition, StrategyStore, TransitionDecorator, TransitionObserver,
 };
 
 use crate::assistant::sha256_hex;
-use crate::ports::{
-    ActorTurnError, HostPorts, SharedSnapshotAuthority, StrategyEffectPermit, host_ports,
-};
+use crate::ports::{HostPorts, SharedSnapshotAuthority, StrategyEffectPermit, host_ports};
 use crate::{
     ASSISTANT_TEMPORARY_DEFINITION_PREFIX, AssistantPreflight, BindingCandidate, BindingValue,
     PreflightFailure, StrategyDefinition, StrategyPackageImporter, preflight_assistant_graph,
@@ -40,138 +38,21 @@ const CANCEL_OWNER_LOOKUP_STEP: std::time::Duration = std::time::Duration::from_
 /// opened turn to its terminal state, `cancel` signals one opened turn to
 /// stop, and `abandon` settles one opened turn that will never run.
 /// Composition happens where the persistent host runtime exists; the strategy
-/// service treats the port as opaque.
-pub struct ActorTurnPort {
-    pub open: Arc<dyn Fn(&Value) -> std::result::Result<String, ActorTurnError> + Send + Sync>,
-    pub run: Arc<dyn Fn(&str, &Value) -> std::result::Result<Value, ActorTurnError> + Send + Sync>,
-    pub cancel: Arc<dyn Fn(&str) -> TurnCancelDisposition + Send + Sync>,
-    pub abandon: Arc<dyn Fn(&str) + Send + Sync>,
-}
-
-/// The bounded outcome of one turn-cancel request routed through the port. The
-/// port converts adapter control results into these facts, so a raw adapter
-/// error can never fabricate an observed stop.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum TurnCancelDisposition {
-    /// The owning runtime accepted cancellation for the exact in-flight turn.
-    Accepted,
-    /// The owner has no active turn for that handle; the effect position stays
-    /// unknown.
-    NoActiveTurn,
-    /// The owning runtime is unreachable from this process.
-    Unavailable,
-}
-
-impl TurnCancelDisposition {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::Accepted => "accepted",
-            Self::NoActiveTurn => "no-active-turn",
-            Self::Unavailable => "unavailable",
-        }
-    }
-}
-
-/// The live in-process owner of one (run, command) attempt.
-///
-/// The drive reserves the entry before the command becomes `Running`, so a
-/// cancellation that arrives while the turn is still being prepared can wait
-/// for the exact turn identity instead of guessing one.
-fn live_turns() -> &'static Mutex<BTreeMap<(String, String), (String, Option<String>)>> {
-    static TURNS: OnceLock<Mutex<BTreeMap<(String, String), (String, Option<String>)>>> =
-        OnceLock::new();
-    TURNS.get_or_init(|| Mutex::new(BTreeMap::new()))
-}
-
-/// One drive-owned command attempt. `reserve` runs before the command becomes
-/// `Running`; `attach` records the exact turn handle once the port opens it;
-/// `Drop` removes the entry only when it is still this attempt's own.
-struct LiveTurnRegistration {
-    run_id: String,
-    command_id: String,
-    attempt_token: String,
-    handle: Option<String>,
-}
-
-impl LiveTurnRegistration {
-    fn reserve(run_id: &str, command_id: &str, attempt_token: &str) -> Self {
-        let mut turns = live_turns()
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner());
-        turns.insert(
-            (run_id.to_owned(), command_id.to_owned()),
-            (attempt_token.to_owned(), None),
-        );
-        Self {
-            run_id: run_id.to_owned(),
-            command_id: command_id.to_owned(),
-            attempt_token: attempt_token.to_owned(),
-            handle: None,
-        }
-    }
-
-    fn attach(&mut self, handle: &str) {
-        let mut turns = live_turns()
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner());
-        let key = (self.run_id.clone(), self.command_id.clone());
-        let owned = turns
-            .get(&key)
-            .is_some_and(|(token, _)| token == &self.attempt_token);
-        if owned || !turns.contains_key(&key) {
-            turns.insert(key, (self.attempt_token.clone(), Some(handle.to_owned())));
-        }
-        self.handle = Some(handle.to_owned());
-    }
-}
-
-impl Drop for LiveTurnRegistration {
-    fn drop(&mut self) {
-        let mut turns = live_turns()
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner());
-        let key = (self.run_id.clone(), self.command_id.clone());
-        if turns
-            .get(&key)
-            .is_some_and(|(token, _)| token == &self.attempt_token)
-        {
-            turns.remove(&key);
-        }
-    }
-}
-
-/// What this process knows about the live owner of one command attempt.
-enum LiveTurnOwner {
-    /// No in-process drive owns this attempt.
-    Absent,
-    /// The drive owns it and is preparing the turn; the handle is not yet
-    /// known.
-    Preparing,
-    /// The exact turn handle executing this attempt.
-    Ready(String),
-}
-
-fn live_turn_owner(run_id: &str, command_id: &str, attempt_token: &str) -> LiveTurnOwner {
-    let turns = live_turns()
-        .lock()
-        .unwrap_or_else(|poison| poison.into_inner());
-    match turns.get(&(run_id.to_owned(), command_id.to_owned())) {
-        Some((token, Some(handle))) if token == attempt_token => {
-            LiveTurnOwner::Ready(handle.clone())
-        }
-        Some((token, None)) if token == attempt_token => LiveTurnOwner::Preparing,
-        _ => LiveTurnOwner::Absent,
-    }
-}
+/// service treats the port as opaque. The port and its disposition vocabulary
+/// are the engine's drive-bookkeeping primitives.
+pub use acativa::runtime::service::{ActorTurnPort, TurnCancelDisposition};
+use acativa::runtime::service::{
+    DriveReservation, LiveTurnOwner, LiveTurnRegistration, cancellation_pending, live_turn_owner,
+    mark_run_cancelled, unmark_run_cancelled,
+};
 
 /// The notice seam for the designated Assistant. `wake` receives the
 /// Conversation id, the designated Assistant Membership id, and the
 /// identifier-only notice part already appended to the timeline; it opens one
 /// new Assistant turn for that notice only when no turn of that membership is
 /// in flight. Composition happens where the persistent host runtime exists.
-pub struct AssistantWakePort {
-    pub wake: Arc<dyn Fn(&str, &str, &Value) -> std::result::Result<(), String> + Send + Sync>,
-}
+/// The seam itself is the engine's run-wake port under this host's own name.
+pub type AssistantWakePort = acativa::runtime::service::RunWakePort;
 
 #[derive(Clone)]
 struct PostCommitDispatcher {
@@ -217,26 +98,6 @@ impl TransitionObserver for PostCommitDispatcher {
             &transition.after,
         )
     }
-}
-
-/// Runs this process has cancelled since their drive started. The settle path
-/// consults it before touching the durable run again, so an ordinary drive
-/// batch performs no extra store read.
-fn cancelled_runs() -> &'static Mutex<BTreeSet<String>> {
-    static RUNS: OnceLock<Mutex<BTreeSet<String>>> = OnceLock::new();
-    RUNS.get_or_init(|| Mutex::new(BTreeSet::new()))
-}
-
-fn cancellation_pending(run_id: &str) -> bool {
-    cancelled_runs()
-        .lock()
-        .unwrap_or_else(|poison| poison.into_inner())
-        .contains(run_id)
-}
-
-fn driving_runs() -> &'static Mutex<BTreeSet<String>> {
-    static RUNS: OnceLock<Mutex<BTreeSet<String>>> = OnceLock::new();
-    RUNS.get_or_init(|| Mutex::new(BTreeSet::new()))
 }
 
 #[derive(Clone)]
@@ -1180,7 +1041,7 @@ impl StrategyService {
             if let Some(runtime_id) = self
                 .ports
                 .effect
-                .compatible_runtime_id(requirement.kind, &requirement.version_requirement)
+                .compatible_runtime_id(requirement.kind.clone(), &requirement.version_requirement)
             {
                 if current.is_none_or(|binding| binding.value_id != runtime_id) {
                     self.store.update_binding(
@@ -1351,7 +1212,7 @@ impl StrategyService {
                     .ok_or_else(|| anyhow!("runtime_unavailable"))?;
                 self.ports.effect.resolve_runtime(
                     value_id,
-                    requirement.kind,
+                    requirement.kind.clone(),
                     &requirement.version_requirement,
                 )?;
             }
@@ -1513,10 +1374,7 @@ impl StrategyService {
 
     fn drive_run(&self, run_id: &str, entry: Option<EntryTurnRegistration>) -> Result<()> {
         let result = self.drive_run_inner(run_id, entry);
-        cancelled_runs()
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner())
-            .remove(run_id);
+        unmark_run_cancelled(run_id);
         result
     }
 
@@ -1896,7 +1754,7 @@ impl StrategyService {
                 let runtime_id = &binding_for(&definition, requirement_id, 0)?.value_id;
                 let runtime = self.ports.effect.resolve_runtime(
                     runtime_id,
-                    requirement.kind,
+                    requirement.kind.clone(),
                     &requirement.version_requirement,
                 )?;
                 let revision_content = self.importer.verified_revision_content(
@@ -2085,10 +1943,7 @@ impl StrategyService {
         let cancelled = self
             .store
             .apply_event(run_id, ReducerEvent::CancelRequested)?;
-        cancelled_runs()
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner())
-            .insert(run_id.to_owned());
+        mark_run_cancelled(run_id);
         let in_flight = cancelled
             .commands
             .values()
@@ -2413,40 +2268,6 @@ impl StrategyService {
             true,
         )?;
         Ok(())
-    }
-}
-
-/// One atomic reservation for a run's background drive. Reserving before the
-/// entry turn opens prevents concurrent idempotent starts from returning two
-/// handles when only one drive can own the run.
-struct DriveReservation {
-    run_id: String,
-}
-
-impl DriveReservation {
-    fn acquire(run_id: &str) -> Option<Self> {
-        let mut driving = driving_runs()
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner());
-        driving.insert(run_id.to_owned()).then(|| Self {
-            run_id: run_id.to_owned(),
-        })
-    }
-
-    fn is_active(run_id: &str) -> bool {
-        driving_runs()
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner())
-            .contains(run_id)
-    }
-}
-
-impl Drop for DriveReservation {
-    fn drop(&mut self) {
-        driving_runs()
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner())
-            .remove(&self.run_id);
     }
 }
 
@@ -3381,6 +3202,7 @@ fn now_ms() -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ports::ActorTurnError;
 
     /// The selection-policy revision a test admits its fixture graph under.
     /// Every admission states it explicitly; nothing here defaults it.
@@ -4113,15 +3935,16 @@ mod tests {
     /// A terminal snapshot is visible before the drive thread finishes its
     /// exit path, so root cleanup waits the drive out and retries the remove
     /// while SQLite drops its journal files.
-    fn remove_drive_root(root: PathBuf, service: StrategyService) {
+    fn remove_drive_root(root: PathBuf, service: StrategyService, run_ids: &[&str]) {
         // The drive set is process-wide while these tests run in parallel, so
         // this bound is a liveness guarantee for every in-flight drive, not a
-        // latency assertion about this test's own run.
+        // latency assertion about this test's own run. Only the runs this
+        // test started can hold this root's store handles, so the wait is
+        // scoped to their reservations.
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
-        while !driving_runs()
-            .lock()
-            .unwrap_or_else(|poison| poison.into_inner())
-            .is_empty()
+        while run_ids
+            .iter()
+            .any(|run_id| DriveReservation::is_active(run_id))
         {
             assert!(
                 std::time::Instant::now() < deadline,
@@ -4227,7 +4050,7 @@ mod tests {
         assert_eq!(recorded.len(), 2);
         assert_eq!(recorded[1].0, "run:dispatch:entry-1");
         drop(recorded);
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 
     fn assistant_workflow_json() -> Value {
@@ -4936,7 +4759,7 @@ mod tests {
             !encoded.contains("late-effect") && !encoded.contains("message"),
             "diagnostics carry no raw effect payload: {encoded}"
         );
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 
     #[test]
@@ -4979,7 +4802,7 @@ mod tests {
             "an unacknowledged request stays unconfirmed: {events:?}"
         );
         release.send(()).unwrap();
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 
     #[test]
@@ -5041,7 +4864,7 @@ mod tests {
         assert_eq!(opens, 2, "the retried command opened a fresh turn inline");
         assert_eq!(runs, 2);
         drop(recorded);
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 
     #[test]
@@ -5293,7 +5116,7 @@ mod tests {
             .unwrap();
         assert_eq!(replay["ok"], false);
         assert_eq!(replay["error"]["code"], "callback_stale");
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 
     /// A callback edge whose target is a second actor state, so the master's
@@ -5490,7 +5313,7 @@ mod tests {
             effects_before_revocation,
             "the review effect must not run without an active authorization"
         );
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 
     #[test]
@@ -5543,7 +5366,7 @@ mod tests {
         let report: Value = serde_json::from_str(&part.content).unwrap();
         assert_eq!(report["runId"], json!(run_id));
         assert_eq!(report["status"], json!("failed"));
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 
     #[test]
@@ -5849,7 +5672,7 @@ mod tests {
         assert_eq!(decided["result"]["terminal"]["status"], "completed");
         let snapshot = service.store().run(&run_id).unwrap();
         assert_eq!(snapshot.status, StrategyRunStatus::Completed);
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 
     #[test]
@@ -5954,7 +5777,7 @@ mod tests {
             assert!(wake.2.get("stateId").and_then(Value::as_str).is_some());
         }
         drop(wakes);
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 
     #[test]
@@ -6024,7 +5847,7 @@ mod tests {
                 .any(|event| event["type"] == "work.stop.accepted"),
             "the parked cancellation is recorded as normal control, not a fault"
         );
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 
     #[test]
@@ -6080,6 +5903,6 @@ mod tests {
             })
             .count();
         assert_eq!(flow_notices, 0);
-        remove_drive_root(root, service);
+        remove_drive_root(root, service, &[&*run_id]);
     }
 }

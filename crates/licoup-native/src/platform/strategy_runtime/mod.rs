@@ -52,8 +52,8 @@ impl RuntimeCatalog {
         let mut values = BTreeMap::new();
         let mut canonical = BTreeSet::new();
         for (kind, names) in [
-            (RuntimeKind::Python, &["python3", "python"][..]),
-            (RuntimeKind::Node, &["node"][..]),
+            (RuntimeKind::new("python"), &["python3", "python"][..]),
+            (RuntimeKind::new("node"), &["node"][..]),
         ] {
             for name in names {
                 let Some(path) = resolve_on_path(name) else {
@@ -65,7 +65,7 @@ impl RuntimeCatalog {
                 if !canonical.insert(path.clone()) {
                     continue;
                 }
-                let Ok(value) = verify_runtime(kind, &path) else {
+                let Ok(value) = verify_runtime(&kind, &path) else {
                     continue;
                 };
                 values.insert(value.descriptor.id.clone(), value);
@@ -103,7 +103,7 @@ impl RuntimeCatalog {
                 "strategy_runtime_unavailable"
             );
         }
-        verify_runtime(kind, &runtime.executable).and_then(|current| {
+        verify_runtime(&kind, &runtime.executable).and_then(|current| {
             ensure!(
                 current.fingerprint == runtime.fingerprint,
                 "strategy_runtime_drifted"
@@ -114,7 +114,7 @@ impl RuntimeCatalog {
 
     pub(crate) fn compatible_id(&self, kind: RuntimeKind, requirement: &str) -> Option<String> {
         self.values.keys().find_map(|id| {
-            self.resolve(id, kind, requirement)
+            self.resolve(id, kind.clone(), requirement)
                 .ok()
                 .map(|_| id.to_owned())
         })
@@ -382,7 +382,7 @@ fn actor_failure_code(response: &Value) -> String {
     }
 }
 
-fn verify_runtime(kind: RuntimeKind, executable: &Path) -> Result<VerifiedRuntime> {
+fn verify_runtime(kind: &RuntimeKind, executable: &Path) -> Result<VerifiedRuntime> {
     let metadata = fs::symlink_metadata(executable)?;
     ensure!(
         executable.is_absolute() && metadata.is_file() && !metadata.file_type().is_symlink(),
@@ -414,22 +414,22 @@ fn verify_runtime(kind: RuntimeKind, executable: &Path) -> Result<VerifiedRuntim
         "strategy_runtime_unavailable"
     );
     let version = parse_version(kind, std::str::from_utf8(&output.stdout)?)?;
-    let runtime_root = runtime_root(executable, kind)?;
+    let runtime_root = runtime_root(executable)?;
     let fingerprint = sha256_hex(
         format!(
             "licoup-strategy-runtime-v1\0{}\0{}\0{}\0{}",
-            kind_wire(kind),
+            kind.as_str(),
             value,
             version,
             metadata.len()
         )
         .as_bytes(),
     );
-    let id = format!("runtime-{}-{}", kind_wire(kind), &fingerprint[..24]);
+    let id = format!("runtime-{}-{}", kind.as_str(), &fingerprint[..24]);
     Ok(VerifiedRuntime {
         descriptor: RuntimeDescriptor {
             id,
-            kind,
+            kind: kind.clone(),
             version,
             available: true,
         },
@@ -439,25 +439,24 @@ fn verify_runtime(kind: RuntimeKind, executable: &Path) -> Result<VerifiedRuntim
     })
 }
 
-fn parse_version(kind: RuntimeKind, value: &str) -> Result<String> {
-    let token = match kind {
-        RuntimeKind::Python => value.trim().strip_prefix("Python "),
-        RuntimeKind::Node => value.trim().strip_prefix('v'),
+fn parse_version(kind: &RuntimeKind, value: &str) -> Result<String> {
+    // The host owns the kind vocabulary; kinds it does not verify refuse
+    // closed rather than silently accepting another parser's output shape.
+    let token = match kind.as_str() {
+        "python" => value.trim().strip_prefix("Python "),
+        "node" => value.trim().strip_prefix('v'),
+        _ => None,
     }
     .ok_or_else(|| anyhow!("strategy_runtime_version_invalid"))?;
     let version = Version::parse(token).map_err(|_| anyhow!("strategy_runtime_version_invalid"))?;
     Ok(version.to_string())
 }
 
-fn runtime_root(executable: &Path, kind: RuntimeKind) -> Result<PathBuf> {
+fn runtime_root(executable: &Path) -> Result<PathBuf> {
     let parent = executable
         .parent()
         .ok_or_else(|| anyhow!("strategy_runtime_unavailable"))?;
-    Ok(match kind {
-        RuntimeKind::Python => parent.parent().unwrap_or(parent),
-        RuntimeKind::Node => parent.parent().unwrap_or(parent),
-    }
-    .to_path_buf())
+    Ok(parent.parent().unwrap_or(parent).to_path_buf())
 }
 
 fn resolve_on_path(name: &str) -> Option<PathBuf> {
@@ -469,13 +468,6 @@ fn resolve_on_path(name: &str) -> Option<PathBuf> {
         .flat_map(|value| std::env::split_paths(&value).collect::<Vec<_>>())
         .map(|directory| directory.join(name))
         .find(|candidate| candidate.is_file())
-}
-
-const fn kind_wire(kind: RuntimeKind) -> &'static str {
-    match kind {
-        RuntimeKind::Python => "python",
-        RuntimeKind::Node => "node",
-    }
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {

@@ -22,7 +22,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
 use licoup_workflow::{PendingCallback, RunCommand, RunSnapshot, StrategyRunStatus};
 use serde::{Deserialize, Serialize};
@@ -35,6 +35,26 @@ use licoup_model_catalog::candidate_routing::{
     PolicyCandidateRouting, SelectionScope, routing_rationale,
 };
 use licoup_workflow_store::{StrategyAuthorization, StrategyDefinition};
+
+// The vocabulary that carries no host naming is the engine's, re-exported
+// under this module so the established `evolution::*` surface keeps
+// resolving. What stays declared below is what the LicoUp composition owns:
+// the callback facts that name conversations and memberships, the context
+// and strategy ports that read them, the ledger cost port bound to this
+// crate's own host-ports registry, the recheck context typed on this
+// crate's snapshot and command, and the Group B governance record.
+pub use acativa::runtime::evolution::{
+    AdoptedPlanningDefaultSeam, AgentModelOptionSeam, BudgetPoolReservationSeam,
+    ContextManifestSummarySeam, DefaultEvolutionObservationPort, EffectRecheckFailure,
+    EffectRecheckReceipt, EvolutionCostPort, EvolutionObservationPort, EvolutionStrategyPort,
+    NodeObservationSummary, ObservationFactKindSeam, ObservationFactRecordSeam,
+    ObservationScopeSeam, PlanningScopeSeam, SourceRefSeam, StrategySourceSeam, StrategySuggestion,
+    StrategyVersionSeam,
+};
+
+/// The callback's cost reading. The fields are the engine's; the name this
+/// host's callback envelope knows them by is its own.
+pub type CallbackCostFacts = acativa::runtime::evolution::EvolutionCostFacts;
 
 // ============================================================================
 // Group B Typed Integration Seams & Gap Tracking
@@ -61,88 +81,6 @@ impl GroupBIntegrationGaps {
             t06_replaceable_strategy_gap: "the replaceable strategy seam is wired to the non-learning candidate policy: an explicit user choice and an adopted default decide first, and every other selection is routed by domain::candidate_routing over the configured candidate catalog and the effective scope admission. Durable learned defaults and the qualification policy of domain::model_planning are not composed into this seam yet, so no learned default reaches a callback; the catalogue's ranking is not used to choose a model either, because the seam carries no price or intelligence facts",
         }
     }
-}
-
-// ----------------------------------------------------------------------------
-// T03 Typed Observation Seam
-// ----------------------------------------------------------------------------
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ObservationScopeSeam {
-    pub responsibility_id: String,
-    pub task_type: String,
-    pub configuration_id: String,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum ObservationFactKindSeam {
-    Run,
-    Wait,
-    Result,
-    Repeat,
-    Correction,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ObservationFactRecordSeam {
-    pub fact_id: String,
-    pub scope: ObservationScopeSeam,
-    pub kind: ObservationFactKindSeam,
-    pub state_id: String,
-    pub visit: u64,
-    pub recorded_at_unix_ms: i64,
-}
-
-pub trait EvolutionObservationPort: Send + Sync {
-    fn collect_node_observations(&self, run_id: &str) -> Vec<NodeObservationSummary>;
-}
-
-#[derive(Default)]
-pub struct DefaultEvolutionObservationPort {
-    observations: Mutex<BTreeMap<String, Vec<NodeObservationSummary>>>,
-}
-
-impl DefaultEvolutionObservationPort {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn record_observation(&self, run_id: &str, obs: NodeObservationSummary) {
-        let mut guard = self.observations.lock().unwrap_or_else(|p| p.into_inner());
-        guard.entry(run_id.to_owned()).or_default().push(obs);
-    }
-}
-
-impl EvolutionObservationPort for DefaultEvolutionObservationPort {
-    fn collect_node_observations(&self, run_id: &str) -> Vec<NodeObservationSummary> {
-        let guard = self.observations.lock().unwrap_or_else(|p| p.into_inner());
-        guard.get(run_id).cloned().unwrap_or_default()
-    }
-}
-
-// ----------------------------------------------------------------------------
-// T04 Typed Cost Seam
-// ----------------------------------------------------------------------------
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BudgetPoolReservationSeam {
-    pub invocation_id: String,
-    pub budget_id: String,
-    pub reserved_tokens: u64,
-    pub settled_tokens: Option<u64>,
-    pub overage_tokens: Option<u64>,
-}
-
-pub trait EvolutionCostPort: Send + Sync {
-    /// Facts about what this run has spent.
-    ///
-    /// `None` means no reading was available (the ledger could not be read).
-    /// Unknown spend is never reported as zero, per the plan's budget rule.
-    fn query_cost_facts(&self, portable_root: &Path, run_id: &str) -> Option<CallbackCostFacts>;
 }
 
 #[derive(Default)]
@@ -196,26 +134,6 @@ impl EvolutionCostPort for LedgerEvolutionCostPort {
     }
 }
 
-// ----------------------------------------------------------------------------
-// T05 Typed Context Seam
-// ----------------------------------------------------------------------------
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SourceRefSeam {
-    pub source_id: String,
-    pub revision: String,
-    pub validity: String,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ContextManifestSummarySeam {
-    pub source_refs: Vec<SourceRefSeam>,
-    pub agreement_revisions: Vec<String>,
-    pub token_estimate: Option<u64>,
-}
-
 pub trait EvolutionContextPort: Send + Sync {
     fn assemble_context_facts(
         &self,
@@ -256,80 +174,6 @@ impl EvolutionContextPort for DefaultEvolutionContextPort {
             context_composition_seam_active: true,
         }
     }
-}
-
-// ----------------------------------------------------------------------------
-// T06 Typed Strategy Seam & Revocable Defaults
-// ----------------------------------------------------------------------------
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PlanningScopeSeam {
-    pub task_kind: String,
-    pub configuration: String,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StrategySourceSeam {
-    pub source_id: String,
-    pub revision: String,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AgentModelOptionSeam {
-    pub agent_id: String,
-    pub model_id: String,
-    pub thinking: String,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AdoptedPlanningDefaultSeam {
-    pub scope: PlanningScopeSeam,
-    pub source: StrategySourceSeam,
-    pub selected_option: AgentModelOptionSeam,
-    pub revocable: bool,
-    pub supersedes_revision: Option<String>,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StrategyVersionSeam {
-    pub version_id: String,
-    pub revision: String,
-    pub source: StrategySourceSeam,
-    pub scope: PlanningScopeSeam,
-    pub revocable: bool,
-    pub revoked: bool,
-}
-
-/// A strategy suggestion presented to the Assistant.
-///
-/// **INVARIANT**: Strategy versions feed selection without granting execution permission.
-/// The `has_execution_permission` field is ALWAYS `false`. The Assistant may select or adopt
-/// a strategy recommendation, but effect execution requires independent host permission recheck.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StrategySuggestion {
-    pub candidate: AgentModelOptionSeam,
-    pub ranking_basis: String,
-    pub source: Option<StrategySourceSeam>,
-    pub scope: Option<PlanningScopeSeam>,
-    pub is_default: bool,
-    /// Must remain false: strategy selection grants no execution permission.
-    pub has_execution_permission: bool,
-    pub rationale: String,
-}
-
-pub trait EvolutionStrategyPort: Send + Sync {
-    fn suggest_strategy(
-        &self,
-        scope: &PlanningScopeSeam,
-        candidates: &[AgentModelOptionSeam],
-        explicit_user_choice: Option<&AgentModelOptionSeam>,
-    ) -> Option<StrategySuggestion>;
 }
 
 pub struct DefaultEvolutionStrategyPort {
@@ -490,39 +334,12 @@ fn configured_option<'a>(
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct NodeObservationSummary {
-    pub node_id: String,
-    pub generation: u64,
-    pub lifecycle_state: String,
-    pub work_role: String,
-    pub active_invocation_id: Option<String>,
-    pub durable_cursor: u64,
-}
-
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct CallbackObservationFacts {
     pub completed_states: Vec<String>,
     pub state_visits: BTreeMap<String, u64>,
     pub node_observations: Vec<NodeObservationSummary>,
     pub failure_diagnostic: Option<String>,
     pub observation_seam_active: bool,
-}
-
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CallbackCostFacts {
-    pub prompt_tokens: u64,
-    pub cached_input_tokens: u64,
-    pub completion_tokens: u64,
-    pub total_tokens: u64,
-    pub exact_count: u64,
-    pub estimated_count: u64,
-    /// Whether a configured budget pool and its reservations contributed to
-    /// these facts. Always `false` in this slice: the T04 pool seam is not
-    /// wired, so the numbers come from the ledger's recorded usage alone and no
-    /// pool is enforcing anything on this run.
-    pub budget_pool_seam_active: bool,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -851,69 +668,6 @@ impl<'a> EffectRecheckContext<'a> {
         }
     }
 }
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct EffectRecheckReceipt {
-    pub run_id: String,
-    pub command_id: String,
-    pub rechecked_at_unix_ms: i64,
-    pub revision_digest: String,
-    pub generation: u64,
-    pub permission_verified: bool,
-    pub version_verified: bool,
-    pub resource_verified: bool,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum EffectRecheckFailure {
-    PermissionDenied { code: String, reason: String },
-    VersionMismatch { expected: String, actual: String },
-    StaleGeneration { expected: u64, current: u64 },
-    ResourceUnavailable { code: String, reason: String },
-}
-
-impl EffectRecheckFailure {
-    pub fn code(&self) -> &'static str {
-        match self {
-            Self::PermissionDenied { .. } => "authorization_required",
-            Self::VersionMismatch { .. } => "strategy_recheck_version_mismatch",
-            Self::StaleGeneration { .. } => "strategy_recheck_stale_generation",
-            Self::ResourceUnavailable { code, .. } => {
-                if code == "session_writer_conflict" {
-                    "strategy_recheck_session_writer_conflict"
-                } else if code == "token_budget_exhausted" {
-                    "strategy_recheck_token_budget_exhausted"
-                } else {
-                    "strategy_recheck_resource_unavailable"
-                }
-            }
-        }
-    }
-}
-
-impl std::fmt::Display for EffectRecheckFailure {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::PermissionDenied { reason, .. } => write!(f, "Permission denied: {reason}"),
-            Self::VersionMismatch { expected, actual } => {
-                write!(f, "Version mismatch: expected {expected}, actual {actual}")
-            }
-            Self::StaleGeneration { expected, current } => {
-                write!(
-                    f,
-                    "Stale generation: expected {expected}, current {current}"
-                )
-            }
-            Self::ResourceUnavailable { code, reason } => {
-                write!(f, "Resource unavailable ({code}): {reason}")
-            }
-        }
-    }
-}
-
-impl std::error::Error for EffectRecheckFailure {}
 
 /// Recheck permission, version, and resources before executing any effect.
 ///
