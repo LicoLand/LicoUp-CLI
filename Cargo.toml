@@ -46,10 +46,6 @@ members = [
     "crates/trybuild",
 ]
 resolver = "3"
-# The C11 usage-source SDK is a path dependency of the kernel and keeps its own
-# standalone workspace and lock on purpose: it is the third-party boundary, not
-# a kernel crate. Excluding it from this workspace is what lets both be true.
-exclude = ["sdk/usage-source"]
 
 [workspace.package]
 version = "0.3.0"
@@ -127,6 +123,10 @@ zstd = "0.13"
 # Revisit when hax publishes a release with the fix.
 [patch.crates-io]
 hax-lib = { git = "https://github.com/hacspec/hax.git", rev = "8f9cb576e58f6cc7e9ed249a7d4439b0f7ed0da7" }
+# Detector crates depend on the published contract; inside this unified build
+# the same crate is the workspace member, so the registry requirement resolves
+# to the local copy and both sides see one `ApplicationFailure`.
+licoup-extension-contracts = { path = "crates/licoup-extension-contracts" }
 
 [profile.release]
 codegen-units = 1

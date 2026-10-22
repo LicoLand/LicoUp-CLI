@@ -26,7 +26,7 @@ completes. The post-split plan for the desktop repository is in
 | Path | Contents |
 | --- | --- |
 | `crates/` | All workspace member crates, including the `licoup-native` host library that provides the `licoup-cli`, `lico-agent` and `lico-secure-mesh-kt-mock` binaries and the `cdylib`/`staticlib` FFI surface. |
-| `sdk/` | Standalone SDK sources kept outside the root workspace: `usage-source` (Rust, own lockfile) and `agent-adapter` (Python SDK + samples). |
+| `sdk/` | Standalone SDK sources kept outside the root workspace: `agent-adapter` (Python SDK + samples). Usage detection moved to the `Agent-Statistics` repository (`token-usage-detector`). |
 | `components/` | Optional feature packages (`analytics`, `appearance`, `endpoint-collaboration`), each a standalone workspace with its own lockfile. |
 | `tests/` | Integration, contract, smoke and product-e2e suites for the CLI and its binaries. |
 | `tools/` | Rust-facing tooling: cargo runners, dependency audit, codegen, agent-adapter standards checks. |

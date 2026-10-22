@@ -2583,7 +2583,6 @@ dependencies = [
  "licoup-public-gateway",
  "licoup-state-machine-codegen",
  "licoup-statistics",
- "licoup-usage-source-sdk",
  "licoup-vault",
  "licoup-workflow",
  "licoup-workflow-runtime",
@@ -2743,22 +2742,13 @@ dependencies = [
  "licoup-extension-contracts",
  "licoup-foundation",
  "licoup-model-catalog",
- "licoup-usage-source-sdk",
  "rusqlite",
  "serde",
  "serde_json",
  "sha2 0.10.9",
  "time",
+ "token-usage-detector",
  "uuid",
-]
-
-[[package]]
-name = "licoup-usage-source-sdk"
-version = "0.1.0"
-dependencies = [
- "licoup-extension-contracts",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -4200,6 +4190,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.118",
+]
+
+[[package]]
+name = "token-usage-detector"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3062beb47617cc25c113f418f25d6b2a5e32f5e20a3826a67498f26e1d3b3f8"
+dependencies = [
+ "licoup-extension-contracts",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
