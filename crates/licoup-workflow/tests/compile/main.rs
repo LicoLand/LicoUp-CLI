@@ -20,7 +20,10 @@ use serde_json::json;
 use licoup_workflow::compile::{
     CompiledWorkflow, CompilerSemantics, DefinitionRevision, EngineSemantics, HandoffReason,
     InterpreterProfile, LoweringCapabilities, LoweringRefusal, PlanKey, PlanMismatch,
-    RecordedPlanKey, RetainedPlan, RunAdmission,
+    RecordedPlanKey, RetainedPlan, RunAdmission, admit_recorded_plan, compiler_semantics_from_wire,
+    compiler_semantics_version, compiler_semantics_wire, engine_semantics_from_wire,
+    engine_semantics_version, engine_semantics_wire, plan_binding_digest, rebuild_retained_plan,
+    record_plan_key, retained_binding_digest, typed_plan_key,
 };
 use licoup_workflow::{ReducerEvent, RunSnapshot, compile_workflow_source, reduce};
 
@@ -143,7 +146,7 @@ fn an_old_run_stays_on_a_compatible_interpreter() {
     // This build executes its own engine semantics, so it must not advance a run
     // bound to an earlier version of that line.
     assert_eq!(
-        this_build.admit_recorded(&older.recorded_plan_key),
+        admit_recorded_plan(&this_build, &older.recorded_plan_key),
         RunAdmission::Handoff {
             reason: HandoffReason::EngineSemantics
         }
@@ -157,39 +160,33 @@ fn an_old_run_stays_on_a_compatible_interpreter() {
 
     // The compatible interpreter is a profile that declares the run's semantics,
     // and it is the same lowering: the identity does not move between them.
-    let bound = older
-        .recorded_plan_key
-        .typed()
-        .expect("the recorded binding types");
+    let bound = typed_plan_key(&older.recorded_plan_key).expect("the recorded binding types");
     let compatible = InterpreterProfile::new(
         bound.compiler_semantics(),
         bound.engine_semantics(),
         LoweringCapabilities::none(),
     );
     assert_eq!(
-        compatible.admit_recorded(&older.recorded_plan_key),
+        admit_recorded_plan(&compatible, &older.recorded_plan_key),
         RunAdmission::Compatible
     );
     assert_eq!(compatible.key_for(fixture_revision()), bound);
     assert_eq!(
-        this_build
-            .key_for(fixture_revision())
-            .binding_digest()
-            .len(),
+        plan_binding_digest(&this_build.key_for(fixture_revision())).len(),
         64
     );
     assert_ne!(
-        this_build.key_for(fixture_revision()).binding_digest(),
-        bound.binding_digest(),
+        plan_binding_digest(&this_build.key_for(fixture_revision())),
+        plan_binding_digest(&bound),
         "the two interpreters hold different identities for the same revision"
     );
 
     // Recording this build's own binding and reading it back yields exactly the
     // key it was recorded from, so a binding survives a store round trip.
     let this_build_key = this_build.key_for(fixture_revision());
-    let recorded = RecordedPlanKey::from(&this_build_key);
+    let recorded = record_plan_key(&this_build_key);
     assert_eq!(
-        recorded.typed().expect("the recorded binding types"),
+        typed_plan_key(&recorded).expect("the recorded binding types"),
         this_build_key
     );
 }
@@ -212,16 +209,16 @@ fn an_opaque_semantics_digest_is_never_reinterpreted() {
         fixture_revision().as_str()
     );
     assert!(
-        CompilerSemantics::from_wire(&opaque.recorded_plan_key.compiler_semantics).is_err(),
+        compiler_semantics_from_wire(&opaque.recorded_plan_key.compiler_semantics).is_err(),
         "a content digest is not a compiler semantics version"
     );
     assert!(
-        opaque.recorded_plan_key.typed().is_err(),
+        typed_plan_key(&opaque.recorded_plan_key).is_err(),
         "the record cannot be typed into a plan key"
     );
     // With no provable binding, the run is handed off rather than restarted here.
     assert_eq!(
-        this_build.admit_recorded(&opaque.recorded_plan_key),
+        admit_recorded_plan(&this_build, &opaque.recorded_plan_key),
         RunAdmission::Handoff {
             reason: HandoffReason::UnprovenSemantics
         }
@@ -237,7 +234,7 @@ fn a_run_bound_to_older_compiler_semantics_is_handed_off_not_relowered() {
     // The definition revision is the same input; the lowering semantics are
     // not, so this build must not advance the run.
     assert_eq!(
-        this_build.admit_recorded(&older.recorded_plan_key),
+        admit_recorded_plan(&this_build, &older.recorded_plan_key),
         RunAdmission::Handoff {
             reason: HandoffReason::CompilerSemantics
         }
@@ -251,17 +248,14 @@ fn a_run_bound_to_older_compiler_semantics_is_handed_off_not_relowered() {
 
     // That interpreter is a real, expressible thing, and its identity for the
     // same revision is a different plan.
-    let bound = older
-        .recorded_plan_key
-        .typed()
-        .expect("the recorded binding types");
+    let bound = typed_plan_key(&older.recorded_plan_key).expect("the recorded binding types");
     let compatible = InterpreterProfile::new(
         bound.compiler_semantics(),
         bound.engine_semantics(),
         LoweringCapabilities::none(),
     );
     assert_eq!(
-        compatible.admit_recorded(&older.recorded_plan_key),
+        admit_recorded_plan(&compatible, &older.recorded_plan_key),
         RunAdmission::Compatible
     );
     let older_key = compatible.key_for(fixture_revision());
@@ -271,7 +265,10 @@ fn a_run_bound_to_older_compiler_semantics_is_handed_off_not_relowered() {
         current_key.definition_revision(),
         "both interpreters lower the same definition bytes"
     );
-    assert_ne!(older_key.binding_digest(), current_key.binding_digest());
+    assert_ne!(
+        plan_binding_digest(&older_key),
+        plan_binding_digest(&current_key)
+    );
 
     // This build has no lowering for that key at all: it cannot produce an
     // index and call it the v0 lowering.
@@ -289,8 +286,8 @@ fn a_record_that_omits_part_of_the_identity_is_refused() {
     // boundary.
     let incomplete = json!({
         "definitionRevision": fixture_revision().as_str(),
-        "compilerSemantics": CompilerSemantics::CURRENT.wire(),
-        "engineSemantics": EngineSemantics::CURRENT.wire(),
+        "compilerSemantics": compiler_semantics_wire(CompilerSemantics::CURRENT),
+        "engineSemantics": engine_semantics_wire(EngineSemantics::CURRENT),
     });
     assert!(
         serde_json::from_value::<RecordedPlanKey>(incomplete.clone()).is_err(),
@@ -303,7 +300,7 @@ fn a_record_that_omits_part_of_the_identity_is_refused() {
     let recorded: RecordedPlanKey =
         serde_json::from_value(complete).expect("the complete record decodes");
     assert_eq!(
-        recorded.typed().expect("the complete record types"),
+        typed_plan_key(&recorded).expect("the complete record types"),
         fixture_key(
             CompilerSemantics::CURRENT,
             EngineSemantics::CURRENT,
@@ -318,14 +315,18 @@ fn a_content_digest_is_not_a_semantics_version_anywhere() {
     let digest = revision.as_str();
 
     // Not through the version constructors...
-    assert!(CompilerSemantics::from_wire(digest).is_err());
-    assert!(EngineSemantics::from_wire(digest).is_err());
+    assert!(compiler_semantics_from_wire(digest).is_err());
+    assert!(engine_semantics_from_wire(digest).is_err());
     // ...not through a line that does not own the version...
-    assert!(CompilerSemantics::from_wire(&EngineSemantics::CURRENT.wire()).is_err());
-    assert!(EngineSemantics::from_wire(&CompilerSemantics::CURRENT.wire()).is_err());
+    assert!(
+        compiler_semantics_from_wire(&engine_semantics_wire(EngineSemantics::CURRENT)).is_err()
+    );
+    assert!(
+        engine_semantics_from_wire(&compiler_semantics_wire(CompilerSemantics::CURRENT)).is_err()
+    );
     // ...and not through a version that does not exist yet.
-    assert!(CompilerSemantics::version(CompilerSemantics::CURRENT.version_of() + 1).is_err());
-    assert!(EngineSemantics::version(EngineSemantics::CURRENT.version_of() + 1).is_err());
+    assert!(compiler_semantics_version(CompilerSemantics::CURRENT.version_of() + 1).is_err());
+    assert!(engine_semantics_version(EngineSemantics::CURRENT.version_of() + 1).is_err());
 
     // The typed key refuses the same substitution on the wire.
     let mut record = json!({
@@ -353,7 +354,7 @@ fn a_content_digest_is_not_a_semantics_version_anywhere() {
 #[test]
 fn the_revision_and_each_semantics_separate_identities() {
     let revision = fixture_revision();
-    let earlier = EngineSemantics::version(EngineSemantics::CURRENT.version_of() - 1)
+    let earlier = engine_semantics_version(EngineSemantics::CURRENT.version_of() - 1)
         .expect("an earlier version of the line is nameable");
 
     // Same revision, different engine semantics: a different plan identity.
@@ -368,7 +369,10 @@ fn the_revision_and_each_semantics_separate_identities() {
         LoweringCapabilities::none(),
     );
     assert_ne!(current_key, earlier_key);
-    assert_ne!(current_key.binding_digest(), earlier_key.binding_digest());
+    assert_ne!(
+        plan_binding_digest(&current_key),
+        plan_binding_digest(&earlier_key)
+    );
     assert_eq!(
         current_key.definition_revision(),
         earlier_key.definition_revision(),
@@ -386,7 +390,10 @@ fn the_revision_and_each_semantics_separate_identities() {
     )
     .expect("the edited key types");
     assert_ne!(current_key, edited_key);
-    assert_ne!(current_key.binding_digest(), edited_key.binding_digest());
+    assert_ne!(
+        plan_binding_digest(&current_key),
+        plan_binding_digest(&edited_key)
+    );
     assert_ne!(*edited_key.definition_revision(), revision);
 
     // The identity is a function of the key alone: asking twice never moves it.
@@ -396,7 +403,10 @@ fn the_revision_and_each_semantics_separate_identities() {
         LoweringCapabilities::none(),
     );
     assert_eq!(rebuilt_key, current_key);
-    assert_eq!(rebuilt_key.binding_digest(), current_key.binding_digest());
+    assert_eq!(
+        plan_binding_digest(&rebuilt_key),
+        plan_binding_digest(&current_key)
+    );
 }
 
 #[test]
@@ -425,8 +435,8 @@ fn lowering_capabilities_are_canonical_namespaced_and_checked() {
     );
     assert_eq!(with_capability, with_reversed);
     assert_eq!(
-        with_capability.binding_digest(),
-        with_reversed.binding_digest()
+        plan_binding_digest(&with_capability),
+        plan_binding_digest(&with_reversed)
     );
 
     for invalid in [
@@ -463,7 +473,7 @@ fn lowering_capabilities_are_canonical_namespaced_and_checked() {
     // the two keys is the engine version.
     let earlier_engine = fixture_key(
         CompilerSemantics::CURRENT,
-        EngineSemantics::version(EngineSemantics::CURRENT.version_of() - 1).expect("nameable"),
+        engine_semantics_version(EngineSemantics::CURRENT.version_of() - 1).expect("nameable"),
         declared.clone(),
     );
     let capable_host = InterpreterProfile::current(declared);
@@ -526,14 +536,12 @@ fn a_retained_plan_holds_the_definition_and_the_identity_only() {
     // Reading it back checks the pair against itself, then rebuilds the plan.
     let read = RetainedPlan::from_wire_bytes(&bytes).expect("the retained pair is consistent");
     assert_eq!(read.key(), &key);
-    assert_eq!(read.binding_digest(), key.binding_digest());
+    assert_eq!(retained_binding_digest(&read), plan_binding_digest(&key));
     assert_eq!(
         read.retained_bytes().expect("the retained form encodes"),
         bytes.len()
     );
-    let rebuilt = read
-        .rebuild()
-        .expect("the retained definition still compiles");
+    let rebuilt = rebuild_retained_plan(&read).expect("the retained definition still compiles");
     assert_eq!(
         DefinitionRevision::of(rebuilt.definition()).expect("the rebuilt plan digests"),
         *key.definition_revision(),
