@@ -4,8 +4,8 @@ use anyhow::{Result, ensure};
 use rusqlite::{OptionalExtension, TransactionBehavior, params};
 
 use crate::control::{
-    AdmissionConflict, AdmissionReceipt, ControlOperation, ControlScope, ControlledStore,
-    OperationGrant,
+    AdmissionConflict, AdmissionFences, AdmissionReceipt, ControlOperation, ControlScope,
+    ControlledStore, FenceFacts, OperationGrant, evaluate_fences,
 };
 use crate::routing::{ChannelKind, QueueBounds};
 
@@ -172,8 +172,14 @@ impl DurableControlledStore {
     }
 }
 
+fn storage_conflict(error: anyhow::Error) -> AdmissionConflict {
+    AdmissionConflict::Storage {
+        reason: error.to_string(),
+    }
+}
+
 impl ControlledStore for DurableControlledStore {
-    fn get_graph_revision(&self, graph_id: &str) -> Option<u64> {
+    fn get_graph_revision(&self, graph_id: &str) -> Result<Option<u64>, AdmissionConflict> {
         self.store
             .with_connection(|connection| -> Result<Option<u64>> {
                 Ok(connection
@@ -185,11 +191,14 @@ impl ControlledStore for DurableControlledStore {
                     .optional()?
                     .map(|value| value.max(0) as u64))
             })
-            .ok()
-            .flatten()
+            .map_err(storage_conflict)
     }
 
-    fn get_node_control_revision(&self, graph_id: &str, node_id: &str) -> Option<u64> {
+    fn get_node_control_revision(
+        &self,
+        graph_id: &str,
+        node_id: &str,
+    ) -> Result<Option<u64>, AdmissionConflict> {
         self.store
             .with_connection(|connection| -> Result<Option<u64>> {
                 Ok(connection
@@ -202,11 +211,15 @@ impl ControlledStore for DurableControlledStore {
                     .optional()?
                     .map(|value| value.max(0) as u64))
             })
-            .ok()
-            .flatten()
+            .map_err(storage_conflict)
     }
 
-    fn is_invocation_settled(&self, graph_id: &str, node_id: &str, invocation_id: &str) -> bool {
+    fn is_invocation_settled(
+        &self,
+        graph_id: &str,
+        node_id: &str,
+        invocation_id: &str,
+    ) -> Result<bool, AdmissionConflict> {
         self.store
             .with_connection(|connection| -> Result<bool> {
                 let count: i64 = connection.query_row(
@@ -217,10 +230,10 @@ impl ControlledStore for DurableControlledStore {
                 )?;
                 Ok(count != 0)
             })
-            .unwrap_or(false)
+            .map_err(storage_conflict)
     }
 
-    fn is_stop_requested(&self, graph_id: &str, target: &str) -> bool {
+    fn is_stop_requested(&self, graph_id: &str, target: &str) -> Result<bool, AdmissionConflict> {
         self.store
             .with_connection(|connection| -> Result<bool> {
                 let count: i64 = connection.query_row(
@@ -231,10 +244,14 @@ impl ControlledStore for DurableControlledStore {
                 )?;
                 Ok(count != 0)
             })
-            .unwrap_or(false)
+            .map_err(storage_conflict)
     }
 
-    fn is_pause_negotiating(&self, graph_id: &str, target: &str) -> bool {
+    fn is_pause_negotiating(
+        &self,
+        graph_id: &str,
+        target: &str,
+    ) -> Result<bool, AdmissionConflict> {
         self.store
             .with_connection(|connection| -> Result<bool> {
                 let count: i64 = connection.query_row(
@@ -245,10 +262,10 @@ impl ControlledStore for DurableControlledStore {
                 )?;
                 Ok(count != 0)
             })
-            .unwrap_or(false)
+            .map_err(storage_conflict)
     }
 
-    fn is_graph_barrier_active(&self, graph_id: &str) -> bool {
+    fn is_graph_barrier_active(&self, graph_id: &str) -> Result<bool, AdmissionConflict> {
         self.store
             .with_connection(|connection| -> Result<bool> {
                 Ok(connection
@@ -260,10 +277,14 @@ impl ControlledStore for DurableControlledStore {
                     .optional()?
                     .is_some_and(|value| value == 1))
             })
-            .unwrap_or(false)
+            .map_err(storage_conflict)
     }
 
-    fn get_target_generation(&self, graph_id: &str, target: &str) -> Option<u64> {
+    fn get_target_generation(
+        &self,
+        graph_id: &str,
+        target: &str,
+    ) -> Result<Option<u64>, AdmissionConflict> {
         self.store
             .with_connection(|connection| -> Result<Option<u64>> {
                 Ok(connection
@@ -276,11 +297,14 @@ impl ControlledStore for DurableControlledStore {
                     .optional()?
                     .map(|value| value.max(0) as u64))
             })
-            .ok()
-            .flatten()
+            .map_err(storage_conflict)
     }
 
-    fn is_grant_revoked(&self, principal_id: &str, grant: &OperationGrant) -> bool {
+    fn is_grant_revoked(
+        &self,
+        principal_id: &str,
+        grant: &OperationGrant,
+    ) -> Result<bool, AdmissionConflict> {
         self.store
             .with_connection(|connection| -> Result<bool> {
                 let grant_json = serde_json::to_string(grant)?;
@@ -292,10 +316,13 @@ impl ControlledStore for DurableControlledStore {
                 )?;
                 Ok(count != 0)
             })
-            .unwrap_or(false)
+            .map_err(storage_conflict)
     }
 
-    fn find_idempotency_record(&self, request_id: &str) -> Option<(AdmissionReceipt, String)> {
+    fn find_idempotency_record(
+        &self,
+        request_id: &str,
+    ) -> Result<Option<(AdmissionReceipt, String)>, AdmissionConflict> {
         self.store
             .with_connection(|connection| -> Result<Option<(AdmissionReceipt, String)>> {
                 let value: Option<(String, String)> = connection
@@ -310,102 +337,246 @@ impl ControlledStore for DurableControlledStore {
                     .map(|(receipt, digest)| Ok((serde_json::from_str(&receipt)?, digest)))
                     .transpose()
             })
-            .ok()
-            .flatten()
+            .map_err(storage_conflict)
     }
 
     fn record_admission(
         &mut self,
         receipt: &mut AdmissionReceipt,
         payload_digest: String,
+        expected_control_revision: Option<u64>,
+        fences: &AdmissionFences,
     ) -> Result<(), AdmissionConflict> {
-        let result = self.store.with_connection(|connection| -> Result<()> {
-            let transaction =
-                connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
-            let next_sequence: i64 = transaction.query_row(
-                "SELECT COALESCE(MAX(admitted_sequence), 0) + 1
+        self.store.with_connection_typed(
+            |connection| -> std::result::Result<(), AdmissionConflict> {
+                let transaction = connection
+                    .transaction_with_behavior(TransactionBehavior::Immediate)
+                    .map_err(AdmissionConflict::from)?;
+                // Idempotency is re-read under the write lock: two identical
+                // requests admitted back-to-back converge on the recorded
+                // receipt instead of tripping the unique constraint.
+                let existing: Option<(String, String)> = transaction
+                    .query_row(
+                        "SELECT receipt_json, payload_digest FROM workflow_control_admissions
+                         WHERE request_id=?1",
+                        params![receipt.request_id],
+                        |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+                    )
+                    .optional()?;
+                if let Some((receipt_json, existing_digest)) = existing {
+                    if existing_digest == payload_digest {
+                        *receipt = serde_json::from_str(&receipt_json)?;
+                        receipt.is_replay = true;
+                        transaction.commit()?;
+                        return Ok(());
+                    }
+                    let existing_receipt: AdmissionReceipt =
+                        serde_json::from_str(&receipt_json)?;
+                    return Err(AdmissionConflict::IdempotencyMismatch {
+                        request_id: receipt.request_id.clone(),
+                        existing_author: existing_receipt.author_principal_id,
+                        reason: "request_id reused with different command payload".to_string(),
+                    });
+                }
+                // Every admission fence is re-evaluated under the write lock
+                // that commits this admission: a revocation, stop, pause,
+                // barrier or generation change committed between the proxy's
+                // prechecks and now still rejects the operation.
+                let mut covering_grants_all_revoked = !fences.covering_grants.is_empty();
+                for grant in &fences.covering_grants {
+                    let count: i64 = transaction.query_row(
+                        "SELECT COUNT(*) FROM workflow_revoked_grants
+                         WHERE principal_id=?1 AND grant_json=?2",
+                        params![fences.principal_id, serde_json::to_string(grant)?],
+                        |row| row.get(0),
+                    )?;
+                    if count == 0 {
+                        covering_grants_all_revoked = false;
+                        break;
+                    }
+                }
+                let barrier_active: i64 = transaction
+                    .query_row(
+                        "SELECT barrier_active FROM workflow_graph_state WHERE graph_id=?1",
+                        params![receipt.graph_id],
+                        |row| row.get(0),
+                    )
+                    .optional()?
+                    .unwrap_or(0);
+                let stop_hit = |target: &str| -> Result<bool, rusqlite::Error> {
+                    let count: i64 = transaction.query_row(
+                        "SELECT COUNT(*) FROM workflow_stop_requests
+                         WHERE graph_id=?1 AND target IN (?2, 'graph')",
+                        params![receipt.graph_id, target],
+                        |row| row.get(0),
+                    )?;
+                    Ok(count != 0)
+                };
+                let stopped_scope = if stop_hit(&fences.target_scope)? {
+                    Some(fences.target_scope.clone())
+                } else {
+                    match &fences.invocation_scope {
+                        Some(key) if stop_hit(key)? => Some(key.clone()),
+                        _ => None,
+                    }
+                };
+                let invocation_settled = match (&receipt.operation, &receipt.target_node_id) {
+                    (ControlOperation::Steer { invocation_id, .. }, Some(node)) => {
+                        let count: i64 = transaction.query_row(
+                            "SELECT COUNT(*) FROM workflow_invocations
+                             WHERE graph_id=?1 AND node_id=?2 AND invocation_id=?3 AND settled=1",
+                            params![receipt.graph_id, node, invocation_id],
+                            |row| row.get(0),
+                        )?;
+                        count != 0
+                    }
+                    _ => false,
+                };
+                let pause_negotiating: i64 = transaction.query_row(
+                    "SELECT COUNT(*) FROM workflow_pause_requests
+                     WHERE graph_id=?1 AND target=?2 AND active=1",
+                    params![receipt.graph_id, fences.target_scope],
+                    |row| row.get(0),
+                )?;
+                let graph_revision: i64 = transaction
+                    .query_row(
+                        "SELECT graph_revision FROM workflow_graph_state WHERE graph_id=?1",
+                        params![receipt.graph_id],
+                        |row| row.get(0),
+                    )
+                    .optional()?
+                    .unwrap_or(1);
+                let target_generation: i64 = transaction
+                    .query_row(
+                        "SELECT generation FROM workflow_node_state
+                         WHERE graph_id=?1 AND node_id=?2",
+                        params![receipt.graph_id, fences.target_scope],
+                        |row| row.get(0),
+                    )
+                    .optional()?
+                    .unwrap_or(1);
+                evaluate_fences(
+                    receipt,
+                    fences,
+                    FenceFacts {
+                        covering_grants_all_revoked,
+                        barrier_active: barrier_active == 1,
+                        stopped_scope,
+                        invocation_settled,
+                        pause_negotiating: pause_negotiating != 0,
+                        graph_revision: graph_revision.max(0) as u64,
+                        target_generation: target_generation.max(0) as u64,
+                    },
+                )?;
+                receipt.graph_revision = graph_revision.max(0) as u64;
+                // The exclusive-control fence is a compare-and-swap, not a
+                // pre-txn read: the persisted revision is re-read under the write
+                // lock, so two proxies that both observed the same revision cannot
+                // both admit.
+                if let Some(node) = receipt.target_node_id.as_deref() {
+                    let persisted: i64 = transaction
+                        .query_row(
+                            "SELECT control_revision FROM workflow_node_state
+                         WHERE graph_id=?1 AND node_id=?2",
+                            params![receipt.graph_id, node],
+                            |row| row.get(0),
+                        )
+                        .optional()?
+                        .unwrap_or(0);
+                    let persisted = persisted.max(0) as u64;
+                    if let Some(expected) = expected_control_revision
+                        && expected != persisted
+                    {
+                        return Err(AdmissionConflict::ControlRevisionConflict {
+                            target_node_id: node.to_string(),
+                            expected,
+                            current: persisted,
+                            reason: "competing exclusive control revision conflict".to_string(),
+                        });
+                    }
+                    receipt.control_revision = persisted + 1;
+                }
+                let next_sequence: i64 = transaction.query_row(
+                    "SELECT COALESCE(MAX(admitted_sequence), 0) + 1
                  FROM workflow_control_admissions",
-                [],
-                |row| row.get(0),
-            )?;
-            receipt.admitted_sequence = next_sequence.max(0) as u64;
-            transaction.execute(
-                "INSERT INTO workflow_control_admissions(
+                    [],
+                    |row| row.get(0),
+                )?;
+                receipt.admitted_sequence = next_sequence.max(0) as u64;
+                transaction.execute(
+                    "INSERT INTO workflow_control_admissions(
                    request_id, admitted_sequence, receipt_json, payload_digest
                  ) VALUES (?1, ?2, ?3, ?4)",
-                params![
-                    receipt.request_id,
-                    receipt.admitted_sequence as i64,
-                    serde_json::to_string(receipt)?,
-                    payload_digest,
-                ],
-            )?;
-            transaction.execute(
-                "INSERT INTO workflow_graph_state(graph_id, graph_revision, barrier_active)
+                    params![
+                        receipt.request_id,
+                        receipt.admitted_sequence as i64,
+                        serde_json::to_string(receipt)?,
+                        payload_digest,
+                    ],
+                )?;
+                transaction.execute(
+                    "INSERT INTO workflow_graph_state(graph_id, graph_revision, barrier_active)
                  VALUES (?1, ?2, 0)
                  ON CONFLICT(graph_id) DO NOTHING",
-                params![receipt.graph_id, receipt.graph_revision as i64],
-            )?;
-            if let Some(node) = receipt.target_node_id.as_deref() {
-                transaction.execute(
-                    "INSERT INTO workflow_node_state(
+                    params![receipt.graph_id, receipt.graph_revision as i64],
+                )?;
+                if let Some(node) = receipt.target_node_id.as_deref() {
+                    transaction.execute(
+                        "INSERT INTO workflow_node_state(
                        graph_id, node_id, control_revision, generation, lifecycle_state,
                        pause_negotiating
                      ) VALUES (?1, ?2, ?3, 1, 'ready', 0)
                      ON CONFLICT(graph_id, node_id)
                      DO UPDATE SET control_revision=excluded.control_revision",
-                    params![receipt.graph_id, node, receipt.control_revision as i64],
-                )?;
-            }
-            match &receipt.operation {
-                ControlOperation::Pause { scope } => {
-                    transaction.execute(
-                        "INSERT INTO workflow_pause_requests(graph_id, target, active)
+                        params![receipt.graph_id, node, receipt.control_revision as i64],
+                    )?;
+                }
+                match &receipt.operation {
+                    ControlOperation::Pause { scope } => {
+                        transaction.execute(
+                            "INSERT INTO workflow_pause_requests(graph_id, target, active)
                          VALUES (?1, ?2, 1)
                          ON CONFLICT(graph_id, target) DO UPDATE SET active=1",
-                        params![receipt.graph_id, pause_target(scope)],
-                    )?;
-                }
-                ControlOperation::Stop { scope, .. } => {
-                    let target = control_target(scope);
-                    transaction.execute(
-                        "INSERT OR IGNORE INTO workflow_stop_requests(graph_id, target)
-                         VALUES (?1, ?2)",
-                        params![receipt.graph_id, target],
-                    )?;
-                    if matches!(scope, ControlScope::Graph) {
-                        transaction.execute(
-                            "UPDATE workflow_graph_state SET barrier_active=1 WHERE graph_id=?1",
-                            params![receipt.graph_id],
+                            params![receipt.graph_id, pause_target(scope)],
                         )?;
                     }
+                    ControlOperation::Stop { scope, .. } => {
+                        let target = control_target(scope);
+                        transaction.execute(
+                            "INSERT OR IGNORE INTO workflow_stop_requests(graph_id, target)
+                         VALUES (?1, ?2)",
+                            params![receipt.graph_id, target],
+                        )?;
+                        if matches!(scope, ControlScope::Graph) {
+                            transaction.execute(
+                                "UPDATE workflow_graph_state SET barrier_active=1 WHERE graph_id=?1",
+                                params![receipt.graph_id],
+                            )?;
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
-            }
-            let payload = serde_json::to_value(&*receipt)?;
-            queue::enqueue_in_transaction(
-                &transaction,
-                ChannelKind::Control,
-                &receipt.request_id,
-                &payload,
-                receipt.admitted_at_unix_ms,
-                QueueBounds::default(),
-            )
-            .map_err(anyhow::Error::new)?;
-            transaction.commit()?;
-            Ok(())
-        });
-        result.map_err(|error| {
-            if let Some(QueueStoreError::Capacity(capacity)) =
-                error.downcast_ref::<QueueStoreError>()
-            {
-                AdmissionConflict::QueueCapacity(capacity.clone())
-            } else {
-                AdmissionConflict::Storage {
-                    reason: error.to_string(),
-                }
-            }
-        })
+                let payload = serde_json::to_value(&*receipt)?;
+                queue::enqueue_in_transaction(
+                    &transaction,
+                    ChannelKind::Control,
+                    &receipt.request_id,
+                    &payload,
+                    receipt.admitted_at_unix_ms,
+                    QueueBounds::default(),
+                )
+                .map_err(|error| match error {
+                    QueueStoreError::Capacity(capacity) => {
+                        AdmissionConflict::QueueCapacity(capacity)
+                    }
+                    other => AdmissionConflict::Storage {
+                        reason: other.to_string(),
+                    },
+                })?;
+                transaction.commit()?;
+                Ok(())
+            },
+        )
     }
 }
 
@@ -534,7 +705,12 @@ mod tests {
                 is_replay: false,
             };
             control
-                .record_admission(&mut receipt, "digest".into())
+                .record_admission(
+                    &mut receipt,
+                    "digest".into(),
+                    Some(9),
+                    &AdmissionFences::default(),
+                )
                 .unwrap();
             assert_eq!(receipt.admitted_sequence, 1);
         }
@@ -545,19 +721,29 @@ mod tests {
         assert_eq!(queued.len(), 1);
         assert_eq!(queued[0].channel, ChannelKind::Control);
         assert_eq!(queued[0].item_id, "request-1");
-        assert_eq!(control.get_graph_revision("graph-1"), Some(4));
+        assert_eq!(control.get_graph_revision("graph-1").unwrap(), Some(4));
         assert_eq!(
-            control.get_node_control_revision("graph-1", "node-1"),
-            Some(9)
+            control
+                .get_node_control_revision("graph-1", "node-1")
+                .unwrap(),
+            Some(10)
         );
-        assert_eq!(control.get_target_generation("graph-1", "node-1"), Some(3));
-        assert!(control.is_invocation_settled("graph-1", "node-1", "inv-1"));
-        assert!(control.is_stop_requested("graph-1", "node-1"));
-        assert!(control.is_pause_negotiating("graph-1", "node-1"));
-        assert!(control.is_grant_revoked("principal-1", &grant));
+        assert_eq!(
+            control.get_target_generation("graph-1", "node-1").unwrap(),
+            Some(3)
+        );
+        assert!(
+            control
+                .is_invocation_settled("graph-1", "node-1", "inv-1")
+                .unwrap()
+        );
+        assert!(control.is_stop_requested("graph-1", "node-1").unwrap());
+        assert!(control.is_pause_negotiating("graph-1", "node-1").unwrap());
+        assert!(control.is_grant_revoked("principal-1", &grant).unwrap());
         assert_eq!(
             control
                 .find_idempotency_record("request-1")
+                .unwrap()
                 .unwrap()
                 .0
                 .admitted_sequence,
@@ -568,7 +754,7 @@ mod tests {
                 .clear_pause_negotiating("graph-1", "node-1")
                 .unwrap()
         );
-        assert!(!control.is_pause_negotiating("graph-1", "node-1"));
+        assert!(!control.is_pause_negotiating("graph-1", "node-1").unwrap());
         drop(control);
         drop(store);
         let _ = fs::remove_dir_all(root);
