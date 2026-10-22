@@ -7,7 +7,7 @@ license.workspace = true
 publish = false
 
 [dependencies]
-acativa = { path = "../../../Acativa/crates/acativa", version = "0.1.0" }
+acativa = "0.1.1"
 anyhow.workspace = true
 fs2.workspace = true
 # The Canonical Conversation crate owns the durable conversation records this
