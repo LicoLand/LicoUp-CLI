@@ -4,8 +4,8 @@ The Rust world leaves the `LicoUp` monorepo (which becomes "LicoUp Desktop":
 Flutter app + packaging + bridge contract) and lands in this repository,
 preserving the existing relative layout so every `path = "…"` dependency and
 declared `[[test]]`/`[[bin]]` path keeps resolving. All paths below are
-relative to the monorepo root `/Users/unka/DevSpace/LicoLand/LicoUp`; they copy
-to the same relative path in this repository.
+relative to the monorepo checkout root; they copy to the same relative path in
+this repository.
 
 > Status: landed. Sources copied from LicoUp `f9e509fd1` on
 > `feature/base-extraction-gateways` (tree clean). `cargo check --workspace
