@@ -33,15 +33,15 @@
 use crate::ledger::{Ledger, LedgerError, LedgerResult, now_ms, open_ledger};
 use licoup_extension_contracts::usage::{ExactNumber, Quality, UsageObservation, UsageOperation};
 use licoup_extension_contracts::{ApplicationFailure, is_namespaced};
-use licoup_usage_source_sdk::binding::{
-    BatchRefusal, BoundObservation, BoundObservationKey, SourceBinding,
-};
-use licoup_usage_source_sdk::collection::{Cursor, PublishBatch, QueryPage, QueryRequest};
-use licoup_usage_source_sdk::metrics as general;
 use rusqlite::{OptionalExtension, TransactionBehavior, params};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::fmt::Write as _;
+use token_usage_detector::binding::{
+    BatchRefusal, BoundObservation, BoundObservationKey, SourceBinding,
+};
+use token_usage_detector::collection::{Cursor, PublishBatch, QueryPage, QueryRequest};
+use token_usage_detector::metrics as general;
 
 /// The stage every refusal from this journal reports.
 const STAGE: &str = "usage-journal";
@@ -1278,13 +1278,13 @@ mod tests {
         CostObservation, MetricValue, Temporality, UsageObservation,
     };
     use licoup_extension_contracts::wire;
-    use licoup_usage_source_sdk::normalize::OtlpSumNormalizer;
     use serde_json::json;
     use std::collections::BTreeMap;
     use std::fs;
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+    use token_usage_detector::normalize::OtlpSumNormalizer;
 
     /// The synthetic OTLP-shaped series the accepted component fixtures publish,
     /// reused here so the base journal is exercised against the same producer
@@ -1506,7 +1506,7 @@ mod tests {
                     .resume_request(&admission, SCOPE, None)
                     .expect("first read")
                     .mode(),
-                licoup_usage_source_sdk::collection::CollectionMode::Pull,
+                token_usage_detector::collection::CollectionMode::Pull,
                 "a source with no durable position is read from the start"
             );
             journal
@@ -1529,7 +1529,7 @@ mod tests {
             .expect("resume");
         assert_eq!(
             resumed.mode(),
-            licoup_usage_source_sdk::collection::CollectionMode::Cursor
+            token_usage_detector::collection::CollectionMode::Cursor
         );
         assert_eq!(resumed.cursor.as_deref(), Some("1@epoch-1"));
         assert_eq!(
@@ -1661,15 +1661,13 @@ mod tests {
     }
 
     #[test]
-    fn the_sdk_dependency_points_downward_only() {
-        // The kernel takes the C11 SDK so its own journal admits the source
-        // shapes; the SDK maps inputs onto the published contract and never
-        // names the kernel or the optional package back.
+    fn the_detector_dependency_points_downward_only() {
+        // The kernel takes the usage detector so its own journal admits the
+        // source shapes; the detector maps inputs onto the published contract
+        // and never names the kernel or this package back. The detector's own
+        // repository enforces its side of the direction.
         let kernel = include_str!("../Cargo.toml");
-        assert!(kernel.contains("licoup-usage-source-sdk"));
-        let sdk = include_str!("../../../sdk/usage-source/Cargo.toml");
-        assert!(!sdk.contains("licoup-native"));
-        assert!(!sdk.contains("licoup-analytics"));
+        assert!(kernel.contains("token-usage-detector"));
     }
 
     #[test]

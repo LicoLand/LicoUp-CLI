@@ -42,13 +42,13 @@ use crate::ledger::{
 };
 use crate::persistence::client_state_store;
 use licoup_extension_contracts::usage::Quality;
-use licoup_usage_source_sdk::binding::{BoundObservation, SourceBinding};
-use licoup_usage_source_sdk::collection::{PublishBatch, QueryPage, QueryRequest};
-use licoup_usage_source_sdk::metrics as general;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
+use token_usage_detector::binding::{BoundObservation, SourceBinding};
+use token_usage_detector::collection::{PublishBatch, QueryPage, QueryRequest};
+use token_usage_detector::metrics as general;
 
 /// The journal generation these facts belong to, as the report names it.
 pub const USAGE_JOURNAL_SCHEMA: &str = "usage-journal.v1";
@@ -409,13 +409,13 @@ mod tests {
         MetricValue, Temporality, UsageObservation, UsageOperation,
     };
     use licoup_extension_contracts::wire;
-    use licoup_usage_source_sdk::collection::Cursor;
     use rusqlite::Connection;
     use serde_json::json;
     use std::collections::BTreeMap;
     use std::fs;
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+    use token_usage_detector::collection::Cursor;
 
     const SOURCE: &str = "source:example.analytics#1";
     const EXTENSION: &str = "example.analytics";
@@ -669,7 +669,7 @@ mod tests {
                 host.resume_request(&admission, SCOPE, None)
                     .expect("first read")
                     .mode(),
-                licoup_usage_source_sdk::collection::CollectionMode::Pull,
+                token_usage_detector::collection::CollectionMode::Pull,
                 "a source with no durable position is read from the start"
             );
             let settled = host.admit_page(&admission, &page).expect("settled");
@@ -690,7 +690,7 @@ mod tests {
             .expect("resume");
         assert_eq!(
             resumed.mode(),
-            licoup_usage_source_sdk::collection::CollectionMode::Cursor
+            token_usage_detector::collection::CollectionMode::Cursor
         );
         assert_eq!(resumed.cursor.as_deref(), Some("1@epoch-1"));
         assert_eq!(fact_rows(&restarted), 1, "the facts survived the restart");
