@@ -1,7 +1,7 @@
 use super::utils::{from_i64, to_i64};
 use anyhow::Result;
-use licoup_statistics::contract::{UNATTRIBUTED_MODEL, UsageVariant};
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::contract::{UNATTRIBUTED_MODEL, UsageVariant};
+use agent_statistics::window::UsageWindow;
 use rusqlite::{Transaction, params};
 use std::collections::{BTreeMap, BTreeSet};
 

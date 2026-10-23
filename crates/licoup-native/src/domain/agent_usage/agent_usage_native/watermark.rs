@@ -3,10 +3,10 @@
 use super::cache::{RefreshStatements, json_column, variant_from_columns};
 use super::models::{CumulativeSnapshot, CumulativeTotals};
 use anyhow::Result;
-use licoup_statistics::contract::{
+use agent_statistics::contract::{
     HistoryUsageSummary, MessageUsage, ModelTokenUsageSummary, UNATTRIBUTED_MODEL, UsageVariant,
 };
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::window::UsageWindow;
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Debug)]

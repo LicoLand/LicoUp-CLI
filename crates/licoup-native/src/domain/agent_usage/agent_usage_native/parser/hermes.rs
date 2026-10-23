@@ -2,8 +2,8 @@ use super::{opaque_scope, positive, read_only_connection, table_columns};
 use crate::domain::agent_usage::agent_usage_native::models::{
     CumulativeSnapshot, CumulativeTotals, ParseResult,
 };
-use licoup_statistics::contract::{HistoryUsageSummary, MessageUsage, UsageAccuracy};
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::contract::{HistoryUsageSummary, MessageUsage, UsageAccuracy};
+use agent_statistics::window::UsageWindow;
 use rusqlite::Connection;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;

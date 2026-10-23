@@ -22,11 +22,11 @@
 
 use crate::domain::conversation::parameters::param_bool;
 use crate::domain::provider_quota::{resolve_session, state_db_path};
-use licoup_statistics::contract::{
+use agent_statistics::contract::{
     DailyUsageSummary, HistoryUsageSummary, MessageUsage, UsageAccuracy, number_field,
 };
-use licoup_statistics::persistence::read_retained_reports;
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::persistence::read_retained_reports;
+use agent_statistics::window::UsageWindow;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::io::Read;
@@ -142,7 +142,7 @@ fn aggregate_events(events: &[Value], window: &UsageWindow) -> HistoryUsageSumma
             continue;
         }
         requests = requests.saturating_add(1);
-        let model = licoup_statistics::variant::model_label(event);
+        let model = agent_statistics::variant::model_label(event);
         match event_token_usage(event) {
             Some(usage) => {
                 let message = MessageUsage {
@@ -150,7 +150,7 @@ fn aggregate_events(events: &[Value], window: &UsageWindow) -> HistoryUsageSumma
                     cached_input_tokens: usage.cached_input_tokens,
                     completion_tokens: usage.completion_tokens,
                     total_tokens: usage.total_tokens,
-                    variant: licoup_statistics::variant::UsageVariant::from_metadata(event),
+                    variant: agent_statistics::variant::UsageVariant::from_metadata(event),
                     model,
                     accuracy: UsageAccuracy::Exact,
                 };
@@ -161,7 +161,7 @@ fn aggregate_events(events: &[Value], window: &UsageWindow) -> HistoryUsageSumma
             None => summary.add_token_unavailable_request_with_variant(
                 Some(day),
                 model,
-                licoup_statistics::variant::UsageVariant::from_metadata(event),
+                agent_statistics::variant::UsageVariant::from_metadata(event),
             ),
         }
     }
@@ -439,7 +439,7 @@ fn load_coverage(scan_params: &Value, window: &UsageWindow) -> HostedCoverage {
         Some("cursor"),
         1,
         &crate::domain::model_registry::refresh_cached_snapshot_for_state_root(
-            licoup_statistics::contract::text_field(scan_params, &["stateRoot"])
+            agent_statistics::contract::text_field(scan_params, &["stateRoot"])
                 .as_deref()
                 .map(std::path::Path::new),
         ),
@@ -454,7 +454,7 @@ fn load_coverage(scan_params: &Value, window: &UsageWindow) -> HostedCoverage {
 
 fn parse_coverage(report: &Value, window: &UsageWindow) -> Option<HostedCoverage> {
     if report.get("usageParserRevision").and_then(Value::as_str)
-        != Some(licoup_statistics::contract::USAGE_PARSER_REVISION)
+        != Some(agent_statistics::contract::USAGE_PARSER_REVISION)
     {
         return None;
     }
@@ -513,7 +513,7 @@ fn parse_retained_day(entry: &Value) -> Option<(String, DailyUsageSummary)> {
     if usage.total_tokens == 0 && usage.request_count == 0 {
         return None;
     }
-    for ((model, variant), totals) in licoup_statistics::model_identity::raw_model_usage(entry) {
+    for ((model, variant), totals) in agent_statistics::model_identity::raw_model_usage(entry) {
         usage.add_model_variant_totals(model, variant, totals);
     }
     Some((day, usage))
@@ -775,7 +775,7 @@ mod tests {
         let window = window();
         let report = json!({
             "generatedAt": "2026-07-15T12:00:00Z",
-            "usageParserRevision": licoup_statistics::contract::USAGE_PARSER_REVISION,
+            "usageParserRevision": agent_statistics::contract::USAGE_PARSER_REVISION,
             "agents": [{
                 "agentId": "cursor",
                 "history": {

@@ -18,8 +18,8 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-use licoup_statistics::contract::HistoryUsageSummary;
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::contract::HistoryUsageSummary;
+use agent_statistics::window::UsageWindow;
 use serde_json::Value;
 
 pub(super) fn summarize(

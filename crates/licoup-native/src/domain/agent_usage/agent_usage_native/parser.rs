@@ -8,15 +8,15 @@ use crate::domain::conversation::source_catalog::HistoryAdapter;
 use crate::domain::conversation::usage::extract_token_usage;
 use anyhow::{Context, Result};
 use hermes::parse_hermes_usage_database;
-use licoup_statistics::attribution::{
+use agent_statistics::attribution::{
     estimated_message_usage, message_usage, summarize_sessions, summarize_sessions_exact_only,
 };
-use licoup_statistics::contract::{HistoryUsageSummary, MessageUsage, text_field};
-use licoup_statistics::variant::{
+use agent_statistics::contract::{HistoryUsageSummary, MessageUsage, text_field};
+use agent_statistics::variant::{
     UsageRequestContext, UsageVariant, compatible_recorded_models, model_label,
     model_with_provider_fallback, prefer_recorded_model,
 };
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::window::UsageWindow;
 use openagent::parse_openagent_usage_database;
 use rusqlite::{Connection, OpenFlags};
 use serde_json::{Value, json};
@@ -917,7 +917,7 @@ mod tests {
         use crate::domain::conversation::source_catalog::usage_adapter_for_agent;
         let path = temp_file("all-file-adapters");
         fs::write(&path,json!({"type":"usage.record","timestamp":"2026-07-15T10:00:00Z","model":"synthetic-model","effort":"medium","fast":true,"usage":{"input_tokens":10,"output_tokens":2}}).to_string()+"\n").unwrap();
-        for agent in licoup_statistics::contract::supported_agents() {
+        for agent in agent_statistics::contract::supported_agents() {
             let Some(adapter) = usage_adapter_for_agent(agent.id) else {
                 continue;
             };
@@ -981,7 +981,7 @@ mod tests {
                 + "\n",
         )
         .unwrap();
-        for agent in licoup_statistics::contract::supported_agents() {
+        for agent in agent_statistics::contract::supported_agents() {
             let Some(adapter) = usage_adapter_for_agent(agent.id) else {
                 continue;
             };
@@ -1030,7 +1030,7 @@ mod tests {
                 .model_variants
                 .iter()
                 .find(|((raw, variant), _)| {
-                    let selected = licoup_statistics::variant::model_selection(raw);
+                    let selected = agent_statistics::variant::model_selection(raw);
                     selected.id == "actual-d"
                         && selected.provider_id.as_deref() == Some("provider-b")
                         && variant == &UsageVariant::default()

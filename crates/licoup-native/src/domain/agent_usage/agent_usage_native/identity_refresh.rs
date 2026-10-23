@@ -2,8 +2,8 @@
 
 use super::cache::RefreshStatements;
 use anyhow::Result;
-use licoup_statistics::contract::{HistoryUsageSummary, ModelTokenUsageSummary, UsageVariant};
-use licoup_statistics::variant::{is_placeholder_id, model_selection};
+use agent_statistics::contract::{HistoryUsageSummary, ModelTokenUsageSummary, UsageVariant};
+use agent_statistics::variant::{is_placeholder_id, model_selection};
 use rusqlite::{Connection, OptionalExtension, params};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -133,7 +133,7 @@ pub(super) fn apply(
 mod tests {
     use super::super::{cache, runtime::CacheRuntime, summarize_inner};
     use super::*;
-    use licoup_statistics::{contract::AgentDef, window::UsageWindow};
+    use agent_statistics::{contract::AgentDef, window::UsageWindow};
     use serde_json::{Value, json};
     use std::{fs, path::PathBuf};
 

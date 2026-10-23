@@ -1,5 +1,5 @@
 use super::*;
-use licoup_statistics::contract::MessageUsage;
+use agent_statistics::contract::MessageUsage;
 use serde_json::json;
 
 fn variant(effort: Option<&str>, fast: Option<bool>) -> UsageVariant {

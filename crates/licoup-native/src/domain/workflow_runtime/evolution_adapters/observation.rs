@@ -1,7 +1,7 @@
 //! Persistent observation of what work actually cost.
 //!
 //! The durable facts belong to
-//! [`licoup_statistics::ledger`]: it owns the Graph run
+//! [`acativa::usage_ledger`]: it owns the Graph run
 //! identity, the per-command usage row and its accuracy marker. This adapter
 //! writes those rows through that API and reads them back as typed values.
 //!
@@ -26,7 +26,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use licoup_statistics::ledger;
+use acativa::usage_ledger;
 
 use super::{AdapterError, AdapterName, AdapterResult, CostUsage, FactState};
 

@@ -1,10 +1,10 @@
 //! Numeric cursor for mutable snapshots whose earlier ledger is already sealed.
 
-use licoup_statistics::contract::{
+use agent_statistics::contract::{
     DailyUsageSummary, HistoryUsageSummary, ModelTokenUsageSummary, UNATTRIBUTED_MODEL,
     UsageVariant,
 };
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::window::UsageWindow;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -224,7 +224,7 @@ fn at_least(current: ModelTokenUsageSummary, previous: ModelTokenUsageSummary) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use licoup_statistics::contract::{MessageUsage, UsageAccuracy};
+    use agent_statistics::contract::{MessageUsage, UsageAccuracy};
     use serde_json::json;
 
     fn history(prompt: u64, effort: &str, estimated: bool) -> HistoryUsageSummary {

@@ -19,7 +19,7 @@
 //! # Ownership
 //!
 //! Nothing here owns a fact. The durable ledgers stay with
-//! [`licoup_statistics::ledger`] (Graph usage rows, budget
+//! [`acativa::usage_ledger`] (Graph usage rows, budget
 //! pools and reservations), the billing facts stay with
 //! [`crate::domain::provider_model_pricing`], and the observation/strategy
 //! seams stay with [`crate::domain::workflow_runtime::evolution`]. These
@@ -47,7 +47,7 @@ mod tests;
 
 use serde::{Deserialize, Serialize};
 
-use licoup_statistics::ledger::LedgerError;
+use acativa::usage_ledger::LedgerError;
 
 pub use budget::{
     BudgetAdapter, BudgetAdmission, BudgetConfiguration, BudgetDenial, BudgetNotConfigured,

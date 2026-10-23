@@ -2,11 +2,11 @@
 
 use super::models::{CachedSource, SourceMetadata};
 use anyhow::{Context, Result};
-use licoup_statistics::contract::{
+use agent_statistics::contract::{
     DailyUsageSummary, HistoryUsageSummary, ModelTokenUsageSummary, UsageVariant,
 };
-use licoup_statistics::variant::UsageRequestContext;
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::variant::UsageRequestContext;
+use agent_statistics::window::UsageWindow;
 use rusqlite::{
     Connection, OptionalExtension, Statement, Transaction, TransactionBehavior, params,
 };
@@ -1167,7 +1167,7 @@ mod variant_tests;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use licoup_statistics::contract::MessageUsage;
+    use agent_statistics::contract::MessageUsage;
     use serde_json::json;
     use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};

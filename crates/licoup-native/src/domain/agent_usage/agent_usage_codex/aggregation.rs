@@ -2,8 +2,8 @@ use super::models::ScanStats;
 use super::rollup::{DailyRollup, collect_detail_rollups, normalized_model};
 use super::utils::from_i64;
 use anyhow::{Context, Result};
-use licoup_statistics::contract::{HistoryUsageSummary, UsageVariant};
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::contract::{HistoryUsageSummary, UsageVariant};
+use agent_statistics::window::UsageWindow;
 use rusqlite::{Connection, TransactionBehavior, params};
 use std::collections::BTreeSet;
 

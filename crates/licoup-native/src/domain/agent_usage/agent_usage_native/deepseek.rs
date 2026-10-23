@@ -4,9 +4,9 @@
 use super::models::ParseResult;
 use crate::domain::conversation::source_catalog::deepseek_generation;
 use anyhow::{Context, Result};
-use licoup_statistics::contract::{HistoryUsageSummary, MessageUsage};
-use licoup_statistics::variant::{UsageVariant, model_label};
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::contract::{HistoryUsageSummary, MessageUsage};
+use agent_statistics::variant::{UsageVariant, model_label};
+use agent_statistics::window::UsageWindow;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;

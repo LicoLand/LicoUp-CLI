@@ -1,7 +1,7 @@
 use super::snapshot_cursor::SnapshotCursor;
 use super::watermark::WatermarkProjection;
-use licoup_statistics::contract::{HistoryUsageSummary, UsageVariant};
-use licoup_statistics::variant::UsageRequestContext;
+use agent_statistics::contract::{HistoryUsageSummary, UsageVariant};
+use agent_statistics::variant::UsageRequestContext;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};

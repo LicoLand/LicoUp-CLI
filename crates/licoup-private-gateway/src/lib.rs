@@ -14,7 +14,7 @@ pub mod model;
 pub mod ports;
 pub mod runtime;
 pub mod state;
-pub use licoup_statistics::gateway as usage;
+pub use agent_statistics::gateway as usage;
 
 pub use default_config::default_config;
 pub use runtime::{GatewayServeArgs, serve_gateway_runtime};

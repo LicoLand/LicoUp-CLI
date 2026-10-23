@@ -4,9 +4,7 @@ version = 4
 
 [[package]]
 name = "acativa"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81118e41a2fe4f1d7f3f77a7061fbee18b8585d21387cdb4267551d1fc77d793"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "flate2",
@@ -80,6 +78,24 @@ dependencies = [
  "ctr",
  "ctutils",
  "ghash",
+]
+
+[[package]]
+name = "agent-statistics"
+version = "0.1.0"
+dependencies = [
+ "acativa",
+ "anyhow",
+ "licoup-client-state",
+ "licoup-extension-contracts",
+ "licoup-foundation",
+ "licoup-model-catalog",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "time",
+ "token-usage-detector",
 ]
 
 [[package]]
@@ -2540,6 +2556,8 @@ dependencies = [
 name = "licoup-native"
 version = "0.3.0"
 dependencies = [
+ "acativa",
+ "agent-statistics",
  "anyhow",
  "base64 0.22.1",
  "block2",
@@ -2596,7 +2614,6 @@ dependencies = [
  "licoup-protocol-bindings",
  "licoup-public-gateway",
  "licoup-state-machine-codegen",
- "licoup-statistics",
  "licoup-workflow",
  "licoup-workflow-runtime",
  "licoup-workflow-store",
@@ -2650,6 +2667,7 @@ dependencies = [
 name = "licoup-private-gateway"
 version = "0.1.0"
 dependencies = [
+ "agent-statistics",
  "anyhow",
  "base64 0.22.1",
  "credential-lease",
@@ -2657,7 +2675,6 @@ dependencies = [
  "libc",
  "licoup-extension-contracts",
  "licoup-foundation",
- "licoup-statistics",
  "rand_core 0.6.4",
  "serde",
  "serde_json",
@@ -2743,24 +2760,6 @@ version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "licoup-statistics"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "licoup-client-state",
- "licoup-extension-contracts",
- "licoup-foundation",
- "licoup-model-catalog",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "time",
- "token-usage-detector",
- "uuid",
 ]
 
 [[package]]
@@ -4196,8 +4195,6 @@ dependencies = [
 [[package]]
 name = "token-usage-detector"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95ae17fa4e7c5f0ff9fdc5a10e41a15ca442a4436156f92b8d5b9039843f0402"
 dependencies = [
  "licoup-extension-contracts",
  "serde",

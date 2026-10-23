@@ -3,12 +3,12 @@ use crate::domain::agent_usage::agent_usage_native::models::{
     CumulativeSnapshot, CumulativeTotals, ParseResult,
 };
 use crate::domain::conversation::usage::extract_token_usage;
-use licoup_statistics::attribution::message_usage;
-use licoup_statistics::contract::{HistoryUsageSummary, MessageUsage, UsageVariant};
-use licoup_statistics::variant::{
+use agent_statistics::attribution::message_usage;
+use agent_statistics::contract::{HistoryUsageSummary, MessageUsage, UsageVariant};
+use agent_statistics::variant::{
     model_label, model_selection, model_with_provider_fallback, prefer_recorded_model,
 };
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::window::UsageWindow;
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::Path;

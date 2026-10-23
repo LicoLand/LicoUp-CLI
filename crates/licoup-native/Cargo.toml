@@ -21,7 +21,10 @@ lico-catalog-convergence = { path = "../lico-catalog-convergence" }
 licoup-foundation = { path = "../licoup-foundation" }
 licoup-protocol-bindings = { path = "../licoup-protocol-bindings" }
 licoup-client-state = { path = "../licoup-client-state" }
-licoup-statistics = { path = "../licoup-statistics" }
+agent-statistics = "0.1.0"
+# The flywheel's usage store: the graph-run ledger and budget reservations
+# this host records into. Path until 0.2.0 lands on crates.io.
+acativa = { version = "0.2.0", path = "../../../Acativa/crates/acativa" }
 licoup-agent-targets = { path = "../licoup-agent-targets" }
 licoup-model-catalog = { path = "../licoup-model-catalog" }
 licoup-endpoint-core = { path = "../licoup-endpoint-core" }

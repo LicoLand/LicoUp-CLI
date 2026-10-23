@@ -1,7 +1,7 @@
 //! Reserve and settle budget by effect id, against a durable reservation.
 //!
 //! The durable facts belong to
-//! [`licoup_statistics::ledger`]: it owns the budget pool, the
+//! [`acativa::usage_ledger`]: it owns the budget pool, the
 //! reservation row and its settlement state. This adapter calls
 //! `reserve_graph_command` / `settle_graph_command` / `release_graph_command`
 //! with the effect id as the reservation identity and translates the answers
@@ -33,7 +33,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use licoup_statistics::ledger;
+use acativa::usage_ledger;
 
 use super::observation::EffectOutcome;
 use super::source::SettleableUsage;

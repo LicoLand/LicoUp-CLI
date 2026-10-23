@@ -1,7 +1,7 @@
 use crate::domain::targets;
 use crate::platform::run_bounded_command_output;
-use licoup_statistics::contract::{HistoryUsageSummary, MessageUsage, UsageAccuracy, number_field};
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::contract::{HistoryUsageSummary, MessageUsage, UsageAccuracy, number_field};
+use agent_statistics::window::UsageWindow;
 use serde_json::{Value, json};
 use std::path::Path;
 use std::process::Command;

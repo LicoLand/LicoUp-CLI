@@ -36,9 +36,9 @@ use files::{
     append_guard, append_guard_matches, is_append_format, is_usage_source, roots_fingerprint,
     source_is_closed, source_key, source_metadata, usage_roots,
 };
-use licoup_statistics::contract::{AgentDef, HistoryUsageSummary};
-use licoup_statistics::persistence::client_state_store;
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::contract::{AgentDef, HistoryUsageSummary};
+use agent_statistics::persistence::client_state_store;
+use agent_statistics::window::UsageWindow;
 use models::{
     CachedSource, ParseResult, PlannedSource, PlannedSourceAction, RefreshPlan, ScanStats,
     SourceMetadata,
@@ -1031,7 +1031,7 @@ mod tests {
         .unwrap();
         assert!(appended.append);
         assert_eq!(appended.parsed.summary.total_tokens(), 12);
-        let known = licoup_statistics::contract::UsageVariant {
+        let known = agent_statistics::contract::UsageVariant {
             effort: Some("high".to_owned()),
             fast: Some(false),
         };

@@ -1,5 +1,5 @@
 use super::constants::{CACHE_SCHEMA_VERSION, PARSER_REVISION};
-use licoup_statistics::contract::{UsageVariant, number_field};
+use agent_statistics::contract::{UsageVariant, number_field};
 use serde_json::{Value, json};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

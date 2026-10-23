@@ -8,9 +8,9 @@
 use super::{agent_usage_codex, agent_usage_native};
 use agent_usage_native::runtime::CacheRuntime;
 use anyhow::Result;
-use licoup_statistics::contract::{AgentDef, HistoryUsageSummary};
-use licoup_statistics::host::StatisticsHost;
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::contract::{AgentDef, HistoryUsageSummary};
+use agent_statistics::host::StatisticsHost;
+use agent_statistics::window::UsageWindow;
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
@@ -25,7 +25,7 @@ fn cache_runtime() -> &'static CacheRuntime {
 /// leaves the statistics engine reporting an empty catalog rather than
 /// inventing one.
 pub fn install() -> Result<(), &'static str> {
-    licoup_statistics::install_host(StatisticsHost {
+    agent_statistics::install_host(StatisticsHost {
         supported_agents,
         summarize_agent_history,
         target_status: target_status_map,

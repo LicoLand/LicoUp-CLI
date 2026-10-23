@@ -1,5 +1,5 @@
 use super::*;
-use licoup_statistics::contract::{MessageUsage, UsageVariant};
+use agent_statistics::contract::{MessageUsage, UsageVariant};
 use std::io::Write;
 
 fn calendar() -> UsageWindow {

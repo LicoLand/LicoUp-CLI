@@ -6,8 +6,8 @@ use super::file_collection::file_metadata;
 use super::models::{CachedFile, ParserState};
 use super::parser::ParserBatch;
 use anyhow::Result;
-use licoup_statistics::variant::{is_placeholder_id, model_selection};
-use licoup_statistics::window::UsageWindow;
+use agent_statistics::variant::{is_placeholder_id, model_selection};
+use agent_statistics::window::UsageWindow;
 use rusqlite::{Connection, Transaction, params};
 use std::path::Path;
 

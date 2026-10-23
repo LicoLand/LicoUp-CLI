@@ -3,7 +3,7 @@ use super::super::cache_batch::CacheBatch;
 use super::super::file_collection::FileMetadata;
 use super::super::models::ParserState;
 use super::support::temp_dir;
-use licoup_statistics::contract::UsageVariant;
+use agent_statistics::contract::UsageVariant;
 
 #[test]
 fn cache_batch_round_trips_and_deletes_file_state() {
