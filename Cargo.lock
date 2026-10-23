@@ -4194,9 +4194,7 @@ dependencies = [
 
 [[package]]
 name = "token-usage-detector"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3062beb47617cc25c113f418f25d6b2a5e32f5e20a3826a67498f26e1d3b3f8"
+version = "0.1.1"
 dependencies = [
  "licoup-extension-contracts",
  "serde",

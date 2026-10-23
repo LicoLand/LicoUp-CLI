@@ -304,16 +304,19 @@ pub trait UsageSourcePort {
         limit: Option<u32>,
     ) -> LedgerResult<QueryRequest>;
 
-    /// Settle one bounded page the host pulled, then advance the durable
-    /// cursor to the position the page returned.
+    /// Settle one bounded page the host pulled in answer to `request`, then
+    /// advance the durable cursor to the position the page returned.
     ///
     /// The position advances over the page the host actually read, and only
     /// forward: an observation the binding refuses is reported in
     /// [`IngestReport::refused`] and not settled, but the read did happen, so
-    /// the journal never re-reads a page it already consumed.
+    /// the journal never re-reads a page it already consumed. The page must
+    /// answer the request it was read for: a page stamped with another scope
+    /// is refused rather than admitted under the wrong question.
     fn admit_page(
         &mut self,
         admission: &SourceAdmission,
+        request: &QueryRequest,
         page: &QueryPage,
     ) -> LedgerResult<IngestReport>;
 
@@ -480,9 +483,11 @@ impl UsageSourcePort for UsageJournal {
     fn admit_page(
         &mut self,
         admission: &SourceAdmission,
+        request: &QueryRequest,
         page: &QueryPage,
     ) -> LedgerResult<IngestReport> {
         page.validate().map_err(from_refusal)?;
+        page.check_request(request).map_err(from_refusal)?;
         if page.source_epoch != admission.binding.source_epoch {
             return Err(LedgerError::refused(STAGE, "usage_source_epoch_mismatch"));
         }
@@ -1374,6 +1379,10 @@ mod tests {
 
     /// One bounded page of the synthetic OTLP-shaped series, as a source that
     /// was pulled would answer it.
+    fn pull() -> QueryRequest {
+        QueryRequest::new(SCOPE, None, None).expect("request")
+    }
+
     fn otlp_page(record: &str, epoch: &str, sequence: u64) -> QueryPage {
         let record: Value = serde_json::from_str(record).expect("fixture");
         let observations = OtlpSumNormalizer::new(EXTENSION, Quality::Reported)
@@ -1450,13 +1459,32 @@ mod tests {
     }
 
     #[test]
+    fn a_page_for_another_scope_is_refused_at_admission() {
+        let root = root("page-scope");
+        let mut journal = UsageJournal::open(&params(&root)).expect("journal");
+        let mut grants = binding("epoch-1");
+        grants.scope_grants.push("scope-2".to_owned());
+        let admission =
+            SourceAdmission::new(grants, SettlementEligibility::SettlementEligible);
+        let mut page = otlp_page(OTLP_CUMULATIVE, "epoch-1", 1);
+        page.scope_ref = "scope-2".to_owned();
+        for observation in &mut page.observations {
+            observation.scope_ref = "scope-2".to_owned();
+        }
+        let failure = journal
+            .admit_page(&admission, &pull(), &page)
+            .expect_err("the page did not answer the request");
+        assert_eq!(failure.code, "usage_page_scope_mismatch");
+    }
+
+    #[test]
     fn a_duplicate_cursor_page_does_not_double_count_or_move_the_cursor_back() {
         let root = root("cursor");
         let mut journal = UsageJournal::open(&params(&root)).expect("journal");
         let admission = source_admission("epoch-1", SettlementEligibility::SettlementEligible);
         let page = otlp_page(OTLP_CUMULATIVE, "epoch-1", 1);
 
-        let first = journal.admit_page(&admission, &page).expect("settled");
+        let first = journal.admit_page(&admission, &pull(), &page).expect("settled");
         assert_eq!(first.accepted, 2);
         assert_eq!(first.cursor.as_deref(), Some("1@epoch-1"));
         assert_eq!(
@@ -1468,7 +1496,7 @@ mod tests {
             "100 then 175 cumulative points are two readings, not a sum of totals"
         );
 
-        let replayed = journal.admit_page(&admission, &page).expect("replayed");
+        let replayed = journal.admit_page(&admission, &pull(), &page).expect("replayed");
         assert!(
             replayed
                 .events
@@ -1510,7 +1538,7 @@ mod tests {
                 "a source with no durable position is read from the start"
             );
             journal
-                .admit_page(&admission, &first_page)
+                .admit_page(&admission, &pull(), &first_page)
                 .expect("settled");
         }
 
@@ -1551,7 +1579,7 @@ mod tests {
         );
         let restarted_page = otlp_page(OTLP_RESTARTED, "epoch-2", 1);
         let settled = journal
-            .admit_page(&reset, &restarted_page)
+            .admit_page(&reset, &pull(), &restarted_page)
             .expect("settled");
         assert_eq!(settled.events[0].outcome, EventOutcome::Settled);
         assert_eq!(settled.cursor.as_deref(), Some("1@epoch-2"));
@@ -1567,7 +1595,7 @@ mod tests {
         // Within one epoch a regressed cumulative value is still a new reading:
         // differencing is the consumer's rule, and the base never invents one.
         let regressed = otlp_page(OTLP_REGRESSED, "epoch-2", 2);
-        let settled = journal.admit_page(&reset, &regressed).expect("settled");
+        let settled = journal.admit_page(&reset, &pull(), &regressed).expect("settled");
         assert_eq!(settled.events[0].outcome, EventOutcome::Settled);
         assert_eq!(settled.cursor.as_deref(), Some("2@epoch-2"));
         assert_eq!(
@@ -1875,7 +1903,7 @@ mod tests {
         let mut journal = UsageJournal::open(&params(&root)).expect("journal");
         let admission = source_admission("epoch-1", SettlementEligibility::SettlementEligible);
         journal
-            .admit_page(&admission, &otlp_page(OTLP_CUMULATIVE, "epoch-1", 4))
+            .admit_page(&admission, &pull(), &otlp_page(OTLP_CUMULATIVE, "epoch-1", 4))
             .expect("settled");
 
         let other = SourceBinding::new(SOURCE, EXTENSION, "instance-1", 1, "epoch-1", ["scope-2"])
@@ -1901,7 +1929,7 @@ mod tests {
             has_more: false,
         };
         let stale = journal
-            .admit_page(&admission, &page)
+            .admit_page(&admission, &pull(), &page)
             .expect_err("another epoch");
         assert_eq!(stale.code, "usage_source_epoch_mismatch");
 
@@ -1938,7 +1966,7 @@ mod tests {
         );
 
         journal
-            .admit_page(&first, &otlp_page(OTLP_CUMULATIVE, "epoch-1", 7))
+            .admit_page(&first, &pull(), &otlp_page(OTLP_CUMULATIVE, "epoch-1", 7))
             .expect("settled");
         assert_eq!(
             journal
@@ -1954,7 +1982,7 @@ mod tests {
         );
 
         journal
-            .admit_page(&second, &otlp_page(OTLP_CUMULATIVE, "epoch-1", 2))
+            .admit_page(&second, &pull(), &otlp_page(OTLP_CUMULATIVE, "epoch-1", 2))
             .expect("settled");
         assert_eq!(
             journal

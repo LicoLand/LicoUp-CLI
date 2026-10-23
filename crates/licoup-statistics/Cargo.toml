@@ -13,7 +13,7 @@ licoup-client-state = { path = "../licoup-client-state", version = "0.3.0" }
 licoup-extension-contracts = { path = "../licoup-extension-contracts", version = "0.3.0" }
 licoup-foundation = { path = "../licoup-foundation", version = "0.3.0" }
 licoup-model-catalog = { path = "../licoup-model-catalog", version = "0.3.0" }
-token-usage-detector = "0.1.0"
+token-usage-detector = { path = "../../../../Agent-Statistics/crates/token-usage-detector", version = "0.1.1" }
 rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true

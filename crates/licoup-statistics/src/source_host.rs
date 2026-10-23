@@ -165,13 +165,15 @@ impl UsageSourceHost {
         UsageSourcePort::resume_request(&self.journal, admission, scope_ref, limit)
     }
 
-    /// Settle one bounded page the host pulled, then advance the durable cursor.
+    /// Settle one bounded page the host pulled in answer to `request`, then
+    /// advance the durable cursor.
     pub fn admit_page(
         &mut self,
         admission: &SourceAdmission,
+        request: &QueryRequest,
         page: &QueryPage,
     ) -> LedgerResult<IngestReport> {
-        UsageSourcePort::admit_page(&mut self.journal, admission, page)
+        UsageSourcePort::admit_page(&mut self.journal, admission, request, page)
     }
 
     /// The durable position for this source and its epoch.
@@ -476,6 +478,10 @@ mod tests {
         .expect("bounded batch")
     }
 
+    fn pull() -> QueryRequest {
+        QueryRequest::new(SCOPE, None, None).expect("request")
+    }
+
     fn page(observations: &[UsageObservation], sequence: u64) -> QueryPage {
         QueryPage {
             source_epoch: "epoch-1".to_owned(),
@@ -672,7 +678,7 @@ mod tests {
                 token_usage_detector::collection::CollectionMode::Pull,
                 "a source with no durable position is read from the start"
             );
-            let settled = host.admit_page(&admission, &page).expect("settled");
+            let settled = host.admit_page(&admission, &pull(), &page).expect("settled");
             assert_eq!(settled.cursor.as_deref(), Some("1@epoch-1"));
         }
 
@@ -696,7 +702,7 @@ mod tests {
         assert_eq!(fact_rows(&restarted), 1, "the facts survived the restart");
 
         // A duplicate page neither double-counts nor rewinds the cursor.
-        let replayed = restarted.admit_page(&admission, &page).expect("replayed");
+        let replayed = restarted.admit_page(&admission, &pull(), &page).expect("replayed");
         assert_eq!(replayed.cursor.as_deref(), Some("1@epoch-1"));
         assert_eq!(fact_rows(&restarted), 1);
         assert_eq!(
