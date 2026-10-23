@@ -16,7 +16,8 @@ pub use agent_statistics::journal::{
     UsageSourcePort,
 };
 pub use acativa::usage_ledger::{
-    graph_admission_report, release_graph_command, reserve_graph_command, settle_graph_command,
+    WORKFLOW_LEDGER_REPORT_SCHEMA, graph_admission_report, release_graph_command,
+    reserve_graph_command, settle_graph_command,
 };
 pub use agent_statistics::source_host::{
     ReadingSettlement, UsageSourceHost, held_metering, install, source_host,

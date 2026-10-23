@@ -20,7 +20,7 @@ const flywheelService = read("crates/licoup-workflow-runtime/src/service.rs");
 // The route receipt and the source revisions it names are the port surface's
 // own contract, so they are read where the runtime declares them.
 const portContracts = read("crates/licoup-workflow-runtime/src/ports.rs");
-const usage = read("crates/licoup-statistics/src/ledger.rs");
+const usage = read("crates/licoup-native/src/domain/agent_usage.rs");
 const policy = read("crates/licoup-client-state/src/policy.rs");
 const subagents = read("crates/licoup-native/src/domain/subagents/mod.rs");
 const conversationContract = JSON.parse(read("schemas/client_bridge/conversation.json"));
@@ -95,8 +95,10 @@ test("Profile snapshots derive only from named existing authorities", () => {
   for (const tool of documentedTools) {
     assert.ok(subagents.includes(`"${tool}"`), `guide tool is available: ${tool}`);
   }
-  assert.match(usage, /graph-usage-ledger-v2\.sqlite3/u);
-  assert.match(usage, /licoup\.graph-usage-report\.v2/u);
+  // The Graph usage ledger lives in the acativa crate; the facade exposes its
+  // reservation surface and the report schema the client parses.
+  assert.match(usage, /pub use acativa::usage_ledger::\{/u);
+  assert.match(usage, /WORKFLOW_LEDGER_REPORT_SCHEMA/u);
   assert.doesNotMatch(policy, /assistant-workflow-usage/u);
 });
 
