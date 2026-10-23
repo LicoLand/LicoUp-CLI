@@ -8,8 +8,7 @@
 #
 # The crate sits above both of its dependencies. It links the host for the ports
 # the runtime consumes (`licoup-native`) and the runtime itself
-# (`licoup-private-gateway`); the credential contract comes from
-# `licoup-vault`, which the kernel already links. This package
+# (`licoup-private-gateway`), which also supplies the credential contract. This package
 # is where those are joined into the program the login item and the client's
 # sidecar manager both start.
 name = "licoup-private-gateway-entry"
@@ -33,5 +32,4 @@ path = "src/bin/lico-llm-gateway.rs"
 licoup-foundation = { path = "../../licoup-foundation" }
 licoup-private-gateway = { path = ".." }
 licoup-native = { path = "../../licoup-native" }
-licoup-vault = { path = "../../licoup-vault" }
 serde_json.workspace = true

@@ -376,7 +376,6 @@ crates/
 ├── licoup-public-gateway/      # Public gateway: MCP engine + optional services, Telegram channel
 │   ├── entry/src/bin/          # The channel package's program: lico-telegram-channel
 │   └── package*/               # The release sources the host installs as packages
-├── licoup-vault/               # Gateway credential lease, handoff and vault port contracts
 ├── licoup-conversation/        # L3: Conversation domain (state machine, events, projections)
 ├── licoup-workflow/            # Pure workflow compiler and transition machine
 ├── licoup-agent-runtime/       # L4+L5: Agent adapters + settlement arbiter

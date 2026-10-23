@@ -3,9 +3,11 @@
 //!
 //! The runtime reaches conversation readiness only through the port in
 //! [`ports::readiness`] that the composing host installs once per process; the
-//! credential lease contract lives in `licoup-vault`.
+//! LLM credential domain lives in [`credential`], specialized over the
+//! `credential-lease` crate's generalized lease machinery.
 
 pub mod control;
+pub mod credential;
 pub mod default_config;
 pub mod http;
 pub mod model;

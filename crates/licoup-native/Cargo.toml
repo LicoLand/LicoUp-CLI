@@ -100,7 +100,7 @@ licoup-workflow-runtime = { path = "../licoup-workflow-runtime" }
 licoup-conversation = { path = "../licoup-conversation" }
 licoup-private-gateway = { path = "../licoup-private-gateway" }
 licoup-public-gateway = { path = "../licoup-public-gateway", default-features = false }
-licoup-vault = { path = "../licoup-vault" }
+credential-lease = { version = "0.2.0" }
 anyhow.workspace = true
 thiserror.workspace = true
 base64.workspace = true

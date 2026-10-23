@@ -7,10 +7,10 @@
 //! itself, so a Gateway started by the app and a Gateway started by the login
 //! item are the same Gateway.
 
+use crate::credential::LlmApiKeyProvider;
 use crate::model::llm_gateway::{
     CredentialStyle, GatewayConfig, GatewayProvider, UpstreamProtocol,
 };
-use licoup_vault::api_key::LlmApiKeyProvider;
 
 /// The fixed provider boundaries of a Gateway that has never been configured.
 ///

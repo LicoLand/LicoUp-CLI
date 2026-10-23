@@ -3,13 +3,13 @@
 
 use licoup_native::platform::{gateway_composition, llm_api_key_vault::PlatformLlmApiKeyVault};
 use licoup_private_gateway::control::client_auth;
+use licoup_private_gateway::credential::{GatewayCredentialHandoff, GatewayCredentialSlot};
 use licoup_private_gateway::http::server::bind_address;
 use licoup_private_gateway::model::llm_gateway::{CompiledGateway, GatewayConfig};
 use licoup_private_gateway::state::DEFAULT_PORT;
 use licoup_private_gateway::state::GatewayStatePaths;
 use licoup_private_gateway::usage::GatewayUsageRecorder;
 use licoup_private_gateway::{GatewayServeArgs, serve_gateway_runtime};
-use licoup_vault::api_key::{GatewayCredentialHandoff, GatewayCredentialSlot};
 use std::{
     env, fs,
     net::TcpListener,

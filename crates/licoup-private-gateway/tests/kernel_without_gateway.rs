@@ -59,7 +59,7 @@ fn kernel_links_only_the_gateway_contracts_and_declares_no_gateway_binary() {
     for contract in [
         "licoup-private-gateway",
         "licoup-public-gateway",
-        "licoup-vault",
+        "credential-lease",
     ] {
         assert!(
             manifest.contains(&format!("{contract} = {{")),
@@ -166,8 +166,9 @@ fn the_runtime_reaches_host_capabilities_only_through_ports() {
         );
     }
     assert!(
-        gateway_manifest.contains("licoup-foundation") && gateway_manifest.contains("licoup-vault"),
-        "the private gateway depends on the foundation and vault contracts"
+        gateway_manifest.contains("licoup-foundation")
+            && gateway_manifest.contains("credential-lease"),
+        "the private gateway depends on the foundation and credential lease contracts"
     );
 
     for (relative, source) in rust_sources("crates/licoup-private-gateway/src") {

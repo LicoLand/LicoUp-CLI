@@ -1,6 +1,6 @@
 use super::*;
 use crate::domain::mobile_relay::endpoint_trust::local_identity_metadata_present;
-use licoup_vault::api_key::{LLM_API_KEY_INVENTORY_SCHEMA, LlmApiKeyProvider};
+use licoup_private_gateway::credential::{LLM_API_KEY_INVENTORY_SCHEMA, LlmApiKeyProvider};
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 

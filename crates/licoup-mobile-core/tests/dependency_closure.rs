@@ -61,7 +61,7 @@ const MUST_STAY_DESKTOP_ONLY: &[&str] = &[
     "licoup-workflow",
     "licoup-private-gateway",
     "licoup-public-gateway",
-    "licoup-vault",
+    "credential-lease",
     "licoup-migrate",
     "licoup-project",
     "licoup-extension-contracts",

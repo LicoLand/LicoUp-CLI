@@ -2,7 +2,7 @@ use super::{AdmittedCommand, CliExecution};
 use anyhow::{Result, anyhow, ensure};
 use serde_json::{Value, json};
 
-use licoup_vault::api_key::{
+use licoup_private_gateway::credential::{
     GatewayCredentialLeaseDays, LlmApiKeyCredentialUpdate, LlmApiKeyProvider, NewLlmApiKey,
 };
 

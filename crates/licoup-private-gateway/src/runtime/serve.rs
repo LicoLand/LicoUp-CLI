@@ -5,12 +5,12 @@ use crate::control::inventory::{
     control_socket_path as inventory_control_socket_path, load_inventory_overlay_if_present,
     overlay_path as inventory_overlay_path, serve_inventory_control,
 };
+use crate::credential::GatewayCredentialSlot;
 use crate::http::server::serve_loopback;
 use crate::model::llm_gateway::CompiledGateway;
 use crate::usage::GatewayUsageRecorder;
 use anyhow::{Result, anyhow};
 use licoup_foundation::core::secret_bytes::SecretBytes;
-use licoup_vault::api_key::GatewayCredentialSlot;
 use std::net::TcpListener;
 use std::path::PathBuf;
 use std::sync::Arc;

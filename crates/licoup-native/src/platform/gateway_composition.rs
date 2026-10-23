@@ -8,10 +8,12 @@
 //! same port the host's own callers use.
 
 use anyhow::{Result, anyhow};
+use credential_lease::{CustodyPort, port};
+use licoup_private_gateway::credential::{
+    GatewayCredentialHandoff, GatewayCredentialLease, LlmApiKeyProvider,
+};
 use licoup_private_gateway::ports::readiness;
 use licoup_public_gateway::lane::{self, LanePort};
-use licoup_vault::api_key::{GatewayCredentialHandoff, GatewayCredentialLease};
-use licoup_vault::port::{self, GatewayVaultPort};
 use serde_json::Value;
 use std::sync::Arc;
 
@@ -21,7 +23,7 @@ struct ProductionGatewayVault {
     vault: PlatformLlmApiKeyVault,
 }
 
-impl GatewayVaultPort for ProductionGatewayVault {
+impl CustodyPort<LlmApiKeyProvider> for ProductionGatewayVault {
     fn lease_from_handoff(
         &self,
         handoff: GatewayCredentialHandoff,
@@ -44,7 +46,7 @@ fn dispatch_lane(operation: &str, params: &Value) -> Result<Value> {
 pub fn install() -> Result<(), &'static str> {
     readiness::install(super::runtime_adapters::reload_conversation_readiness_document)?;
     let vault = PlatformLlmApiKeyVault::production().map_err(|_| "gateway_vault_unavailable")?;
-    port::install(Arc::new(ProductionGatewayVault { vault }))?;
+    port::install::<LlmApiKeyProvider, _>(Arc::new(ProductionGatewayVault { vault }))?;
     Ok(())
 }
 

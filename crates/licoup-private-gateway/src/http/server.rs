@@ -1,12 +1,12 @@
 //! Process-local, loopback-only HTTP front end for the LLM gateway.
 
+use crate::credential::GatewayCredentialSlot;
 use crate::http::transport::{
     GatewayExchange, GatewayStreamSink, GatewayTransportError, exchange_to_sink, list_models,
 };
 use crate::model::llm_gateway::{CompiledGateway, GatewayResponse, MAX_GATEWAY_BODY_BYTES};
 use crate::usage::GatewayUsageRecorder;
 use licoup_foundation::core::secret_bytes::SecretBytes;
-use licoup_vault::api_key::GatewayCredentialSlot;
 use std::collections::BTreeMap;
 use std::io::{ErrorKind, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
@@ -462,15 +462,15 @@ pub fn bind_address(port: u16) -> SocketAddr {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::credential::{
+        GatewayCredential, GatewayCredentialEpochSource, GatewayCredentialLease,
+        GatewayCredentialLeaseDays, LlmApiKeyProvider,
+    };
     use crate::model::llm_gateway::{
         ClientProtocol, CredentialStyle, GatewayConfig, GatewayProvider, ModelRoute,
         UpstreamProtocol,
     };
     use anyhow::Result;
-    use licoup_vault::api_key::{
-        GatewayCredential, GatewayCredentialEpochSource, GatewayCredentialLease,
-        GatewayCredentialLeaseDays, LlmApiKeyProvider,
-    };
     use std::sync::Arc;
     use std::time::Duration;
 
@@ -518,7 +518,7 @@ mod tests {
         GatewayCredentialSlot::new(
             GatewayCredentialLease::new(
                 credentials,
-                GatewayCredentialLeaseDays::Seven,
+                GatewayCredentialLeaseDays::Seven.duration(),
                 epoch.clone(),
                 Arc::new(StaticEpochSource(epoch)),
             )

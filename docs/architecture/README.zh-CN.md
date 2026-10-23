@@ -172,7 +172,6 @@ flowchart TB
 | `crates/licoup-native/` | Rust 客户端核心、命令与平台桥接（第 3 层与第 4 层） |
 | `crates/licoup-private-gateway/` | Private Gateway Runtime 进程 crate（loopback 模型服务） |
 | `crates/licoup-public-gateway/` | Public Gateway：MCP 引擎与可选服务、Telegram 通道 |
-| `crates/licoup-vault/` | Gateway 凭证租约、移交与保管端口契约 |
 | `crates/licoup-workflow/` | 纯工作流定义、诊断、编译索引和状态转换机 |
 | `crates/licoup-conversation/` | Canonical Conversation 领域 crate（已是 workspace 成员，抽取进行中） |
 | `crates/licoup-agent-runtime/` | Agent Runtime 与 adapter crate（已是 workspace 成员，抽取进行中） |
@@ -356,7 +355,6 @@ crates/
 │   └── src/ffi/                # 移动平台 FFI（Android/iOS）
 ├── licoup-private-gateway/     # Private Gateway Runtime 进程：回环模型服务
 ├── licoup-public-gateway/      # Public Gateway：MCP 引擎与可选服务、Telegram 通道
-├── licoup-vault/               # Gateway 凭证租约、移交与保管端口契约
 ├── licoup-conversation/        # L3: Conversation 领域（状态机、事件、投影）
 ├── licoup-workflow/            # 纯工作流编译器与状态转换机
 ├── licoup-agent-runtime/       # L4+L5: 智能体适配器 + settlement 仲裁器
