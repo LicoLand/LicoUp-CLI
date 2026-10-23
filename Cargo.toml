@@ -128,10 +128,6 @@ licoup-extension-contracts = { path = "crates/licoup-extension-contracts" }
 # credential-lease builds against the published foundation; inside this unified
 # build the same crate is the workspace member, so `SecretBytes` stays one type.
 licoup-foundation = { path = "crates/licoup-foundation" }
-# Not yet published: the extracted measurement engine and the flywheel's usage
-# store resolve to the sibling checkouts until their registry versions land.
-agent-statistics = { path = "../../Agent-Statistics/crates/agent-statistics" }
-acativa = { path = "../Acativa/crates/acativa" }
 # agent-statistics consumes these through the registry; inside this unified
 # build the same crates are workspace members, so both sides see one type.
 licoup-model-catalog = { path = "crates/licoup-model-catalog" }

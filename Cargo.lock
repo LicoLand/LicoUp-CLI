@@ -5,6 +5,8 @@ version = 4
 [[package]]
 name = "acativa"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4dc87324dedcaf2a245b8649c221a5cc117cf39fc67c994d64352a39467c31b"
 dependencies = [
  "anyhow",
  "flate2",
@@ -83,6 +85,8 @@ dependencies = [
 [[package]]
 name = "agent-statistics"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a2c802882eb5f322049bd07af4e693d85ed8ef72fe8c5479728347b4f6a068f"
 dependencies = [
  "acativa",
  "anyhow",
@@ -4195,6 +4199,8 @@ dependencies = [
 [[package]]
 name = "token-usage-detector"
 version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95ae17fa4e7c5f0ff9fdc5a10e41a15ca442a4436156f92b8d5b9039843f0402"
 dependencies = [
  "licoup-extension-contracts",
  "serde",
