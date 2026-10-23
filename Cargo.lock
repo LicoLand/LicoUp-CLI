@@ -84,9 +84,9 @@ dependencies = [
 
 [[package]]
 name = "agent-statistics"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a2c802882eb5f322049bd07af4e693d85ed8ef72fe8c5479728347b4f6a068f"
+checksum = "20da7f8e8744cd31f058edc8340c091660936bd579de3849c2adb8ca0d4b9a34"
 dependencies = [
  "acativa",
  "anyhow",
