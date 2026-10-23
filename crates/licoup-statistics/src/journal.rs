@@ -1464,8 +1464,7 @@ mod tests {
         let mut journal = UsageJournal::open(&params(&root)).expect("journal");
         let mut grants = binding("epoch-1");
         grants.scope_grants.push("scope-2".to_owned());
-        let admission =
-            SourceAdmission::new(grants, SettlementEligibility::SettlementEligible);
+        let admission = SourceAdmission::new(grants, SettlementEligibility::SettlementEligible);
         let mut page = otlp_page(OTLP_CUMULATIVE, "epoch-1", 1);
         page.scope_ref = "scope-2".to_owned();
         for observation in &mut page.observations {
@@ -1484,7 +1483,9 @@ mod tests {
         let admission = source_admission("epoch-1", SettlementEligibility::SettlementEligible);
         let page = otlp_page(OTLP_CUMULATIVE, "epoch-1", 1);
 
-        let first = journal.admit_page(&admission, &pull(), &page).expect("settled");
+        let first = journal
+            .admit_page(&admission, &pull(), &page)
+            .expect("settled");
         assert_eq!(first.accepted, 2);
         assert_eq!(first.cursor.as_deref(), Some("1@epoch-1"));
         assert_eq!(
@@ -1496,7 +1497,9 @@ mod tests {
             "100 then 175 cumulative points are two readings, not a sum of totals"
         );
 
-        let replayed = journal.admit_page(&admission, &pull(), &page).expect("replayed");
+        let replayed = journal
+            .admit_page(&admission, &pull(), &page)
+            .expect("replayed");
         assert!(
             replayed
                 .events
@@ -1595,7 +1598,9 @@ mod tests {
         // Within one epoch a regressed cumulative value is still a new reading:
         // differencing is the consumer's rule, and the base never invents one.
         let regressed = otlp_page(OTLP_REGRESSED, "epoch-2", 2);
-        let settled = journal.admit_page(&reset, &pull(), &regressed).expect("settled");
+        let settled = journal
+            .admit_page(&reset, &pull(), &regressed)
+            .expect("settled");
         assert_eq!(settled.events[0].outcome, EventOutcome::Settled);
         assert_eq!(settled.cursor.as_deref(), Some("2@epoch-2"));
         assert_eq!(
@@ -1903,7 +1908,11 @@ mod tests {
         let mut journal = UsageJournal::open(&params(&root)).expect("journal");
         let admission = source_admission("epoch-1", SettlementEligibility::SettlementEligible);
         journal
-            .admit_page(&admission, &pull(), &otlp_page(OTLP_CUMULATIVE, "epoch-1", 4))
+            .admit_page(
+                &admission,
+                &pull(),
+                &otlp_page(OTLP_CUMULATIVE, "epoch-1", 4),
+            )
             .expect("settled");
 
         let other = SourceBinding::new(SOURCE, EXTENSION, "instance-1", 1, "epoch-1", ["scope-2"])

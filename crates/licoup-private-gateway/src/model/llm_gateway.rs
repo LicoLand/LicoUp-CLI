@@ -3,7 +3,7 @@
 //! Configuration contains credential references only. Secrets are resolved by
 //! the platform transport after routing and endpoint validation succeed.
 
-use licoup_vault::api_key::LlmApiKeyProvider;
+use crate::credential::LlmApiKeyProvider;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 use std::collections::{BTreeMap, HashMap, VecDeque};

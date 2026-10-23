@@ -4,10 +4,9 @@
 //! The host CLI (same uid) pushes a handoff or clear message after authorize /
 //! clear. Secrets never land on disk; only the live socket carries them.
 
-use anyhow::{Result, anyhow, ensure};
 #[cfg(unix)]
-use licoup_vault::api_key::GatewayCredentialHandoff;
-use licoup_vault::api_key::GatewayCredentialSlot;
+use crate::credential::{GatewayCredentialHandoff, GatewayCredentialSlot, LlmApiKeyProvider};
+use anyhow::{Result, anyhow, ensure};
 use serde_json::{Value, json};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -106,11 +105,13 @@ pub fn apply_credentials_hot(
         .map_err(|_| anyhow!("llm_gateway_credentials_control_unavailable"))?;
     let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
     let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
-    let payload = match handoff {
-        Some(handoff) => handoff.to_json()?,
-        None => Vec::new(),
-    };
-    write_framed_bytes(&mut stream, &payload)?;
+    let payload = handoff.map(|handoff| handoff.to_json()).transpose()?;
+    write_framed_bytes(
+        &mut stream,
+        payload
+            .as_ref()
+            .map_or(&[][..], |payload| payload.expose_bytes()),
+    )?;
     let response = read_framed_json(&mut stream)?;
     if response.get("ok").and_then(Value::as_bool) != Some(true) {
         let code = response
@@ -142,7 +143,8 @@ fn handle_control_message(
         return Ok(false);
     }
     let handoff = GatewayCredentialHandoff::from_json(&payload)?;
-    let lease = licoup_vault::port::require()?.lease_from_handoff(handoff)?;
+    let lease =
+        credential_lease::port::require::<LlmApiKeyProvider>()?.lease_from_handoff(handoff)?;
     credentials.replace(lease)?;
     Ok(credentials.connected())
 }

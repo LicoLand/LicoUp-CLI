@@ -476,7 +476,7 @@ pub fn gateway_credential_migration_pending(root: &Path) -> Result<bool> {
 /// and unrelated client state remain available while the user responds.
 pub fn migrate_gateway_credentials(
     root: &Path,
-) -> Result<licoup_vault::api_key::LlmApiKeyInventory> {
+) -> Result<licoup_private_gateway::credential::LlmApiKeyInventory> {
     migrate_gateway_credentials_with(root, || {
         PlatformLlmApiKeyVault::at_state_root(root)?.migrate_legacy_credentials()
     })
@@ -484,8 +484,8 @@ pub fn migrate_gateway_credentials(
 
 fn migrate_gateway_credentials_with(
     root: &Path,
-    migrate: impl FnOnce() -> Result<licoup_vault::api_key::LlmApiKeyInventory>,
-) -> Result<licoup_vault::api_key::LlmApiKeyInventory> {
+    migrate: impl FnOnce() -> Result<licoup_private_gateway::credential::LlmApiKeyInventory>,
+) -> Result<licoup_private_gateway::credential::LlmApiKeyInventory> {
     admit(root)?;
     let migration_root = root.join("client-state/migrations");
     let custody_lock = OpenOptions::new()

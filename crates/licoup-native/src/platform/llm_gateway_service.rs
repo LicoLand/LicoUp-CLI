@@ -9,22 +9,24 @@
 //! socket; spawn-time fd handoff remains the cold-start path.
 
 #[cfg(unix)]
+#[cfg(test)]
 use crate::core::secure_mesh_secret_store::SecretBytes;
 #[cfg(unix)]
 use crate::core::secure_mesh_secret_store::SecretStoreAuthorizationSession;
 use anyhow::{Result, anyhow, ensure};
+use credential_lease::HandoffDocument;
 use licoup_foundation::platform::file_security::{
     atomic_write_private_text, ensure_private_dir, read_private_text_bounded,
     remove_private_state_marker,
 };
 use licoup_foundation::platform::paths;
+use licoup_private_gateway::credential::LlmApiKeyProvider;
+#[cfg(unix)]
+use licoup_private_gateway::credential::{GatewayCredentialHandoff, LlmApiKeyInventory};
 use licoup_private_gateway::model::llm_gateway::{
     CompiledGateway, CredentialStyle, GatewayConfig, GatewayProvider, MAX_GATEWAY_BODY_BYTES,
     UpstreamProtocol,
 };
-use licoup_vault::api_key::LlmApiKeyProvider;
-#[cfg(unix)]
-use licoup_vault::api_key::{GatewayCredentialHandoff, LlmApiKeyInventory};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::BTreeSet;
@@ -56,7 +58,7 @@ const POLL_INTERVAL: Duration = Duration::from_millis(100);
 /// app process. The cache is never serialized to disk or projected through a
 /// command result. A restarted sidecar receives a fresh inherited-pipe copy.
 #[cfg(unix)]
-static GATEWAY_SESSION_CREDENTIALS: OnceLock<Mutex<Option<SecretBytes>>> = OnceLock::new();
+static GATEWAY_SESSION_CREDENTIALS: OnceLock<Mutex<Option<HandoffDocument>>> = OnceLock::new();
 
 /// Credential IDs currently bound into the in-memory Gateway handoff. Selection
 /// is process-local and never persisted.
@@ -64,7 +66,7 @@ static GATEWAY_SESSION_CREDENTIALS: OnceLock<Mutex<Option<SecretBytes>>> = OnceL
 static GATEWAY_ENABLED_CREDENTIAL_IDS: OnceLock<Mutex<BTreeSet<String>>> = OnceLock::new();
 
 #[cfg(unix)]
-fn gateway_session_credentials() -> &'static Mutex<Option<SecretBytes>> {
+fn gateway_session_credentials() -> &'static Mutex<Option<HandoffDocument>> {
     GATEWAY_SESSION_CREDENTIALS.get_or_init(|| Mutex::new(None))
 }
 
@@ -128,12 +130,7 @@ fn authorization_failure_report(error: &anyhow::Error) -> Option<Value> {
 pub(crate) fn replace_gateway_session_credentials(
     handoff: Option<GatewayCredentialHandoff>,
 ) -> Result<()> {
-    let payload = handoff
-        .map(|handoff| handoff.to_json())
-        .transpose()?
-        .map(SecretBytes::try_from_bytes)
-        .transpose()
-        .map_err(|_| anyhow!("llm_gateway_session_credentials_unavailable"))?;
+    let payload = handoff.map(|handoff| handoff.to_json()).transpose()?;
     *gateway_session_credentials()
         .lock()
         .map_err(|_| anyhow!("llm_gateway_session_credentials_unavailable"))? = payload;
@@ -174,7 +171,7 @@ pub(crate) fn reconcile_gateway_session_credentials(
 
 fn reconcile_enabled_credential_ids(
     enabled: &BTreeSet<String>,
-    inventory: &licoup_vault::api_key::LlmApiKeyInventory,
+    inventory: &licoup_private_gateway::credential::LlmApiKeyInventory,
     now_epoch_seconds: u64,
 ) -> BTreeSet<String> {
     let available: BTreeSet<&str> = inventory
@@ -388,7 +385,7 @@ pub fn credentials_authorize(credential_id: Option<&str>) -> Result<Value> {
             .as_ref()
             .map(|value| {
                 value
-                    .providers()
+                    .kinds()
                     .map(|provider| provider.as_str().to_owned())
                     .collect::<Vec<_>>()
             })
@@ -467,7 +464,7 @@ pub fn credentials_clear(credential_id: Option<&str>) -> Result<Value> {
             .as_ref()
             .map(|value| {
                 value
-                    .providers()
+                    .kinds()
                     .map(|provider| provider.as_str().to_owned())
                     .collect::<Vec<_>>()
             })
@@ -1396,7 +1393,7 @@ mod tests {
     #[test]
     fn unleased_provider_model_reaches_the_credential_boundary() {
         let gateway = CompiledGateway::compile(default_config()).unwrap();
-        let credentials = licoup_vault::api_key::GatewayCredentialSlot::disconnected();
+        let credentials = licoup_private_gateway::credential::GatewayCredentialSlot::disconnected();
         let request = serde_json::json!({
             "model": "deepseek:deepseek-v4-flash",
             "messages": [{"role": "user", "content": "synthetic"}]
@@ -1594,7 +1591,7 @@ mod tests {
         credentials.insert(
             LlmApiKeyProvider::Kimi,
             vec![
-                licoup_vault::api_key::GatewayCredential::new(
+                licoup_private_gateway::credential::GatewayCredential::new(
                     uuid::Uuid::new_v4().to_string(),
                     SecretBytes::try_from_string("synthetic-secret".to_owned()).unwrap(),
                     None,
@@ -1604,7 +1601,7 @@ mod tests {
         );
         let handoff = GatewayCredentialHandoff::new(
             credentials,
-            licoup_vault::api_key::GatewayCredentialLeaseDays::Seven,
+            licoup_private_gateway::credential::GatewayCredentialLeaseDays::Seven.duration(),
             "11111111-1111-4111-8111-111111111111".to_owned(),
         )
         .unwrap();
@@ -1625,7 +1622,7 @@ mod tests {
 
     #[test]
     fn vault_mutation_reconciliation_never_auto_authorizes_new_credentials() {
-        use licoup_vault::api_key::{
+        use licoup_private_gateway::credential::{
             GatewayCredentialLeaseDays, LlmApiKeyInventory, LlmApiKeyMetadata,
         };
 

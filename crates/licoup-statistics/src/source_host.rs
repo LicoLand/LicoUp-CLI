@@ -678,7 +678,9 @@ mod tests {
                 token_usage_detector::collection::CollectionMode::Pull,
                 "a source with no durable position is read from the start"
             );
-            let settled = host.admit_page(&admission, &pull(), &page).expect("settled");
+            let settled = host
+                .admit_page(&admission, &pull(), &page)
+                .expect("settled");
             assert_eq!(settled.cursor.as_deref(), Some("1@epoch-1"));
         }
 
@@ -702,7 +704,9 @@ mod tests {
         assert_eq!(fact_rows(&restarted), 1, "the facts survived the restart");
 
         // A duplicate page neither double-counts nor rewinds the cursor.
-        let replayed = restarted.admit_page(&admission, &pull(), &page).expect("replayed");
+        let replayed = restarted
+            .admit_page(&admission, &pull(), &page)
+            .expect("replayed");
         assert_eq!(replayed.cursor.as_deref(), Some("1@epoch-1"));
         assert_eq!(fact_rows(&restarted), 1);
         assert_eq!(

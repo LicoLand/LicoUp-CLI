@@ -607,6 +607,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "credential-lease"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e51551157583b89a4c8aaf6af0ce5da4520f82f3411670db295899f1682f2d23"
+dependencies = [
+ "anyhow",
+ "licoup-foundation",
+ "serde",
+ "serde_json",
+ "uuid",
+ "zeroize",
+]
+
+[[package]]
 name = "criterion"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2481,7 +2495,6 @@ dependencies = [
  "licoup-extension-contracts",
  "licoup-foundation",
  "licoup-native",
- "licoup-vault",
  "rand_core 0.6.4",
  "rusqlite",
  "semver",
@@ -2534,6 +2547,7 @@ dependencies = [
  "command-group",
  "core-foundation",
  "core-foundation-sys",
+ "credential-lease",
  "criterion",
  "dbus-secret-service",
  "ed25519-dalek 2.2.0",
@@ -2583,7 +2597,6 @@ dependencies = [
  "licoup-public-gateway",
  "licoup-state-machine-codegen",
  "licoup-statistics",
- "licoup-vault",
  "licoup-workflow",
  "licoup-workflow-runtime",
  "licoup-workflow-store",
@@ -2639,12 +2652,12 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
+ "credential-lease",
  "fs2",
  "libc",
  "licoup-extension-contracts",
  "licoup-foundation",
  "licoup-statistics",
- "licoup-vault",
  "rand_core 0.6.4",
  "serde",
  "serde_json",
@@ -2662,7 +2675,6 @@ dependencies = [
  "licoup-foundation",
  "licoup-native",
  "licoup-private-gateway",
- "licoup-vault",
  "serde_json",
 ]
 
@@ -2748,17 +2760,6 @@ dependencies = [
  "sha2 0.10.9",
  "time",
  "token-usage-detector",
- "uuid",
-]
-
-[[package]]
-name = "licoup-vault"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "licoup-foundation",
- "serde",
- "serde_json",
  "uuid",
 ]
 

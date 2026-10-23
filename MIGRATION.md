@@ -51,7 +51,7 @@ crates/licoup-platform-bridges           crates/licoup-private-gateway
 crates/licoup-private-gateway/entry      crates/licoup-project
 crates/licoup-protocol-bindings          crates/licoup-public-gateway
 crates/licoup-public-gateway/entry       crates/licoup-state-machine-codegen
-crates/licoup-statistics                 crates/licoup-vault
+crates/licoup-statistics
 crates/licoup-workflow                   crates/licoup-workflow-runtime
 crates/licoup-workflow-store             crates/trybuild
 ```
@@ -70,7 +70,7 @@ Binary ownership after the move (declared in the member manifests):
 Publishable family (manifests carry `version = "…"` + `description`, no
 `publish = false`): `licoup-foundation`, `licoup-application`,
 `licoup-client-state`, `licoup-extension-contracts`, `licoup-model-catalog`,
-`licoup-vault`, `licoup-statistics`, `licoup-private-gateway`,
+`licoup-statistics`, `licoup-private-gateway`,
 `licoup-public-gateway`, `licoup-migrate`, all `licoup-agent-*` adapter
 packages, `licoup-usage-source-sdk`. Their inter-crate deps already use
 `{ path = "…", version = "…" }` form, so `cargo publish` works once versions
@@ -310,7 +310,7 @@ product docs stay in Desktop). This repo authors its own `AGENTS.md`/
    `components/analytics cargo check --tests --locked` both pass, so both
    external `[[test]]` targets compile. Full `--no-run` was not executed
    (compile-clean is this lane's bar, not test execution).
-3. `cargo publish --dry-run -p licoup-vault -p licoup-statistics
+3. `cargo publish --dry-run -p licoup-statistics
    -p licoup-private-gateway -p licoup-public-gateway` — path+version deps
    hold for the publishable family. **NOT RUN** (deferred — publish is gated
    anyway).

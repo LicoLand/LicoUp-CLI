@@ -21,7 +21,7 @@ use crate::{
     platform::secure_mesh_secret_store::PlatformSecretStore,
 };
 use licoup_foundation::platform::{file_security, paths};
-use licoup_vault::api_key::{
+use licoup_private_gateway::credential::{
     GatewayCredential, GatewayCredentialChange, GatewayCredentialEpochSource,
     GatewayCredentialHandoff, GatewayCredentialLease, GatewayCredentialLeaseDays,
     LlmApiKeyCredentialUpdate, LlmApiKeyInventory, LlmApiKeyMetadata, LlmApiKeyProvider,
@@ -348,7 +348,8 @@ impl PlatformLlmApiKeyVault {
         Ok(Some(GatewayCredentialHandoff::new(
             credentials,
             GatewayCredentialLeaseDays::try_from(inventory.lease_days)
-                .map_err(|code| anyhow!(code))?,
+                .map_err(|code| anyhow!(code))?
+                .duration(),
             epoch,
         )?))
     }
@@ -525,7 +526,7 @@ fn decode_inventory(bytes: &[u8]) -> Result<LlmApiKeyInventory> {
         value
             .get("schemaVersion")
             .and_then(serde_json::Value::as_str)
-            == Some(licoup_vault::api_key::LLM_API_KEY_INVENTORY_SCHEMA),
+            == Some(licoup_private_gateway::credential::LLM_API_KEY_INVENTORY_SCHEMA),
         "llm_api_key_inventory_invalid"
     );
     let lease_days = value

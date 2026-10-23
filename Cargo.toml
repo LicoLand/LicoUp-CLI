@@ -33,7 +33,6 @@ members = [
     "crates/licoup-workflow",
     "crates/licoup-workflow-runtime",
     "crates/licoup-workflow-store",
-    "crates/licoup-vault",
     "crates/licoup-statistics",
     "crates/licoup-private-gateway",
     "crates/licoup-private-gateway/entry",
@@ -127,6 +126,9 @@ hax-lib = { git = "https://github.com/hacspec/hax.git", rev = "8f9cb576e58f6cc7e
 # the same crate is the workspace member, so the registry requirement resolves
 # to the local copy and both sides see one `ApplicationFailure`.
 licoup-extension-contracts = { path = "crates/licoup-extension-contracts" }
+# credential-lease builds against the published foundation; inside this unified
+# build the same crate is the workspace member, so `SecretBytes` stays one type.
+licoup-foundation = { path = "crates/licoup-foundation" }
 
 [profile.release]
 codegen-units = 1

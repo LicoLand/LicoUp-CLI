@@ -1,11 +1,11 @@
 //! Bounded outbound transport for the local LLM gateway.
 
+use crate::credential::GatewayCredentialSlot;
 use crate::model::llm_gateway::{
     CompiledGateway, CredentialStyle, GatewayError, GatewayProvider, GatewayResponse,
     MAX_GATEWAY_BODY_BYTES, UpstreamProtocol, models_endpoint_for, namespaced_model_id,
 };
 use crate::model::llm_gateway_stream::GatewayStreamTransformer;
-use licoup_vault::api_key::GatewayCredentialSlot;
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Read;
@@ -125,7 +125,7 @@ pub fn list_models(
     let mut first_failure = None;
     let mut failed_providers = 0usize;
     for provider in gateway.catalog_providers() {
-        if !credentials.contains_provider(provider.credential_provider) {
+        if !credentials.contains_kind(provider.credential_provider) {
             continue;
         }
         let candidates = match credentials.resolve_candidates(provider.credential_provider) {
@@ -617,15 +617,15 @@ impl Drop for Permit {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::credential::{
+        GatewayCredential, GatewayCredentialEpochSource, GatewayCredentialLease,
+        GatewayCredentialLeaseDays, LlmApiKeyProvider,
+    };
     use crate::model::llm_gateway::{
         ClientProtocol, CredentialStyle, GatewayConfig, GatewayProvider, ModelRoute,
     };
     use anyhow::Result;
     use licoup_foundation::core::secret_bytes::SecretBytes;
-    use licoup_vault::api_key::{
-        GatewayCredential, GatewayCredentialEpochSource, GatewayCredentialLease,
-        GatewayCredentialLeaseDays, LlmApiKeyProvider,
-    };
     use std::collections::BTreeMap;
     use std::io::Write as _;
     use std::net::TcpListener;
@@ -723,7 +723,7 @@ mod tests {
         GatewayCredentialSlot::new(
             GatewayCredentialLease::new(
                 credentials,
-                GatewayCredentialLeaseDays::Seven,
+                GatewayCredentialLeaseDays::Seven.duration(),
                 epoch.clone(),
                 Arc::new(StaticEpochSource(epoch)),
             )
@@ -1059,7 +1059,7 @@ mod tests {
         let slot = GatewayCredentialSlot::new(
             GatewayCredentialLease::new(
                 credentials,
-                GatewayCredentialLeaseDays::Seven,
+                GatewayCredentialLeaseDays::Seven.duration(),
                 epoch.clone(),
                 Arc::new(StaticEpochSource(epoch)),
             )
@@ -1132,7 +1132,7 @@ mod tests {
         let slot = GatewayCredentialSlot::new(
             GatewayCredentialLease::new(
                 credentials,
-                GatewayCredentialLeaseDays::Seven,
+                GatewayCredentialLeaseDays::Seven.duration(),
                 epoch.clone(),
                 Arc::new(StaticEpochSource(epoch)),
             )
@@ -1438,7 +1438,7 @@ mod tests {
             }],
         })
         .unwrap();
-        let credentials = licoup_vault::api_key::GatewayCredentialSlot::disconnected();
+        let credentials = crate::credential::GatewayCredentialSlot::disconnected();
         let request = serde_json::json!({
             "model": "deepseek:deepseek-v4-flash",
             "messages": [{"role": "user", "content": "synthetic"}]

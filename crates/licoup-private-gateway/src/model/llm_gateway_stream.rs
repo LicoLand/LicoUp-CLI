@@ -558,7 +558,7 @@ mod tests {
             client_protocol,
             upstream_protocol: UpstreamProtocol::OpenAiChatCompletions,
             endpoint: "http://127.0.0.1/v1/chat/completions".to_owned(),
-            credential_provider: licoup_vault::api_key::LlmApiKeyProvider::Kimi,
+            credential_provider: crate::credential::LlmApiKeyProvider::Kimi,
             credential_style: crate::model::llm_gateway::CredentialStyle::Bearer,
             body: Vec::new(),
             stream: true,
