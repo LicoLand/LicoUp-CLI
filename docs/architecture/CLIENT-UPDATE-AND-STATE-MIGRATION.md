@@ -68,7 +68,7 @@ not reset progress: conversion journals remain in the selected data root.
 
 Both macOS publication profiles select the governed `independent-tool` and
 `independent-tool-digest` pair. Their source is the separate release-tool build
-output, never the app bundle. Release Authority owns Developer ID signing, independent
+output, never the app bundle. The release-authority pipeline owns Developer ID signing, independent
 notarization, immutable materialization and public byte/checksum verification for
 that pair. It does not run the migration tool as an acceptance probe. Source
 configuration and synthetic checks do not establish published availability or

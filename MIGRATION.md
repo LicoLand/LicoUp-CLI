@@ -25,7 +25,7 @@ this repository.
 | `.cargo/config.toml` | `.cargo/config.toml` | Tracked. Carries `build.target-dir = "build/crates/licoup-native/target"` and `net.git-fetch-with-cli = true` (required for the private `licoarc` git dep — Cargo's built-in git client cannot use the credential helper). Copy verbatim. |
 | `LICENSE` | `LICENSE` | Already copied (AGPL-3.0). |
 | `NOTICE` | `NOTICE` | Already copied; preferred-source URL updated to `LicoUp-CLI`. |
-| `.githooks/` (`commit-msg`, `pre-commit`, `pre-push`) | `.githooks/` | Local GitVault gates; the same checkers guard this repo. |
+| `.githooks/` (`commit-msg`, `pre-commit`, `pre-push`) | _removed_ | Copied during the migration, then removed: repository-local gate delegation is retired. Audit authority is Probator; local gating comes from the global GitVault hook chain. |
 
 ### 1.2 `crates/` — entire directory, all 41 crate trees
 
@@ -171,7 +171,7 @@ Move:
 | `packages/` | Dart packages: `presentation_contract`, `presentation_flutter`, `presentation_runtime`, plus `contracts/client/` JSON schemas + fixtures and `protocols/native-client/` docs — all client-surface contracts. |
 | `schemas/client_bridge/` | The bridge contract schema (decision: Desktop owns the contract). |
 | `tools/scripts/` Desktop lane | `client-build.mjs`, `client-gate*.mjs`, `client-release-*.mjs`, `client-macos-*.mjs`, `client-mobile-simulator-closure*`, `client-device-demo.mjs`, `client-version.mjs`, `client-support-matrix.mjs`, `client-promotion.mjs`, `client-packages-verify.mjs`, `client-ui-state-machine.mjs`, `generate-client-bridge-contracts.mjs` (see §3.2), release/VM/install tooling. |
-| `tools/release-authority/`, `tools/distribution/`, `tools/release/`, `tools/templates/`, `tools/development/` | Release authority, packaging distribution, report/plan rendering — product-side. |
+| Release-authority tool directory, `tools/distribution/`, `tools/release/`, `tools/templates/`, `tools/development/` | Release authority, packaging distribution, report/plan rendering — product-side. |
 | `tools/data-migration/` | Node data-migration CLI/engine — open question §5 (recommended: Desktop product tooling; the Rust `licoup-migrate` crate already moved). |
 | `tools/client-*.json`, `tools/client-version.json` | Release/package target manifests and the product-version authority — product-side (see §3.1 for the version-env fixup). |
 | `tests/contract/client/` Flutter/release-bound subset | Packaging, release, version, layout, golden and plan tests stay; see §3.4. |
@@ -234,7 +234,7 @@ Classification rule: a test moves iff the artifact under test is a moved
 source. `*-source-bundle.test.mjs` files name their target sources; grep each
 bundle for `crates/`, `sdk/`, `components/`, `tests/integration`, `schemas/conversation_protocol`,
 `schemas/extensions`, `schemas/subagent_mcp` → move; `apps/`, `packages/`,
-`schemas/client_bridge`, `tools/{release-authority,distribution,release,templates,development}`,
+`schemas/client_bridge`, the release-authority directory under `tools/`, `tools/{distribution,release,templates,development}`,
 packaging/release scripts → stay. Representative examples:
 
 - Move: `antigravity-adapter-package-source-bundle`, `claude-code-driver-source-bundle`,
@@ -244,7 +244,7 @@ packaging/release scripts → stay. Representative examples:
   `assistant-workflow-contract`, `endpoint-*` tests, `lico-subagent-mcp`,
   `cursor-subagent-mcp`, `antigravity-subagent-mcp`, `internal-capability-surface`.
 - Stay: `layout-*`, `client-version`, `client-release-*`, `client-macos-install`,
-  `release-authority-integration`, `client-promotion`, `client-weekly-release`,
+  the release-authority integration test, `client-promotion`, `client-weekly-release`,
   `cli-command-admission-source-bundle` (CLI VM tooling is product-side).
 - Shared infra `tools/scripts/lib/source-check-bundle.mjs` + `tools/scripts/lib/privacy-test-fixtures.mjs`
   move to CLI (bundles assert on moved sources); Desktop keeps or duplicates
@@ -281,7 +281,7 @@ Every moved `.mjs` resolves its root as
 `path.resolve(fileURLToPath(new URL("../..", import.meta.url)))` — correct while
 `tools/scripts/` keeps its depth (it does). What breaks is any tool that reads
 `apps/`, `packages/`, `schemas/client_bridge/`, `tools/client-version.json`,
-`tools/release-authority/` or `docs/` paths at that root. Fix list is exactly the
+the release-authority directory or `docs/` paths at that root. Fix list is exactly the
 files in the `grep -rln "crates/" tools/` result **intersected** with the move
 list in §1.6 — for each moved tool, audit non-`crates/`/`sdk/`/`tests/`/`components/`
 root references and either move the referenced asset or parameterize the path.
@@ -500,7 +500,12 @@ calls beyond the manifest examples:
   `client-promotion`, `client-weekly-release`, `package-client/`,
   `verify-client-plan/`, plus the manifest's stated stays.
 
-### D8 Repo-identity tooling required by `.githooks/`
+### D8 Repo-identity tooling required by `.githooks/` (superseded)
+
+> Status: superseded. The `.githooks/` copies, `gate-identity-policy.mjs`,
+> and the temporary noreply pin described below were all removed during the
+> post-rebuild cleanup; identity is resolved by the GitVault `includeIf`
+> route and the global hook chain, and auditing is Probator's job.
 
 The copied `.githooks/{commit-msg,pre-commit,pre-push}` exec
 `tools/scripts/gate-identity-policy.mjs` — discovered when the first

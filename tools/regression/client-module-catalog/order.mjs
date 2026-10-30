@@ -888,7 +888,6 @@ export const CLIENT_MODULE_ID_ORDER = Object.freeze([
   "release.model-pricing",
   "release.contracts",
   "release.migration-asset",
-  "release.workflows",
   "rust.core.agent-hermes-package",
   "rust.core.agent-lico-agent-package",
   "rust.core.agent-openclaw-package",

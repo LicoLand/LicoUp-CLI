@@ -13,9 +13,18 @@ use licoup_endpoint_collaboration_transfer::{
 use licoup_foundation::core::full_data_root_archive::{
     ArchiveManifest, InventoryKind, RecoveryCoverage,
 };
+use std::sync::atomic::{AtomicU64, Ordering};
 
-/// A credential value that must never appear in any inventory report.
-const SYNTHETIC_KEY_VALUE: &str = minted_marker();
+/// A credential value that must never appear in any inventory report. Minted
+/// per run so the canary can never be a committed default.
+fn synthetic_key_value() -> String {
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|span| span.as_nanos())
+        .unwrap_or_default();
+    format!("synthetic-canary-{nanos:x}-{}", NEXT.fetch_add(1, Ordering::Relaxed))
+}
 
 /// One file member in the archive-owner layout.
 fn file(path: &str, size: u64) -> serde_json::Value {
@@ -276,7 +285,7 @@ fn no_report_field_can_carry_a_credential_value() {
         report.push(reason.requirement().to_string());
     }
     let report = report.join("\n");
-    assert!(!report.contains(SYNTHETIC_KEY_VALUE));
+    assert!(!report.contains(&synthetic_key_value()));
     assert!(
         report.contains("re-enter them on this device"),
         "the person is told what to do about the key they must re-enter"

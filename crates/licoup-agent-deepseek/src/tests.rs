@@ -11,7 +11,8 @@
 use crate::parser::{FrameParser, TurnParser};
 use crate::registration::{ADAPTER_ID, CONTRACT, FRAMING};
 use crate::session_store::{
-    COMPRESSED_SUFFIX, CURRENT_FORMAT_VERSION, SessionReadError, read_usage_samples,
+    COMPRESSED_SUFFIX, CURRENT_FORMAT_VERSION, SessionReadError, read_session_log,
+    read_usage_samples,
 };
 use licoup_agent_adapter_sdk::adapters::NativeLineParser;
 use serde_json::{Value, json};
@@ -328,6 +329,44 @@ fn a_generation_this_reader_does_not_read_is_refused_by_name() {
         read_usage_samples(&bare),
         Err(SessionReadError::Malformed(_))
     ));
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn a_row_past_the_row_bound_is_refused_as_a_resource_limit() {
+    let root = synthetic_root("row-bound");
+    let oversized = json!({ "blob": "x".repeat(5 * 1024 * 1024) });
+    let path = write_session(&root, &[header(json!({})), oversized], false);
+    assert!(
+        matches!(
+            read_session_log(&path),
+            Err(SessionReadError::ResourceLimit(_))
+        ),
+        "one row past the row bound must be refused, not buffered"
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn an_event_storm_past_the_retained_bound_is_refused_as_a_resource_limit() {
+    let root = synthetic_root("event-bound");
+    std::fs::create_dir_all(&root).unwrap();
+    let path = root.join(format!("session.v{CURRENT_FORMAT_VERSION}.jsonl"));
+    let mut text = serde_json::to_vec(&header(json!({}))).unwrap();
+    text.push(b'\n');
+    // One million tiny events stay inside the byte bound but past the
+    // retained-vector bound; the read must refuse rather than grow it.
+    for _ in 0..1_000_001 {
+        text.extend_from_slice(b"{}\n");
+    }
+    std::fs::write(&path, text).unwrap();
+    assert!(
+        matches!(
+            read_session_log(&path),
+            Err(SessionReadError::ResourceLimit(_))
+        ),
+        "an event storm past the retained bound must be refused"
+    );
     std::fs::remove_dir_all(root).unwrap();
 }
 

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "licoup.package-release.v1",
+  "packageId": "org.licoland.fixture.native-converter",
+  "packageVersion": "1.3.0",
+  "clientCompatibility": {
+    "kind": "range",
+    "range": ">=0.2.0, <1.0.0"
+  },
+  "converter": {
+    "kind": "native-executable",
+    "entry": "bin/licoup-fixture-converter",
+    "sourceFormat": "fixture.agent-session.v1",
+    "targetFormat": "licoup.conversation.v1"
+  }
+}

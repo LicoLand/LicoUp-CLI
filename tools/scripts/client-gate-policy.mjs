@@ -16,7 +16,6 @@ export const CLIENT_GATE_LANES = Object.freeze({
     "client:gate:topology",
     "client:gate:self-test",
     "repo:client-boundary",
-    "gate:self-test",
     "repo:local-info-hygiene:self-test",
     "repo:local-info-hygiene",
     "repo:workspace-cache-boundary",
@@ -191,7 +190,6 @@ function isAndroidPath(file) {
 function isReleasePolicyPath(file) {
   return (
     file.startsWith("docs/releases/") ||
-    file.startsWith("tools/release-authority/") ||
     file.startsWith("tools/release/") ||
     file.startsWith("tools/scripts/macos-release/") ||
     file.startsWith("apps/desktop/scripts/package-client") ||

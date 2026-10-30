@@ -2,11 +2,11 @@
 
 use super::cache::{RefreshStatements, json_column, variant_from_columns};
 use super::models::{CumulativeSnapshot, CumulativeTotals};
-use anyhow::Result;
 use agent_statistics::contract::{
     HistoryUsageSummary, MessageUsage, ModelTokenUsageSummary, UNATTRIBUTED_MODEL, UsageVariant,
 };
 use agent_statistics::window::UsageWindow;
+use anyhow::Result;
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Debug)]
@@ -398,11 +398,26 @@ mod tests {
     use super::*;
     use serde_json::json;
     use std::path::Path;
+    use std::sync::atomic::{AtomicU64, Ordering};
 
-    fn snapshot(prompt: u64, effort: Option<&str>, fast: Option<bool>) -> CumulativeSnapshot {
+    fn minted_marker() -> String {
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|span| span.as_nanos())
+            .unwrap_or_default();
+        format!("{nanos:x}-{}", NEXT.fetch_add(1, Ordering::Relaxed))
+    }
+
+    fn snapshot(
+        prompt: u64,
+        effort: Option<&str>,
+        fast: Option<bool>,
+        marker: &str,
+    ) -> CumulativeSnapshot {
         CumulativeSnapshot {
-            usage_key: minted_marker().to_owned(),
-            session_key: minted_marker().to_owned(),
+            usage_key: marker.to_owned(),
+            session_key: marker.to_owned(),
             model: Some("raw-model".to_owned()),
             variant: UsageVariant {
                 effort: effort.map(str::to_owned),
@@ -425,9 +440,10 @@ mod tests {
         let mut statements = RefreshStatements::prepare(&transaction).unwrap();
         let calendar =
             UsageWindow::from_params(&json!({"now":"2026-07-15T12:00:00Z", "historyDays":1}));
-        let high = snapshot(100, Some("high"), Some(false));
-        let low = snapshot(130, Some("low"), None);
-        let fast = snapshot(150, None, Some(true));
+        let marker = minted_marker();
+        let high = snapshot(100, Some("high"), Some(false), &marker);
+        let low = snapshot(130, Some("low"), None, &marker);
+        let fast = snapshot(150, None, Some(true), &marker);
         let mut initial = HistoryUsageSummary::default();
         apply_cumulative_watermarks(
             &mut statements,
@@ -486,7 +502,7 @@ mod tests {
         }
         // A reset keeps the existing day total and resets only the last
         // counter, just as the previous latest-only projection did.
-        let reset = snapshot(120, None, None);
+        let reset = snapshot(120, None, None, &marker);
         let mut after_reset = HistoryUsageSummary::default();
         apply_cumulative_watermarks(
             &mut statements,
@@ -495,7 +511,7 @@ mod tests {
             &calendar,
             &[
                 high.clone(),
-                snapshot(160, Some("low"), None),
+                snapshot(160, Some("low"), None, &marker),
                 reset.clone(),
             ],
             WatermarkProjection::ReplaceCurrentDay,
@@ -509,7 +525,7 @@ mod tests {
             "scope",
             "source",
             &calendar,
-            &[reset, snapshot(125, Some("high"), Some(false))],
+            &[reset, snapshot(125, Some("high"), Some(false), &marker)],
             WatermarkProjection::ReplaceCurrentDay,
             &mut resumed,
         )
@@ -524,7 +540,7 @@ mod tests {
 
         let tomorrow =
             UsageWindow::from_params(&json!({"now":"2026-07-16T12:00:00Z", "historyDays":1}));
-        let mut later = snapshot(140, Some("high"), Some(false));
+        let mut later = snapshot(140, Some("high"), Some(false), &marker);
         later.observed_day = "2026-07-16".to_owned();
         let mut next_day = HistoryUsageSummary::default();
         apply_cumulative_watermarks(
@@ -538,8 +554,9 @@ mod tests {
         )
         .unwrap();
         assert_eq!(next_day.total_tokens(), 15);
+        let usage_key = later.usage_key.clone();
         let saved = load_watermarks_batch(&transaction, "scope", "source", &[later]).unwrap();
-        assert_eq!(saved[minted_marker()].day_variants.len(), 1);
-        assert_eq!(saved[minted_marker()].day_total.prompt, 15);
+        assert_eq!(saved[usage_key.as_str()].day_variants.len(), 1);
+        assert_eq!(saved[usage_key.as_str()].day_total.prompt, 15);
     }
 }

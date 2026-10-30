@@ -456,6 +456,16 @@ pub fn field_names(value: &Value) -> Vec<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    fn minted_marker() -> String {
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|span| span.as_nanos())
+            .unwrap_or_default();
+        format!("{nanos:x}-{}", NEXT.fetch_add(1, Ordering::Relaxed))
+    }
 
     fn config() -> ProviderConfig {
         ProviderConfig {
@@ -524,7 +534,7 @@ mod tests {
 
         // Key material pasted into the field meant for a handle.
         let mut pasted = config();
-        pasted.credential_ref = Some(minted_marker().to_owned());
+        pasted.credential_ref = Some(minted_marker());
         assert!(pasted.validate().is_err());
 
         // A handle whose token still looks like key material is not a handle.

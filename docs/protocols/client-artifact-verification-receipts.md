@@ -72,7 +72,7 @@ They never expose publisher accounts, team/store identifiers, certificate
 subjects or stable fingerprints, credentials, private keys, custody details,
 or private-channel infrastructure.
 
-Release Authority owns the post-release macOS publication receipt. One immutable
+The release-authority pipeline owns the post-release macOS publication receipt. One immutable
 authorization binds the exact accepted `origin/release` source, version, build,
 tag, Release name, and public installer name. Repository source and the
 protected promotion train are read-only to this delegated operation.

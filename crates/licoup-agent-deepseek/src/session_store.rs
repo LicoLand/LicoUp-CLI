@@ -49,7 +49,7 @@
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, BufRead, BufReader, Read};
 use std::path::Path;
 
 /// The one physical session-log generation this reader is written against.
@@ -61,6 +61,18 @@ pub const CURRENT_FORMAT_VERSION: u64 = 4;
 
 /// The suffix that marks a Zstandard-framed artifact.
 pub const COMPRESSED_SUFFIX: &str = ".zstd";
+/// The largest a single decoded row may be: the row readers stream precisely
+/// so a log never has to be buffered whole, and one oversized row must not
+/// defeat that bound through `read_line`.
+const SESSION_ROW_MAX_BYTES: u64 = 4 * 1024 * 1024;
+/// The decoded volume `read_session_log` materializes into its event vector.
+/// The fold retains nothing; the transcript view that retains rows answers
+/// them against this total rather than growing without bound.
+const SESSION_LOG_MAX_BYTES: u64 = 64 * 1024 * 1024;
+/// The most events `read_session_log` retains. Real sessions are orders of
+/// magnitude smaller; the ceiling exists to bound the vector itself, since a
+/// byte bound alone cannot cap per-row `Value` overhead on tiny rows.
+const SESSION_EVENT_MAX_ROWS: usize = 1_000_000;
 
 /// One usage sample, as the Harness recorded it.
 ///
@@ -102,6 +114,8 @@ pub enum SessionReadError {
     /// Reported rather than folded: a caller must be able to refuse a session
     /// instead of publishing a count from a schema nobody has read.
     UnsupportedFormatVersion(u64),
+    /// The artifact exceeds a bounded-read limit this reader enforces.
+    ResourceLimit(&'static str),
 }
 
 impl std::fmt::Display for SessionReadError {
@@ -109,6 +123,9 @@ impl std::fmt::Display for SessionReadError {
         match self {
             Self::Io(error) => write!(formatter, "session artifact could not be read: {error}"),
             Self::Malformed(reason) => write!(formatter, "session artifact is malformed: {reason}"),
+            Self::ResourceLimit(reason) => {
+                write!(formatter, "session artifact exceeds a resource bound: {reason}")
+            }
             Self::UnsupportedFormatVersion(version) => write!(
                 formatter,
                 "session artifact declares format version {version}, which this reader does not read"
@@ -131,6 +148,102 @@ impl From<io::Error> for SessionReadError {
 /// suffix decides, exactly as the Harness's own layout decides. Rows are folded
 /// as they arrive, so a long session never has to be held in memory.
 pub fn read_usage_samples(path: &Path) -> Result<Vec<UsageSample>, SessionReadError> {
+    fold_rows(decoded_reader(path)?)
+}
+
+/// One decoded session artifact, undigested: the header it declared, the raw
+/// header row, and every event row in file order.
+///
+/// The usage fold is one reader's view of this same log; callers whose
+/// questions the fold does not answer — a transcript projection, for example —
+/// read the rows here rather than re-decoding the container or re-stating the
+/// version contract.
+pub struct SessionLog {
+    /// The physical header, with the fork-inherited prefix length folded in.
+    pub header: SessionHeader,
+    /// The raw header row, which also carries the working directory, the
+    /// creation time and any lineage facts the typed header does not project.
+    pub header_row: Value,
+    /// Every event row after the header, in the order the artifact recorded
+    /// them.
+    pub events: Vec<Value>,
+}
+
+/// Decode one session artifact into its header and raw event rows.
+///
+/// Rows arrive already ordered by `seq`; nothing here interprets them beyond
+/// the header's version gate. A fork's inherited prefix is reported through
+/// `header.inherited_event_count`, not removed: which rows count is the
+/// caller's question, and the usage fold and the transcript answer it the same
+/// way (rows below the prefix are copied ancestry).
+pub fn read_session_log(path: &Path) -> Result<SessionLog, SessionReadError> {
+    let mut reader = decoded_reader(path)?;
+    let (header, row) = read_header_row(&mut reader)?;
+    let mut events = Vec::new();
+    let mut decoded_bytes = 0_u64;
+    while let Some((row, row_bytes)) = next_row(&mut reader)? {
+        decoded_bytes += row_bytes;
+        if decoded_bytes > SESSION_LOG_MAX_BYTES || events.len() >= SESSION_EVENT_MAX_ROWS {
+            return Err(SessionReadError::ResourceLimit(
+                "the artifact exceeds the session log bound",
+            ));
+        }
+        events.push(row);
+    }
+    Ok(SessionLog {
+        header,
+        header_row: row,
+        events,
+    })
+}
+
+/// Read only the header row of one session artifact.
+///
+/// Listing a sessions directory needs each artifact's identity, not its
+/// events: the first row carries the durable session id, the creation time and
+/// the lineage facts, and a compressed artifact decodes only the frame the
+/// row lands in. The same version gate as the full read applies — an artifact
+/// of another generation is refused by name here too.
+pub fn read_session_header(path: &Path) -> Result<SessionLog, SessionReadError> {
+    let mut reader = decoded_reader(path)?;
+    let (header, row) = read_header_row(&mut reader)?;
+    Ok(SessionLog {
+        header,
+        header_row: row,
+        events: Vec::new(),
+    })
+}
+
+/// Read and validate the header row: the artifact decides whether this reader
+/// understands it, and an unversioned or later-generation artifact is refused
+/// rather than folded against a schema nobody has read.
+fn read_header_row(reader: &mut impl BufRead) -> Result<(SessionHeader, Value), SessionReadError> {
+    let Some((row, _)) = next_row(reader)? else {
+        return Err(SessionReadError::Malformed(
+            "the artifact carries no header row",
+        ));
+    };
+    if row.get("type").and_then(Value::as_str) != Some("session") {
+        return Err(SessionReadError::Malformed(
+            "the first row is not a session header",
+        ));
+    }
+    let version = row
+        .get("version")
+        .and_then(Value::as_u64)
+        .ok_or(SessionReadError::Malformed(
+            "the header carries no format version",
+        ))?;
+    if version != CURRENT_FORMAT_VERSION {
+        return Err(SessionReadError::UnsupportedFormatVersion(version));
+    }
+    let header = translate_header(&row)?;
+    Ok((header, row))
+}
+
+/// Open one artifact as a decoded row source: a concatenated-Zstandard
+/// container when the file name declares one, plain text otherwise.
+fn decoded_reader(path: &Path) -> Result<Box<dyn BufRead>, SessionReadError> {
     if path
         .file_name()
         .and_then(|name| name.to_str())
@@ -138,9 +251,9 @@ pub fn read_usage_samples(path: &Path) -> Result<Vec<UsageSample>, SessionReadEr
     {
         let decoder = zstd::stream::read::Decoder::new(File::open(path)?)
             .map_err(|_| SessionReadError::Malformed("zstandard container could not be decoded"))?;
-        fold_rows(BufReader::new(decoder))
+        Ok(Box::new(BufReader::new(decoder)))
     } else {
-        fold_rows(BufReader::new(File::open(path)?))
+        Ok(Box::new(BufReader::new(File::open(path)?)))
     }
 }
 
@@ -164,7 +277,7 @@ fn fold_rows(reader: impl BufRead) -> Result<Vec<UsageSample>, SessionReadError>
 
 /// Read the header row and hand back the fold primed with its inherited cut.
 fn read_header(mut reader: impl BufRead) -> Result<(SessionHeader, Fold), SessionReadError> {
-    let Some(row) = next_row(&mut reader)? else {
+    let Some((row, _)) = next_row(&mut reader)? else {
         return Err(SessionReadError::Malformed(
             "the artifact carries no header row",
         ));
@@ -211,21 +324,33 @@ fn translate_header(row: &Value) -> Result<SessionHeader, SessionReadError> {
     })
 }
 
-/// The next non-empty row of the artifact, parsed as one JSON value.
-fn next_row(reader: &mut impl BufRead) -> Result<Option<Value>, SessionReadError> {
+/// The next non-empty row of the artifact, parsed as one JSON value and
+/// paired with its raw byte length so a retaining caller can enforce a total
+/// decoded bound. A single row is capped at `SESSION_ROW_MAX_BYTES`: rows
+/// are streamed precisely so a log never has to be buffered whole, and one
+/// oversized row must not turn the line read into an unbounded allocation.
+fn next_row(reader: &mut impl BufRead) -> Result<Option<(Value, u64)>, SessionReadError> {
     let mut line = String::new();
     loop {
         line.clear();
-        let read = reader.read_line(&mut line)?;
+        let read = reader
+            .by_ref()
+            .take(SESSION_ROW_MAX_BYTES + 1)
+            .read_line(&mut line)?;
         if read == 0 {
             return Ok(None);
+        }
+        if line.len() as u64 > SESSION_ROW_MAX_BYTES {
+            return Err(SessionReadError::ResourceLimit(
+                "a row exceeds the session row bound",
+            ));
         }
         let trimmed = line.trim();
         if trimmed.is_empty() {
             continue;
         }
         return serde_json::from_str(trimmed)
-            .map(Some)
+            .map(|row| Some((row, line.len() as u64)))
             .map_err(|_| SessionReadError::Malformed("a row is not valid JSON"));
     }
 }
@@ -263,7 +388,7 @@ struct OpenAttempt {
 impl Fold {
     /// Absorb every event row of the artifact.
     fn absorb_rows(&mut self, reader: &mut impl BufRead) -> Result<(), SessionReadError> {
-        while let Some(row) = next_row(reader)? {
+        while let Some((row, _)) = next_row(reader)? {
             self.absorb(row);
         }
         Ok(())

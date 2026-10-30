@@ -693,7 +693,7 @@ mod tests {
         store
             .append_runtime_frame(&scope, 1, &json!({"event":"agent.synthetic.before"}))
             .unwrap();
-        let speech = json!({"event":crate::projection::USER_MESSAGE_EVENT_KIND,"payload":{"text":"字".repeat(400_000),"unknownMetadata":[{"secret":minted_marker()}]}});
+        let speech = json!({"event":crate::projection::USER_MESSAGE_EVENT_KIND,"payload":{"text":"字".repeat(400_000),"unknownMetadata":[{"secret":Uuid::new_v4().to_string()}]}});
         store.append_runtime_local_frame(&scope, &speech).unwrap();
         store
             .append_runtime_frame(&scope, 2, &json!({"event":"agent.synthetic.after"}))

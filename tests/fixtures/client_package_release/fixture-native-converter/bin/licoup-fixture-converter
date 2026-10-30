@@ -1,0 +1,7 @@
+LicoUp release fixture: placeholder for a compiled native converter entry.
+
+This file stands in for the compiled executable a first-party package ships as
+its native converter. It carries no interpreter: the package manifest declares a
+process runtime with no runtimeRef, and the release tooling refuses an entry
+whose name or bytes mark it as a script. Nothing in the repository executes it;
+the fixture proves packaging, signed-index and offline-import behavior only.

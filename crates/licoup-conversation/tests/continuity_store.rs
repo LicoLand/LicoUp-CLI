@@ -205,12 +205,12 @@ fn current_schema_repairs_missing_defaults_and_designation_trigger() {
             Ok((
                 unit.query_row(
                     "SELECT value FROM continuity_schema WHERE key=?1",
-                    [],
+                    ["adoption_enabled"],
                     |row| row.get::<_, String>(0),
                 )?,
                 unit.query_row(
                     "SELECT value FROM continuity_schema WHERE key=?1",
-                    [],
+                    ["adoption_stage"],
                     |row| row.get::<_, String>(0),
                 )?,
                 unit.query_row(

@@ -97,8 +97,8 @@ test("layer, FFI, bridge, packaging, and release paths select dedicated modules"
     "apps/desktop/scripts/build-android-apk.mjs",
   ])), ["packaging.android"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "tools/release-authority/macos-direct-arm64.json",
-  ])), ["release.contracts", "release.workflows"]);
+    "tools/scripts/client-gate-policy.mjs",
+  ])), ["architecture.client-boundaries", "release.contracts"]);
 });
 
 test("Android Secure Mesh leaves select boundary tests and Kotlin compile independently", () => {
