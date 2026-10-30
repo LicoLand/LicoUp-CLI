@@ -67,7 +67,7 @@ export function seedDisposableProfile(context) {
   );
   mkdirSync(context.disposableDataRoot, { recursive: true, mode: 0o700 });
   chmodSync(context.disposableDataRoot, 0o700);
-  const sourceRoot = context.disposableSeedSource;
+  const sourceRoot = context.disposableSourceDir;
   if (!sourceRoot || !existsSync(sourceRoot)) return false;
   requireFact(
     resolve(sourceRoot) !== resolve(context.disposableDataRoot),

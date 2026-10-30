@@ -613,7 +613,7 @@ mod tests {
             }],
             input_refs: vec![source],
             retrieved_reads: Vec::new(),
-            replay_key: "rep".into(),
+            replay_key: String::from("replay-key"),
             observed_revision: 1,
             designation_epoch: 1,
         }

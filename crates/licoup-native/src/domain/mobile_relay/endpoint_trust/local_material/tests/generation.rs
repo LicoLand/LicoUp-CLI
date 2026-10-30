@@ -45,7 +45,7 @@ fn incomplete_existing_identity_is_not_a_fresh_identity() {
     let _home = FixtureHome::enter("incomplete-identity");
     for e2ee in [
         json!({"endpointId": "pc_existing"}),
-        json!({"pri": "synthetic-existing-private-material"}),
+        json!({"privateKeyBase64url": String::from("synthetic-existing-private-material")}),
     ] {
         let mut config = json!({"mobileRelayE2ee": e2ee});
         let before = config.clone();

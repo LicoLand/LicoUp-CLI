@@ -101,7 +101,7 @@ mod tests {
         let refresh = dispatch(
             &["catalog".into(), "refresh".into()],
             &json!({
-                "par": "opaque-a",
+                "partitionKey": String::from("opaque-a"),
                 "sourceRevision": 2,
                 "catalogRevision": "catalog-2",
                 "audienceRevision": 3,
@@ -119,7 +119,7 @@ mod tests {
         assert_eq!(restored["reconnectFence"], true);
         let blocked = dispatch(
             &["catalog".into(), "list".into()],
-            &json!({"par": "opaque-a"}),
+            &json!({"partitionKey": String::from("opaque-a")}),
         )
         .unwrap();
         assert_eq!(blocked["ok"], false);

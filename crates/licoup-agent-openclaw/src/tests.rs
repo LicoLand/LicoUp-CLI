@@ -165,10 +165,11 @@ fn a_frame_is_classified_once_and_private_metadata_never_leaves_the_parser() {
     // The Gateway session key arrives on the opening update, before the session
     // response: it is captured by the binding the parser owns and is never
     // reported as an effect of its own.
-    let private_key = ["private", "session", "key"].join("-");
+    let private_session = ["private", "session", "key"].join("-");
     let opening = protocol.handle_frame(
         format!(
-            r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"session_info_update","_meta":{{"ses":"{private_key}"}}}}}}}}"#
+            r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"session_info_update","_meta":{{"sessionKey":"{}"}}}}}}}}"#,
+            private_session
         )
         .as_bytes(),
     );
@@ -178,7 +179,7 @@ fn a_frame_is_classified_once_and_private_metadata_never_leaves_the_parser() {
     );
     assert_eq!(
         protocol.binding.native_id(),
-        Some(private_key.as_str()),
+        Some(private_session.as_str()),
         "the binding is captured exactly once, by the parser that owns it"
     );
 
@@ -199,7 +200,8 @@ fn a_frame_is_classified_once_and_private_metadata_never_leaves_the_parser() {
     let private_metadata = ["not", "for", "projection"].join("-");
     let content = protocol.handle_frame(
         format!(
-            r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"agent_message_chunk","content":{{"type":"text","text":"visible"}},"_meta":{{"secret":"{pr"}}}}}}}}"#
+            r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"agent_message_chunk","content":{{"type":"text","text":"visible"}},"_meta":{{"secret":"{}"}}}}}}}}"#,
+            private_metadata
         )
         .as_bytes(),
     );
@@ -219,7 +221,7 @@ fn a_frame_is_classified_once_and_private_metadata_never_leaves_the_parser() {
     // The reported session identity is the *resumable* Gateway key, which is
     // what the client stores to resume this conversation — not the
     // process-local ACP protocol id, and not any part of the update's metadata.
-    assert_eq!(outcome.session_id, private_key);
+    assert_eq!(outcome.session_id, private_session);
     let projected = json!({
         "output": outcome.output,
         "sessionId": outcome.session_id,

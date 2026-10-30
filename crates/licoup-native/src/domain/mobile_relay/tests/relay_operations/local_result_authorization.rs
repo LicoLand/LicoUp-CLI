@@ -48,7 +48,7 @@ fn mobile_relay_encrypted_local_effect_command_requires_local_confirmation() {
         },
         "riskClass": "local_effect",
         "requiresUserConfirmation": false,
-        "ide": "idem_mobile_relay_local_effect",
+        "idempotencyKey": String::from("idem_mobile_relay_local_effect"),
         "createdAt": now_iso(),
         "expiresAt": timestamp_after_seconds(MOBILE_RELAY_COMMAND_TTL_SECONDS).unwrap(),
         "body": {
@@ -104,7 +104,7 @@ fn command_result_secure_consumes_canonical_sync_and_acks_after_open() {
             },
             "execution": {
                 "commandId": "cmd-canonical-result",
-                "ide": "idem-canonical-result"
+                "idempotencyKey": String::from("idem-canonical-result")
             },
             "bodyRedacted": true
         }),
@@ -121,7 +121,7 @@ fn command_result_secure_consumes_canonical_sync_and_acks_after_open() {
 
     let result_params = with_station_params(json!({
         "commandId": "cmd-canonical-result",
-        "ide": "idem-canonical-result"
+        "idempotencyKey": String::from("idem-canonical-result")
     }));
     let output = command_result_secure(&result_params).unwrap();
 
@@ -190,7 +190,7 @@ fn command_result_secure_reuses_single_operation_auth_batch_for_fetch_and_result
                     },
                     "execution": {
                         "commandId": "cmd-single-auth-result",
-                        "ide": "idem-single-auth-result"
+                        "idempotencyKey": String::from("idem-single-auth-result")
                     },
                     "bodyRedacted": true
                 }),
@@ -211,7 +211,7 @@ fn command_result_secure_reuses_single_operation_auth_batch_for_fetch_and_result
 
             let output = command_result_secure(&with_station_params(json!({
                 "commandId": "cmd-single-auth-result",
-                "ide": "idem-single-auth-result"
+                "idempotencyKey": String::from("idem-single-auth-result")
             })))?;
 
             assert_eq!(output["ok"], true);
@@ -257,7 +257,7 @@ fn command_result_secure_returns_typed_pending_when_station_has_no_result() {
 
     let output = command_result_secure(&with_station_params(json!({
         "commandId": "cmd-pending-result",
-        "ide": "idem-pending-result"
+        "idempotencyKey": String::from("idem-pending-result")
     })))
     .unwrap();
 
@@ -312,7 +312,7 @@ fn command_result_secure_caches_unmatched_results_without_head_of_line_blocking(
 
     let target = command_result_secure(&with_station_params(json!({
         "commandId": "cmd-out-of-order-11",
-        "ide": "idem-out-of-order-11"
+        "idempotencyKey": String::from("idem-out-of-order-11")
     })))
     .unwrap();
     assert_eq!(target["pending"], false);
@@ -320,7 +320,7 @@ fn command_result_secure_caches_unmatched_results_without_head_of_line_blocking(
 
     let first_cached = command_result_secure(&with_station_params(json!({
         "commandId": "cmd-out-of-order-0",
-        "ide": "idem-out-of-order-0"
+        "idempotencyKey": String::from("idem-out-of-order-0")
     })))
     .unwrap();
     assert_eq!(first_cached["pending"], false);

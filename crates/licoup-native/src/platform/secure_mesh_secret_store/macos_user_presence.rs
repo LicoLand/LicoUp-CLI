@@ -1467,7 +1467,7 @@ fn keychain_roundtrip_probe(backend: MacosKeychainBackend) -> bool {
 
 fn silent_keychain_roundtrip_probe(backend: MacosKeychainBackend) -> bool {
     const PROBE_SERVICE: &str = "dev.licoland.licoup.secure-mesh-probe";
-    const PROBE_SECRET: &[u8] = b"sec";
+    const PROBE_MATERIAL: &[u8] = b"secure-mesh-keychain-probe";
     let account = format!("probe-{}", Uuid::new_v4());
 
     let mut pairs = vec![
@@ -1504,7 +1504,7 @@ fn silent_keychain_roundtrip_probe(backend: MacosKeychainBackend) -> bool {
     let query_pair_count = pairs.len() - 1;
     pairs.push((
         security_framework_static!(kSecValueData, sec_key),
-        CFData::from_buffer(PROBE_SECRET).into_CFType(),
+        CFData::from_buffer(PROBE_MATERIAL).into_CFType(),
     ));
     let add_query = CFDictionary::from_CFType_pairs(&pairs);
     // SAFETY: add_query owns all referenced values for the synchronous call.
@@ -1532,7 +1532,7 @@ fn silent_keychain_roundtrip_probe(backend: MacosKeychainBackend) -> bool {
         if type_id == CFData::type_id() {
             // SAFETY: type identity is CFData and +1 ownership transfers to the wrapper.
             let data = unsafe { CFData::wrap_under_create_rule(copied as CFDataRef) };
-            data.bytes() == PROBE_SECRET
+            data.bytes() == PROBE_MATERIAL
         } else {
             // SAFETY: copied has not yet been released.
             unsafe { CFRelease(copied) };

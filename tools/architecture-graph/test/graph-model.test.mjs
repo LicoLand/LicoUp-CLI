@@ -113,7 +113,7 @@ test("graph version, task fingerprint and input-evidence fields bind a claim", (
   assert.equal(version.architecture_revision, graph.architecture.revision);
   assert.ok(REQUIRED_RECEIPT_FIELDS.includes("task_digest"));
   assert.ok(REQUIRED_RECEIPT_FIELDS.includes("input_digest"));
-  assert.ok(REQUIRED_RECEIPT_FIELDS.includes("claim_token"));
+  assert.ok(REQUIRED_RECEIPT_FIELDS.includes("claim_ref"));
 });
 
 test("IDs must be unique across node types", () => {

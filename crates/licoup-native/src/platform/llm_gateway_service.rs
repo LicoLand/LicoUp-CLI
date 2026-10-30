@@ -105,6 +105,7 @@ fn authorization_report(
     value
 }
 
+const INCONSISTENT_INVENTORY: &str = "llm_api_key_inventory_inconsistent";
 fn authorization_failure_report(error: &anyhow::Error) -> Option<Value> {
     let reason = match error.to_string().as_str() {
         "secure_mesh_keychain_classic_access_requires_user_action" => {
@@ -114,7 +115,7 @@ fn authorization_failure_report(error: &anyhow::Error) -> Option<Value> {
         // build (for example an ad hoc local install that cannot see the
         // shared keychain group) must surface as their own recoverable cause,
         // not as an opaque authorization failure.
-        "llm" => "llm_api_key_inventory_inconsistent",
+        "llm_api_key_inventory_inconsistent" => INCONSISTENT_INVENTORY,
         _ => return None,
     };
     Some(authorization_report(
@@ -1473,10 +1474,10 @@ mod tests {
 
     #[test]
     fn old_gateway_health_requires_replacement_for_live_provider_models() {
-        let old = r#"{"protocols":["openai-responses","openai-chat-completions","anthropic-messages"],"cli":"bearer-or-x-api-key"}"#;
-        assert!(!health_supports_current_protocols(old));
-        let current = r#"{"protocols":["openai-responses","openai-chat-completions","anthropic-messages","live-provider-models"],"cli":"bearer-or-x-api-key"}"#;
-        assert!(health_supports_current_protocols(current));
+        let old = format!(r#"{{"protocols":["openai-responses","openai-chat-completions","anthropic-messages"],"clientAuth":"{}"}}"#, "bearer-or-x-api-key");
+        assert!(!health_supports_current_protocols(&old));
+        let current = format!(r#"{{"protocols":["openai-responses","openai-chat-completions","anthropic-messages","live-provider-models"],"clientAuth":"{}"}}"#, "bearer-or-x-api-key");
+        assert!(health_supports_current_protocols(&current));
     }
 
     #[test]

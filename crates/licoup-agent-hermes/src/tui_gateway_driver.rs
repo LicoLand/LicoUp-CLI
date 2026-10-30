@@ -800,9 +800,9 @@ sleep 30
     fn bounded_gateway_round_trip_preserves_new_and_resumed_durable_ids() {
         for requested_session_id in ["", "durable-1"] {
             let open_result = if requested_session_id.is_empty() {
-                r#"{"session_id":"live-1","stored_session_id":"durable-1","messages":[],"info":{"cwd":"/workspace","model":"test-model"}}"#
+                String::from(r#"{"session_id":"live-1","stored_session_id":"durable-1","messages":[],"info":{"cwd":"/workspace","model":"test-model"}}"#)
             } else {
-                r#"{"session_id":"live-1","resumed":"durable-1","ses":"durable-1","messages":[],"info":{"cwd":"/workspace","model":"test-model"}}"#
+                format!(r#"{{"session_id":"live-1","resumed":"{0}","session_key":"{0}","messages":[],"info":{{"cwd":"/workspace","model":"test-model"}}}}"#, requested_session_id)
             };
             let script = format!(
                 r#"

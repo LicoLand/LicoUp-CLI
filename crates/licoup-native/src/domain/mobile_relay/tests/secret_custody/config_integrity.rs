@@ -128,7 +128,7 @@ fn mobile_relay_public_config_redacts_secret_material() {
             "pcClientId": "pc-redacted",
             "pcClientName": "Mac",
             "pairingId": "pair-redacted",
-            "mob": "paired-device-token-redaction-canary"
+            "mobileToken": String::from("paired-device-token-redaction-canary")
         }
     ]);
     let runtime_secrets = MobileRelayE2eeSecretField::ALL

@@ -247,8 +247,8 @@ fn read_access_token(state_db_path: &std::path::Path) -> Result<Option<String>> 
     .map_err(|_| anyhow!("cursor state store is not readable"))?;
     connection
         .query_row(
-            "SELECT value FROM ItemTable WHERE key = 'cur' LIMIT 1",
-            [],
+            "SELECT value FROM ItemTable WHERE key = ?1 LIMIT 1",
+            ["cursorAuth/accessToken"],
             |row| row.get::<_, String>(0),
         )
         .map(Some)

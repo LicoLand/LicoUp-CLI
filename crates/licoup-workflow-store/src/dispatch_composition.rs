@@ -431,7 +431,7 @@ fn a_foreign_or_repeated_owner_result_cannot_settle_the_attempt() {
                 &fixture.run_id,
                 ReducerEvent::CommandSucceeded {
                     command_id: claimed.id.clone(),
-                    attempt_token: "att".into(),
+                    attempt_token: String::from("attempt:someone-else"),
                     output: json!({ "ok": true }),
                 },
             )
@@ -440,7 +440,7 @@ fn a_foreign_or_repeated_owner_result_cannot_settle_the_attempt() {
     );
     let foreign = EffectCompletion {
         command_id: claimed.id.clone(),
-        attempt_token: "att".into(),
+        attempt_token: String::from("attempt:someone-else"),
         owner: "first-owner".into(),
         output_digest: "digest:foreign".into(),
     };

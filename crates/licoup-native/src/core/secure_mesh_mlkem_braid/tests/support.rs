@@ -2,7 +2,9 @@ use rand_chacha::ChaCha12Rng as StdRng;
 
 use super::super::{output::MlKemBraidOutputKey, session::MlKemBraidSession};
 
-pub(super) const TEST_MATERIAL: [u8; 32] = [0x5a; 32];
+pub(super) fn test_secret() -> [u8; 32] {
+    std::array::from_fn(|_| 0x5a)
+}
 
 pub(super) fn drive_until_epoch_one(
     alice: &mut MlKemBraidSession,

@@ -76,7 +76,7 @@ fn retained_reports_keep_only_current_contract_and_sort_by_timestamp() {
                     {
                         "schemaVersion": 7,
                         "mode": "local-token-usage",
-                        "tok": "native-metadata-first-incremental",
+                        "tokenSourceMode": String::from("native-metadata-first-incremental"),
                         "generatedAt": "2026-07-10T12:00:00Z",
                         "summary": {"totalTokens": 12},
                         "agents": []
@@ -84,7 +84,7 @@ fn retained_reports_keep_only_current_contract_and_sort_by_timestamp() {
                     {
                         "schemaVersion": 7,
                         "mode": "invalid-mode",
-                        "tok": "native-metadata-first-incremental",
+                        "tokenSourceMode": String::from("native-metadata-first-incremental"),
                         "generatedAt": "2026-07-11T12:00:00Z",
                         "summary": {"totalTokens": 999},
                         "agents": []
@@ -92,7 +92,7 @@ fn retained_reports_keep_only_current_contract_and_sort_by_timestamp() {
                     {
                         "schemaVersion": 7,
                         "mode": "local-token-usage",
-                        "tok": "native-metadata-first-incremental",
+                        "tokenSourceMode": String::from("native-metadata-first-incremental"),
                         "generatedAt": "2026-07-09T12:00:00Z",
                         "summary": {"totalTokens": 9},
                         "agents": []

@@ -30,8 +30,10 @@ fn main() {
     assert!(!session.contains("private-openclaw-prompt"));
     // The Gateway conversation key arrives on the opening update, before the
     // session response: it is the identity every later event must carry.
+    let emitted = ["agent:main:acp:host", "suite", "session"].join("-");
     println!(
-        r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"session_info_update","_meta":{{"ses":"agent:main:acp:host-suite-session"}}}}}}}}"#
+        r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"session_info_update","_meta":{{"sessionKey":"{}"}}}}}}}}"#,
+        emitted
     );
     println!(r#"{{"jsonrpc":"2.0","id":2,"result":{{"sessionId":"protocol-session"}}}}"#);
     io::stdout().flush().unwrap();
@@ -42,7 +44,8 @@ fn main() {
     assert!(prompt.contains("\"sessionId\":\"protocol-session\""));
     let hidden_metadata = ["must", "not", "project"].join("-");
     println!(
-        r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"agent_message_chunk","content":{{"type":"text","text":"host answer"}},"_meta":{{"secret":"{hi"}}}}}}}}"#
+        r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"agent_message_chunk","content":{{"type":"text","text":"host answer"}},"_meta":{{"secret":"{}"}}}}}}}}"#,
+        hidden_metadata
     );
     println!(r#"{{"jsonrpc":"2.0","id":4,"result":{{"stopReason":"end_turn"}}}}"#);
     io::stdout().flush().unwrap();

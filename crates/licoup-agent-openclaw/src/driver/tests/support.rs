@@ -113,7 +113,8 @@ fn main() {
     let session = lines.next().unwrap().unwrap();
     assert!(session.contains("\"method\":\"session/new\""));
     assert!(!session.contains("private-openclaw-prompt"));
-    println!(r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"session_info_update","_meta":{{"ses":"agent:main:acp:native-session"}}}}}}}}"#);
+    let session_ref = ["agent:main:acp:native", "session"].join("-");
+    println!(r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"session_info_update","_meta":{{"sessionKey":"{}"}}}}}}}}"#, session_ref);
     println!(r#"{{"jsonrpc":"2.0","id":2,"result":{{"sessionId":"protocol-session","modes":{{"currentModeId":"medium","availableModes":[]}}}}}}"#);
     io::stdout().flush().unwrap();
 
@@ -127,7 +128,7 @@ fn main() {
     assert!(prompt.contains("private-openclaw-prompt"));
     assert!(prompt.contains("\"sessionId\":\"protocol-session\""));
     let hidden_metadata = ["must", "not", "project"].join("-");
-    println!(r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"agent_message_chunk","content":{{"type":"text","text":"native "}},"_meta":{{"secret":"{hi"}}}}}}}}"#);
+    println!(r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"agent_message_chunk","content":{{"type":"text","text":"native "}},"_meta":{{"secret":"{}"}}}}}}}}"#, hidden_metadata);
     println!(r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-session","update":{{"sessionUpdate":"agent_message_chunk","content":{{"type":"text","text":"answer"}}}}}}}}"#);
     println!(r#"{{"jsonrpc":"2.0","id":4,"result":{{"stopReason":"end_turn"}}}}"#);
     io::stdout().flush().unwrap();

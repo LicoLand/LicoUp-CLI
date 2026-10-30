@@ -555,9 +555,9 @@ impl SecureMeshMlsSecurityLedger {
         let writer_reservation_removed = tx.execute(
             r#"
             DELETE FROM secure_mesh_mls_operation_reservations
-            WHERE operation_id = ?1 AND reservation_key = 'par'
+            WHERE operation_id = ?1 AND reservation_key = ?2
             "#,
-            params![operation_id],
+            params![operation_id, "participant-writer"],
         )?;
         ensure!(
             writer_reservation_removed == 1,
@@ -614,13 +614,13 @@ impl SecureMeshMlsSecurityLedger {
             INNER JOIN secure_mesh_mls_operation_reservations reservations
                 ON reservations.operation_id = operations.operation_id
             WHERE operations.local_endpoint_scope_hash = ?1
-              AND reservations.reservation_key = 'par'
+              AND reservations.reservation_key = ?2
               AND operations.state IN ('crypto_prepared', 'crypto_committed')
             ORDER BY operations.created_at_unix_seconds, operations.operation_id
             "#,
         )?;
         let ids = statement
-            .query_map(params![scope], |row| row.get::<_, String>(0))?
+            .query_map(params![scope, "participant-writer"], |row| row.get::<_, String>(0))?
             .collect::<std::result::Result<Vec<_>, _>>()?;
         ids.into_iter()
             .map(|operation_id| {

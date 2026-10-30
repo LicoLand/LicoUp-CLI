@@ -55,14 +55,14 @@ fn mobile_relay_native_secret_store_cleanup_uses_single_authorization_batch() {
     let store = EphemeralSecretStore::new();
     let namespace = "native-secret-store-cleanup-batch";
     let mut config = json!({
-        "pcToken": "cle",
-        "mob": "cleanup-mobile-token-canary",
+        "pcToken": String::from("cleanup-pc-token-canary"),
+        "mobileToken": String::from("cleanup-mobile-token-canary"),
         "mobileRelayE2ee": {},
         "pairedDevices": [
             {
                 "id": "cleanup-device",
                 "pairingId": "cleanup-pairing",
-                "mob": "cleanup-paired-token-canary"
+                "mobileToken": String::from("cleanup-paired-token-canary")
             }
         ]
     });

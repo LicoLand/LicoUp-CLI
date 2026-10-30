@@ -20,7 +20,7 @@ export const REQUIRED_RECEIPT_FIELDS = Object.freeze([
   "task_id",
   "task_digest",
   "input_digest",
-  "claim_token",
+  "claim_ref",
   "owner",
   "generation",
   "status",
@@ -159,7 +159,7 @@ export function verifyEvidenceBinding({ graph, receipt, claim = null }) {
       reasons.push(`receipt does not carry required field ${field}`);
     }
   }
-  for (const field of ["claim_token", "owner", "producer"]) {
+  for (const field of ["claim_ref", "owner", "producer"]) {
     if (typeof receipt[field] !== "string" || receipt[field].trim().length === 0) {
       reasons.push(`receipt ${field} must be a non-empty string`);
     }
@@ -231,9 +231,9 @@ export function verifyEvidenceBinding({ graph, receipt, claim = null }) {
 
   if (claim !== null) {
     if (claim.task_id !== receipt.task_id) reasons.push("claim and receipt name different tasks");
-    for (const field of ["task_digest", "graph_digest", "input_digest", "claim_token", "owner", "generation"]) {
-      const claimField = field === "claim_token" ? claim.claim_token : claim[field];
-      const receiptField = field === "claim_token" ? receipt.claim_token : receipt[field];
+    for (const field of ["task_digest", "graph_digest", "input_digest", "claim_ref", "owner", "generation"]) {
+      const claimField = field === "claim_ref" ? claim.claim_ref : claim[field];
+      const receiptField = field === "claim_ref" ? receipt.claim_ref : receipt[field];
       if (claimField === undefined) reasons.push(`claim record does not carry ${field}`);
       else if (receiptField !== claimField) reasons.push(`receipt ${field} does not match the claim record`);
     }

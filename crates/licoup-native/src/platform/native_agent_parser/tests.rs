@@ -123,18 +123,20 @@ fn cursor_parser_streams_only_assistant_frames_and_completes_with_cumulative_res
     use licoup_agent_cursor::model::EffectiveSettings;
 
     let mut parser = CursorParser::new(
-        minted_marker(),
+        "synthetic-session",
         "exact user prompt",
         EffectiveSettings::default(),
     );
+    let api_source = String::from("synthetic");
+    let session_ref = ["synthetic", "session"].join("-");
     let init = parser
-        .parse_line(br#"{"type":"system","subtype":"init","api":"synthetic","cwd":"/tmp","session_id":minted_marker(),"model":"fake-model","permissionMode":"default"}"#)
+        .parse_line(format!(r#"{{"type":"system","subtype":"init","apiKeySource":"{}","cwd":"/tmp","session_id":"{}","model":"fake-model","permissionMode":"default"}}"#, api_source, session_ref).as_bytes())
         .unwrap();
     assert!(init.is_empty());
     // Only the exact user prompt echo acknowledges native delivery, and it
     // must never become assistant output.
     let echo = parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"exact user prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"exact user prompt"}]}}"#)
         .unwrap();
     assert!(
         echo.iter()
@@ -143,17 +145,17 @@ fn cursor_parser_streams_only_assistant_frames_and_completes_with_cumulative_res
     assert!(echo.iter().any(|effect| matches!(
         effect,
         CursorEffect::Accepted { session_id, turn_id }
-            if session_id == minted_marker() && turn_id == "cursor-turn"
+            if session_id == "synthetic-session" && turn_id == "cursor-turn"
     )));
     let first = parser
-        .parse_line(br#"{"type":"assistant","session_id":minted_marker(),"timestamp_ms":1,"message":{"role":"assistant","content":[{"type":"text","text":"hello "}]}}"#)
+        .parse_line(br#"{"type":"assistant","session_id":"synthetic-session","timestamp_ms":1,"message":{"role":"assistant","content":[{"type":"text","text":"hello "}]}}"#)
         .unwrap();
     assert!(first.iter().any(|effect| matches!(
         effect,
         CursorEffect::Text { text, .. } if text == "hello "
     )));
     let second = parser
-        .parse_line(br#"{"type":"assistant","session_id":minted_marker(),"timestamp_ms":2,"message":{"role":"assistant","content":[{"type":"text","text":"world"}]}}"#)
+        .parse_line(br#"{"type":"assistant","session_id":"synthetic-session","timestamp_ms":2,"message":{"role":"assistant","content":[{"type":"text","text":"world"}]}}"#)
         .unwrap();
     assert!(second.iter().any(|effect| matches!(
         effect,
@@ -163,7 +165,7 @@ fn cursor_parser_streams_only_assistant_frames_and_completes_with_cumulative_res
     // suffix, and completion carries the full cumulative reply with the
     // request-id transport turn id.
     let terminal = parser
-        .parse_line(br#"{"type":"result","subtype":"success","is_error":false,"session_id":minted_marker(),"request_id":"req-1","result":"hello world"}"#)
+        .parse_line(br#"{"type":"result","subtype":"success","is_error":false,"session_id":"synthetic-session","request_id":"req-1","result":"hello world"}"#)
         .unwrap();
     assert!(
         terminal
@@ -182,19 +184,19 @@ fn cursor_parser_terminal_result_appends_missing_suffix() {
     use crate::platform::native_agent_parser::adapters::cursor::{CursorEffect, CursorParser};
     use licoup_agent_cursor::model::EffectiveSettings;
 
-    let mut parser = CursorParser::new(minted_marker(), "prompt", EffectiveSettings::default());
+    let mut parser = CursorParser::new("synthetic-session", "prompt", EffectiveSettings::default());
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
     let first = parser
-        .parse_line(br#"{"type":"assistant","session_id":minted_marker(),"message":{"role":"assistant","content":[{"type":"text","text":"hello"}]}}"#)
+        .parse_line(br#"{"type":"assistant","session_id":"synthetic-session","message":{"role":"assistant","content":[{"type":"text","text":"hello"}]}}"#)
         .unwrap();
     assert!(first.iter().any(|effect| matches!(
         effect,
         CursorEffect::Text { text, .. } if text == "hello"
     )));
     let terminal = parser
-        .parse_line(br#"{"type":"result","subtype":"success","is_error":false,"session_id":minted_marker(),"result":"hello world"}"#)
+        .parse_line(br#"{"type":"result","subtype":"success","is_error":false,"session_id":"synthetic-session","result":"hello world"}"#)
         .unwrap();
     assert!(terminal.iter().any(|effect| matches!(
         effect,
@@ -211,16 +213,16 @@ fn cursor_parser_terminal_result_keeps_streamed_text_when_result_diverges() {
     use crate::platform::native_agent_parser::adapters::cursor::{CursorEffect, CursorParser};
     use licoup_agent_cursor::model::EffectiveSettings;
 
-    let mut parser = CursorParser::new(minted_marker(), "prompt", EffectiveSettings::default());
+    let mut parser = CursorParser::new("synthetic-session", "prompt", EffectiveSettings::default());
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
     parser
-        .parse_line(br#"{"type":"assistant","session_id":minted_marker(),"message":{"role":"assistant","content":[{"type":"text","text":"hello"},{"type":"text","text":" world"}]}}"#)
+        .parse_line(br#"{"type":"assistant","session_id":"synthetic-session","message":{"role":"assistant","content":[{"type":"text","text":"hello"},{"type":"text","text":" world"}]}}"#)
         .unwrap();
     let terminal = parser
         .parse_line(
-            br#"{"type":"result","subtype":"success","is_error":false,"session_id":minted_marker(),"result":"a different answer"}"#,
+            br#"{"type":"result","subtype":"success","is_error":false,"session_id":"synthetic-session","result":"a different answer"}"#,
         )
         .unwrap();
     assert!(
@@ -239,15 +241,15 @@ fn cursor_parser_ignores_a_rewritten_snapshot_and_still_completes() {
     use crate::platform::native_agent_parser::adapters::cursor::{CursorEffect, CursorParser};
     use licoup_agent_cursor::model::EffectiveSettings;
 
-    let mut parser = CursorParser::new(minted_marker(), "prompt", EffectiveSettings::default());
+    let mut parser = CursorParser::new("synthetic-session", "prompt", EffectiveSettings::default());
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
     parser
-        .parse_line(br#"{"type":"assistant","session_id":minted_marker(),"timestamp_ms":1,"message":{"role":"assistant","content":[{"type":"text","text":"hello"}]}}"#)
+        .parse_line(br#"{"type":"assistant","session_id":"synthetic-session","timestamp_ms":1,"message":{"role":"assistant","content":[{"type":"text","text":"hello"}]}}"#)
         .unwrap();
     let rewritten = parser
-        .parse_line(br#"{"type":"assistant","session_id":minted_marker(),"message":{"role":"assistant","content":[{"type":"text","text":"rewritten"}]}}"#)
+        .parse_line(br#"{"type":"assistant","session_id":"synthetic-session","message":{"role":"assistant","content":[{"type":"text","text":"rewritten"}]}}"#)
         .unwrap();
     assert!(
         rewritten
@@ -256,7 +258,7 @@ fn cursor_parser_ignores_a_rewritten_snapshot_and_still_completes() {
     );
     let terminal = parser
         .parse_line(
-            br#"{"type":"result","subtype":"success","is_error":false,"session_id":minted_marker(),"result":"hello"}"#,
+            br#"{"type":"result","subtype":"success","is_error":false,"session_id":"synthetic-session","result":"hello"}"#,
         )
         .unwrap();
     assert!(terminal.iter().any(|effect| matches!(
@@ -270,9 +272,9 @@ fn cursor_parser_accepts_an_explicit_empty_success_result() {
     use crate::platform::native_agent_parser::adapters::cursor::{CursorEffect, CursorParser};
     use licoup_agent_cursor::model::EffectiveSettings;
 
-    let mut parser = CursorParser::new(minted_marker(), "prompt", EffectiveSettings::default());
+    let mut parser = CursorParser::new("synthetic-session", "prompt", EffectiveSettings::default());
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
     let effects = parser
         .parse_line(br#"{"type":"result","subtype":"success","result":""}"#)
@@ -288,15 +290,15 @@ fn cursor_parser_keeps_a_valid_reply_when_is_error_is_explicitly_false() {
     use crate::platform::native_agent_parser::adapters::cursor::{CursorEffect, CursorParser};
 
     let mut parser = CursorParser::new(
-        minted_marker(),
+        "synthetic-session",
         "prompt",
         licoup_agent_cursor::model::EffectiveSettings::default(),
     );
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
     let effects = parser
-        .parse_line(br#"{"type":"result","subtype":"error_during_execution","is_error":false,"session_id":minted_marker(),"result":"usable final reply"}"#)
+        .parse_line(br#"{"type":"result","subtype":"error_during_execution","is_error":false,"session_id":"synthetic-session","result":"usable final reply"}"#)
         .unwrap();
     assert!(effects.iter().any(|effect| matches!(
         effect,
@@ -312,15 +314,15 @@ fn cursor_parser_classifies_an_explicit_terminal_execution_failure() {
     use licoup_agent_cursor::errors::CursorFailureKind;
 
     let mut parser = CursorParser::new(
-        minted_marker(),
+        "synthetic-session",
         "prompt",
         licoup_agent_cursor::model::EffectiveSettings::default(),
     );
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
     assert!(matches!(
-        parser.parse_line(br#"{"type":"result","subtype":"error_during_execution","is_error":true,"session_id":minted_marker(),"result":"private vendor detail"}"#),
+        parser.parse_line(br#"{"type":"result","subtype":"error_during_execution","is_error":true,"session_id":"synthetic-session","result":"private vendor detail"}"#),
         Err(CursorParseFailure::TurnFailed(
             CursorFailureKind::ExecutionFailed
         ))
@@ -335,22 +337,22 @@ fn cursor_parser_rejects_missing_or_different_prompt_acknowledgement() {
     use licoup_agent_cursor::model::EffectiveSettings;
 
     let mut mismatched = CursorParser::new(
-        minted_marker(),
+        "synthetic-session",
         "expected prompt",
         EffectiveSettings::default(),
     );
     assert!(matches!(
-        mismatched.parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"different prompt"}]}}"#),
+        mismatched.parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"different prompt"}]}}"#),
         Err(CursorParseFailure::PromptAcknowledgementMismatch)
     ));
 
     let mut missing = CursorParser::new(
-        minted_marker(),
+        "synthetic-session",
         "expected prompt",
         EffectiveSettings::default(),
     );
     assert!(matches!(
-        missing.parse_line(br#"{"type":"assistant","session_id":minted_marker(),"timestamp_ms":1,"message":{"role":"assistant","content":[{"type":"text","text":"reply"}]}}"#),
+        missing.parse_line(br#"{"type":"assistant","session_id":"synthetic-session","timestamp_ms":1,"message":{"role":"assistant","content":[{"type":"text","text":"reply"}]}}"#),
         Err(CursorParseFailure::PromptAcknowledgementMissing)
     ));
 }
@@ -361,7 +363,7 @@ fn cursor_parser_preserves_an_explicit_model_selector_over_the_init_label() {
     use licoup_agent_cursor::model::EffectiveSettings;
 
     let mut parser = CursorParser::new(
-        minted_marker(),
+        "synthetic-session",
         "prompt",
         EffectiveSettings {
             model: Some("composer-2.5".to_owned()),
@@ -369,13 +371,13 @@ fn cursor_parser_preserves_an_explicit_model_selector_over_the_init_label() {
         },
     );
     parser
-        .parse_line(br#"{"type":"system","subtype":"init","session_id":minted_marker(),"model":"Composer 2.5"}"#)
+        .parse_line(br#"{"type":"system","subtype":"init","session_id":"synthetic-session","model":"Composer 2.5"}"#)
         .unwrap();
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
     let completed = parser
-        .parse_line(br#"{"type":"result","subtype":"success","session_id":minted_marker(),"result":"ok"}"#)
+        .parse_line(br#"{"type":"result","subtype":"success","session_id":"synthetic-session","result":"ok"}"#)
         .unwrap();
     assert!(completed.iter().any(|effect| matches!(
         effect,
@@ -389,11 +391,11 @@ fn cursor_parser_projects_each_structured_tool_call_once() {
     use crate::platform::native_agent_parser::adapters::cursor::{CursorEffect, CursorParser};
     use licoup_agent_cursor::model::EffectiveSettings;
 
-    let mut parser = CursorParser::new(minted_marker(), "prompt", EffectiveSettings::default());
+    let mut parser = CursorParser::new("synthetic-session", "prompt", EffectiveSettings::default());
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
-    let frame = br#"{"type":"assistant","session_id":minted_marker(),"message":{"role":"assistant","content":[{"type":"tool_use","id":"call-1","name":"lico_subagent_delegate","input":{"private":"not projected"}}]}}"#;
+    let frame = br#"{"type":"assistant","session_id":"synthetic-session","message":{"role":"assistant","content":[{"type":"tool_use","id":"call-1","name":"lico_subagent_delegate","input":{"private":"not projected"}}]}}"#;
     let first = parser.parse_line(frame).unwrap();
     assert!(first.iter().any(|effect| matches!(
         effect,
@@ -412,12 +414,12 @@ fn cursor_parser_projects_current_mcp_tool_call_frames_once() {
     use crate::platform::native_agent_parser::adapters::cursor::{CursorEffect, CursorParser};
     use licoup_agent_cursor::model::EffectiveSettings;
 
-    let mut parser = CursorParser::new(minted_marker(), "prompt", EffectiveSettings::default());
+    let mut parser = CursorParser::new("synthetic-session", "prompt", EffectiveSettings::default());
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
-    let started = br#"{"type":"tool_call","subtype":"started","session_id":minted_marker(),"tool_call":{"toolCallId":"call-1\nopaque","mcpToolCall":{"args":{"toolCallId":"call-1\nopaque","toolName":"lico_subagent_delegate","name":"land.lico.licoup.subagents-lico_subagent_delegate","args":{"private":"not projected"}}}}}"#;
-    let completed = br#"{"type":"tool_call","subtype":"completed","session_id":minted_marker(),"tool_call":{"toolCallId":"call-1\nopaque","mcpToolCall":{"args":{"toolCallId":"call-1\nopaque","toolName":"lico_subagent_delegate","name":"land.lico.licoup.subagents-lico_subagent_delegate","args":{"private":"not projected"}}}}}"#;
+    let started = br#"{"type":"tool_call","subtype":"started","session_id":"synthetic-session","tool_call":{"toolCallId":"call-1\nopaque","mcpToolCall":{"args":{"toolCallId":"call-1\nopaque","toolName":"lico_subagent_delegate","name":"land.lico.licoup.subagents-lico_subagent_delegate","args":{"private":"not projected"}}}}}"#;
+    let completed = br#"{"type":"tool_call","subtype":"completed","session_id":"synthetic-session","tool_call":{"toolCallId":"call-1\nopaque","mcpToolCall":{"args":{"toolCallId":"call-1\nopaque","toolName":"lico_subagent_delegate","name":"land.lico.licoup.subagents-lico_subagent_delegate","args":{"private":"not projected"}}}}}"#;
 
     let first = parser.parse_line(started).unwrap();
     assert!(first.iter().any(|effect| matches!(
@@ -437,11 +439,11 @@ fn cursor_parser_projects_only_allowlisted_mcp_application_error_codes() {
     use crate::platform::native_agent_parser::adapters::cursor::{CursorEffect, CursorParser};
     use licoup_agent_cursor::model::EffectiveSettings;
 
-    let mut parser = CursorParser::new(minted_marker(), "prompt", EffectiveSettings::default());
+    let mut parser = CursorParser::new("synthetic-session", "prompt", EffectiveSettings::default());
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
-    let completed = br#"{"type":"tool_call","subtype":"completed","session_id":minted_marker(),"tool_call":{"toolCallId":"call-1","mcpToolCall":{"args":{"toolCallId":"call-1","toolName":"lico_subagent_delegate","args":{"private":"never projected"}},"result":{"success":{"isError":true,"content":[{"type":"text","text":"subagent_cross_conversation_rejected private provider result"}]}}}}}"#;
+    let completed = br#"{"type":"tool_call","subtype":"completed","session_id":"synthetic-session","tool_call":{"toolCallId":"call-1","mcpToolCall":{"args":{"toolCallId":"call-1","toolName":"lico_subagent_delegate","args":{"private":"never projected"}},"result":{"success":{"isError":true,"content":[{"type":"text","text":"subagent_cross_conversation_rejected private provider result"}]}}}}}"#;
 
     let first = parser.parse_line(completed).unwrap();
     assert!(first.iter().any(|effect| matches!(
@@ -463,11 +465,11 @@ fn cursor_parser_projects_membership_authorization_mcp_error_codes() {
     use crate::platform::native_agent_parser::adapters::cursor::{CursorEffect, CursorParser};
     use licoup_agent_cursor::model::EffectiveSettings;
 
-    let mut parser = CursorParser::new(minted_marker(), "prompt", EffectiveSettings::default());
+    let mut parser = CursorParser::new("synthetic-session", "prompt", EffectiveSettings::default());
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
-    let completed = br#"{"type":"tool_call","subtype":"completed","session_id":minted_marker(),"tool_call":{"toolCallId":"call-1","mcpToolCall":{"args":{"toolCallId":"call-1","toolName":"lico_subagent_delegate","args":{"private":"never projected"}},"result":{"success":{"isError":true,"content":[{"type":"text","text":"caller_membership_not_authorized"}]}}}}}"#;
+    let completed = br#"{"type":"tool_call","subtype":"completed","session_id":"synthetic-session","tool_call":{"toolCallId":"call-1","mcpToolCall":{"args":{"toolCallId":"call-1","toolName":"lico_subagent_delegate","args":{"private":"never projected"}},"result":{"success":{"isError":true,"content":[{"type":"text","text":"caller_membership_not_authorized"}]}}}}}"#;
 
     let first = parser.parse_line(completed).unwrap();
     assert!(first.iter().any(|effect| matches!(
@@ -483,12 +485,12 @@ fn cursor_parser_ignores_internal_mcp_catalog_calls() {
     use crate::platform::native_agent_parser::adapters::cursor::{CursorEffect, CursorParser};
     use licoup_agent_cursor::model::EffectiveSettings;
 
-    let mut parser = CursorParser::new(minted_marker(), "prompt", EffectiveSettings::default());
+    let mut parser = CursorParser::new("synthetic-session", "prompt", EffectiveSettings::default());
     parser
-        .parse_line(br#"{"type":"user","session_id":minted_marker(),"message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
+        .parse_line(br#"{"type":"user","session_id":"synthetic-session","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#)
         .unwrap();
     let effects = parser
-        .parse_line(br#"{"type":"tool_call","subtype":"started","session_id":minted_marker(),"tool_call":{"toolCallId":"catalog-1","getMcpToolsToolCall":{"args":{"server":"land.lico.licoup.subagents","toolName":"lico_subagent_delegate"}}}}"#)
+        .parse_line(br#"{"type":"tool_call","subtype":"started","session_id":"synthetic-session","tool_call":{"toolCallId":"catalog-1","getMcpToolsToolCall":{"args":{"server":"land.lico.licoup.subagents","toolName":"lico_subagent_delegate"}}}}"#)
         .unwrap();
 
     assert!(

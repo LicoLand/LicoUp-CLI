@@ -2,7 +2,7 @@ use super::{SPQR_MAX_PERSISTED_STATE_BYTES, SecureMeshSparsePqRatchet, derive_hy
 
 #[test]
 fn sparse_pq_ratchet_matches_keys_and_restores_state() {
-    let material = [0x31; 32];
+    let secret: [u8; 32] = std::array::from_fn(|_| 0x31);
     let mut alice = SecureMeshSparsePqRatchet::new_initiator(&secret).unwrap();
     let mut bob = SecureMeshSparsePqRatchet::new_responder(&secret).unwrap();
     for _ in 0..12 {
@@ -22,7 +22,7 @@ fn sparse_pq_ratchet_matches_keys_and_restores_state() {
 
 #[test]
 fn sparse_pq_ratchet_supports_bounded_out_of_order_messages() {
-    let material = [0x42; 32];
+    let secret: [u8; 32] = std::array::from_fn(|_| 0x42);
     let mut alice = SecureMeshSparsePqRatchet::new_initiator(&secret).unwrap();
     let mut bob = SecureMeshSparsePqRatchet::new_responder(&secret).unwrap();
     let first = alice.send_key().unwrap();
@@ -38,7 +38,7 @@ fn sparse_pq_ratchet_supports_bounded_out_of_order_messages() {
 
 #[test]
 fn sparse_pq_ratchet_opens_retained_previous_epoch_after_new_epoch() {
-    let material = [0x47; 32];
+    let secret: [u8; 32] = std::array::from_fn(|_| 0x47);
     let mut alice = SecureMeshSparsePqRatchet::new_initiator(&secret).unwrap();
     let mut bob = SecureMeshSparsePqRatchet::new_responder(&secret).unwrap();
     let delayed = alice.send_key().unwrap();

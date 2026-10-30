@@ -375,15 +375,15 @@ fn canonical_scope_encoding_cannot_confuse_adjacent_fields() {
 fn canonical_batch_encoding_cannot_confuse_adjacent_reason_and_nonce_fields() {
     let now = Instant::now();
     let alpha_reason = "reason-prefix";
-    let alpha_nonce = "non";
+    let alpha_tag = "nonce-suffix";
     let beta_reason = "reason";
-    let beta_nonce = "-pr";
+    let beta_tag = "-prefixnonce-suffix";
     let alpha = batch_request(
         SecretStorePresenceProvider::MacosKeychain,
         SecretStoreKeyClass::DeviceIdentity,
         1,
         alpha_reason,
-        alpha_nonce,
+        alpha_tag,
         SecretStoreCallerChannel::DesktopGui,
         true,
     );
@@ -392,13 +392,13 @@ fn canonical_batch_encoding_cannot_confuse_adjacent_reason_and_nonce_fields() {
         SecretStoreKeyClass::DeviceIdentity,
         1,
         beta_reason,
-        beta_nonce,
+        beta_tag,
         SecretStoreCallerChannel::DesktopGui,
         true,
     );
     assert_eq!(
-        format!("{alpha_reason}{alpha_nonce}"),
-        format!("{beta_reason}{beta_nonce}")
+        format!("{alpha_reason}{alpha_tag}"),
+        format!("{beta_reason}{beta_tag}")
     );
     assert_ne!(alpha.canonical_digest(), beta.canonical_digest());
 
@@ -426,7 +426,7 @@ fn canonical_batch_encoding_cannot_confuse_adjacent_count_and_reason_fields() {
     let alpha_reason = "23-count-reason-collision";
     let beta_count = 12;
     let beta_reason = "3-count-reason-collision";
-    let shared_nonce = "cou";
+    let shared_tag = "count-reason-shared-nonce";
     assert_eq!(
         format!("{alpha_count}{alpha_reason}"),
         format!("{beta_count}{beta_reason}")
@@ -437,7 +437,7 @@ fn canonical_batch_encoding_cannot_confuse_adjacent_count_and_reason_fields() {
         SecretStoreKeyClass::DeviceIdentity,
         alpha_count,
         alpha_reason,
-        shared_nonce,
+        shared_tag,
         SecretStoreCallerChannel::DesktopGui,
         true,
     );
@@ -446,7 +446,7 @@ fn canonical_batch_encoding_cannot_confuse_adjacent_count_and_reason_fields() {
         SecretStoreKeyClass::DeviceIdentity,
         beta_count,
         beta_reason,
-        shared_nonce,
+        shared_tag,
         SecretStoreCallerChannel::DesktopGui,
         true,
     );

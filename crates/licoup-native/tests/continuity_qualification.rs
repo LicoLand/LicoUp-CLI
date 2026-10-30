@@ -543,7 +543,7 @@ fn explicit_model_choice_and_requested_execution_bypass_automatic_gate() {
             RoutingCandidate {
                 responsibility_id: "responsibility:delegation".to_owned(),
                 identity: identity.clone(),
-                stable_key: "b-s".to_owned(),
+                stable_key: String::from("b-stable"),
                 hard_admitted: true,
                 explicit_model_choice: true,
                 request_kind: RequestKind::AutomaticAdvancement,
@@ -551,7 +551,7 @@ fn explicit_model_choice_and_requested_execution_bypass_automatic_gate() {
             RoutingCandidate {
                 responsibility_id: "responsibility:delegation".to_owned(),
                 identity: identity.clone(),
-                stable_key: "a-s".to_owned(),
+                stable_key: String::from("a-stable"),
                 hard_admitted: true,
                 explicit_model_choice: false,
                 request_kind: RequestKind::AutomaticAdvancement,
@@ -559,7 +559,7 @@ fn explicit_model_choice_and_requested_execution_bypass_automatic_gate() {
             RoutingCandidate {
                 responsibility_id: "responsibility:delegation".to_owned(),
                 identity,
-                stable_key: "c-s".to_owned(),
+                stable_key: String::from("c-stable"),
                 hard_admitted: false,
                 explicit_model_choice: true,
                 request_kind: RequestKind::ExplicitlyRequested,

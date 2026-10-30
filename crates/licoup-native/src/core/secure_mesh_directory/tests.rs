@@ -655,11 +655,11 @@ fn component_versions_and_same_version_digests_are_monotonic_across_restart() {
 fn identity_rotation_is_monotonic_and_prekey_only_updates_keep_the_same_epoch() {
     let first = claim("device-a", 1, "active", 1);
 
-    let mut same_epoch_key_change = claim("dev", 2, "active", 2);
-    same_epoch_key_change.endpoint.rotation_epoch = 1;
+    let mut same_epoch_shift = claim("device-a", 2, "active", 2);
+    same_epoch_shift.endpoint.rotation_epoch = 1;
     assert_component_violation(
         first.clone(),
-        same_epoch_key_change,
+        same_epoch_shift,
         "identity key changed without strict rotation epoch advance",
         "identity-same-epoch-key-change",
     );

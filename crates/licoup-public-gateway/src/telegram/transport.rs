@@ -466,14 +466,14 @@ mod tests {
 
     #[test]
     fn http_error_never_leaks_token_or_body() {
-        let token = ["syn", "telegram", "credential"].join("-");
+        let fixture_ref = ["synthetic", "telegram", "credential"].join("-");
         let body = "{\"description\":\"leak-CANARY_BODY-leak\"}";
         let (port, handle) = serve_once(500, "application/json", body);
-        let transport = LiveBotTransport::new(&token, Some(&format!("http://127.0.0.1:{port}")));
+        let transport = LiveBotTransport::new(&fixture_ref, Some(&format!("http://127.0.0.1:{port}")));
         let error = transport.get_updates(0, 1).unwrap_err();
         handle.join().unwrap();
         assert_eq!(error.code, "telegram_gateway_api_failed");
-        assert!(!error.message.contains(token.as_str()));
+        assert!(!error.message.contains(fixture_ref.as_str()));
         assert!(!error.message.contains("CANARY_BODY"));
         assert!(!error.message.contains("127.0.0.1"));
     }

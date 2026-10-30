@@ -283,15 +283,16 @@ fn openclaw_gateway_session_key_is_the_native_continuity_id() {
     let dir = temp_dir("openclaw-session-key");
     fs::write(
         dir.join("session.json"),
-        r#"{
-          "sessions": [{
-            "ses": "agent:main:fixture-thread",
+        format!(
+            r#"{{"sessions": [{{
+            "sessionKey": "{}",
             "messages": [
-              {"role": "user", "text": "OpenClaw native prompt"},
-              {"role": "assistant", "text": "OpenClaw native answer"}
+              {{"role": "user", "text": "OpenClaw native prompt"}},
+              {{"role": "assistant", "text": "OpenClaw native answer"}}
             ]
-          }]
-        }"#,
+          }}]}}"#,
+            "agent:main:fixture-thread"
+        ),
     )
     .unwrap();
 

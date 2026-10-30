@@ -1432,7 +1432,7 @@ mod tests {
             kind: licoup_workflow::CommandKind::Actor,
             status: licoup_workflow::CommandStatus::Claimed,
             attempt: 1,
-            attempt_token: "att".into(),
+            attempt_token: String::from("attempt:1"),
             binding_id: Some("entry".into()),
             runtime_id: None,
             entry: None,

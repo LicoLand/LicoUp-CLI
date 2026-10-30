@@ -38,7 +38,7 @@ mod transport_integrity;
 const MANIFEST_MEMBER: &str = "licoup-data-root.json";
 
 /// The credential inventory document, at the data-root-relative path its owner reads.
-const CREDENTIAL_INVENTORY: &str = "llm";
+const INVENTORY_DOC_PATH: &str = "llm-api-key-inventory.json";
 
 fn scratch(name: &str) -> PathBuf {
     // A canonical base for the disposable roots under test. The owner resolves a named
@@ -76,7 +76,7 @@ fn synthetic_data_root(name: &str) -> PathBuf {
         br#"{"allow":[]}"#,
     );
     write(
-        &root.join(CREDENTIAL_INVENTORY),
+        &root.join(INVENTORY_DOC_PATH),
         br#"{"providers":["synthetic-exportable"]}"#,
     );
     write(&root.join(".licoup-workspace.json"), br#"{"revision":1}"#);
@@ -625,7 +625,7 @@ fn export_writes_a_private_archive_and_restore_keeps_private_state() {
         "a restored directory is private"
     );
     assert_eq!(
-        fs::symlink_metadata(target.join(CREDENTIAL_INVENTORY))
+        fs::symlink_metadata(target.join(INVENTORY_DOC_PATH))
             .expect("file metadata")
             .permissions()
             .mode()
@@ -1608,7 +1608,7 @@ fn coverage_never_completes_from_credential_metadata() {
     // Empty or malformed metadata is still not key availability.
     for (name, bytes) in [("empty", b"".as_slice()), ("malformed", b"{not json")] {
         let root = synthetic_data_root(&format!("custody-{name}"));
-        fs::write(root.join(CREDENTIAL_INVENTORY), bytes).expect("write metadata");
+        fs::write(root.join(INVENTORY_DOC_PATH), bytes).expect("write metadata");
         let outcome = export(&root, &work.join(format!("{name}.zip")));
         assert_eq!(
             outcome.coverage,
@@ -1618,7 +1618,7 @@ fn coverage_never_completes_from_credential_metadata() {
     }
 
     let absent = synthetic_data_root("custody-absent");
-    fs::remove_file(absent.join(CREDENTIAL_INVENTORY)).expect("remove metadata");
+    fs::remove_file(absent.join(INVENTORY_DOC_PATH)).expect("remove metadata");
     let absent_archive = work.join("absent.zip");
     let absent_outcome = export(&absent, &absent_archive);
     assert_eq!(absent_outcome.coverage, RecoveryCoverage::Limited);

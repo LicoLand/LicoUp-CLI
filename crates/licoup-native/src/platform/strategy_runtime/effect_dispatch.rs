@@ -385,7 +385,7 @@ mod tests {
 
         let handle = EffectHandle {
             effect_id: "effect:unit".into(),
-            attempt_token: "eff".into(),
+            attempt_token: String::from("effect:unit-attempt-1"),
             agent_id: "not-a-runtime-adapter".into(),
             driver_id: "fixture-driver".into(),
             runtime_protocol: "fixture-protocol".into(),

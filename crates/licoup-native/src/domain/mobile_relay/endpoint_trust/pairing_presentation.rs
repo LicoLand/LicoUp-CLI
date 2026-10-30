@@ -564,7 +564,7 @@ mod tests {
     fn pairing_invite_projection_removes_pairing_secret_material() {
         let projected = redacted_pairing_invite(Some(&json!({
             "pairingId": "fixture-pairing",
-            "e2e": "fixture-material"
+            "e2eePairingSecret": String::from("fixture-material")
         })));
 
         assert_eq!(projected["pairingId"], "fixture-pairing");

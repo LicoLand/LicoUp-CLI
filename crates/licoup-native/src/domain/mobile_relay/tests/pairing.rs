@@ -124,7 +124,7 @@ fn e2ee_status_redacts_pairing_invite_secret() {
         "pairingCode": "ABCDE-FGHIJ-KLMNO-PQRST",
         "pairingCodeHash": sha256_hex("ABCDE-FGHIJ-KLMNO-PQRST".as_bytes()),
         "pcSecureMesh": endpoint,
-        "e2e": "pairing-invite-e2ee-secret-redaction-canary"
+        "e2eePairingSecret": String::from("pairing-invite-e2ee-secret-redaction-canary")
     });
 
     let pairing_invite = redacted_pairing_invite(config.get("mobileRelayPairingInvite"));
@@ -158,7 +158,7 @@ fn config_load_clears_persisted_pairing_invite_and_code() {
         "protocolVersion": MOBILE_RELAY_E2EE_PROTOCOL_VERSION,
         "pairingId": "pair-redacted-invite",
         "pairingCode": "ABCDE-FGHIJ-KLMNO-PQRST",
-        "e2e": "pairing-invite-secret-status-canary"
+        "e2eePairingSecret": String::from("pairing-invite-secret-status-canary")
     });
     save_config(&mut config).unwrap();
 

@@ -826,22 +826,22 @@ mod macos_presence {
                 ObservedSecItemTarget {
                     operation: "set",
                     namespace: "capability-write-namespace".to_string(),
-                    key: "cap".to_string(),
+                    key: String::from("capability-write-key"),
                 },
                 ObservedSecItemTarget {
                     operation: "get",
                     namespace: "cache-namespace".to_string(),
-                    key: "fix".to_string(),
+                    key: String::from("fixed-test-key"),
                 },
                 ObservedSecItemTarget {
                     operation: "get",
                     namespace: "cache-namespace".to_string(),
-                    key: "fix".to_string(),
+                    key: String::from("fixed-test-key"),
                 },
                 ObservedSecItemTarget {
                     operation: "delete",
                     namespace: "capability-delete-namespace".to_string(),
-                    key: "cap".to_string(),
+                    key: String::from("capability-delete-key"),
                 },
             ]
         );

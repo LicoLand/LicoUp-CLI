@@ -49,7 +49,7 @@ fn credential_custody_inventory_classifies_each_credential_once_without_values()
     )
     .unwrap();
     let config = json!({
-        "pcToken": "pc-",
+        "pcToken": String::from("pc-token-value-canary"),
         "mobileToken": "",
         "mobileTokenPresent": true,
         "pairedDevices": [
@@ -254,13 +254,13 @@ fn provider_api_key_inventory_metadata_is_validated_and_deduplicated() {
 #[test]
 fn runtime_override_policy_rejects_unredacted_secret_fields() {
     assert!(contains_unredacted_token_secret_override(&json!({
-        "pcToken": "tes"
+        "pcToken": String::from("test-only-token")
     })));
     assert!(contains_unredacted_e2ee_secret_override(&json!({
-        "pri": "test-only-private-material"
+        "privateKeyBase64url": String::from("test-only-private-material")
     })));
     assert!(!contains_unredacted_token_secret_override(&json!({
-        "pcToken": "red"
+        "pcToken": String::from("redacted")
     })));
     assert!(!contains_unredacted_e2ee_secret_override(&json!({
         "privateKeyBase64url": "***"

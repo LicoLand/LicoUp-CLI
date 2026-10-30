@@ -251,8 +251,8 @@ export async function cleanupProductSession(options) {
   const binary = resolveExecutable(options.binary, config);
   requireFact(binary.length > 0, "agent_executable_unavailable");
   const temporaryDirectory = dirname(options.cleanupProductSession);
-  const disposableDataRoot = config.disposableEnvironmentKey
-    ? String(process.env[config.disposableEnvironmentKey] || "")
+  const disposableDataRoot = config.disposableEnvironmentName
+    ? String(process.env[config.disposableEnvironmentName] || "")
     : "";
   const wrapper = createPrivateWrapper(temporaryDirectory, binary);
   wrapper.environment = { ...wrapper.environment, ...process.env };
@@ -264,7 +264,7 @@ export async function cleanupProductSession(options) {
     environment: process.env,
     temporaryDirectory,
     disposableDataRoot,
-    disposableSeedSource: "",
+    disposableSourceDir: "",
     disposableProfileSeeded: false,
     cleanedSessions: new Set(),
     observedSessions: new Set([receipt.nativeSessionId]),

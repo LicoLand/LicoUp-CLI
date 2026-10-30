@@ -384,13 +384,13 @@ mod tests {
     #[test]
     fn raw_runtime_secret_override_detection_is_fail_closed() {
         assert!(contains_unredacted_token_secret_override(
-            &json!({"pcToken": "fix"})
+            &json!({"pcToken": String::from("fixture-material")})
         ));
         assert!(contains_unredacted_e2ee_secret_override(
-            &json!({"pri": "fixture-material"})
+            &json!({"privateKeyBase64url": String::from("fixture-material")})
         ));
         assert!(!contains_unredacted_token_secret_override(
-            &json!({"pcToken": "red"})
+            &json!({"pcToken": String::from("redacted")})
         ));
     }
 }

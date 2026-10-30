@@ -40,7 +40,7 @@
       ],
       "assertion": {
         "originalPath": "/new_goals",
-        "obs": "newGoals",
+        "observeEvent": "newGoals",
         "op": "eq",
         "value": 0
       },
@@ -76,7 +76,7 @@
       ],
       "assertion": {
         "originalPath": "/external_effects",
-        "obs": "externalEffects",
+        "observeEvent": "externalEffects",
         "op": "eq",
         "value": 0
       },
@@ -112,7 +112,7 @@
       ],
       "assertion": {
         "originalPath": "/goals/report/has_next_attention",
-        "obs": "reportHasNextAttention",
+        "observeEvent": "reportHasNextAttention",
         "op": "eq",
         "value": true
       },
@@ -151,7 +151,7 @@
       ],
       "assertion": {
         "originalPath": "/selected_option",
-        "obs": "selectedOption",
+        "observeEvent": "selectedOption",
         "op": "eq",
         "value": "second"
       },
@@ -187,7 +187,7 @@
       ],
       "assertion": {
         "originalPath": "/external_effects",
-        "obs": "externalEffects",
+        "observeEvent": "externalEffects",
         "op": "eq",
         "value": 0
       },
@@ -224,7 +224,7 @@
       ],
       "assertion": {
         "originalPath": "/agreements/scope",
-        "obs": "agreementScope",
+        "observeEvent": "agreementScope",
         "op": "eq",
         "value": "matter"
       },
@@ -260,7 +260,7 @@
       ],
       "assertion": {
         "originalPath": "/source_event_copies",
-        "obs": "sourceEventCopies",
+        "observeEvent": "sourceEventCopies",
         "op": "eq",
         "value": 1
       },
@@ -296,7 +296,7 @@
       ],
       "assertion": {
         "originalPath": "/new_goals",
-        "obs": "newGoals",
+        "observeEvent": "newGoals",
         "op": "eq",
         "value": 0
       },
@@ -332,7 +332,7 @@
       ],
       "assertion": {
         "originalPath": "/goals/draft/has_next_attention",
-        "obs": "draftHasNextAttention",
+        "observeEvent": "draftHasNextAttention",
         "op": "eq",
         "value": true
       },
@@ -369,7 +369,7 @@
       ],
       "assertion": {
         "originalPath": "/external_effects",
-        "obs": "externalEffects",
+        "observeEvent": "externalEffects",
         "op": "eq",
         "value": 0
       },
@@ -407,7 +407,7 @@
       ],
       "assertion": {
         "originalPath": "/context/contains_unrelated_private_material",
-        "obs": "containsUnrelatedPrivateMaterial",
+        "observeEvent": "containsUnrelatedPrivateMaterial",
         "op": "eq",
         "value": false
       },
@@ -445,7 +445,7 @@
       ],
       "assertion": {
         "originalPath": "/context/agreement_revision",
-        "obs": "agreementRevision",
+        "observeEvent": "agreementRevision",
         "op": "eq",
         "value": 2
       },
@@ -485,7 +485,7 @@
       ],
       "assertion": {
         "originalPath": "/context/transition",
-        "obs": "contextTransition",
+        "observeEvent": "contextTransition",
         "op": "eq",
         "value": "continue"
       },
@@ -527,7 +527,7 @@
       ],
       "assertion": {
         "originalPath": "/context/source_revision",
-        "obs": "sourceRevision",
+        "observeEvent": "sourceRevision",
         "op": "eq",
         "value": 3
       },
@@ -564,7 +564,7 @@
       ],
       "assertion": {
         "originalPath": "/agreements/scope",
-        "obs": "agreementScope",
+        "observeEvent": "agreementScope",
         "op": "eq",
         "value": "matter"
       },
@@ -600,7 +600,7 @@
       ],
       "assertion": {
         "originalPath": "/knowledge/result",
-        "obs": "knowledgeResult",
+        "observeEvent": "knowledgeResult",
         "op": "eq",
         "value": "source_unavailable"
       },
@@ -637,7 +637,7 @@
       ],
       "assertion": {
         "originalPath": "/dispatched_revoked_contexts",
-        "obs": "dispatchedRevokedContexts",
+        "observeEvent": "dispatchedRevokedContexts",
         "op": "eq",
         "value": 0
       },
@@ -674,7 +674,7 @@
       ],
       "assertion": {
         "originalPath": "/unapproved_disclosures",
-        "obs": "unapprovedDisclosures",
+        "observeEvent": "unapprovedDisclosures",
         "op": "eq",
         "value": 0
       },
@@ -712,7 +712,7 @@
       ],
       "assertion": {
         "originalPath": "/context/agreement_revision",
-        "obs": "agreementRevision",
+        "observeEvent": "agreementRevision",
         "op": "eq",
         "value": 2
       },
@@ -747,7 +747,7 @@
       ],
       "assertion": {
         "originalPath": "/native/isolation",
-        "obs": "nativeIsolation",
+        "observeEvent": "nativeIsolation",
         "op": "eq",
         "value": "unverified"
       },
@@ -783,7 +783,7 @@
       ],
       "assertion": {
         "originalPath": "/native/silent_resume_fallback",
-        "obs": "silentResumeFallback",
+        "observeEvent": "silentResumeFallback",
         "op": "eq",
         "value": false
       },
@@ -822,7 +822,7 @@
       ],
       "assertion": {
         "originalPath": "/native/inherited_unrelated_context",
-        "obs": "inheritedUnrelatedContext",
+        "observeEvent": "inheritedUnrelatedContext",
         "op": "eq",
         "value": false
       },
@@ -858,7 +858,7 @@
       ],
       "assertion": {
         "originalPath": "/native/max_concurrent_writers",
-        "obs": "maxConcurrentWriters",
+        "observeEvent": "maxConcurrentWriters",
         "op": "eq",
         "value": 1
       },
@@ -896,7 +896,7 @@
       ],
       "assertion": {
         "originalPath": "/native/tool_environment_preserved",
-        "obs": "toolEnvironmentPreserved",
+        "observeEvent": "toolEnvironmentPreserved",
         "op": "eq",
         "value": true
       },
@@ -932,7 +932,7 @@
       ],
       "assertion": {
         "originalPath": "/artifact/authorship_preserved",
-        "obs": "authorshipPreserved",
+        "observeEvent": "authorshipPreserved",
         "op": "eq",
         "value": true
       },
@@ -969,7 +969,7 @@
       ],
       "assertion": {
         "originalPath": "/ui/forced_session_reset",
-        "obs": "forcedSessionReset",
+        "observeEvent": "forcedSessionReset",
         "op": "eq",
         "value": false
       },
@@ -1005,7 +1005,7 @@
       ],
       "assertion": {
         "originalPath": "/goals/work/achieved",
-        "obs": "goalAchieved",
+        "observeEvent": "goalAchieved",
         "op": "eq",
         "value": false
       },
@@ -1043,7 +1043,7 @@
       ],
       "assertion": {
         "originalPath": "/goals/work/achieved",
-        "obs": "goalAchieved",
+        "observeEvent": "goalAchieved",
         "op": "eq",
         "value": false
       },
@@ -1079,7 +1079,7 @@
       ],
       "assertion": {
         "originalPath": "/goals/work/lifecycle",
-        "obs": "goalLifecycle",
+        "observeEvent": "goalLifecycle",
         "op": "eq",
         "value": "waiting"
       },
@@ -1115,7 +1115,7 @@
       ],
       "assertion": {
         "originalPath": "/goals/work/lifecycle",
-        "obs": "goalLifecycle",
+        "observeEvent": "goalLifecycle",
         "op": "eq",
         "value": "achieved"
       },
@@ -1150,7 +1150,7 @@
       ],
       "assertion": {
         "originalPath": "/goals/work/lifecycle",
-        "obs": "goalLifecycle",
+        "observeEvent": "goalLifecycle",
         "op": "eq",
         "value": "achieved"
       },
@@ -1186,7 +1186,7 @@
       ],
       "assertion": {
         "originalPath": "/future_dispatches",
-        "obs": "futureDispatches",
+        "observeEvent": "futureDispatches",
         "op": "eq",
         "value": 0
       },
@@ -1222,7 +1222,7 @@
       ],
       "assertion": {
         "originalPath": "/goals/work/final_cancelled",
-        "obs": "finalCancelled",
+        "observeEvent": "finalCancelled",
         "op": "eq",
         "value": false
       },
@@ -1258,7 +1258,7 @@
       ],
       "assertion": {
         "originalPath": "/goals/work/achieved",
-        "obs": "goalAchieved",
+        "observeEvent": "goalAchieved",
         "op": "eq",
         "value": false
       },
@@ -1294,7 +1294,7 @@
       ],
       "assertion": {
         "originalPath": "/logical_advancements",
-        "obs": "logicalAdvancements",
+        "observeEvent": "logicalAdvancements",
         "op": "eq",
         "value": 1
       },
@@ -1329,7 +1329,7 @@
       ],
       "assertion": {
         "originalPath": "/unbounded_retries",
-        "obs": "unboundedRetries",
+        "observeEvent": "unboundedRetries",
         "op": "eq",
         "value": false
       },
@@ -1365,7 +1365,7 @@
       ],
       "assertion": {
         "originalPath": "/partial_transaction_state",
-        "obs": "partialTransactionState",
+        "observeEvent": "partialTransactionState",
         "op": "eq",
         "value": false
       },
@@ -1404,7 +1404,7 @@
       ],
       "assertion": {
         "originalPath": "/logical_advancements",
-        "obs": "logicalAdvancements",
+        "observeEvent": "logicalAdvancements",
         "op": "eq",
         "value": 1
       },
@@ -1441,7 +1441,7 @@
       ],
       "assertion": {
         "originalPath": "/external_effect_count",
-        "obs": "externalEffectCount",
+        "observeEvent": "externalEffectCount",
         "op": "eq",
         "value": 1
       },
@@ -1476,7 +1476,7 @@
       ],
       "assertion": {
         "originalPath": "/stale_epoch_dispatches",
-        "obs": "staleEpochDispatches",
+        "observeEvent": "staleEpochDispatches",
         "op": "eq",
         "value": 0
       },
@@ -1511,7 +1511,7 @@
       ],
       "assertion": {
         "originalPath": "/agreements/current_revision",
-        "obs": "currentAgreementRevision",
+        "observeEvent": "currentAgreementRevision",
         "op": "eq",
         "value": 2
       },
@@ -1548,7 +1548,7 @@
       ],
       "assertion": {
         "originalPath": "/catchup_reviews",
-        "obs": "catchupReviews",
+        "observeEvent": "catchupReviews",
         "op": "eq",
         "value": 1
       },
@@ -1585,7 +1585,7 @@
       ],
       "assertion": {
         "originalPath": "/cancel_requests",
-        "obs": "cancelRequests",
+        "observeEvent": "cancelRequests",
         "op": "eq",
         "value": 0
       },
@@ -1619,7 +1619,7 @@
       ],
       "assertion": {
         "originalPath": "/qualification/status",
-        "obs": "qualificationStatus",
+        "observeEvent": "qualificationStatus",
         "op": "eq",
         "value": "unqualified"
       },
@@ -1653,7 +1653,7 @@
       ],
       "assertion": {
         "originalPath": "/qualification/status",
-        "obs": "qualificationStatus",
+        "observeEvent": "qualificationStatus",
         "op": "eq",
         "value": "unknown"
       },
@@ -1687,7 +1687,7 @@
       ],
       "assertion": {
         "originalPath": "/qualification/status",
-        "obs": "qualificationStatus",
+        "observeEvent": "qualificationStatus",
         "op": "eq",
         "value": "stale"
       },
@@ -1721,7 +1721,7 @@
       ],
       "assertion": {
         "originalPath": "/cost/unknown_as_zero",
-        "obs": "unknownCostAsZero",
+        "observeEvent": "unknownCostAsZero",
         "op": "eq",
         "value": false
       },
@@ -1755,7 +1755,7 @@
       ],
       "assertion": {
         "originalPath": "/unapproved_disclosures",
-        "obs": "unapprovedDisclosures",
+        "observeEvent": "unapprovedDisclosures",
         "op": "eq",
         "value": 0
       },
@@ -1781,7 +1781,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/before_state_commit",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -1809,7 +1809,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/after_state_commit_before_handoff",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -1837,7 +1837,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/after_dispatch_claim_before_native_start",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -1864,7 +1864,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/after_external_effect_before_receipt",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -1891,7 +1891,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/after_receipt_before_goal_update",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -1918,7 +1918,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/observer_detach",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -1945,7 +1945,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/native_eof_without_success",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -1972,7 +1972,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/designation_changed_during_inference",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -1999,7 +1999,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/agreement_revision_changed_during_inference",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -2027,7 +2027,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/acl_revoked_after_context_assembly",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -2054,7 +2054,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/duplicate_callback",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -2082,7 +2082,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/cancel_races_late_result",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -2109,7 +2109,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/host_sleep_timer_backlog",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -2136,7 +2136,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/deleted_source_in_old_summary",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -2162,7 +2162,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/parallel_writer_attempt",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },
@@ -2188,7 +2188,7 @@
       ],
       "assertion": {
         "originalPath": "/fault/qualification_revoked_before_admission",
-        "obs": "faultBoundaryHeld",
+        "observeEvent": "faultBoundaryHeld",
         "op": "eq",
         "value": true
       },

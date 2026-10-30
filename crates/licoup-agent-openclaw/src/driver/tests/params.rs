@@ -22,7 +22,7 @@ fn request_validation_normalizes_agent_and_keeps_private_values_off_command_conf
 #[test]
 fn conflicting_native_session_identity_fails_closed() {
     let failure = ProtocolConfig::from_params(
-        &json!({"ses": "different"}),
+        &json!({"sessionKey": String::from("different")}),
         "prompt",
         "requested",
         Some(absolute_test_cwd().as_path()),

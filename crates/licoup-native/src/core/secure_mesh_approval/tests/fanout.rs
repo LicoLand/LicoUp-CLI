@@ -3,6 +3,8 @@ use serde_json::json;
 
 #[test]
 fn approval_fanout_plan_never_exposes_plaintext_operation_detail() {
+    let flow = "nonce-fanout";
+    let cb = "cb-fanout-1";
     let request = json!({
         "pendingOperationId": "op-fanout-plain-1",
         "requesterAgentId": "hermes",
@@ -10,10 +12,10 @@ fn approval_fanout_plan_never_exposes_plaintext_operation_detail() {
         "originEndpointId": "endpoint-origin",
         "riskLevel": "local_effect",
         "displaySummary": "Allow hermes tool",
-        "ada": "cb-fanout-1",
+        "adapterCallbackTokenRef": cb,
         "adapterStyle": "callback",
         "expiresAt": "2099-01-01T00:00:00Z",
-        "res": "nonce-fanout",
+        "responseNonce": flow,
         "requestedTools": ["fs.read"],
         "trustedEndpointIds": ["endpoint-origin", "endpoint-phone", "endpoint-tablet"],
     });

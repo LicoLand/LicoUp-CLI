@@ -699,7 +699,7 @@ mod tests {
             .permit_effect(&EffectPermit {
                 run_id: run.run_id.clone(),
                 effect_id: "command-1".to_owned(),
-                attempt_token: "att".to_owned(),
+                attempt_token: String::from("attempt-1"),
                 expected_authorization_digest: digest,
                 claimant: "host-1#1".to_owned(),
                 lease_until_unix_ms: 4_000_000_000_000,

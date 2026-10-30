@@ -3,7 +3,7 @@ import { digest, safeErrorCode } from "./errors.mjs";
 import {
   failedProcessLocalFactCode,
   processLocalHostShutdownEvidence,
-  processLocalBooleanFactKeys,
+  processLocalBooleanFactFields,
   processLocalRoundFactsReady,
 } from "./round-facts.mjs";
 
@@ -33,7 +33,7 @@ export function aggregateProcessLocalResult(
       && Object.hasOwn(entry, "continuityScope")
       && typeof entry.continuityScope === "string"
       && entry.continuityScope.length > 0
-      && processLocalBooleanFactKeys.every((key) =>
+      && processLocalBooleanFactFields.every((key) =>
         Object.hasOwn(entry, key) && typeof entry[key] === "boolean"));
   const processLocalFactsPassed = processLocalFactsEvidenceComplete
     && facts.every(processLocalRoundFactsReady);

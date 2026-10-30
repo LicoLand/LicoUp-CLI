@@ -298,11 +298,11 @@ function buildContext(options, agentId, config) {
   )
     ? join(temporaryDirectory, "isolated-agent-data")
     : "";
-  const disposableSeedSource = config.cleanupKind === "disposable-data-root"
-    ? (process.env[config.disposableEnvironmentKey] || join(homedir(), ".kimi-code"))
+  const disposableSourceDir = config.cleanupKind === "disposable-data-root"
+    ? (process.env[config.disposableEnvironmentName] || join(homedir(), ".kimi-code"))
     : "";
   const environment = disposableDataRoot
-    ? { ...process.env, [config.disposableEnvironmentKey]: disposableDataRoot }
+    ? { ...process.env, [config.disposableEnvironmentName]: disposableDataRoot }
     : process.env;
   const portableDataRoot = join(temporaryDirectory, "licoup-portable");
   mkdirSync(portableDataRoot, { recursive: true, mode: 0o700 });
@@ -321,7 +321,7 @@ function buildContext(options, agentId, config) {
     environment: wrapper.environment,
     temporaryDirectory,
     disposableDataRoot,
-    disposableSeedSource,
+    disposableSourceDir,
     disposableProfileSeeded: false,
     timeoutMs: options.timeoutMs,
     maxOutputBytes: options.maxOutputBytes,

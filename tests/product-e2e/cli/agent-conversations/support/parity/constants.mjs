@@ -165,7 +165,7 @@ export const agentConfigs = Object.freeze({
     runtimeProtocol: "kimi-code-acp-v1-stdio-ndjson",
     laneFamily: "acp",
     cleanupKind: "disposable-data-root",
-    disposableEnvironmentKey: "KIM",
+    disposableEnvironmentName: "KIMI_CODE_HOME",
     sameSessionGate: true,
   }),
   pi: Object.freeze({
@@ -177,7 +177,7 @@ export const agentConfigs = Object.freeze({
     runtimeProtocol: "pi-rpc-stdio-jsonl",
     laneFamily: "rpc",
     cleanupKind: "pi-disposable-session-root",
-    disposableEnvironmentKey: "PI_",
+    disposableEnvironmentName: "PI_CODING_AGENT_SESSION_DIR",
   }),
   codex: Object.freeze({
     id: "codex",
@@ -202,8 +202,8 @@ export const agentConfigs = Object.freeze({
     laneFamily: "stream-json",
     cleanupKind: "process-local-rpc",
     continuityScope: "process-local",
-    isolatedConfigEnvironmentKey: "CLA",
-    noHistoryEnvironmentKey: "CLA",
+    isolatedConfigEnvironmentName: "CLAUDE_CONFIG_DIR",
+    noHistoryEnvironmentName: "CLAUDE_CODE_SKIP_PROMPT_HISTORY",
     sameSessionGate: true,
   }),
   antigravity: Object.freeze({

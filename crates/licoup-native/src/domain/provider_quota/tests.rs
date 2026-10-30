@@ -1124,9 +1124,9 @@ fn provider_quota_backoff_skips_refetch_until_due_without_a_snapshot() {
 fn provider_quota_redaction_strips_credential_shaped_material() {
     let mut value = json!({
         "agentId": "codex",
-        "nested": {"acc": "fixture-secret", "ok": 1},
+        "nested": {"accessToken": String::from("fixture-secret"), "ok": 1},
         "note": "Authorization: Bearer fixture-secret",
-        "csr": "fixture-secret"
+        "csrfToken": String::from("fixture-secret")
     });
     assert!(redaction::contains_credential_material(&value));
     redaction::redact_outgoing(&mut value);

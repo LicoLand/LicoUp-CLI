@@ -380,7 +380,8 @@ fn file_payload_aad_rejects_every_bound_context_dimension_and_metadata_tamper() 
     tampered_manifest.file_aad_digest = general_purpose::URL_SAFE_NO_PAD.encode([0x62u8; 32]);
     assert!(open_file_manifest(&root_key, &context, &tampered_manifest).is_err());
     let mut wrong_suite_chunk = encrypted_chunk.clone();
-    wrong_suite_chunk.file_key_suite = "rem".to_string();
+    let removed = "removed-file-key-suite-v1".to_string();
+    wrong_suite_chunk.file_key_suite = removed;
     assert!(open_file_chunk(&root_key, &context, &wrong_suite_chunk).is_err());
     let mut wrong_index_chunk = encrypted_chunk;
     wrong_index_chunk.chunk_index = 1;

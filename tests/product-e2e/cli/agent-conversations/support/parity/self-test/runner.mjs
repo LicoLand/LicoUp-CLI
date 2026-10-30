@@ -29,7 +29,7 @@ import {
 } from "../process.mjs";
 import {
   failedParityFactCode,
-  processLocalBooleanFactKeys,
+  processLocalBooleanFactFields,
   processLocalRoundFactsReady,
   roundFactsReady,
 } from "../round-facts.mjs";
@@ -174,22 +174,22 @@ export async function runSelfTest() {
     } catch (error) {
       productFixtureReceiptRejected = error instanceof AcceptanceError;
     }
-    const seedSource = join(temporaryDirectory, "dis");
-    const seedTarget = join(temporaryDirectory, "dis");
-    mkdirSync(join(seedSource, "credentials"), { recursive: true, mode: 0o700 });
-    mkdirSync(join(seedSource, "sessions"), { recursive: true, mode: 0o700 });
-    writeFileSync(join(seedSource, "config.toml"), "[self_test]\n", { mode: 0o600 });
-    writeFileSync(join(seedSource, "credentials", "account"), "self-test", { mode: 0o600 });
-    writeFileSync(join(seedSource, "sessions", "must-not-copy"), "private", { mode: 0o600 });
+    const sourceDir = join(temporaryDirectory, "disposable-seed-source");
+    const targetDir = join(temporaryDirectory, "disposable-seed-target");
+    mkdirSync(join(sourceDir, "credentials"), { recursive: true, mode: 0o700 });
+    mkdirSync(join(sourceDir, "sessions"), { recursive: true, mode: 0o700 });
+    writeFileSync(join(sourceDir, "config.toml"), "[self_test]\n", { mode: 0o600 });
+    writeFileSync(join(sourceDir, "credentials", "account"), "self-test", { mode: 0o600 });
+    writeFileSync(join(sourceDir, "sessions", "must-not-copy"), "private", { mode: 0o600 });
     const disposableProfileSeedSafe = seedDisposableProfile({
       temporaryDirectory,
-      disposableDataRoot: seedTarget,
-      disposableSeedSource: seedSource,
+      disposableDataRoot: targetDir,
+      disposableSourceDir: sourceDir,
     })
-      && existsSync(join(seedTarget, "config.toml"))
-      && existsSync(join(seedTarget, "credentials", "account"))
-      && !existsSync(join(seedTarget, "sessions"));
-    rmSync(seedTarget, { recursive: true, force: true });
+      && existsSync(join(targetDir, "config.toml"))
+      && existsSync(join(targetDir, "credentials", "account"))
+      && !existsSync(join(targetDir, "sessions"));
+    rmSync(targetDir, { recursive: true, force: true });
     const environment = {
       ...process.env,
       LICO_FAKE_ACP_STATE: statePath,
@@ -353,7 +353,7 @@ export async function runSelfTest() {
       ...context,
       config: agentConfigs["kimi-code"],
       disposableDataRoot: kimiDisposableRoot,
-      disposableSeedSource: seedSource,
+      disposableSourceDir: sourceDir,
       cleanedSessions: new Set(),
       observedSessions: new Set(["fake-kimi-session"]),
     };
@@ -379,7 +379,7 @@ export async function runSelfTest() {
       wrapper: piWrapper,
       environment: piEnvironment,
       disposableDataRoot: piDisposableRoot,
-      disposableSeedSource: "",
+      disposableSourceDir: "",
       cleanedSessions: new Set(),
       observedSessions: new Set(),
     };
@@ -992,9 +992,9 @@ export async function runSelfTest() {
       { ...evidenceSeed, processLocalOraclePassed: true },
       { releaseUi: true },
     );
-    const processLocalTruthKeys = ["con", ...processLocalBooleanFactKeys];
+    const processLocalTruthFields = ["continuityScope", ...processLocalBooleanFactFields];
     const processLocalFactTruthRows = [];
-    for (const key of processLocalTruthKeys) {
+    for (const key of processLocalTruthFields) {
       const falseRound = {
         ...claudeProcessLocalRound,
         ready: false,
@@ -1102,7 +1102,7 @@ export async function runSelfTest() {
       }
       : null;
     const processLocalFactTruthTable = processLocalFactTruthRows.length
-        === processLocalTruthKeys.length
+        === processLocalTruthFields.length
       && processLocalFactTruthRows.every(Boolean)
       && coreChecksFromAggregate(processLocalReleaseAggregate)["P-03"] === "pass"
       && coreChecksFromAggregate(processLocalReleaseAggregate)["P-04"] === "pass"

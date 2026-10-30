@@ -1174,7 +1174,7 @@ fn the_production_control_path_reaches_the_lane_and_reports_its_answer() {
     let port = production_effect_bridge(owner);
     let handle = EffectHandle {
         effect_id: "effect:lane".into(),
-        attempt_token: "eff".into(),
+        attempt_token: String::from("effect:lane-attempt-1"),
         agent_id: "codex".into(),
         driver_id: "codex-app-server".into(),
         runtime_protocol: "codex-app-server".into(),

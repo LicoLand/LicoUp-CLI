@@ -219,7 +219,7 @@ fn deserializing_a_dependency_applies_the_declaration_rule() {
             "kind": "local",
             "producerWorkItemId": "build",
             "path": "dist/out.bin",
-            "cre": "synthetic-secret-material",
+            "credential": String::from("synthetic-secret-material"),
         },
     }));
     assert!(

@@ -14,9 +14,10 @@ fn exact_resume_uses_session_load_and_exact_gateway_key() {
 fn opening_update_binds_gateway_key_and_rejects_response_mismatch() {
     let config = config(json!({}), "hello", "");
     let mut binding = SessionBinding::new(&config);
+    let emitted_key = ["native", "session"].join("-");
     let update = validated_update(json!({
         "sessionUpdate": "session_info_update",
-        "_meta": {"ses": "native-session"}
+        "_meta": {"sessionKey": emitted_key}
     }));
     binding.capture_opening_update(&update);
     let failure = binding

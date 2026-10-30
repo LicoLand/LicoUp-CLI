@@ -556,7 +556,7 @@ test("doctor certifies an admitted root and fails closed on every deviation", ()
   const cases = [
     {
       label: "ledger is not the admission's contract",
-      seed: (root) => writePrivateJson(path.join(root, "cli"), {
+      prepare: (root) => writePrivateJson(path.join(root, "client-state/migrations/ledger.json"), {
         schemaVersion: "v0.0.1:client-state-migration-ledger-1",
         highestAdmittedProductVersion: "0.3.0",
         frontierId: frontier.frontierId,
@@ -568,7 +568,7 @@ test("doctor certifies an admitted root and fails closed on every deviation", ()
     },
     {
       label: "ledger claims a domain the frontier does not define",
-      seed: (root) => seedLedger(root, frontier, {
+      prepare: (root) => seedLedger(root, frontier, {
         "not-a-frontier-domain": { schemaVersion: 1, completedStepIds: [] },
       }),
       code: "migration_ledger_invalid",
@@ -577,7 +577,7 @@ test("doctor certifies an admitted root and fails closed on every deviation", ()
     },
     {
       label: "state was admitted by a newer binary",
-      seed: (root) => seedLedger(root, frontier, {
+      prepare: (root) => seedLedger(root, frontier, {
         "appearance-presentation": {
           schemaVersion: 1,
           completedStepIds: ["appearance-presentation.absent-to-1"],
@@ -595,7 +595,7 @@ test("doctor certifies an admitted root and fails closed on every deviation", ()
     },
     {
       label: "a durable store is newer than the binary",
-      seed: (root) => writeJson(path.join(root, "cli"), {
+      prepare: (root) => writeJson(path.join(root, "client-state/appearance-preferences.json"), {
         schemaVersion: 9,
       }),
       code: "state_newer_than_binary",
@@ -604,7 +604,7 @@ test("doctor certifies an admitted root and fails closed on every deviation", ()
     },
     {
       label: "a durable store is an unknown shape",
-      seed: (root) => writeJson(path.join(root, "cli"), {
+      prepare: (root) => writeJson(path.join(root, "client-state/current-client-view.json"), {
         schemaVersion: 1.5,
       }),
       code: "unsupported_state_shape",
@@ -613,7 +613,7 @@ test("doctor certifies an admitted root and fails closed on every deviation", ()
     },
     {
       label: "migration metadata is not private state",
-      seed: (root) => {
+      prepare: (root) => {
         writePrivateJson(path.join(root, "client-state/migrations/ledger.json"), {
           schemaVersion: "v0.0.1:client-state-migration-ledger-1",
           highestAdmittedProductVersion: "0.3.0",
@@ -628,7 +628,7 @@ test("doctor certifies an admitted root and fails closed on every deviation", ()
     },
     {
       label: "an update handoff is waiting for the next startup",
-      seed: (root) => writePrivateJson(
+      prepare: (root) => writePrivateJson(
         path.join(root, "client-state/migrations/update-handoff.json"),
         {
           schemaVersion: "v0.0.1:client-update-handoff-1",
@@ -647,7 +647,7 @@ test("doctor certifies an admitted root and fails closed on every deviation", ()
     },
     {
       label: "a durable store is not a regular file",
-      seed: (root) => {
+      prepare: (root) => {
         fs.mkdirSync(path.join(root, "client-state"), { recursive: true });
         fs.symlinkSync(
           path.join(root, "missing-target"),
@@ -662,7 +662,7 @@ test("doctor certifies an admitted root and fails closed on every deviation", ()
   for (const scenario of cases) {
     const root = tempRoot("doctor");
     try {
-      scenario.seed(root);
+      scenario.prepare(root);
       const { envelope, status } = runJson(["doctor", "--root", root]);
       assert.equal(status, scenario.exitCode, scenario.label);
       assert.equal(envelope.verdict, scenario.verdict, scenario.label);
@@ -1228,7 +1228,7 @@ test("the evaluator refuses fake conversation and malformed strategy databases",
   const cases = [
     {
       label: "a current-stamped two-table conversation store",
-      seed: (root) => {
+      prepare: (root) => {
         const directory = path.join(root, "client-state/conversations");
         fs.mkdirSync(directory, { recursive: true });
         const database = new DatabaseSync(path.join(directory, "conversations.sqlite3"));
@@ -1246,7 +1246,7 @@ test("the evaluator refuses fake conversation and malformed strategy databases",
     },
     {
       label: "a development conversation schema",
-      seed: (root) => {
+      prepare: (root) => {
         const directory = path.join(root, "client-state/conversations");
         fs.mkdirSync(directory, { recursive: true });
         const database = new DatabaseSync(path.join(directory, "conversations.sqlite3"));
@@ -1259,7 +1259,7 @@ test("the evaluator refuses fake conversation and malformed strategy databases",
     },
     {
       label: "a strategy version row on a truncated database",
-      seed: (root) => {
+      prepare: (root) => {
         const directory = path.join(root, "client-state/adaptive-flywheel");
         fs.mkdirSync(directory, { recursive: true });
         const database = new DatabaseSync(path.join(directory, "strategies.sqlite3"));
@@ -1272,7 +1272,7 @@ test("the evaluator refuses fake conversation and malformed strategy databases",
     },
     {
       label: "a legacy strategy stamp",
-      seed: (root) => {
+      prepare: (root) => {
         const directory = path.join(root, "client-state/adaptive-flywheel");
         fs.mkdirSync(directory, { recursive: true });
         const database = new DatabaseSync(path.join(directory, "strategies.sqlite3"));
@@ -1287,7 +1287,7 @@ test("the evaluator refuses fake conversation and malformed strategy databases",
   for (const scenario of cases) {
     const root = tempRoot("refused-shape");
     try {
-      scenario.seed(root);
+      scenario.prepare(root);
       const report = evaluateMigrationState({
         root,
         frontier,
@@ -1377,7 +1377,7 @@ test("released and producer-variant stores are accepted; mutations and malformed
     {
       label: "the released membership identity index is not unique",
       domainId: "canonical-conversation",
-      seed: (root) => {
+      prepare: (root) => {
         seedReleasedConversation(root);
         const database = new DatabaseSync(
           path.join(root, "client-state/conversations/conversations.sqlite3"),
@@ -1392,7 +1392,7 @@ test("released and producer-variant stores are accepted; mutations and malformed
     {
       label: "the released partial predicate was weakened",
       domainId: "adaptive-flywheel",
-      seed: (root) => {
+      prepare: (root) => {
         seedReleasedStrategy(root, { producerUpgraded: true });
         const database = new DatabaseSync(
           path.join(root, "client-state/adaptive-flywheel/strategies.sqlite3"),
@@ -1408,7 +1408,7 @@ test("released and producer-variant stores are accepted; mutations and malformed
     {
       label: "an older published stamp on two tables",
       domainId: "canonical-conversation",
-      seed: (root) => {
+      prepare: (root) => {
         const directory = path.join(root, "client-state/conversations");
         fs.mkdirSync(directory, { recursive: true });
         const database = new DatabaseSync(path.join(directory, "conversations.sqlite3"));
@@ -1427,7 +1427,7 @@ test("released and producer-variant stores are accepted; mutations and malformed
     {
       label: "a current stamped store without a conversation title",
       domainId: "canonical-conversation",
-      seed: (root) => {
+      prepare: (root) => {
         const directory = path.join(root, "client-state/conversations");
         fs.mkdirSync(directory, { recursive: true });
         const database = new DatabaseSync(path.join(directory, "conversations.sqlite3"));
@@ -1443,7 +1443,7 @@ test("released and producer-variant stores are accepted; mutations and malformed
     {
       label: "an identity-only older store",
       domainId: "canonical-conversation",
-      seed: (root) => {
+      prepare: (root) => {
         const directory = path.join(root, "client-state/conversations");
         fs.mkdirSync(directory, { recursive: true });
         const database = new DatabaseSync(path.join(directory, "conversations.sqlite3"));
@@ -1465,7 +1465,7 @@ test("released and producer-variant stores are accepted; mutations and malformed
     {
       label: "a current store missing a principal business field",
       domainId: "canonical-conversation",
-      seed: (root) => {
+      prepare: (root) => {
         const directory = path.join(root, "client-state/conversations");
         fs.mkdirSync(directory, { recursive: true });
         const database = new DatabaseSync(path.join(directory, "conversations.sqlite3"));
@@ -1481,7 +1481,7 @@ test("released and producer-variant stores are accepted; mutations and malformed
     {
       label: "a released store without event sequence uniqueness",
       domainId: "canonical-conversation",
-      seed: (root) => {
+      prepare: (root) => {
         seedReleasedConversation(root);
         const database = new DatabaseSync(
           path.join(root, "client-state/conversations/conversations.sqlite3"),
@@ -1509,7 +1509,7 @@ test("released and producer-variant stores are accepted; mutations and malformed
     {
       label: "a malformed schema_meta inspection",
       domainId: "canonical-conversation",
-      seed: (root) => {
+      prepare: (root) => {
         const directory = path.join(root, "client-state/conversations");
         fs.mkdirSync(directory, { recursive: true });
         const database = new DatabaseSync(path.join(directory, "conversations.sqlite3"));
@@ -1525,7 +1525,7 @@ test("released and producer-variant stores are accepted; mutations and malformed
   for (const mutation of mutations) {
     const root = tempRoot("released-mutation");
     try {
-      mutation.seed(root);
+      mutation.prepare(root);
       const report = evaluate(root);
       assert.equal(report.verdict, "invalid", mutation.label);
       const domain = report.domains.find((entry) => entry.domainId === mutation.domainId);

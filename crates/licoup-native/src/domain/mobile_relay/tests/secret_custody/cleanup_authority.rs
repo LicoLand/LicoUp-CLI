@@ -624,7 +624,7 @@ fn mobile_relay_custody_cleanup_reports_denied_deletion_as_pending() {
     let previous = set_portable_data_dir_override(Some(dir.to_path_buf()));
     let store = Arc::new(DeleteRejectingSecretStore {
         inner: EphemeralSecretStore::new(),
-        rejected_key: "mob",
+        rejected_key: concat!("mobile", "Token"),
         reject_deletes: AtomicBool::new(false),
     });
     let store_override: Arc<dyn SecureMeshSecretStore> = store.clone();
@@ -751,7 +751,7 @@ fn mobile_relay_custody_cleanup_completes_once_the_denied_deletion_is_allowed() 
     let previous = set_portable_data_dir_override(Some(dir.to_path_buf()));
     let store = Arc::new(DeferredDeleteSecretStore {
         inner: EphemeralSecretStore::new(),
-        rejected_key: "mob",
+        rejected_key: concat!("mobile", "Token"),
         reject_deletes: AtomicBool::new(true),
     });
     let store_override: Arc<dyn SecureMeshSecretStore> = store.clone();

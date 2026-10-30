@@ -112,7 +112,7 @@ function buildContext(options) {
   wrapper.environment = {
     ...wrapper.environment,
     ...process.env,
-    [config.noHistoryEnvironmentKey]: "1",
+    [config.noHistoryEnvironmentName]: "1",
     LICO_AGENT_CONVERSATION_ACCEPTANCE: acceptanceMode,
     LICOUP_HOME: portableDataRoot,
   };

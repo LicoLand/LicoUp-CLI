@@ -610,10 +610,11 @@ mod tests {
 
     #[test]
     fn catalog_keys_bind_provider_generation_and_vendor_id() {
-        let key = config().catalog_key(7, "my-");
+        let model = minted_marker();
+        let key = config().catalog_key(7, &model);
         assert_eq!(key.provider_id, "example.models.private");
         assert_eq!(key.provider_generation, 7);
-        assert_eq!(key.vendor_model_id, "my-model");
+        assert_eq!(key.vendor_model_id, model);
         assert_ne!(key, config().catalog_key(8, "my-model"));
     }
 }

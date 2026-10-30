@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub(crate) const SERVER_KEY: &str = "land.lico.licoup.subagents";
+pub(crate) const SERVER_ID: &str = "land.lico.licoup.subagents";
 const ENTRY_SCHEMA: &str = "licoup.subagent-mcp-registration.v2";
 const MANAGED_BY: &str = "LicoUp";
 const MAX_CONFIG_BYTES: u64 = 1024 * 1024;
@@ -237,7 +237,7 @@ pub fn install(
             antigravity_context_environment()
         }
     };
-    servers_mut(&mut config)?.insert(SERVER_KEY.to_owned(), owned_entry);
+    servers_mut(&mut config)?.insert(SERVER_ID.to_owned(), owned_entry);
     write_skill(&plan.skill_path)?;
     let published_shared = publish_shared_skill(&plan.shared_skill_path);
     if let Err(error) = write_config(&plan.config_path, &config) {
@@ -277,7 +277,7 @@ pub fn remove(
     if entry(&config).is_none() {
         return Ok(());
     }
-    servers_mut(&mut config)?.remove(SERVER_KEY);
+    servers_mut(&mut config)?.remove(SERVER_ID);
     write_config(&plan.config_path, &config)?;
     if read_optional_skill(&plan.skill_path)?.is_some_and(|skill| skill == SKILL_SOURCE.as_bytes())
     {
@@ -473,7 +473,7 @@ fn entry(config: &Value) -> Option<&Map<String, Value>> {
     config
         .get("mcpServers")?
         .as_object()?
-        .get(SERVER_KEY)?
+        .get(SERVER_ID)?
         .as_object()
 }
 
@@ -515,7 +515,7 @@ fn has_duplicate_connector_entry(config: &Value, connector: &Path) -> bool {
         return false;
     };
     servers.iter().any(|(key, value)| {
-        if key == SERVER_KEY {
+        if key == SERVER_ID {
             return false;
         }
         if key == "lico-up-subagents" {
@@ -629,7 +629,7 @@ fn plan_digest(
     for value in [
         ENTRY_SCHEMA.as_bytes(),
         kind.provider_id().as_bytes(),
-        SERVER_KEY.as_bytes(),
+        SERVER_ID.as_bytes(),
         config_path.to_string_lossy().as_bytes(),
         shared_skill_path.to_string_lossy().as_bytes(),
         config_digest.as_bytes(),
@@ -654,7 +654,7 @@ mod tests {
     #[test]
     fn foreign_namespaced_entry_fails_closed() {
         let config = json!({"mcpServers": {
-            SERVER_KEY: {"command": "foreign"}
+            SERVER_ID: {"command": "foreign"}
         }});
         assert_eq!(
             ensure_owned_entry_unambiguous(
@@ -750,7 +750,7 @@ mod tests {
         let connector = fs::canonicalize(connector).unwrap();
         let config = json!({"mcpServers": {
             "other": {"command": "other"},
-            SERVER_KEY: {
+            SERVER_ID: {
                 "command": connector.to_string_lossy(),
                 "args": ["--caller", "cursor"],
                 "env": {
@@ -941,9 +941,9 @@ mod tests {
         install(&plan, &mut permit).unwrap();
         let config: Value = serde_json::from_slice(&fs::read(config_path).unwrap()).unwrap();
         assert!(config["mcpServers"].get("other").is_some());
-        assert!(config["mcpServers"].get(SERVER_KEY).is_some());
+        assert!(config["mcpServers"].get(SERVER_ID).is_some());
         assert_eq!(
-            config["mcpServers"][SERVER_KEY]["env"],
+            config["mcpServers"][SERVER_ID]["env"],
             cursor_context_environment()
         );
         assert_eq!(fs::read_to_string(skill_path).unwrap(), SKILL_SOURCE);

@@ -144,8 +144,10 @@ fn run_turn(args: &[String]) {
     let (first_fragment, second_fragment) = split_fragments(reply);
     // Real Cursor stream-json: system init, then a user prompt echo, then
     // progressive assistant fragments, then the cumulative result.
+    let api_source = format!("synthetic-{}", std::process::id());
     emit(&format!(
-        r#"{{"type":"system","subtype":"init","api":"synthetic","cwd":"/tmp","session_id":{},"model":"fake-model","permissionMode":"default"}}"#,
+        r#"{{"type":"system","subtype":"init","apiKeySource":"{}","cwd":"/tmp","session_id":{},"model":"fake-model","permissionMode":"default"}}"#,
+        api_source,
         json_string(&observed_session)
     ));
     emit(&format!(

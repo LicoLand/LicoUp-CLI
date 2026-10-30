@@ -148,7 +148,7 @@ fn secure_mesh_contract_failure_codes_cover_secret_and_unsupported_inputs() {
 
     let secret = SecureMeshRequest::new(
         SecureMeshAction::KtStatus,
-        json!({"pri": "unit-test-secret"}),
+        json!({"privateKey": String::from("unit-test-secret")}),
     )
     .expect_err("secret-bearing payload must fail before dispatch");
     assert_eq!(secret.code, SecureMeshFailureCode::ForbiddenSecretMaterial);

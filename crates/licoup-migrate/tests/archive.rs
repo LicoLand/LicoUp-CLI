@@ -24,8 +24,8 @@ use licoup_migrate::error::ARCHIVE_INSIDE_DATA_ROOT;
 use licoup_native::core::full_data_root_archive::{RecoveryCoverage, RecoveryLimitation};
 use support::*;
 
-const CREDENTIAL_DOMAIN: &str = concat!("gateway-", "credential-custody");
-const CREDENTIAL_INVENTORY: &str = "llm";
+const CUSTODY_DOMAIN: &str = "gateway-credential-custody";
+const INVENTORY_DOC: &str = "llm-api-key-inventory.json";
 
 /// A synthetic root the archive owner can capture.
 ///
@@ -44,7 +44,7 @@ fn exportable_root(root: &Path, inventory: bool) {
     if inventory {
         write_file(
             root,
-            CREDENTIAL_INVENTORY,
+            INVENTORY_DOC,
             br#"{"schemaVersion":"licoup.llm-api-key-inventory.v1","leaseDays":7,"entries":[]}"#,
         );
     }
@@ -78,7 +78,7 @@ fn both_containers_round_trip_the_same_logical_payload() {
             .iter()
             .map(|limitation| limitation.domain.as_str())
             .collect();
-        assert_eq!(domains, vec![CREDENTIAL_DOMAIN]);
+        assert_eq!(domains, vec![CUSTODY_DOMAIN]);
 
         // The owner's own coverage report is the second half of the oracle: the payload it
         // declared must be the payload that came back.
@@ -104,7 +104,7 @@ fn both_containers_round_trip_the_same_logical_payload() {
             1,
             "the limitation travels with the archive"
         );
-        assert_eq!(import.limitations[0].domain, CREDENTIAL_DOMAIN);
+        assert_eq!(import.limitations[0].domain, CUSTODY_DOMAIN);
 
         // The restore is free to add the client-state collections its own composition
         // creates, so the oracle is that every captured file arrives with its bytes.
@@ -165,7 +165,7 @@ fn a_credential_store_that_cannot_travel_is_reported_as_a_limitation() {
         .iter()
         .map(|limitation| limitation.domain.as_str())
         .collect();
-    assert_eq!(domains, vec![CREDENTIAL_DOMAIN]);
+    assert_eq!(domains, vec![CUSTODY_DOMAIN]);
     let reason: &str = &export.limitations[0].reason;
     assert!(
         reason.contains("absent from the captured root"),
@@ -178,7 +178,7 @@ fn a_credential_store_that_cannot_travel_is_reported_as_a_limitation() {
     let import = archive::import(&archive_path, &target).expect("import runs");
     assert_eq!(import.coverage, RecoveryCoverage::Limited);
     assert_eq!(import.limitations.len(), 1);
-    assert_eq!(import.limitations[0].domain, CREDENTIAL_DOMAIN);
+    assert_eq!(import.limitations[0].domain, CUSTODY_DOMAIN);
 
     // Everything that did travel still arrives intact.
     let restored = files(&target);
@@ -199,7 +199,7 @@ fn a_present_inventory_document_does_not_complete_the_recovery() {
     let export = archive::export(&source, &archive_path, true).expect("export runs");
     assert_eq!(export.coverage, RecoveryCoverage::Limited);
     let limitation: &RecoveryLimitation = &export.limitations[0];
-    assert_eq!(limitation.domain, CREDENTIAL_DOMAIN);
+    assert_eq!(limitation.domain, CUSTODY_DOMAIN);
     assert!(
         limitation.reason.contains("travels as non-secret metadata"),
         "the present inventory is reported as metadata: {}",
@@ -383,7 +383,7 @@ fn reports_serialize_as_camel_case_json_with_a_stable_status() {
     }
     assert!(exported.get("file_count").is_none(), "keys are camelCase");
     assert_eq!(exported["coverage"], "limited");
-    assert_eq!(exported["limitations"][0]["domain"], CREDENTIAL_DOMAIN);
+    assert_eq!(exported["limitations"][0]["domain"], CUSTODY_DOMAIN);
 
     let imported = serde_json::to_value(&import).expect("import report serializes");
     assert_eq!(imported["status"], "imported");

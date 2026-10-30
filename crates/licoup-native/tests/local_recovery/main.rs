@@ -51,11 +51,11 @@ include!("../../../../tests/fixtures/client_state_migration/released_source.rs")
 include!("../../../../tests/fixtures/client_state_migration/owner_layouts.rs");
 
 const SETTINGS_COLLECTION: &str = "settings";
-const CONVERSATION_SNAPSHOT_ROOT_KEY: &str = "con";
+const SNAPSHOT_ROOT: &str = "conversationSnapshotRoot";
 const USER_PROJECT_PATH: &str = "/tmp/unrelated-user-project";
 const USER_NOTES: &str = "client-state/user-notes.txt";
 const REVISION_STORE: &str = "client-state/adaptive-flywheel/strategy-packages/revisions";
-const CREDENTIAL_METADATA: &str = "llm";
+const METADATA_DOC_PATH: &str = "llm-api-key-inventory.json";
 
 // ---------------------------------------------------------------------------
 // Disposable roots and fixtures
@@ -157,7 +157,7 @@ fn arrange_current_owner_content(root: &Path, work: &Path) -> String {
             SETTINGS_COLLECTION,
             json!({
                 "theme": "orbital-dark",
-                CONVERSATION_SNAPSHOT_ROOT_KEY: root.join("snapshots").display().to_string(),
+                SNAPSHOT_ROOT: root.join("snapshots").display().to_string(),
                 "userProjectPath": USER_PROJECT_PATH,
             }),
         )
@@ -181,7 +181,7 @@ fn arrange_current_owner_content(root: &Path, work: &Path) -> String {
     let prepared = service
         .execute(json!({
             "action": "strategy.package.prepare-import",
-            "sel": "recovery-oracle",
+            "selectionToken": String::from("recovery-oracle"),
             "sourcePath": package_path.display().to_string(),
         }))
         .expect("prepare package");
@@ -494,7 +494,7 @@ fn local_recovery_released_root_round_trips_both_containers_across_homes() {
         // Owner-managed references are rebased; user content and unrelated paths are not.
         let restored_settings = settings(&target);
         assert_eq!(
-            restored_settings[CONVERSATION_SNAPSHOT_ROOT_KEY]
+            restored_settings[SNAPSHOT_ROOT]
                 .as_str()
                 .expect("snapshot root"),
             target.join("snapshots").display().to_string(),
@@ -556,7 +556,7 @@ fn local_recovery_missing_credential_metadata_stays_limited() {
     seed_released_source_root(&source);
     admit(&source).expect("admission");
     // The protected credential metadata did not travel in this root.
-    fs::remove_file(source.join(CREDENTIAL_METADATA)).expect("remove credential metadata");
+    fs::remove_file(source.join(METADATA_DOC_PATH)).expect("remove credential metadata");
     assert!(credential_entries(&source).is_empty());
 
     let archive = fixture.join("limited.zip");
@@ -578,7 +578,7 @@ fn local_recovery_missing_credential_metadata_stays_limited() {
         credential_entries(&target).is_empty(),
         "the limitation is truthful: no credential metadata was invented"
     );
-    assert!(!target.join(CREDENTIAL_METADATA).exists());
+    assert!(!target.join(METADATA_DOC_PATH).exists());
 
     remove_root(&fixture);
 }
@@ -676,7 +676,7 @@ fn local_recovery_a_version_marker_alone_does_not_satisfy_the_oracle() {
     let marker_settings = settings(&marker_only);
     assert!(
         marker_settings
-            .get(CONVERSATION_SNAPSHOT_ROOT_KEY)
+            .get(SNAPSHOT_ROOT)
             .is_none(),
         "a marker-only root holds no arranged collection: {marker_settings}"
     );

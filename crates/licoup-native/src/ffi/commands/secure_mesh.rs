@@ -355,7 +355,7 @@ mod tests {
     fn secure_mesh_approval_respond_cli_admits_bound_response_fields() {
         let pending_operation_id = format!("approval-cli-{}", uuid::Uuid::new_v4());
         let responding_endpoint_id = "endpoint-cli-responder";
-        let response_nonce = "non";
+        let response_tag = "nonce-cli-response";
         crate::core::secure_mesh_approval::evaluate_approval_request_json(&json!({
             "pendingOperationId": pending_operation_id,
             "requesterAgentId": "codex",
@@ -363,10 +363,10 @@ mod tests {
             "originEndpointId": "endpoint-cli-origin",
             "riskLevel": "local_effect",
             "displaySummary": "Approve a bounded CLI operation",
-            "ada": "callback-cli-response",
+            "adapterCallbackTokenRef": String::from("callback-cli-response"),
             "adapterStyle": "callback",
             "expiresAt": "2099-01-01T00:00:00Z",
-            "responseNonce": response_nonce,
+            "responseNonce": response_tag,
             "requestedTools": ["fs.read"],
             "trustedEndpointIds": [responding_endpoint_id],
         }))
@@ -383,7 +383,7 @@ mod tests {
             "--responding-endpoint-id".into(),
             responding_endpoint_id.into(),
             "--response-nonce".into(),
-            response_nonce.into(),
+            response_tag.into(),
         ])
         .unwrap();
         let value = expect_json(result, "secure mesh approval respond");
@@ -392,7 +392,7 @@ mod tests {
         assert_eq!(value["response"]["responseNonceBound"], true);
         let serialized = serde_json::to_string(&value).unwrap();
         assert!(!serialized.contains(responding_endpoint_id));
-        assert!(!serialized.contains(response_nonce));
+        assert!(!serialized.contains(response_tag));
     }
 
     #[test]

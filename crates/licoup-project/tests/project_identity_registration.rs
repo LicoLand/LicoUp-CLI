@@ -341,7 +341,7 @@ fn a_registration_carrying_an_undeclared_field_is_refused() {
         "authority": {"kind": "membership", "reference": "membership:owner"},
         "workspaceId": "workspace:shared",
         "planId": "plan:alpha",
-        "cre": "synthetic-secret-material",
+        "credential": String::from("synthetic-secret-material"),
     });
     let decoded: Result<ProjectRegistration, _> = serde_json::from_value(smuggled);
     assert!(

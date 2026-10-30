@@ -236,7 +236,7 @@ function buildContext(options, agentId, config) {
     environment: wrapper.environment,
     temporaryDirectory,
     disposableDataRoot: "",
-    disposableSeedSource: "",
+    disposableSourceDir: "",
     disposableProfileSeeded: false,
     timeoutMs: options.timeoutMs,
     maxOutputBytes: options.maxOutputBytes,

@@ -72,16 +72,16 @@ export async function runLive(options, selfTestEvidence) {
       ? join(temporaryDirectory, "isolated-claude-config")
       : "";
     if (claudeConfigRoot) mkdirSync(claudeConfigRoot, { recursive: true, mode: 0o700 });
-    const disposableSeedSource = config.cleanupKind === "disposable-data-root"
-      ? (process.env[config.disposableEnvironmentKey] || join(homedir(), ".kimi-code"))
+    const disposableSourceDir = config.cleanupKind === "disposable-data-root"
+      ? (process.env[config.disposableEnvironmentName] || join(homedir(), ".kimi-code"))
       : "";
     const environment = disposableDataRoot
-      ? { ...process.env, [config.disposableEnvironmentKey]: disposableDataRoot }
+      ? { ...process.env, [config.disposableEnvironmentName]: disposableDataRoot }
       : claudeConfigRoot
         ? {
           ...process.env,
-          [config.isolatedConfigEnvironmentKey]: claudeConfigRoot,
-          [config.noHistoryEnvironmentKey]: "1",
+          [config.isolatedConfigEnvironmentName]: claudeConfigRoot,
+          [config.noHistoryEnvironmentName]: "1",
         }
         : process.env;
     wrapper.environment = {
@@ -100,7 +100,7 @@ export async function runLive(options, selfTestEvidence) {
         : environment,
       temporaryDirectory,
       disposableDataRoot,
-      disposableSeedSource,
+      disposableSourceDir,
       disposableProfileSeeded: false,
       cleanedSessions: new Set(),
       claudeConfigRoot,

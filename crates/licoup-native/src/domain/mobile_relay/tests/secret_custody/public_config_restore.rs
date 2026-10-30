@@ -48,7 +48,7 @@ fn native_secret_store_restores_selected_device_without_raw_json_overrides() {
             "pcClientId": "pc-selected",
             "pcClientName": "Selected Mac",
             "pairingId": "pair-selected",
-            "mob": "paired-device-secret-store-canary",
+            "mobileToken": String::from("paired-device-secret-store-canary"),
             "credentialPresent": true
         }
     ]);
@@ -140,7 +140,7 @@ fn runtime_secret_overrides_require_platform_transport_marker() {
                 {
                     "id": "pc-selected",
                     "pairingId": "pair-selected",
-                    "mob": "untrusted-runtime-override-canary"
+                    "mobileToken": String::from("untrusted-runtime-override-canary")
                 }
             ]
         }
@@ -170,7 +170,7 @@ fn runtime_secret_overrides_reject_raw_token_fields() {
         &json!({
             "secretOverrideTransport": RUNTIME_SECRET_OVERRIDE_TRANSPORT,
             "secretOverrides": {
-                "mob": "mobile-token-raw-override-canary"
+                "mobileToken": String::from("mobile-token-raw-override-canary")
             }
         }),
     ) {
@@ -188,7 +188,7 @@ fn runtime_secret_overrides_reject_raw_token_fields() {
                     {
                         "id": "pc-selected",
                         "pairingId": "pair-selected",
-                        "mob": "paired-token-raw-override-canary"
+                        "mobileToken": String::from("paired-token-raw-override-canary")
                     }
                 ]
             }

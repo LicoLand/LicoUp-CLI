@@ -22,11 +22,11 @@ fn fingerprints_and_source_keys_are_stable_digests_without_raw_paths() {
         PathBuf::from("synthetic-root"),
     ];
     let fingerprint = roots_fingerprint(&roots, "0|");
-    let key = source_key(&fingerprint, Path::new("syn"));
+    let source_ref = source_key(&fingerprint, Path::new("synthetic-root/rollout.jsonl"));
     assert_eq!(fingerprint.len(), 64);
-    assert_eq!(key.len(), 64);
+    assert_eq!(source_ref.len(), 64);
     assert!(!fingerprint.contains("synthetic-root"));
-    assert!(!key.contains("rollout"));
+    assert!(!source_ref.contains("rollout"));
     assert_eq!(
         expand_user_path("relative/history"),
         PathBuf::from("relative/history")

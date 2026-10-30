@@ -14,9 +14,9 @@ export const STARTUP_RESULTS = Object.freeze([
 
 const SAFE_REASON = /^[a-z][a-z0-9_]{0,63}$/u;
 const SAFE_VERSION = /^(?:unresolved|\d+(?:\.\d+)+(?:-[0-9A-Za-z.-]+)?)$/u;
-export const SERVER_KEY = "lan";
-const SERVER_KEY_PATTERN = new RegExp(
-  `(?:^|[^A-Za-z0-9_.-])${SERVER_KEY.replaceAll(".", "\\.")}(?:$|[^A-Za-z0-9_.-])`,
+export const SERVER_ID = "land.lico.licoup.subagents";
+const SERVER_ID_PATTERN = new RegExp(
+  `(?:^|[^A-Za-z0-9_.-])${SERVER_ID.replaceAll(".", "\\.")}(?:$|[^A-Za-z0-9_.-])`,
   "u",
 );
 
@@ -40,17 +40,17 @@ export function recognizeRegistry(agent, value) {
     : value.servers ?? value.mcpServers ?? value.items ?? value.entries ?? [];
   const matchingEntries = Array.isArray(entries)
     ? entries.filter((entry) => typeof entry === "string"
-      ? entry === SERVER_KEY
-      : entry?.name === SERVER_KEY || entry?.id === SERVER_KEY || entry?.key === SERVER_KEY)
+      ? entry === SERVER_ID
+      : entry?.name === SERVER_ID || entry?.id === SERVER_ID || entry?.key === SERVER_ID)
     : [];
   const mappedEntryPresent = !Array.isArray(entries)
     && entries !== null
     && (typeof entries === "object" || typeof entries === "function")
-    && Object.hasOwn(entries, SERVER_KEY);
+    && Object.hasOwn(entries, SERVER_ID);
   const present = matchingEntries.length > 0 || mappedEntryPresent || value.serverPresent === true;
   const listed = matchingEntries.some((entry) => typeof entry === "string"
     || registryEntryEnabled(entry))
-    || (mappedEntryPresent && registryEntryEnabled(entries[SERVER_KEY]));
+    || (mappedEntryPresent && registryEntryEnabled(entries[SERVER_ID]));
   if (listed) return startupReceipt(agent, "passed", "startup_server_recognized", version);
   if (!present && value.registrationMode === "installer-only") {
     return startupReceipt(
@@ -77,14 +77,14 @@ export function parseReadOnlyRegistryOutput(stdout, format) {
   if (format !== "text") throw new TypeError("startup_surface_format_invalid");
   let present = false;
   const listed = String(stdout).split(/\r?\n/u).some((line) => {
-    if (!SERVER_KEY_PATTERN.test(line)) return false;
+    if (!SERVER_ID_PATTERN.test(line)) return false;
     present = true;
     const status = line.toLowerCase();
     if (/\b(?:disabled|inactive|disconnected|failed|error|unavailable)\b/u.test(status)) return false;
     return /\b(?:connected|ready|enabled|active|running)\b/u.test(status);
   });
   return {
-    servers: listed ? [SERVER_KEY] : [],
+    servers: listed ? [SERVER_ID] : [],
     serverPresent: present,
   };
 }

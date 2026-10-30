@@ -46,14 +46,14 @@ fn snapshot_capture_redacts_content_and_metadata_before_private_persistence() {
     let root = TestRoot::new("snapshot-redaction");
     let store = crate::ClientStateStore::new(root.path().join("state")).unwrap();
     let source = store.root().join("target-config.json");
-    let snapshot_key_canary = ["sna", "key", "canary"].join("-");
+    let snapshot_canary = ["snapshot", "key", "canary"].join("-");
     let url_canary = ["url", "canary"].join("-");
     let metadata_canary = ["metadata", "canary"].join("-");
     fs::write(
         &source,
         json!({
-            "apiKey": snapshot_key_canary.clone(),
-            "sec": "secret://local/ref",
+            "apiKey": snapshot_canary.clone(),
+            "secretRef": String::from("secret://local/ref"),
             "webUrl": format!("https://example.invalid/?access_token={url_canary}"),
         })
         .to_string(),
@@ -70,7 +70,7 @@ fn snapshot_capture_redacts_content_and_metadata_before_private_persistence() {
         .unwrap();
     let snapshot_raw = fs::read_to_string(&snapshot.snapshot_path).unwrap();
 
-    for canary in [&snapshot_key_canary, &url_canary, &metadata_canary] {
+    for canary in [&snapshot_canary, &url_canary, &metadata_canary] {
         assert!(!snapshot_raw.contains(canary));
     }
     assert!(snapshot_raw.contains(crate::policy::REDACTED_SECRET));

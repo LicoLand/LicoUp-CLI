@@ -669,7 +669,8 @@ impl StrategyService {
                 self.require_actor_port()?;
                 let conversation_id = required_string(object, "conversationId")?;
                 let membership_id = required_string(object, "membershipId")?;
-                let idempotency_key = required_string(object, "ide")?;
+                let field = "idempotencyKey";
+                let idempotency_key = required_string(object, field)?;
                 let workflow = object
                     .get("workflow")
                     .cloned()
@@ -3311,7 +3312,7 @@ mod tests {
             .execute(json!({
                 "action": "strategy.package.prepare-import",
                 "sourcePath": zip_path.to_string_lossy(),
-                "sel": "selection-test"
+                "selectionToken": String::from("selection-test")
             }))
             .unwrap();
         assert_eq!(prepared["ok"], true);
@@ -4119,7 +4120,7 @@ mod tests {
                 "workflow": workflow,
                 "bindings": bindings,
                 "input": {"message": "hi"},
-                "ide": "assistant-start-1"
+                "idempotencyKey": String::from("assistant-start-1")
             })
         };
         let response = service.execute(request()).unwrap();
@@ -4205,7 +4206,7 @@ mod tests {
                     "revision": 1
                 }],
                 "input": {"message": "hi"},
-                "ide": "assistant-runtime-failure"
+                "idempotencyKey": String::from("assistant-runtime-failure")
             })
         };
 
@@ -4285,7 +4286,7 @@ mod tests {
                     "revision": 1
                 }],
                 "input": {"message": "hi"},
-                "ide": "assistant-entry-registration-failure"
+                "idempotencyKey": String::from("assistant-entry-registration-failure")
             })
         };
 
@@ -4349,7 +4350,7 @@ mod tests {
                     "revision": 1
                 }],
                 "input": {"message": "hi"},
-                "ide": "assistant-start-rejected"
+                "idempotencyKey": String::from("assistant-start-rejected")
             }))
             .unwrap();
         assert_eq!(response["ok"], true);
@@ -4411,7 +4412,7 @@ mod tests {
                 "workflow": workflow,
                 "bindings": [],
                 "input": {"message": "hi"},
-                "ide": "assistant-multi-pass-rejected"
+                "idempotencyKey": String::from("assistant-multi-pass-rejected")
             })
         };
 
@@ -4527,7 +4528,7 @@ mod tests {
                     "revision": 1
                 }],
                 "input": {"message": "hi"},
-                "ide": "assistant-stale-route"
+                "idempotencyKey": String::from("assistant-stale-route")
             }))
             .unwrap();
         assert_eq!(response["ok"], true, "{response}");
@@ -4581,7 +4582,7 @@ mod tests {
                 "action": "strategy.run.start",
                 "revisionDigest": revision,
                 "input": {"message": "hi"},
-                "ide": "start-open-failure",
+                "idempotencyKey": String::from("start-open-failure"),
                 "conversationId": conversation_id,
             }))
             .unwrap();
@@ -4654,7 +4655,7 @@ mod tests {
                 "action": "strategy.run.start",
                 "revisionDigest": revision,
                 "input": {"message": "hi"},
-                "ide": "cancel-fixture",
+                "idempotencyKey": String::from("cancel-fixture"),
                 "conversationId": conversation_id,
             }))
             .unwrap();
@@ -5005,7 +5006,7 @@ mod tests {
                 "action": "strategy.run.start",
                 "revisionDigest": revision,
                 "input": {"message": "hi"},
-                "ide": "callback-start-1",
+                "idempotencyKey": String::from("callback-start-1"),
                 "conversationId": conversation_id,
             }))
             .unwrap();
@@ -5266,7 +5267,7 @@ mod tests {
                 "action": "strategy.run.start",
                 "revisionDigest": revision,
                 "input": {"message": "hi"},
-                "ide": "revoked-callback-start-1",
+                "idempotencyKey": String::from("revoked-callback-start-1"),
                 "conversationId": conversation_id,
             }))
             .unwrap();
@@ -5340,7 +5341,7 @@ mod tests {
                 "action": "strategy.run.start",
                 "revisionDigest": revision,
                 "input": {"message": "hi"},
-                "ide": "failure-report-1",
+                "idempotencyKey": String::from("failure-report-1"),
                 "conversationId": conversation_id,
             }))
             .unwrap();
@@ -5383,7 +5384,7 @@ mod tests {
             .execute(json!({
                 "action": "strategy.package.prepare-import",
                 "sourcePath": root.join("absent.zip").to_string_lossy(),
-                "sel": "selection-missing",
+                "selectionToken": String::from("selection-missing"),
                 "conversationId": conversation_id,
             }))
             .unwrap();
@@ -5482,7 +5483,7 @@ mod tests {
                 "action": "strategy.run.start",
                 "revisionDigest": "0".repeat(64),
                 "input": {"message": "hi"},
-                "ide": "start-missing-revision",
+                "idempotencyKey": String::from("start-missing-revision"),
                 "conversationId": conversation_id,
             }))
             .unwrap();
@@ -5550,7 +5551,7 @@ mod tests {
                     "revision": 1
                 }],
                 "input": {"message": "hi"},
-                "ide": "assistant-callback-1"
+                "idempotencyKey": String::from("assistant-callback-1")
             })
         };
 
@@ -5646,7 +5647,7 @@ mod tests {
                 "revision": 1
             }],
             "input": {"message": "hi"},
-            "ide": "assistant-callback-drive-failure"
+            "idempotencyKey": String::from("assistant-callback-drive-failure")
         });
         let response = service.execute(request.clone()).unwrap();
         assert_eq!(response["result"]["status"], "waiting", "{response}");
@@ -5709,7 +5710,7 @@ mod tests {
                 "action": "strategy.run.start",
                 "revisionDigest": revision,
                 "input": {"message": "hi"},
-                "ide": "flow-start-1",
+                "idempotencyKey": String::from("flow-start-1"),
                 "conversationId": conversation_id,
             }))
             .unwrap();
@@ -5802,7 +5803,7 @@ mod tests {
                 "action": "strategy.run.start",
                 "revisionDigest": revision,
                 "input": {"message": "hi"},
-                "ide": "cancel-parked",
+                "idempotencyKey": String::from("cancel-parked"),
                 "conversationId": conversation_id,
             }))
             .unwrap();
@@ -5872,7 +5873,7 @@ mod tests {
                 "action": "strategy.run.start",
                 "revisionDigest": revision,
                 "input": {"message": "hi"},
-                "ide": "callback-flow-start-1",
+                "idempotencyKey": String::from("callback-flow-start-1"),
                 "conversationId": conversation_id,
             }))
             .unwrap();

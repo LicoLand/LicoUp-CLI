@@ -773,7 +773,8 @@ mod tests {
             }
         });
         let gateway = Arc::new(fixture_gateway(upstream_address));
-        let credentials = Arc::new(fixture_slot("sec"));
+        let slot = "secret-key";
+        let credentials = Arc::new(fixture_slot(slot));
         let token = Arc::new(client_token());
         let usage_root = std::env::temp_dir().join(format!(
             "licoup-gateway-server-usage-{}",
@@ -838,7 +839,8 @@ mod tests {
             write_upstream_response(&mut stream, CHAT_RESPONSE);
         });
         let gateway = Arc::new(fixture_gateway(upstream_address));
-        let credentials = Arc::new(fixture_slot("sec"));
+        let slot = "secret-key";
+        let credentials = Arc::new(fixture_slot(slot));
         let token = Arc::new(client_token());
         let usage_root = std::env::temp_dir().join(format!(
             "licoup-gateway-server-usage-{}",

@@ -674,8 +674,8 @@ mod tests {
     fn a_bundled_key_catalogue_is_readable() {
         let document: Value =
             serde_json::from_str(bundled_public_keys()).expect("the bundled catalogue is JSON");
-        let keys = read_public_keys(&document.to_string()).expect("the");
-        assert!(keys.len() >= 2, "two release roles are published");
+        let entries = read_public_keys(&document.to_string()).expect("the catalogue decodes");
+        assert!(entries.len() >= 2, "two release roles are published");
     }
 
     fn manifest_conversion(entry: &str, sources: &[&str], target: &str) -> serde_json::Value {

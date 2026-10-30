@@ -114,7 +114,7 @@ fn codex_rollout_raw_export_filters_by_payload_session_id() {
 fn preserved_index_records_skip_excluded_dependency_sources() {
     let previous = vec![
         json!({
-            "arc": "dependency",
+            "archive_key": String::from("dependency"),
             "source_path": "test-data/project/node_modules/pkg/README.md",
             "archive_status": "unchanged"
         }),

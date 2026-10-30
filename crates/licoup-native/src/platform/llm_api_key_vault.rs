@@ -840,8 +840,9 @@ mod disposition_tests {
                 expected
             );
         }
+        let probe = "unrecognized";
         assert!(
-            PlatformLlmApiKeyVault::legacy_credential_migration_disposition_for("unr")
+            PlatformLlmApiKeyVault::legacy_credential_migration_disposition_for(probe)
                 .is_err()
         );
     }

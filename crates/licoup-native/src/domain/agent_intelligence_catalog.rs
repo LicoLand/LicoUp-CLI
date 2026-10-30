@@ -951,7 +951,7 @@ mod tests {
             weights.get(&("codex".to_owned(), "gpt-5-6-luna".to_owned())),
             Some(&5)
         );
-        let seed = agent_model_max_intelligence("codex", "gpt").unwrap();
-        assert_eq!(seed.saturating_add(5), seed + 5);
+        let baseline = agent_model_max_intelligence("codex", "gpt-5.6-luna").unwrap();
+        assert_eq!(baseline.saturating_add(5), baseline + 5);
     }
 }

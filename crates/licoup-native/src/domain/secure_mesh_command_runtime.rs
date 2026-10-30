@@ -147,7 +147,7 @@ mod tests {
             },
             "riskClass": "safe_write",
             "requiresUserConfirmation": false,
-            "ide": "idem-unready-agent",
+            "idempotencyKey": String::from("idem-unready-agent"),
             "createdAt": "2026-01-01T00:00:00Z",
             "expiresAt": "2026-01-01T00:10:00Z",
             "body": {

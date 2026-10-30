@@ -95,7 +95,8 @@ fn configured_verified_acp_is_preferred_and_authentication_unsupported_is_skippe
     );
 
     let expected_revision = capabilities.revision().to_owned();
-    let pin = select_pinned_protocol(&target, &capabilities, &policy(&["fix"]))
+    let agent = "fixture-acp-agent";
+    let pin = select_pinned_protocol(&target, &capabilities, &policy(&[agent]))
         .expect("configured ready ACP should be selected");
 
     assert_eq!(pin.protocol, ProtocolKind::Acp);
@@ -568,7 +569,9 @@ fn synthetic_kimi_acp_and_claude_native_are_data_only_and_dispatch_through_real_
 
 #[test]
 fn resume_rejects_any_attempt_protocol_adapter_session_or_capability_revision_mismatch() {
-    let pin = fixture_pin("fix", P"att");
+    let agent = "fixture-agent";
+    let attempt = "attempt-resume";
+    let pin = fixture_pin(agent, ProtocolKind::Acp, attempt);
     let variants = [
         PinnedProtocol {
             attempt_id: "different-attempt".to_owned(),
@@ -712,7 +715,9 @@ fn persisted_resume_uses_the_original_pin_after_policy_and_current_snapshot_chan
 
 #[test]
 fn semantic_events_are_ordered_bounded_and_end_in_exactly_one_terminal_event() {
-    let pin = fixture_pin("fix", P"att");
+    let agent = "fixture-agent";
+    let attempt = "attempt-events";
+    let pin = fixture_pin(agent, ProtocolKind::Acp, attempt);
     let cases = [
         vec![
             SemanticEvent {
@@ -791,7 +796,9 @@ fn semantic_events_are_ordered_bounded_and_end_in_exactly_one_terminal_event() {
 
 #[test]
 fn cancellation_and_cleanup_use_the_exact_pin_and_unknown_never_retries_or_falls_back() {
-    let pin = fixture_pin("fix", P"att");
+    let agent = "fixture-agent";
+    let attempt = "attempt-controls";
+    let pin = fixture_pin(agent, ProtocolKind::Acp, attempt);
     let mut control_adapter =
         ScriptedAdapter::for_pin(&pin, Err(AdapterOperationError::UnknownOutcome));
     cancel_pinned_attempt(&pin, &mut control_adapter).unwrap();
@@ -825,7 +832,9 @@ fn cancellation_and_cleanup_use_the_exact_pin_and_unknown_never_retries_or_falls
 
     // A different ready adapter exists but is never passed to or selected by
     // the pinned attempt after an unknown external outcome.
-    let fallback_pin = fixture_pin("fal", P"fal");
+    let agent = "fallback-agent";
+    let attempt = "fallback-attempt";
+    let fallback_pin = fixture_pin(agent, ProtocolKind::Native, attempt);
     let fallback = ScriptedAdapter::for_pin(
         &fallback_pin,
         Ok(AdapterDispatchOutcome {
@@ -903,7 +912,9 @@ fn real_coordinator_terminalizes_unknown_once_and_never_wakes_the_ready_secondar
 
 #[test]
 fn governed_values_are_privacy_minimal_opaque_handles_and_digests() {
-    let pin = fixture_pin("fix", P"att");
+    let agent = "fixture-agent";
+    let attempt = "attempt-private";
+    let pin = fixture_pin(agent, ProtocolKind::Acp, attempt);
     let value = serde_json::to_string(&request(pin)).unwrap();
     let private_path_canary = ["private-user", "path-canary"].join("/");
     for forbidden in [
@@ -921,7 +932,9 @@ fn governed_values_are_privacy_minimal_opaque_handles_and_digests() {
 
 #[test]
 fn sensitive_bindings_and_adapter_events_are_rejected_before_projection() {
-    let pin = fixture_pin("fix", P"att");
+    let agent = "fixture-agent";
+    let attempt = "attempt-canary";
+    let pin = fixture_pin(agent, ProtocolKind::Acp, attempt);
     let valid_outcome = || AdapterDispatchOutcome {
         session_binding: pin.session_binding.clone(),
         events: completed_events(),

@@ -30,10 +30,10 @@ use serde_json::json;
 use support::*;
 
 const SETTINGS_COLLECTION: &str = "settings";
-const SNAPSHOT_ROOT_KEY: &str = "con";
+const SNAPSHOT_ROOT_FIELD: &str = "conversationSnapshotRoot";
 const UNRELATED_USER_PATH: &str = "/tmp/unrelated-user-project";
 const REVISION_STORE: &str = "client-state/adaptive-flywheel/strategy-packages/revisions";
-const CREDENTIAL_DOMAIN: &str = concat!("gateway-", "credential-custody");
+const CUSTODY_DOMAIN: &str = "gateway-credential-custody";
 
 fn requires_credential_authorization() -> bool {
     PlatformLlmApiKeyVault::legacy_credential_migration_disposition()
@@ -44,12 +44,13 @@ fn requires_credential_authorization() -> bool {
 /// Arrange current-format owner content the released producers also write: one settings
 /// collection with an owner-managed reference, and one genuine committed workflow revision.
 fn arrange_current_owner_content(root: &Path, work: &Path) -> String {
+    let marker = "interoperability-oracle";
     let store = ClientStateStore::new(root.join("client-state")).expect("client-state owner");
     store
         .write_collection(
             SETTINGS_COLLECTION,
             json!({
-                SNAPSHOT_ROOT_KEY: root.join("snapshots").display().to_string(),
+                SNAPSHOT_ROOT_FIELD: root.join("snapshots").display().to_string(),
                 "userProjectPath": UNRELATED_USER_PATH,
             }),
         )
@@ -66,7 +67,7 @@ fn arrange_current_owner_content(root: &Path, work: &Path) -> String {
     let prepared = service
         .execute(json!({
             "action": "strategy.package.prepare-import",
-            "sel": "interoperability-oracle",
+            "selectionToken": marker,
             "sourcePath": package_path.display().to_string(),
         }))
         .expect("prepare package");
@@ -131,7 +132,7 @@ fn require_owner_readback(root: &Path, restored_snapshot_root: &Path, revision_d
         .read_collection(SETTINGS_COLLECTION)
         .expect("settings read");
     assert_eq!(
-        settings[SNAPSHOT_ROOT_KEY].as_str(),
+        settings[SNAPSHOT_ROOT_FIELD].as_str(),
         Some(restored_snapshot_root.display().to_string().as_str()),
         "the owner-managed snapshot reference follows the restored home"
     );
@@ -238,7 +239,7 @@ fn the_client_cli_and_the_tool_restore_each_others_archives() {
             .as_array()
             .expect("stillOwed")
             .iter()
-            .any(|domain| domain == CREDENTIAL_DOMAIN),
+            .any(|domain| domain == CUSTODY_DOMAIN),
         requires_authorization,
         "the report follows the credential owner's platform verdict: {converted_report}"
     );
@@ -270,7 +271,7 @@ fn the_client_cli_and_the_tool_restore_each_others_archives() {
     );
     assert_eq!(code, 0, "the CLI export must succeed: {exported}");
     assert_eq!(exported["coverage"], "limited");
-    assert_eq!(limitation_domains(&exported), vec![CREDENTIAL_DOMAIN]);
+    assert_eq!(limitation_domains(&exported), vec![CUSTODY_DOMAIN]);
 
     let tool_target = fixture.join("restored/tool-from-cli");
     let (code, imported) = run_tool(&[
@@ -283,7 +284,7 @@ fn the_client_cli_and_the_tool_restore_each_others_archives() {
     assert_eq!(code, 0, "the tool must restore the CLI archive: {imported}");
     assert_eq!(imported["status"], "imported");
     assert_eq!(imported["coverage"], "limited");
-    assert_eq!(limitation_domains(&imported), vec![CREDENTIAL_DOMAIN]);
+    assert_eq!(limitation_domains(&imported), vec![CUSTODY_DOMAIN]);
     assert_eq!(imported["relocated"], true);
     assert!(
         imported["verifiedWorkflowRevisions"]
@@ -312,7 +313,7 @@ fn the_client_cli_and_the_tool_restore_each_others_archives() {
     assert_eq!(code, 0, "the tool export must succeed: {exported}");
     assert_eq!(exported["status"], "exported");
     assert_eq!(exported["coverage"], "limited");
-    assert_eq!(limitation_domains(&exported), vec![CREDENTIAL_DOMAIN]);
+    assert_eq!(limitation_domains(&exported), vec![CUSTODY_DOMAIN]);
 
     let cli_target = fixture.join("restored/cli-from-tool");
     let (code, imported) = run_client_cli(
@@ -372,7 +373,7 @@ fn a_marker_only_application_root_is_refused_by_the_oracle() {
     assert_eq!(exported["coverage"], "limited");
     assert_eq!(
         limitation_domains(&exported),
-        vec![CREDENTIAL_DOMAIN],
+        vec![CUSTODY_DOMAIN],
         "pending custody stays visible even for a marker-only root"
     );
 
@@ -386,7 +387,7 @@ fn a_marker_only_application_root_is_refused_by_the_oracle() {
     ]);
     assert_eq!(code, 0, "the archive itself is well-formed: {imported}");
     assert_eq!(imported["coverage"], "limited");
-    assert_eq!(limitation_domains(&imported), vec![CREDENTIAL_DOMAIN]);
+    assert_eq!(limitation_domains(&imported), vec![CUSTODY_DOMAIN]);
     assert!(
         !owner_readback_accepts(&tool_target),
         "markers alone must not satisfy the owner readback oracle"
@@ -403,7 +404,7 @@ fn a_marker_only_application_root_is_refused_by_the_oracle() {
         "--writers-stopped",
     ]);
     assert_eq!(code, 0, "{exported}");
-    assert_eq!(limitation_domains(&exported), vec![CREDENTIAL_DOMAIN]);
+    assert_eq!(limitation_domains(&exported), vec![CUSTODY_DOMAIN]);
 
     let cli_target = fixture.join("restored/cli-from-marker-only");
     let (code, imported) = run_client_cli(

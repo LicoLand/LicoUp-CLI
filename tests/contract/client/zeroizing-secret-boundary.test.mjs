@@ -164,17 +164,17 @@ test("platform and mobile bridges have no String compatibility secret payload", 
     /get_secret:\s*Option<[\s\S]*value_out:\s*\*mut \*mut u8[\s\S]*value_len_out:\s*\*mut usize/u,
   );
   assert.ok(ios.includes("bytes_zeroize_and_free"));
-  const iosSecretStoreBlocks = implementationBlocks(ios, "Sec");
-  const iosSecretStore = iosSecretStoreBlocks.find((block) =>
+  const ios_store_blocks = implementationBlocks(ios, "SecureMeshSecretStore");
+  const ios_store = ios_store_blocks.find((block) =>
     block.includes("IOS_SECRET_STORE_BACKEND"));
-  assert.ok(iosSecretStore, "missing iOS callback secret-store implementation");
-  assert.match(iosSecretStore, /secret:\s*SecretBytes/u);
-  assert.match(iosSecretStore, /Result<Option<SecretBytes>>/u);
-  assert.match(iosSecretStore, /secret\.expose_bytes\s*\(\)/u);
-  assert.match(iosSecretStore, /bytes_zeroize_and_free/u);
-  assert.doesNotMatch(iosSecretStore, /CString::new\s*\(\s*secret/u);
-  assert.doesNotMatch(iosSecretStore, /CStr::from_ptr/u);
-  assert.doesNotMatch(iosSecretStore, /(?:to_owned|to_string)\s*\(\)/u);
+  assert.ok(ios_store, "missing iOS callback secret-store implementation");
+  assert.match(ios_store, /secret:\s*SecretBytes/u);
+  assert.match(ios_store, /Result<Option<SecretBytes>>/u);
+  assert.match(ios_store, /secret\.expose_bytes\s*\(\)/u);
+  assert.match(ios_store, /bytes_zeroize_and_free/u);
+  assert.doesNotMatch(ios_store, /CString::new\s*\(\s*secret/u);
+  assert.doesNotMatch(ios_store, /CStr::from_ptr/u);
+  assert.doesNotMatch(ios_store, /(?:to_owned|to_string)\s*\(\)/u);
 });
 
 test("native hydration and admitted secrets move only into RuntimeSecretMaterial", async () => {
@@ -337,9 +337,9 @@ test("cryptographic and relay consumers borrow explicit typed secret views", asy
     /fields\.private_key\.to_string\(\)\s*,\s*json!\s*\(/u,
   );
 
-  const requirePairingSecret = rustFunctionBlock(pairing, "req");
-  assert.match(requirePairingSecret, /material:\s*&RuntimeSecretMaterial/u);
-  assert.match(requirePairingSecret, /secret\.expose_bytes\s*\(\)/u);
+  const require_pairing_block = rustFunctionBlock(pairing, "require_pairing_secret");
+  assert.match(require_pairing_block, /material:\s*&RuntimeSecretMaterial/u);
+  assert.match(require_pairing_block, /secret\.expose_bytes\s*\(\)/u);
   for (const pairingConsumer of ["pairing_create", "pairing_claim"]) {
     const block = rustFunctionBlock(pairing, pairingConsumer);
     assert.ok(block.includes("secret_context.material"), pairingConsumer);

@@ -10,7 +10,7 @@ fn snapshot_redaction_covers_json_text_metadata_and_reference_exceptions() {
     let content = json!({
         "headers": {"Authorization": authorization_canary},
         "apiKey": api_canary,
-        "sec": "secret://local/ref",
+        "secretRef": String::from("secret://local/ref"),
         "url": format!("https://example.invalid/?access_token={query_canary}"),
     })
     .to_string();

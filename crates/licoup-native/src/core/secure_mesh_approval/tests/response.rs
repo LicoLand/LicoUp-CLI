@@ -5,6 +5,8 @@ use serde_json::json;
 
 #[test]
 fn first_valid_response_wins_and_duplicate_is_rejected() {
+    let flow = "nonce-cas";
+    let cb = "cb-ref-2";
     let request = json!({
         "pendingOperationId": "op-cas-1",
         "requesterAgentId": "hermes",
@@ -12,10 +14,10 @@ fn first_valid_response_wins_and_duplicate_is_rejected() {
         "originEndpointId": "endpoint-origin",
         "riskLevel": "high_risk",
         "displaySummary": "Approve terminal command",
-        "ada": "cb-ref-2",
+        "adapterCallbackTokenRef": cb,
         "adapterStyle": "callback",
         "expiresAt": "2099-01-01T00:00:00Z",
-        "res": "nonce-cas",
+        "responseNonce": flow,
         "trustedEndpointIds": ["endpoint-origin", "endpoint-phone"],
     });
     let _ = evaluate_approval_request_json(&request).unwrap();
@@ -23,7 +25,7 @@ fn first_valid_response_wins_and_duplicate_is_rejected() {
         "pendingOperationId": "op-cas-1",
         "decision": "allow",
         "respondingEndpointId": "endpoint-phone",
-        "res": "nonce-cas",
+        "responseNonce": flow,
     }))
     .unwrap();
     assert_eq!(first["ok"], true);
@@ -33,7 +35,7 @@ fn first_valid_response_wins_and_duplicate_is_rejected() {
         "pendingOperationId": "op-cas-1",
         "decision": "deny",
         "respondingEndpointId": "endpoint-origin",
-        "res": "nonce-cas",
+        "responseNonce": flow,
     }))
     .unwrap();
     assert_eq!(second["ok"], false);
@@ -44,6 +46,10 @@ fn first_valid_response_wins_and_duplicate_is_rejected() {
 
 #[test]
 fn expired_and_untrusted_endpoint_fail_closed() {
+    let flow = "nonce-exp";
+    let flow2 = "nonce-trust";
+    let cb = "cb-ref-3";
+    let cb2 = "cb-ref-4";
     let request = json!({
         "pendingOperationId": "op-exp-1",
         "requesterAgentId": "openclaw",
@@ -51,10 +57,10 @@ fn expired_and_untrusted_endpoint_fail_closed() {
         "originEndpointId": "endpoint-origin",
         "riskLevel": "safe_write",
         "displaySummary": "Approve edit",
-        "ada": "cb-ref-3",
+        "adapterCallbackTokenRef": cb,
         "adapterStyle": "callback",
         "expiresAt": "2000-01-01T00:00:00Z",
-        "res": "nonce-exp",
+        "responseNonce": flow,
         "trustedEndpointIds": ["endpoint-origin"],
     });
     assert!(evaluate_approval_request_json(&request).is_err());
@@ -66,10 +72,10 @@ fn expired_and_untrusted_endpoint_fail_closed() {
         "originEndpointId": "endpoint-origin",
         "riskLevel": "safe_write",
         "displaySummary": "Approve edit",
-        "ada": "cb-ref-4",
+        "adapterCallbackTokenRef": cb2,
         "adapterStyle": "callback",
         "expiresAt": "2099-01-01T00:00:00Z",
-        "res": "nonce-trust",
+        "responseNonce": flow2,
         "trustedEndpointIds": ["endpoint-origin"],
     });
     let _ = evaluate_approval_request_json(&live).unwrap();
@@ -78,7 +84,7 @@ fn expired_and_untrusted_endpoint_fail_closed() {
             "pendingOperationId": "op-trust-1",
             "decision": "allow",
             "respondingEndpointId": "endpoint-evil",
-            "res": "nonce-trust",
+            "responseNonce": flow2,
         }))
         .is_err()
     );
@@ -86,6 +92,8 @@ fn expired_and_untrusted_endpoint_fail_closed() {
 
 #[test]
 fn multi_client_resolve_cas_converges_first_valid_response() {
+    let flow = "nonce-cas-multi";
+    let cb = "cb-cas-multi";
     let request = json!({
         "pendingOperationId": "op-cas-multi-1",
         "requesterAgentId": "hermes",
@@ -93,10 +101,10 @@ fn multi_client_resolve_cas_converges_first_valid_response() {
         "originEndpointId": "endpoint-origin",
         "riskLevel": "high_risk",
         "displaySummary": "Approve remote effect",
-        "ada": "cb-cas-multi",
+        "adapterCallbackTokenRef": cb,
         "adapterStyle": "callback",
         "expiresAt": "2099-01-01T00:00:00Z",
-        "res": "nonce-cas-multi",
+        "responseNonce": flow,
         "trustedEndpointIds": [
             "endpoint-origin",
             "endpoint-phone",
@@ -109,7 +117,7 @@ fn multi_client_resolve_cas_converges_first_valid_response() {
         "pendingOperationId": "op-cas-multi-1",
         "decision": "allow",
         "respondingEndpointId": "endpoint-phone",
-        "res": "nonce-cas-multi",
+        "responseNonce": flow,
     }))
     .unwrap();
     assert_eq!(phone_allow["ok"], true);
@@ -123,7 +131,7 @@ fn multi_client_resolve_cas_converges_first_valid_response() {
         "pendingOperationId": "op-cas-multi-1",
         "decision": "deny",
         "respondingEndpointId": "endpoint-tablet",
-        "res": "nonce-cas-multi",
+        "responseNonce": flow,
     }))
     .unwrap();
     assert_eq!(tablet_deny["ok"], false);
@@ -135,7 +143,7 @@ fn multi_client_resolve_cas_converges_first_valid_response() {
         "pendingOperationId": "op-cas-multi-1",
         "decision": "allow",
         "respondingEndpointId": "endpoint-origin",
-        "res": "nonce-cas-multi",
+        "responseNonce": flow,
     }))
     .unwrap();
     assert_eq!(origin_retry["ok"], false);

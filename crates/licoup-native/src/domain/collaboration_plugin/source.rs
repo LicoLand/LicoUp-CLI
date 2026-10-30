@@ -272,9 +272,9 @@ mod tests {
 
     #[test]
     fn github_source_rejects_credentials_queries_and_tree_urls() {
-        let credential_url = ["htt", "token", "@", "github.com/LicoLand/plugin"].concat();
+        let guarded_url = ["https://", "token", "@", "github.com/LicoLand/plugin"].concat();
         for url in [
-            credential_url.as_str(),
+            guarded_url.as_str(),
             "https://github.com/LicoLand/plugin?token=value",
             "https://github.com/LicoLand/plugin/tree/main",
             "http://github.com/LicoLand/plugin",

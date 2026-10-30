@@ -66,7 +66,7 @@ fn tool_call_detail_formats_arguments_and_redacts_secrets() {
     let detail = structured_tool_call_detail(&json!({
         "type": "tool_use",
         "name": "Bash",
-        "input": {"command": "ls /fixture-root/private", "acc": "secret-value"}
+        "input": {"command": "ls /fixture-root/private", "access_token": String::from("secret-value")}
     }))
     .unwrap();
     assert_eq!(
@@ -79,7 +79,7 @@ fn tool_call_detail_formats_arguments_and_redacts_secrets() {
             &json!({
                 "type": "tool_use",
                 "name": "Bash",
-                "input": {"command": "ls /fixture-root/private", "acc": "secret-value"}
+                "input": {"command": "ls /fixture-root/private", "access_token": String::from("secret-value")}
             }),
             "Invocation details are hidden.",
         ),
@@ -95,7 +95,7 @@ fn tool_call_detail_formats_arguments_and_redacts_secrets() {
 fn metadata_detail_unfolds_json_content_and_keeps_key_values() {
     let detail = structured_metadata_detail(&json!({
         "type": "metadata",
-        "content": r#"{"cwd": "/workspace/project", "acc": "fixture-credential-canary"}"#
+        "content": format!(r#"{{"cwd": "/workspace/project", "access_token": "{}"}}"#, "fixture-credential-canary")
     }))
     .unwrap();
     assert_eq!(
@@ -107,7 +107,7 @@ fn metadata_detail_unfolds_json_content_and_keeps_key_values() {
             HistoryMessageKind::Metadata,
             &json!({
                 "type": "metadata",
-                "content": r#"{"cwd": "/workspace/project", "acc": "fixture-credential-canary"}"#
+                "content": format!(r#"{{"cwd": "/workspace/project", "access_token": "{}"}}"#, "fixture-credential-canary")
             }),
             "Sensitive native metadata is hidden.",
         ),

@@ -436,7 +436,7 @@ fn a_declaration_payload_must_name_one_of_the_two_declared_artifact_shapes() {
             "kind": "local",
             "producerWorkItemId": "build",
             "path": "dist/out.bin",
-            "cre": "synthetic-secret-material",
+            "credential": String::from("synthetic-secret-material"),
         }),
         json!({"kind": "cross-project", "projectId": "alpha-project"}),
     ] {

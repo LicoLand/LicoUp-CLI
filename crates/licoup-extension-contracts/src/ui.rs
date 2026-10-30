@@ -486,14 +486,14 @@ mod tests {
     fn a_secret_field_carries_no_secret() {
         assert!(form("example.settings/endpoint").validate().is_ok());
 
-        let mut with_secret = form("exa");
-        with_secret.fields = vec![Field {
+        let mut with_field = form("example.settings/endpoint");
+        with_field.fields = vec![Field {
             value: Some("placeholder-secret".to_owned()),
             ..Field::new("key", "API key", FieldType::SecretRef)
         }];
-        let failure = with_secret.validate().expect_err("inline secret");
+        let failure = with_field.validate().expect_err("inline secret");
         assert_eq!(failure.code, "ui_secret_inline_refused");
-        let contributions = [with_secret, form("example.settings/local")];
+        let contributions = [with_field, form("example.settings/local")];
         let mounts = plan_mount(&contributions, &[]);
         assert_eq!(mounts[0].blocked, Some("contribution_invalid"));
         assert!(mounts[1].is_mounted());

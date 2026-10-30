@@ -58,7 +58,7 @@ fn stdio_rpc_parses_typed_state_requests_without_cli_arguments() {
 
 #[test]
 fn stdio_rpc_rejects_invalid_state_without_echoing_private_payload() {
-    let private_secret = ["cre", "canary"].join("-");
+    let private_payload = ["credential", "canary"].join("-");
     let request = serde_json::to_vec(&json!({
         "protocol": STDIO_RPC_PROTOCOL,
         "id": "request-state",
@@ -66,7 +66,7 @@ fn stdio_rpc_rejects_invalid_state_without_echoing_private_payload() {
         "method": "state.get",
         "params": {
             "collection": "private-path-canary",
-            "secret": private_secret
+            "secret": private_payload
         },
     }))
     .unwrap();

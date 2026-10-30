@@ -9,7 +9,7 @@ const manager = read("crates/licoup-native/src/platform/antigravity_subagent_mcp
 const driver = "crates/licoup-agent-antigravity/src/driver";
 const execution = read(`${driver}/execution.rs`);
 const hooks = read(`${driver}/hooks.rs`);
-const auth = read(`${d`);
+const oauth_source = read(`${driver}/auth.rs`);
 const registration = read("crates/licoup-agent-antigravity/src/registration.rs");
 const runtime = read("crates/licoup-agent-drivers/src/runtime_adapters/subagent_mesh.rs");
 const adapters = read("crates/licoup-native/src/platform/native_agent_parser/adapters/mod.rs");
@@ -20,7 +20,7 @@ test("Antigravity registration uses one common namespaced ownership contract", (
   assert.match(manager, /0\.2\.0/u);
   assert.match(common, /ConfigAmbiguous/u);
   assert.match(common, /official\.exists\(\) && legacy\.exists\(\)/u);
-  assert.doesNotMatch(manager, /SERVER_KEY/u);
+  assert.doesNotMatch(manager, /SERVER_ID/u);
   assert.match(common, /\.gemini.*config.*skills/su);
   assert.match(common, /fn antigravity_context_environment/u);
   assert.match(common, /"\$\{LICOUP_HOME\}"/u);
@@ -42,7 +42,7 @@ test("Antigravity target requires hook identity, auth preflight, PTY and exact r
   assert.match(execution, /apply_mcp_runtime_root/u);
   assert.match(execution, /current_dir\(&self\.workspace\)/u);
   assert.match(hooks, /receipt/u);
-  assert.match(auth, /oauth|auth/iu);
+  assert.match(oauth_source, /oauth|auth/iu);
   // Exact resume asks the Agent's own parser through the shared port, and the
   // host's Antigravity entry is the package's own registration, which answers
   // with Antigravity's receipt rule. The host parser tree keeps no Antigravity

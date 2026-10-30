@@ -39,7 +39,7 @@ fn activity_jsonl_is_filterable_bounded_and_path_redacted() {
         json!({
             "target": "opencode",
             "configPath": root.path().join("private-config"),
-            "acc": "activity-token-canary"
+            "accessToken": String::from("activity-token-canary")
         }),
     )
     .unwrap();

@@ -81,7 +81,7 @@ export async function runAgentConversation(argv = process.argv.slice(2)) {
       environment: wrapper.environment,
       temporaryDirectory,
       disposableDataRoot: "",
-      disposableSeedSource: "",
+      disposableSourceDir: "",
       disposableProfileSeeded: false,
       timeoutMs: options.timeoutMs,
       maxOutputBytes: options.maxOutputBytes,

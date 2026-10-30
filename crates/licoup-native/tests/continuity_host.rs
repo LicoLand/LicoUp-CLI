@@ -3190,7 +3190,7 @@ fn production_settlement_refines_authorized_read_and_hides_invalid_read() {
     designate_assistant(&service, &conversation_id, &owner, &agent);
     let refine_event = post(&service, &conversation_id, &owner, "REFINE-CURRENT-CONTENT");
     let (other_id, other_owner, _) = create_group_with_agent(&service, "codex");
-    let secret_event = post(&service, &other_id, &other_owner, "UNG");
+    let guarded_event = post(&service, &other_id, &other_owner, "UNGRANTED-SECRET-TEXT");
     let posted = post(
         &service,
         &conversation_id,
@@ -3246,7 +3246,7 @@ fn production_settlement_refines_authorized_read_and_hides_invalid_read() {
     .unwrap();
     invalid.commitment_proposals.clear();
     invalid.task_child_admission = None;
-    invalid.requested_reads = vec![live_event_source(service.store(), &other_id, &secret_event)];
+    invalid.requested_reads = vec![live_event_source(service.store(), &other_id, &guarded_event)];
     service
         .after_runtime_settlement(
             &conversation_id,

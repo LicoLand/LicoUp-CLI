@@ -15,7 +15,7 @@ export function roundFactsReady(facts) {
     && facts.cleanupVerified;
 }
 
-export const processLocalBooleanFactKeys = Object.freeze([
+export const processLocalBooleanFactFields = Object.freeze([
   "persistentHost",
   "openNew",
   "exactSessionId",
@@ -43,7 +43,7 @@ export const processLocalBooleanFactKeys = Object.freeze([
 
 export function processLocalRoundFactsReady(facts) {
   return facts?.continuityScope === "process-local"
-    && processLocalBooleanFactKeys.every((key) => facts[key] === true);
+    && processLocalBooleanFactFields.every((key) => facts[key] === true);
 }
 
 export function processLocalHostShutdownEvidence(options) {

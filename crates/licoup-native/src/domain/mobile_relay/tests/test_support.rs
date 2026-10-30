@@ -258,7 +258,7 @@ pub(super) fn paired_command_envelope_fixture() -> (Value, Value, Value) {
         },
         "riskClass": "read_only",
         "requiresUserConfirmation": false,
-        "ide": "idem_mobile_relay_replay_fixture",
+        "idempotencyKey": String::from("idem_mobile_relay_replay_fixture"),
         "createdAt": now_iso(),
         "expiresAt": timestamp_after_seconds(MOBILE_RELAY_COMMAND_TTL_SECONDS).unwrap(),
         "body": {

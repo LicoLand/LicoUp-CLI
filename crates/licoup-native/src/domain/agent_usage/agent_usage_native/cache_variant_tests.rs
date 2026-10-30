@@ -210,8 +210,8 @@ fn schema_seven_migrates_existing_ledgers_sources_and_cursors_without_recounting
     assert_eq!(
         connection
             .query_row(
-                "SELECT last_prompt FROM native_usage_watermarks WHERE usage_key='old'",
-                [],
+                "SELECT last_prompt FROM native_usage_watermarks WHERE usage_key=?1",
+                ["old-model-key"],
                 |row| row.get::<_, i64>(0)
             )
             .unwrap(),

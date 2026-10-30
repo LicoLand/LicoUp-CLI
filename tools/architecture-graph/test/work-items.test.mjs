@@ -16,7 +16,7 @@ function receiptFor(graph, taskId, overrides = {}) {
   return {
     task_id: taskId,
     input_digest: "b".repeat(64),
-    claim_token: "fix",
+    claim_ref: "fixture-claim",
     owner: "fixture-worker",
     generation: 1,
     status: "passed",
@@ -174,7 +174,7 @@ test("malformed receipt fields produce a rejection rather than success or a Type
   const base = receiptFor(graph, "T01");
   const overrides = [
     { input_digest: "not-a-digest" },
-    { claim_token: "" },
+    { claim_ref: "" },
     { owner: " " },
     { generation: 0 },
     { generation: 1.5 },
@@ -198,14 +198,14 @@ test("a stale claim record cannot be paired with a fresh receipt", () => {
   const receipt = receiptFor(graph, "T01");
   const claim = {
     task_id: "T01",
-    claim_token: "token-a",
+    claim_ref: "token-a",
     owner: "worker-a",
     generation: 3,
     task_digest: receipt.task_digest,
     graph_digest: receipt.graph_digest,
     input_digest: "b".repeat(64),
   };
-  const paired = { ...receipt, claim_token: "token-a", owner: "worker-a", generation: 3, input_digest: "b".repeat(64) };
+  const paired = { ...receipt, claim_ref: "token-a", owner: "worker-a", generation: 3, input_digest: "b".repeat(64) };
   assert.equal(verifyEvidenceBinding({ graph, receipt: paired, claim }).consistent, true);
 
   const oldGeneration = verifyEvidenceBinding({
@@ -219,7 +219,7 @@ test("a stale claim record cannot be paired with a fresh receipt", () => {
   const missingField = verifyEvidenceBinding({
     graph,
     receipt: paired,
-    claim: { task_id: "T01", claim_token: "token-a" },
+    claim: { task_id: "T01", claim_ref: "token-a" },
   });
   assert.ok(missingField.reasons.some((reason) => reason.includes("claim record does not carry")));
 });

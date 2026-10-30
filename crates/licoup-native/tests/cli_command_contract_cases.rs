@@ -1150,13 +1150,13 @@ fn state_write_admission_is_bounded_atomic_and_redacted() {
 
     let initial = json!({
         "items": [{
-            "key": "cli",
+            "key": String::from("cli-admission-oracle"),
             "value": "original"
         }]
     });
     let replacement = json!({
         "items": [{
-            "key": "cli",
+            "key": String::from("cli-admission-oracle"),
             "value": "replacement"
         }]
     });
@@ -4097,7 +4097,7 @@ mod recovery_cli {
     use std::os::unix::fs::PermissionsExt;
 
     const LEASE_ACTION: &str = "LICOUP_TEST_CLI_LEASE_ACTION";
-    const SNAPSHOT_ROOT_KEY: &str = "con";
+    const SNAPSHOT_ROOT: &str = "conversationSnapshotRoot";
     const UNRELATED_USER_PATH: &str = "/tmp/unrelated-user-project";
 
     fn recovery_fixture(label: &str) -> (PathBuf, PathBuf, PathBuf) {
@@ -4141,7 +4141,7 @@ mod recovery_cli {
             .write_collection(
                 "settings",
                 json!({
-                    SNAPSHOT_ROOT_KEY: root.join("snapshots").display().to_string(),
+                    SNAPSHOT_ROOT: root.join("snapshots").display().to_string(),
                     "userProjectPath": UNRELATED_USER_PATH,
                 }),
             )
@@ -4278,7 +4278,7 @@ mod recovery_cli {
             .read_collection("settings")
             .expect("settings read");
             assert_eq!(
-                restored[SNAPSHOT_ROOT_KEY].as_str(),
+                restored[SNAPSHOT_ROOT].as_str(),
                 Some(target.join("snapshots").display().to_string().as_str()),
                 "the owned reference follows the restored home"
             );

@@ -99,7 +99,7 @@ fn mobile_relay_e2ee_round_trips_command_and_result_without_plaintext() {
         },
         "riskClass": "safe_write",
         "requiresUserConfirmation": false,
-        "ide": "idem_mobile_test",
+        "idempotencyKey": String::from("idem_mobile_test"),
         "createdAt": now_iso(),
         "expiresAt": timestamp_after_seconds(MOBILE_RELAY_COMMAND_TTL_SECONDS).unwrap(),
         "body": {
@@ -249,7 +249,7 @@ fn mobile_relay_file_key_envelope_hides_attachment_key_and_opens_file_after_decr
         "kind": "secure_mesh.file_key",
         "fileKeyBase64url": file_key_base64url,
         "fileId": manifest.file_id,
-        "fil": "relay-file-key-secret-canary",
+        "fileKeyCanary": String::from("relay-file-key-secret-canary"),
         "manifestCiphertextHash": encrypted_manifest.ciphertext_hash,
         "chunkCiphertextHash": encrypted_chunk.ciphertext_hash
     });
@@ -347,7 +347,7 @@ fn mobile_relay_file_key_envelope_metadata_boundary_is_exhaustive() {
             "fileKeyBase64url": file_key_base64url,
             "fileId": "relay-file-boundary-private-id",
             "fileName": "relay-file-boundary-private-name.txt",
-            "fil": "relay-file-boundary-private-key-canary"
+            "fileKeyCanary": String::from("relay-file-boundary-private-key-canary")
         }),
     )
     .unwrap();

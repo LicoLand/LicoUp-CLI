@@ -388,7 +388,7 @@ mod tests {
         // The deliberately scrubbed probe spawns apply their env_clear +
         // whitelist after any snapshot application, so the snapshot can never
         // widen a probe's environment.
-        let _pin = pin_process_env_snapshot_for_testing(&[("LIC", "pinned")]);
+        let _guard = pin_process_env_snapshot_for_testing(&[("LICO_TEST_SNAPSHOT_MARKER", "pinned")]);
         let mut command = Command::new("fixture");
         apply_to_command(&mut command);
         command.env("LICO_INJECTION_CANDIDATE", "1");

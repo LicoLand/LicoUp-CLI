@@ -1128,7 +1128,7 @@ mod tests {
             )]));
             let stale = force_stop_confirm(&json!({
                 "scopeId": "local-service.opencode_serve",
-                "con": "local-service.opencode_serve#1",
+                "confirmationToken": String::from("local-service.opencode_serve#1"),
                 "confirmed": true,
             }));
             assert_eq!(stale["status"], "unconfirmed");
@@ -1291,7 +1291,7 @@ mod tests {
                 "conversationId": "conversation:two",
                 "reason": "/fixture/private/secret-token",
                 "prompt": "confidential work content",
-                "apiKey": "red",
+                "apiKey": String::from("redacted-synthetic-canary"),
             }),
             &ports,
         );

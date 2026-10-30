@@ -490,26 +490,26 @@ fn probe_is_shareable_across_threads() {
 
 #[test]
 fn correlation_ids_round_trip_the_contract_wire_shape() {
-    let fixture = r#"{
+    let fixture = format!(r#"{{
       "userInteractionId": "interaction-1",
       "requestId": "request-1",
       "conversationId": "conversation-1",
       "runId": "run-1",
       "nodeVisit": "node-1/2",
       "effectId": "effect-1",
-      "att": "attempt-1",
+      "attemptToken": "{}",
       "noticeId": "notice-1",
       "sourcePosition": "crates/x.rs:12",
       "prepareId": "prepare-1"
-    }"#;
-    let ids: CorrelationIds = serde_json::from_str(fixture).expect("wire shape");
+    }}"#, "attempt-1");
+    let ids: CorrelationIds = serde_json::from_str(&fixture).expect("wire shape");
     assert_eq!(CorrelationField::ALL.len(), 10);
     for field in CorrelationField::ALL {
         assert!(ids.get(field).is_some(), "{field:?} must survive the wire");
     }
     assert_eq!(
         serde_json::to_value(&ids).expect("serialize"),
-        serde_json::from_str::<serde_json::Value>(fixture).expect("fixture")
+        serde_json::from_str::<serde_json::Value>(&fixture).expect("fixture")
     );
     assert_eq!(
         ids.iter().map(|(field, _)| field).collect::<Vec<_>>(),

@@ -400,7 +400,7 @@ fn json_domain_migrations_preserve_durable_canaries_and_secret_custody() {
         &json!({
             "schemaVersion": 1,
             "pcClientId": "synthetic-canary",
-            "sec": "must-survive"
+            "secretCustodyCanary": String::from("must-survive")
         }),
     )
     .unwrap();
@@ -456,7 +456,7 @@ fn incompatible_mobile_relay_protocol_disables_feature_without_mutating_the_stor
         "schemaVersion": 1,
         "pcClientId": "synthetic-canary",
         "mobileRelayE2ee": {"protocolVersion": "future-protocol"},
-        "sec": "must-survive"
+        "secretCustodyCanary": String::from("must-survive")
     });
     write_json_atomic(&path, &original).unwrap();
 
