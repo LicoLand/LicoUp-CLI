@@ -70,6 +70,7 @@ fn cursor_exact_miss_does_not_parse_unrelated_database_records() {
                 session_ids: vec!["missing".into()],
                 match_terms: vec![],
                 match_project_paths: vec![],
+                hydrate_session_ids: std::collections::BTreeSet::new(),
                 page: HistoryPageConfig {
                     offset: 0,
                     limit: Some(1),
@@ -95,6 +96,7 @@ fn cursor_exact_miss_does_not_parse_unrelated_database_records() {
                 session_ids: requested.into_iter().map(str::to_string).collect(),
                 match_terms: vec![],
                 match_project_paths: vec![],
+                hydrate_session_ids: std::collections::BTreeSet::new(),
                 page: HistoryPageConfig {
                     offset: 0,
                     limit: Some(1),
@@ -148,6 +150,7 @@ fn cursor_recognized_empty_stores_do_not_fall_back_to_bookkeeping() {
                 session_ids: vec![],
                 match_terms: vec![],
                 match_project_paths: vec![],
+                hydrate_session_ids: std::collections::BTreeSet::new(),
                 page: HistoryPageConfig {
                     offset: 0,
                     limit: Some(1),
@@ -191,6 +194,7 @@ fn public_composition_opens_locally_and_routes_to_generic_fallback() {
             session_ids: Vec::new(),
             match_terms: Vec::new(),
             match_project_paths: Vec::new(),
+            hydrate_session_ids: std::collections::BTreeSet::new(),
             page: HistoryPageConfig {
                 offset: 0,
                 limit: None,

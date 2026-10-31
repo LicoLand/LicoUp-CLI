@@ -55,6 +55,19 @@ license = "AGPL-3.0-or-later"
 [workspace.dependencies]
 # One canonical version per shared dependency. Members reference these via
 # `workspace = true`; keep direct-dependency generations in one place.
+#
+# First-party crates published by crates.io owner `Unka-Malloc` from the
+# Agent-Statistics, Adapter-For-All-Agents and Adapters-For-Model-Providers
+# repositories. The owner record and the Cargo.lock checksum are the published
+# artifact's provenance; an exact version keeps a registry substitution a
+# reviewable manifest edit.
+a4aa = "=0.4.1"
+a4aa-copilot = "=0.4.1"
+a4mp = { version = "=0.1.0", default-features = false }
+agent-statistics = "=0.2.0"
+balance-detector = "=0.2.0"
+collection-store = "=0.1.0"
+token-usage-detector = "=0.2.0"
 anyhow = "1.0"
 base64 = "0.22"
 chacha20poly1305 = { version = "0.10", features = ["std"] }
@@ -121,17 +134,9 @@ zstd = "0.13"
 # Revisit when hax publishes a release with the fix.
 [patch.crates-io]
 hax-lib = { git = "https://github.com/hacspec/hax.git", rev = "8f9cb576e58f6cc7e9ed249a7d4439b0f7ed0da7" }
-# Detector crates depend on the published contract; inside this unified build
-# the same crate is the workspace member, so the registry requirement resolves
-# to the local copy and both sides see one `ApplicationFailure`.
-licoup-extension-contracts = { path = "crates/licoup-extension-contracts" }
 # credential-lease builds against the published foundation; inside this unified
 # build the same crate is the workspace member, so `SecretBytes` stays one type.
 licoup-foundation = { path = "crates/licoup-foundation" }
-# agent-statistics consumes these through the registry; inside this unified
-# build the same crates are workspace members, so both sides see one type.
-licoup-model-catalog = { path = "crates/licoup-model-catalog" }
-licoup-client-state = { path = "crates/licoup-client-state" }
 
 [profile.release]
 codegen-units = 1

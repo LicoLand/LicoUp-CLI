@@ -158,7 +158,7 @@ pub(super) fn backfill_transcript_message_times(messages: &mut [Value], path: &P
     }
 }
 
-fn epoch_millis_to_rfc3339(millis: i128) -> Option<String> {
+pub(super) fn epoch_millis_to_rfc3339(millis: i128) -> Option<String> {
     use time::{OffsetDateTime, format_description::well_known::Rfc3339};
     OffsetDateTime::from_unix_timestamp(i64::try_from(millis / 1000).ok()?)
         .ok()

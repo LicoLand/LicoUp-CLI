@@ -3536,7 +3536,7 @@ mod tests {
             .store()
             .prepare_runtime_dispatch(
                 &agent_id,
-                minted_marker(),
+                "synthetic-session",
                 "Synthetic request",
                 Some(&conversation_id),
                 Some(&membership_id),
@@ -3546,7 +3546,7 @@ mod tests {
             .unwrap();
         service
             .store()
-            .bind_runtime_session(&scope, &agent_id, minted_marker(), None, None)
+            .bind_runtime_session(&scope, &agent_id, "synthetic-session", None, None)
             .unwrap();
         let ordinary = service
             .execute(json!({"action":"conversation.get","conversationId":conversation_id}))
@@ -3561,7 +3561,7 @@ mod tests {
         assert_eq!(
             local["nativeSessionReferences"],
             json!([{"membershipId":membership_id,
-            "agentId":agent_id,"nativeSessionId":minted_marker()}])
+            "agentId":agent_id,"nativeSessionId":"synthetic-session"}])
         );
         assert!(local.get("runtimeBindings").is_none());
     }

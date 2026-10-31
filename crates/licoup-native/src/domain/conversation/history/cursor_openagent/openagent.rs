@@ -33,7 +33,7 @@ pub(super) fn parse_openagent_sqlite_sessions(
     source_kind: &str,
     metadata: &fs::Metadata,
     connection: &mut Connection,
-    only_session_id: Option<&str>,
+    requested_sessions: Option<&std::collections::BTreeSet<String>>,
 ) -> Vec<Value> {
     let transaction = match connection.transaction_with_behavior(TransactionBehavior::Deferred) {
         Ok(transaction) => transaction,
@@ -47,7 +47,7 @@ pub(super) fn parse_openagent_sqlite_sessions(
     }
 
     let sessions =
-        retain_requested_session_lineage(openagent_session_rows(&transaction), only_session_id)
+        retain_requested_session_lineage(openagent_session_rows(&transaction), requested_sessions)
             .into_iter()
             .filter_map(|meta| {
                 let messages =
@@ -206,12 +206,12 @@ pub(super) fn openagent_session_rows(connection: &Connection) -> Vec<OpenAgentSe
 /// parent conversation's delegated-task cards.
 fn retain_requested_session_lineage(
     sessions: Vec<OpenAgentSessionMeta>,
-    only_session_id: Option<&str>,
+    requested_sessions: Option<&std::collections::BTreeSet<String>>,
 ) -> Vec<OpenAgentSessionMeta> {
-    let Some(requested) = only_session_id.map(str::trim).filter(|id| !id.is_empty()) else {
+    let Some(seed) = requested_sessions.filter(|ids| !ids.is_empty()) else {
         return sessions;
     };
-    let mut wanted = std::collections::HashSet::<String>::from([requested.to_owned()]);
+    let mut wanted = std::collections::HashSet::<String>::from_iter(seed.iter().cloned());
     loop {
         let before = wanted.len();
         for session in &sessions {

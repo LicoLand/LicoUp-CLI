@@ -1,8 +1,8 @@
 use super::file_collection::FileMetadata;
 use super::models::{CachedFile, ParserState};
 use super::utils::{from_i64, to_i64, totals_columns, totals_from_columns};
-use anyhow::Result;
 use agent_statistics::contract::UsageVariant;
+use anyhow::Result;
 use rusqlite::{OptionalExtension, Statement, Transaction, params};
 
 pub(super) struct CacheBatch<'connection> {

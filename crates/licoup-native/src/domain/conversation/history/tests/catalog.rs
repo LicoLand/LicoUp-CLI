@@ -733,6 +733,274 @@ fn openagent_explicit_parent_folds_identically_in_browse_and_exact_reads() {
 }
 
 #[test]
+fn openagent_browse_hydration_scopes_shared_store_parse_to_the_page() {
+    let home = temp_dir("openagent-scoped-hydration");
+    let data_dir = home.join(".local/share/opencode");
+    fs::create_dir_all(&data_dir).unwrap();
+    let database = data_dir.join("opencode.db");
+    let connection = Connection::open(&database).unwrap();
+    connection
+        .execute_batch(
+            "CREATE TABLE session (
+                id TEXT PRIMARY KEY, parent_id TEXT, title TEXT, directory TEXT,
+                time_created INTEGER, time_updated INTEGER, time_archived INTEGER
+             );
+             CREATE TABLE message (
+                id TEXT PRIMARY KEY, session_id TEXT, time_created INTEGER,
+                time_updated INTEGER, data TEXT
+             );
+             CREATE TABLE part (
+                id TEXT PRIMARY KEY, message_id TEXT, session_id TEXT,
+                time_created INTEGER, data TEXT
+             );",
+        )
+        .unwrap();
+    let now = now_epoch_millis();
+    for index in 0..40_i64 {
+        connection
+            .execute(
+                "INSERT INTO session VALUES (?1, NULL, ?2, '/workspace/openagent', ?3, ?3, NULL)",
+                (
+                    format!("ses-{index:02}"),
+                    format!("Title {index:02}"),
+                    now - index,
+                ),
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO message VALUES (?1, ?2, ?3, ?3, ?4)",
+                (
+                    format!("msg-{index:02}"),
+                    format!("ses-{index:02}"),
+                    now - index,
+                    format!(r#"{{"role":"user","text":"Prompt {index:02}"}}"#),
+                ),
+            )
+            .unwrap();
+    }
+    // A delegated child of the newest session keeps the lineage fold covered.
+    connection
+        .execute(
+            "INSERT INTO session VALUES ('ses-child', 'ses-00', 'Child task', '/workspace/openagent', ?1, ?1, NULL)",
+            [now + 1],
+        )
+        .unwrap();
+    connection
+        .execute(
+            "INSERT INTO message VALUES ('msg-child', 'ses-child', ?1, ?1, ?2)",
+            (now + 1, r#"{"role":"assistant","text":"child work"}"#),
+        )
+        .unwrap();
+    drop(connection);
+
+    let cache_root = temp_dir("openagent-scoped-hydration-cache");
+    let params = json!({
+        "agent": "opencode",
+        "homeDir": display_path(&home),
+        "limit": 5,
+        "historyProjectionCacheRoot": display_path(&cache_root)
+    });
+    let scan_config = HistoryScanConfig::from_params(&params);
+    let (listed, cold) = super::super::catalog::conversation_list_from_catalog_inner(
+        HistoryAdapter::OpenCode,
+        "opencode",
+        &params,
+        &scan_config,
+    );
+    let sessions = listed["sessions"].as_array().unwrap();
+    assert_eq!(sessions.len(), 5);
+    // An unscoped parse materializes every one of the 41 stored sessions; the
+    // page scope bounds it to the rendered rows plus their lineage children.
+    assert!(
+        cold.parsed_sessions <= 6,
+        "hydration parse must be scoped to the page, parsed {}",
+        cold.parsed_sessions
+    );
+    assert!(
+        sessions[0]["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|message| message["role"] == "subagent"),
+        "the page scope still includes lineage children for the fold"
+    );
+
+    let (listed_warm, warm) = super::super::catalog::conversation_list_from_catalog_inner(
+        HistoryAdapter::OpenCode,
+        "opencode",
+        &params,
+        &scan_config,
+    );
+    assert_eq!(warm.cache_hits, 1);
+    assert_eq!(warm.parsed_sessions, 0, "a scoped cache hit parses nothing");
+    assert_eq!(listed_warm["sessions"], listed["sessions"]);
+
+    // The next page is a different scope: it must parse its own sessions and
+    // must not resolve against page one's cached projection.
+    let next_params = json!({
+        "agent": "opencode",
+        "homeDir": display_path(&home),
+        "limit": 5,
+        "offset": 5,
+        "historyProjectionCacheRoot": display_path(&cache_root)
+    });
+    let next_config = HistoryScanConfig::from_params(&next_params);
+    let (next, next_counters) = super::super::catalog::conversation_list_from_catalog_inner(
+        HistoryAdapter::OpenCode,
+        "opencode",
+        &next_params,
+        &next_config,
+    );
+    let next_sessions = next["sessions"].as_array().unwrap();
+    assert_eq!(next_counters.cache_misses, 1);
+    assert!(next_counters.parsed_sessions <= 5);
+    let next_ids = next_sessions
+        .iter()
+        .filter_map(|session| session["nativeSessionId"].as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        next_ids,
+        vec!["ses-05", "ses-06", "ses-07", "ses-08", "ses-09"],
+        "a differently scoped page resolves its own sessions"
+    );
+    fs::remove_dir_all(&home).unwrap();
+    fs::remove_dir_all(&cache_root).unwrap();
+}
+
+#[test]
+fn cursor_browse_hydration_scopes_shared_store_parse_to_the_page() {
+    let home = temp_dir("cursor-scoped-hydration");
+    let storage = home.join("Library/Application Support/Cursor/User/globalStorage");
+    fs::create_dir_all(&storage).unwrap();
+    let database = storage.join("state.vscdb");
+    let connection = Connection::open(&database).unwrap();
+    connection
+        .execute(
+            "CREATE TABLE cursorDiskKV (key TEXT NOT NULL, value BLOB NOT NULL)",
+            [],
+        )
+        .unwrap();
+    let now = now_epoch_millis();
+    for index in 0..40_i64 {
+        let composer = format!("composer-{index:02}");
+        let bubble = format!("bubble-{index:02}");
+        connection
+            .execute(
+                "INSERT INTO cursorDiskKV (key, value) VALUES (?1, ?2)",
+                rusqlite::params![
+                    format!("composerData:{composer}"),
+                    serde_json::to_vec(&json!({
+                        "composerId": composer,
+                        "name": format!("Cursor session {index:02}"),
+                        "createdAt": now - index,
+                        "lastUpdatedAt": now - index,
+                        "fullConversationHeadersOnly": [
+                            { "bubbleId": bubble, "type": 1 }
+                        ]
+                    }))
+                    .unwrap()
+                ],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO cursorDiskKV (key, value) VALUES (?1, ?2)",
+                rusqlite::params![
+                    format!("bubbleId:{composer}:{bubble}"),
+                    serde_json::to_vec(&json!({
+                        "bubbleId": bubble,
+                        "type": 1,
+                        "createdAt": now - index,
+                        "text": format!("Cursor prompt {index:02}")
+                    }))
+                    .unwrap()
+                ],
+            )
+            .unwrap();
+    }
+    // A delegated child of the newest composer keeps the lineage fold covered.
+    connection
+        .execute(
+            "INSERT INTO cursorDiskKV (key, value) VALUES (?1, ?2)",
+            rusqlite::params![
+                "composerData:composer-child",
+                serde_json::to_vec(&json!({
+                    "composerId": "composer-child",
+                    "name": "Delegated task",
+                    "createdAt": now + 1,
+                    "lastUpdatedAt": now + 1,
+                    "subagentInfo": { "parentComposerId": "composer-00" },
+                    "fullConversationHeadersOnly": [
+                        { "bubbleId": "bubble-child", "type": 1 }
+                    ]
+                }))
+                .unwrap()
+            ],
+        )
+        .unwrap();
+    connection
+        .execute(
+            "INSERT INTO cursorDiskKV (key, value) VALUES (?1, ?2)",
+            rusqlite::params![
+                "bubbleId:composer-child:bubble-child",
+                serde_json::to_vec(&json!({
+                    "bubbleId": "bubble-child",
+                    "type": 1,
+                    "createdAt": now + 1,
+                    "text": "delegated work"
+                }))
+                .unwrap()
+            ],
+        )
+        .unwrap();
+    drop(connection);
+
+    let cache_root = temp_dir("cursor-scoped-hydration-cache");
+    let params = json!({
+        "agent": "cursor",
+        "homeDir": display_path(&home),
+        "limit": 5,
+        "historyProjectionCacheRoot": display_path(&cache_root)
+    });
+    let scan_config = HistoryScanConfig::from_params(&params);
+    let (listed, cold) = super::super::catalog::conversation_list_from_catalog_inner(
+        HistoryAdapter::Cursor,
+        "cursor",
+        &params,
+        &scan_config,
+    );
+    let sessions = listed["sessions"].as_array().unwrap();
+    assert_eq!(sessions.len(), 5);
+    // An unscoped parse materializes every one of the 41 stored composers; the
+    // page scope bounds it to the rendered rows plus their lineage children.
+    assert!(
+        cold.parsed_sessions <= 6,
+        "cursor hydration parse must be scoped to the page, parsed {}",
+        cold.parsed_sessions
+    );
+    assert!(
+        sessions[0]["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|message| message["role"] == "subagent"),
+        "the page scope still includes lineage children for the fold"
+    );
+
+    let (_, warm) = super::super::catalog::conversation_list_from_catalog_inner(
+        HistoryAdapter::Cursor,
+        "cursor",
+        &params,
+        &scan_config,
+    );
+    assert_eq!(warm.cache_hits, 1);
+    assert_eq!(warm.parsed_sessions, 0, "a scoped cache hit parses nothing");
+    fs::remove_dir_all(&home).unwrap();
+    fs::remove_dir_all(&cache_root).unwrap();
+}
+
+#[test]
 fn kimi_code_catalog_reads_state_json_and_hydrates_page_from_wire() {
     let home = temp_dir("kimi-code-catalog");
     let session_dir = home.join(".kimi-code/sessions/wd_project/session-a");

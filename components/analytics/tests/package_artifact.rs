@@ -23,11 +23,11 @@ use licoup_extension_contracts::manifest::{PackageManifest, Runtime};
 use licoup_extension_contracts::profile::ExtensionProfile;
 use licoup_extension_contracts::ui::{Contribution, MountRequirement};
 use licoup_extension_contracts::usage::Quality;
-use licoup_usage_source_sdk::binding::SourceBinding;
-use licoup_usage_source_sdk::normalize::OtlpSumNormalizer;
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use token_usage_detector::binding::SourceBinding;
+use token_usage_detector::normalize::OtlpSumNormalizer;
 
 const PACKAGE_ID: &str = "org.licoland.feature.analytics";
 const CAPABILITY: &str = "analytics.v1";

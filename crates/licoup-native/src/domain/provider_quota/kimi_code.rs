@@ -9,6 +9,7 @@
 //! coding usages endpoint. The refresh token is never read or used; the CLI
 //! itself renews the access token when the user runs it.
 
+use super::balance;
 use super::contract::{
     DEFAULT_STALE_AFTER_SECONDS, ProviderQuotaSnapshot, QuotaFetchError, QuotaIdentity,
     QuotaProvider, QuotaStatus, QuotaWindow,
@@ -112,7 +113,8 @@ impl KimiCodeSource {
 
         let payload = (self.fetch_usages)(USAGES_URL, &headers)?;
         let account_label = credentials::jwt_string_claim(&token, "sub");
-        normalize_usages(&payload, &captured_at, account_label)
+        let epoch = expires_at.map(|epoch| epoch.to_string());
+        normalize_usages(&payload, &captured_at, account_label, epoch.as_deref())
     }
 }
 
@@ -182,7 +184,9 @@ fn normalize_usages(
     payload: &Value,
     captured_at: &str,
     account_label: Option<String>,
+    account_epoch: Option<&str>,
 ) -> Result<ProviderQuotaSnapshot, QuotaFetchError> {
+    balance::refuse_self_asserted(payload)?;
     let mut windows = Vec::new();
     if let Some(usage) = payload.get("usage") {
         if let Some(window) = normalize_counter_window(
@@ -221,6 +225,16 @@ fn normalize_usages(
             .and_then(Value::as_str)
             .map(membership_level_label),
     };
+    let balance = balance::bind(
+        QuotaProvider::KimiCode,
+        identity
+            .account_label
+            .as_deref()
+            .unwrap_or(balance::LOCAL_ACCOUNT),
+        account_epoch.unwrap_or(balance::FIXED_EPOCH),
+        &windows,
+        captured_at,
+    )?;
     Ok(ProviderQuotaSnapshot {
         agent_id: QuotaProvider::KimiCode.agent_id().to_owned(),
         provider: QuotaProvider::KimiCode,
@@ -229,6 +243,7 @@ fn normalize_usages(
         identity,
         captured_at: captured_at.to_owned(),
         stale_after_seconds: DEFAULT_STALE_AFTER_SECONDS,
+        balance: Some(balance),
     })
 }
 

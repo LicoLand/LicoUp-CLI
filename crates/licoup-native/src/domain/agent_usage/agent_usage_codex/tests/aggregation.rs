@@ -96,7 +96,7 @@ fn identity_fixture() -> (std::path::PathBuf, std::path::PathBuf, serde_json::Va
     today["payload"]["info"]["model"] = json!("Default");
     today["payload"]["model"] = json!("actual-model");
     fs::write(history.join("rollout.jsonl"), [
-        json!({"type":"session_meta","payload":{"id":minted_marker()}}).to_string(),
+        json!({"type":"session_meta","payload":{"id":"synthetic-session"}}).to_string(),
         json!({"type":"turn_context","payload":{"turn_id":"synthetic-turn","model":"actual-model"}}).to_string(),
         token_event("2026-07-09T10:00:00Z", (10, 2, 3), (10, 2, 3)),
         today.to_string(),

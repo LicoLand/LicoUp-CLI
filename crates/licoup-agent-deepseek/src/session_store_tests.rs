@@ -52,7 +52,7 @@ fn session_header(inherited: Option<u64>) -> Value {
     let mut header = json!({
         "type": "session",
         "version": 4,
-        "id": minted_marker(),
+        "id": "synthetic-session",
         "createdAt": 1784109600000_u64,
         "cwd": "/synthetic",
         "isSeeded": false,

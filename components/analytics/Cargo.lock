@@ -138,9 +138,9 @@ version = "0.1.0"
 dependencies = [
  "licoup-extension-contracts",
  "licoup-state-machine-codegen",
- "licoup-usage-source-sdk",
  "serde",
  "serde_json",
+ "token-usage-detector",
 ]
 
 [[package]]
@@ -159,6 +159,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "token-usage-detector",
  "url",
 ]
 
@@ -166,15 +167,6 @@ dependencies = [
 name = "licoup-state-machine-codegen"
 version = "0.3.0"
 dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "licoup-usage-source-sdk"
-version = "0.1.0"
-dependencies = [
- "licoup-extension-contracts",
  "serde",
  "serde_json",
 ]
@@ -326,6 +318,16 @@ checksum = "b1e27c91459209c2986af3dcf603a5a74a4368754ce37414f59acc971167f643"
 dependencies = [
  "displaydoc",
  "zerovec",
+]
+
+[[package]]
+name = "token-usage-detector"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "723eb4e7d72efb57b019dc8b993936a17dcb153e34004b3dd927f247bea53929"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

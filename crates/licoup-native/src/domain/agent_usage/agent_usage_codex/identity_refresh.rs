@@ -5,9 +5,9 @@ use super::cache::open_cache_database;
 use super::file_collection::file_metadata;
 use super::models::{CachedFile, ParserState};
 use super::parser::ParserBatch;
-use anyhow::Result;
 use agent_statistics::variant::{is_placeholder_id, model_selection};
 use agent_statistics::window::UsageWindow;
+use anyhow::Result;
 use rusqlite::{Connection, Transaction, params};
 use std::path::Path;
 

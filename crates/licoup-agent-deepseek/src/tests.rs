@@ -54,7 +54,7 @@ fn header(extra: Value) -> Value {
     let mut value = json!({
         "type": "session",
         "version": CURRENT_FORMAT_VERSION,
-        "id": minted_marker(),
+        "id": "synthetic-session",
         "createdAt": 1784109600000_u64,
         "cwd": "/synthetic",
         "isSeeded": false,

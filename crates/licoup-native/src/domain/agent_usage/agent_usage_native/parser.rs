@@ -6,8 +6,6 @@ use crate::domain::conversation::adapter_dispatch::parse_history_file;
 use crate::domain::conversation::history::HistoryScanConfig;
 use crate::domain::conversation::source_catalog::HistoryAdapter;
 use crate::domain::conversation::usage::extract_token_usage;
-use anyhow::{Context, Result};
-use hermes::parse_hermes_usage_database;
 use agent_statistics::attribution::{
     estimated_message_usage, message_usage, summarize_sessions, summarize_sessions_exact_only,
 };
@@ -17,6 +15,8 @@ use agent_statistics::variant::{
     model_with_provider_fallback, prefer_recorded_model,
 };
 use agent_statistics::window::UsageWindow;
+use anyhow::{Context, Result};
+use hermes::parse_hermes_usage_database;
 use openagent::parse_openagent_usage_database;
 use rusqlite::{Connection, OpenFlags};
 use serde_json::{Value, json};
@@ -657,8 +657,8 @@ mod tests {
         fs::write(
             &path,
             [
-                r#"{"type":"user.message","timestamp":"2026-07-15T10:00:00Z","sessionId":minted_marker(),"message":"history text is not gateway usage"}"#,
-                r#"{"type":"assistant.message","timestamp":"2026-07-15T10:00:01Z","sessionId":minted_marker(),"message":"response text is not gateway usage"}"#,
+                r#"{"type":"user.message","timestamp":"2026-07-15T10:00:00Z","sessionId":"synthetic-session","message":"history text is not gateway usage"}"#,
+                r#"{"type":"assistant.message","timestamp":"2026-07-15T10:00:01Z","sessionId":"synthetic-session","message":"response text is not gateway usage"}"#,
             ]
             .join("\n"),
         )

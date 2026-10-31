@@ -122,7 +122,59 @@ pub(crate) fn discover_history_files(
             },
         }
     }
+    if adapter == HistoryAdapter::DeepSeekHarness {
+        retain_newest_deepseek_generations(&mut discovery.candidates);
+    }
     discovery
+}
+
+/// One Harness session directory can hold several generations of the same log
+/// (`session.jsonl`, `session.v3.jsonl.zstd`, …) — generations of one artifact,
+/// not distinct conversations. The reader is written against
+/// `CURRENT_FORMAT_VERSION`, so the newest generation it can decode wins; a
+/// directory whose artifacts are all newer falls back to the newest one, which
+/// the parser then refuses by name instead of guessing at an unread schema.
+fn retain_newest_deepseek_generations(candidates: &mut Vec<HistoryFileCandidate>) {
+    use licoup_agent_deepseek::session_store::CURRENT_FORMAT_VERSION;
+    use std::collections::BTreeMap;
+    let mut best = BTreeMap::<std::path::PathBuf, (u64, usize)>::new();
+    let mut fallback = BTreeMap::<std::path::PathBuf, (u64, usize)>::new();
+    let mut keep = std::collections::BTreeSet::new();
+    for (index, candidate) in candidates.iter().enumerate() {
+        let (Some(directory), Some(generation)) = (
+            candidate.path.parent(),
+            crate::domain::conversation::source_catalog::deepseek_generation(&candidate.path),
+        ) else {
+            keep.insert(index);
+            continue;
+        };
+        let target = if generation <= CURRENT_FORMAT_VERSION {
+            &mut best
+        } else {
+            &mut fallback
+        };
+        match target.get(directory) {
+            Some((kept, _)) if *kept >= generation => {}
+            _ => {
+                target.insert(directory.to_path_buf(), (generation, index));
+            }
+        }
+    }
+    for directory in best.keys().chain(fallback.keys()) {
+        let index = best
+            .get(directory)
+            .or_else(|| fallback.get(directory))
+            .map(|(_, index)| *index);
+        if let Some(index) = index {
+            keep.insert(index);
+        }
+    }
+    let mut index = 0usize;
+    candidates.retain(|_| {
+        let retained = keep.contains(&index);
+        index += 1;
+        retained
+    });
 }
 
 fn discover_path(
@@ -270,6 +322,11 @@ fn exact_session_candidate_for_id(
         | (HistoryAdapter::KimiCode, "kimi-code-session-store") => {
             path_identity_matches(path, session_id)
         }
+        // The Harness names each session directory by the session's durable
+        // identity, so the directory component is the exact match.
+        (HistoryAdapter::DeepSeekHarness, "deepseek-harness-session-store") => {
+            path_identity_matches(path, session_id)
+        }
         (
             HistoryAdapter::Codex,
             "codex-prompt-history"
@@ -310,6 +367,9 @@ fn exact_directory_can_be_pruned(
         (HistoryAdapter::Cursor, "cursor-cli-projects") => (2, &["agent-transcripts"][..]),
         (HistoryAdapter::ClaudeCode, "claude-project-transcripts") => (2, &[][..]),
         (HistoryAdapter::KimiCode, "kimi-code-session-store") => (2, &["agents"][..]),
+        // Sessions live at `<root>/<project>/<session id>/`: the project layer
+        // at depth 1 is not an identity, the session directory at depth 2 is.
+        (HistoryAdapter::DeepSeekHarness, "deepseek-harness-session-store") => (2, &[][..]),
         _ => return false,
     };
     if depth < prunable_from {

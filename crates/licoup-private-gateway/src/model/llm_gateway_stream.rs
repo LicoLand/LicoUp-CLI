@@ -2,7 +2,10 @@
 
 use crate::model::llm_gateway::{
     ClientProtocol, GatewayError, MAX_GATEWAY_BODY_BYTES, PreparedGatewayRequest, UpstreamProtocol,
+    client_wire_dialect, sse_frame, upstream_stream_decoder,
 };
+use a4mp::wire::{self, StreamEncoder, WireDialect};
+use a4mp::{SseEvent, SseEventDecoder, StreamEvent};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
@@ -20,8 +23,56 @@ pub struct StreamedChatResponse {
 
 enum StreamMode {
     Passthrough,
+    /// Responses client over a Chat upstream: the local interim projection
+    /// until a4mp exposes a Responses wire dialect.
     Responses(ChatStreamState),
-    Anthropic(ChatStreamState),
+    /// Cross-dialect relay: upstream protocol decoder → canonical
+    /// `StreamEvent`s → client wire encoder, all supplied by a4mp.
+    Canonical(CanonicalRelay),
+    /// Responses client over a non-Chat upstream: canonical events rendered
+    /// as Chat SSE, then projected through the local interim.
+    CanonicalResponses(CanonicalRelay, ChatStreamState),
+}
+
+struct CanonicalRelay {
+    decoder: Box<dyn SseEventDecoder>,
+    encoder: Box<dyn StreamEncoder>,
+    started: bool,
+}
+
+impl CanonicalRelay {
+    fn new(upstream: UpstreamProtocol, dialect: WireDialect, model: &str) -> Self {
+        Self {
+            decoder: upstream_stream_decoder(upstream),
+            encoder: wire::stream_encoder(dialect, model),
+            started: false,
+        }
+    }
+
+    fn decode(&mut self, frame: &SseEvent) -> Result<Vec<StreamEvent>, GatewayError> {
+        self.decoder
+            .decode(frame)
+            .map_err(|_| GatewayError::InvalidUpstreamResponse)
+    }
+
+    fn encode(&mut self, events: &[StreamEvent]) -> Vec<SseEvent> {
+        let mut frames = Vec::new();
+        if !self.started {
+            self.started = true;
+            frames.extend(self.encoder.preamble());
+        }
+        for event in events {
+            frames.extend(self.encoder.encode(event));
+        }
+        let _ = self.encoder.drain_losses();
+        frames
+    }
+
+    fn finish(&mut self) -> Vec<SseEvent> {
+        let mut frames = self.encode(&[]);
+        frames.extend(self.encoder.finish());
+        frames
+    }
 }
 
 struct ChatStreamState {
@@ -67,6 +118,9 @@ impl GatewayStreamTransformer {
             started: false,
             history_response: None,
         };
+        let relay = |upstream: UpstreamProtocol, dialect: WireDialect| {
+            CanonicalRelay::new(upstream, dialect, &request.requested_model)
+        };
         let mode = match (request.client_protocol, request.upstream_protocol) {
             (ClientProtocol::AnthropicMessages, UpstreamProtocol::AnthropicMessages)
             | (ClientProtocol::OpenAiChatCompletions, UpstreamProtocol::OpenAiChatCompletions)
@@ -76,10 +130,14 @@ impl GatewayStreamTransformer {
             (ClientProtocol::OpenAiResponses, UpstreamProtocol::OpenAiChatCompletions) => {
                 StreamMode::Responses(state())
             }
-            (ClientProtocol::AnthropicMessages, UpstreamProtocol::OpenAiChatCompletions) => {
-                StreamMode::Anthropic(state())
-            }
-            _ => return Err(GatewayError::UnsupportedConversion),
+            (ClientProtocol::OpenAiResponses, upstream) => StreamMode::CanonicalResponses(
+                relay(upstream, WireDialect::OpenAiChatCompletions),
+                state(),
+            ),
+            (client, upstream) => StreamMode::Canonical(relay(
+                upstream,
+                client_wire_dialect(client).ok_or(GatewayError::UnsupportedConversion)?,
+            )),
         };
         Ok(Self {
             mode,
@@ -103,20 +161,34 @@ impl GatewayStreamTransformer {
         while let Some((event_end, delimiter_len)) = next_event_boundary(&self.pending) {
             let event = self.pending.drain(..event_end).collect::<Vec<_>>();
             self.pending.drain(..delimiter_len);
-            let Some(data) = event_data(&event)? else {
+            let frame = parse_frame(&event)?;
+            if frame.data.is_empty() && frame.event.is_none() {
                 continue;
-            };
-            if data == "[DONE]" {
+            }
+            if frame.data.trim() == "[DONE]" {
                 output.extend(self.finalize()?);
                 self.finished = true;
                 continue;
             }
-            let chunk: Value =
-                serde_json::from_str(&data).map_err(|_| GatewayError::InvalidUpstreamResponse)?;
             match &mut self.mode {
-                StreamMode::Responses(state) => output.extend(state.responses_chunk(&chunk)?),
-                StreamMode::Anthropic(state) => output.extend(state.anthropic_chunk(&chunk)?),
                 StreamMode::Passthrough => unreachable!(),
+                StreamMode::Responses(state) => {
+                    let chunk: Value = serde_json::from_str(&frame.data)
+                        .map_err(|_| GatewayError::InvalidUpstreamResponse)?;
+                    output.extend(state.responses_chunk(&chunk)?);
+                }
+                StreamMode::Canonical(relay) => {
+                    let events = relay.decode(&frame)?;
+                    for out in relay.encode(&events) {
+                        output.extend_from_slice(&sse_frame(&out));
+                    }
+                }
+                StreamMode::CanonicalResponses(relay, state) => {
+                    let events = relay.decode(&frame)?;
+                    for out in relay.encode(&events) {
+                        output.extend(state.responses_frame(&out)?);
+                    }
+                }
             }
         }
         Ok(output)
@@ -134,21 +206,43 @@ impl GatewayStreamTransformer {
 
     pub fn take_chat_history_response(&mut self) -> Option<StreamedChatResponse> {
         match &mut self.mode {
-            StreamMode::Responses(state) => state.history_response.take(),
-            StreamMode::Anthropic(_) | StreamMode::Passthrough => None,
+            StreamMode::Responses(state) | StreamMode::CanonicalResponses(_, state) => {
+                state.history_response.take()
+            }
+            StreamMode::Canonical(_) | StreamMode::Passthrough => None,
         }
     }
 
     fn finalize(&mut self) -> Result<Vec<u8>, GatewayError> {
         match &mut self.mode {
             StreamMode::Responses(state) => state.finish_responses(),
-            StreamMode::Anthropic(state) => state.finish_anthropic(),
+            StreamMode::Canonical(relay) => Ok(relay.finish().iter().flat_map(sse_frame).collect()),
+            StreamMode::CanonicalResponses(relay, state) => {
+                let mut output = Vec::new();
+                for frame in relay.finish() {
+                    output.extend(state.responses_frame(&frame)?);
+                }
+                output.extend(state.finish_responses()?);
+                Ok(output)
+            }
             StreamMode::Passthrough => Ok(Vec::new()),
         }
     }
 }
 
 impl ChatStreamState {
+    /// One Chat SSE frame produced by the canonical relay's OpenAI encoder is
+    /// folded back into the interim projection.
+    fn responses_frame(&mut self, frame: &SseEvent) -> Result<Vec<u8>, GatewayError> {
+        let data = frame.data.trim();
+        if data.is_empty() || data == "[DONE]" {
+            return Ok(Vec::new());
+        }
+        let chunk: Value =
+            serde_json::from_str(data).map_err(|_| GatewayError::InvalidUpstreamResponse)?;
+        self.responses_chunk(&chunk)
+    }
+
     fn observe(&mut self, chunk: &Value) {
         if self.id.is_none() {
             self.id = chunk.get("id").and_then(Value::as_str).map(str::to_owned);
@@ -169,10 +263,6 @@ impl ChatStreamState {
             .as_deref()
             .map(|id| format!("resp_{id}"))
             .unwrap_or_else(|| "resp_gateway".to_owned())
-    }
-
-    fn message_id(&self) -> &str {
-        self.id.as_deref().unwrap_or("gateway-message")
     }
 
     fn responses_chunk(&mut self, chunk: &Value) -> Result<Vec<u8>, GatewayError> {
@@ -267,63 +357,6 @@ impl ChatStreamState {
         Ok(())
     }
 
-    fn anthropic_chunk(&mut self, chunk: &Value) -> Result<Vec<u8>, GatewayError> {
-        self.observe(chunk);
-        let mut output = Vec::new();
-        if !self.started {
-            self.started = true;
-            output.extend(named_event("message_start", json!({"type":"message_start","message":{"id":self.message_id(),"type":"message","role":"assistant","model":self.model,"content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":0,"output_tokens":0}}}))?);
-        }
-        let Some(delta) = chunk.pointer("/choices/0/delta") else {
-            return Ok(output);
-        };
-        if let Some(text) = delta
-            .get("content")
-            .and_then(Value::as_str)
-            .filter(|value| !value.is_empty())
-        {
-            if self.text.is_none() {
-                let index = self.allocate_output();
-                output.extend(named_event("content_block_start", json!({"type":"content_block_start","index":index,"content_block":{"type":"text","text":""}}))?);
-                self.text = Some(OutputState {
-                    output_index: index,
-                    value: String::new(),
-                });
-            }
-            let index = self.text.as_ref().unwrap().output_index;
-            self.text.as_mut().unwrap().value.push_str(text);
-            output.extend(named_event("content_block_delta", json!({"type":"content_block_delta","index":index,"delta":{"type":"text_delta","text":text}}))?);
-        }
-        for call in delta
-            .get("tool_calls")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-        {
-            let index = call.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
-            let mut tool = self.tools.remove(&index).unwrap_or_default();
-            append_tool_fields(&mut tool, call);
-            if tool.output_index.is_none() && !tool.id.is_empty() && !tool.name.is_empty() {
-                let output_index = self.allocate_output();
-                tool.output_index = Some(output_index);
-                output.extend(named_event("content_block_start", json!({"type":"content_block_start","index":output_index,"content_block":{"type":"tool_use","id":tool.id,"name":tool.name,"input":{}}}))?);
-            }
-            if let Some(output_index) = tool.output_index {
-                let delta = tool
-                    .arguments
-                    .get(tool.emitted_arguments..)
-                    .ok_or(GatewayError::InvalidUpstreamResponse)?
-                    .to_owned();
-                if !delta.is_empty() {
-                    output.extend(named_event("content_block_delta", json!({"type":"content_block_delta","index":output_index,"delta":{"type":"input_json_delta","partial_json":delta}}))?);
-                    tool.emitted_arguments = tool.arguments.len();
-                }
-            }
-            self.tools.insert(index, tool);
-        }
-        Ok(output)
-    }
-
     fn finish_responses(&mut self) -> Result<Vec<u8>, GatewayError> {
         self.history_response = Some(self.project_history_response());
         let mut output = Vec::new();
@@ -408,31 +441,6 @@ impl ChatStreamState {
         }
     }
 
-    fn finish_anthropic(&mut self) -> Result<Vec<u8>, GatewayError> {
-        let mut output = Vec::new();
-        if let Some(text) = self.text.take() {
-            output.extend(named_event(
-                "content_block_stop",
-                json!({"type":"content_block_stop","index":text.output_index}),
-            )?);
-        }
-        let tools = std::mem::take(&mut self.tools);
-        let has_tools = !tools.is_empty();
-        for (_, tool) in tools {
-            output.extend(named_event("content_block_stop", json!({"type":"content_block_stop","index":tool.output_index.ok_or(GatewayError::InvalidUpstreamResponse)?}))?);
-        }
-        let output_tokens = self
-            .usage
-            .as_ref()
-            .and_then(|usage| usage.get("completion_tokens"))
-            .and_then(Value::as_u64)
-            .unwrap_or(0);
-        let stop_reason = anthropic_stop_reason(self.finish_reason.as_deref(), has_tools);
-        output.extend(named_event("message_delta", json!({"type":"message_delta","delta":{"stop_reason":stop_reason,"stop_sequence":null},"usage":{"output_tokens":output_tokens}}))?);
-        output.extend(named_event("message_stop", json!({"type":"message_stop"}))?);
-        Ok(output)
-    }
-
     fn allocate_output(&mut self) -> usize {
         let value = self.next_output_index;
         self.next_output_index += 1;
@@ -472,33 +480,29 @@ fn next_event_boundary(bytes: &[u8]) -> Option<(usize, usize)> {
     }
 }
 
-fn event_data(event: &[u8]) -> Result<Option<String>, GatewayError> {
-    let text = std::str::from_utf8(event).map_err(|_| GatewayError::InvalidUpstreamResponse)?;
-    let lines = text
-        .lines()
-        .filter_map(|line| line.strip_prefix("data:").map(str::trim_start))
-        .collect::<Vec<_>>();
-    Ok((!lines.is_empty()).then(|| lines.join("\n")))
+fn parse_frame(raw: &[u8]) -> Result<SseEvent, GatewayError> {
+    let text = std::str::from_utf8(raw).map_err(|_| GatewayError::InvalidUpstreamResponse)?;
+    let mut frame = SseEvent::default();
+    let mut data = Vec::new();
+    for line in text.lines() {
+        if line.starts_with(':') {
+            continue;
+        }
+        if let Some(value) = line.strip_prefix("data:") {
+            data.push(value.trim_start().to_owned());
+        } else if let Some(value) = line.strip_prefix("event:") {
+            frame.event = Some(value.trim().to_owned());
+        } else if let Some(value) = line.strip_prefix("id:") {
+            frame.id = Some(value.trim().to_owned());
+        }
+    }
+    frame.data = data.join("\n");
+    Ok(frame)
 }
 
 fn data_event(value: Value) -> Result<Vec<u8>, GatewayError> {
     serde_json::to_vec(&value)
         .map(|json| [b"data: ".as_slice(), json.as_slice(), b"\n\n"].concat())
-        .map_err(|_| GatewayError::InvalidUpstreamResponse)
-}
-
-fn named_event(name: &str, value: Value) -> Result<Vec<u8>, GatewayError> {
-    serde_json::to_vec(&value)
-        .map(|json| {
-            [
-                b"event: ".as_slice(),
-                name.as_bytes(),
-                b"\ndata: ".as_slice(),
-                json.as_slice(),
-                b"\n\n",
-            ]
-            .concat()
-        })
         .map_err(|_| GatewayError::InvalidUpstreamResponse)
 }
 
@@ -520,18 +524,6 @@ fn responses_usage(usage: Option<&Value>) -> Value {
         .and_then(Value::as_u64)
         .unwrap_or(0);
     json!({"input_tokens":input,"input_tokens_details":{"cached_tokens":0},"output_tokens":output,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":input + output})
-}
-
-fn anthropic_stop_reason(finish_reason: Option<&str>, has_tools: bool) -> &'static str {
-    if has_tools || finish_reason == Some("tool_calls") {
-        "tool_use"
-    } else {
-        match finish_reason {
-            Some("length") => "max_tokens",
-            Some("content_filter") => "refusal",
-            _ => "end_turn",
-        }
-    }
 }
 
 fn responses_completion(finish_reason: Option<&str>) -> (&'static str, Value) {
@@ -593,6 +585,49 @@ mod tests {
             .push(b"data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"length\"}]}\n\ndata: [DONE]\n\n")
             .unwrap();
         assert!(String::from_utf8_lossy(&last).contains("max_tokens"));
+    }
+
+    /// A Responses client on an Anthropic upstream rides the canonical relay:
+    /// Anthropic SSE is decoded to canonical events, re-encoded as Chat SSE,
+    /// and projected into Responses events by the interim.
+    #[test]
+    fn responses_client_on_anthropic_upstream_bridges_through_canonical() {
+        let mut request = request(ClientProtocol::OpenAiResponses);
+        request.upstream_protocol = UpstreamProtocol::AnthropicMessages;
+        let mut transformer = GatewayStreamTransformer::new(&request).unwrap();
+        let first = transformer
+            .push(
+                concat!(
+                    "event: message_start\n",
+                    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"role\":\"assistant\",\"content\":[],\"usage\":{\"input_tokens\":3}}}\n\n",
+                    "event: content_block_start\n",
+                    "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+                    "event: content_block_delta\n",
+                    "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"hi\"}}\n\n",
+                )
+                .as_bytes(),
+            )
+            .unwrap();
+        let last = transformer
+            .push(
+                concat!(
+                    "event: content_block_stop\n",
+                    "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+                    "event: message_delta\n",
+                    "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":2}}\n\n",
+                    "event: message_stop\n",
+                    "data: {\"type\":\"message_stop\"}\n\n",
+                )
+                .as_bytes(),
+            )
+            .unwrap();
+        let combined = [first, last].concat();
+        let text = String::from_utf8_lossy(&combined);
+        assert!(text.contains("response.output_text.delta") || text.contains("response.completed"));
+
+        let tail = transformer.finish().unwrap();
+        let text = String::from_utf8_lossy(&tail);
+        assert!(text.contains("response.completed") || text.contains("response.output_text.done"));
     }
 
     #[test]

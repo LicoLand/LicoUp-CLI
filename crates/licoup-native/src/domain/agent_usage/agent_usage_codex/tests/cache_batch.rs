@@ -19,7 +19,7 @@ fn cache_batch_round_trips_and_deletes_file_state() {
             file_id: Some("synthetic-file".to_string()),
         };
         let state = ParserState {
-            session_id: Some(minted_marker().to_string()),
+            session_id: Some("synthetic-session".to_string()),
             current_model: Some("synthetic-model".to_string()),
             current_variant: UsageVariant {
                 effort: Some("high".to_owned()),
@@ -40,7 +40,7 @@ fn cache_batch_round_trips_and_deletes_file_state() {
         assert!(cached.state.pending_context);
         assert_eq!(
             cached.state.session_id.as_deref(),
-            Some(minted_marker())
+            Some("synthetic-session")
         );
 
         batch.delete_source("root", "source").unwrap();

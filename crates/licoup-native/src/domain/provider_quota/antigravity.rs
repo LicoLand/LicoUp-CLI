@@ -12,6 +12,7 @@
 //! entry with a remaining fraction normalizes into one `QuotaWindow`; account
 //! identity is enriched best-effort from a separate user-status call.
 
+use super::balance;
 use super::contract::{
     DEFAULT_STALE_AFTER_SECONDS, ProviderQuotaSnapshot, QuotaFetchError, QuotaIdentity,
     QuotaProvider, QuotaStatus, QuotaWindow,
@@ -195,6 +196,7 @@ fn normalize_quota_summary(
     payload: &Value,
     captured_at: &str,
 ) -> Result<ProviderQuotaSnapshot, QuotaFetchError> {
+    balance::refuse_self_asserted(payload)?;
     let root = payload
         .get("response")
         .or_else(|| payload.get("summary"))
@@ -216,6 +218,15 @@ fn normalize_quota_summary(
     if windows.is_empty() {
         return Err(QuotaFetchError::new("antigravity_quota_windows_missing"));
     }
+    // The loopback lane carries no credential identity: the bound account is
+    // the local server's ambient account with no observable epoch rotation.
+    let balance = balance::bind(
+        QuotaProvider::Antigravity,
+        balance::LOCAL_ACCOUNT,
+        balance::FIXED_EPOCH,
+        &windows,
+        captured_at,
+    )?;
     Ok(ProviderQuotaSnapshot {
         agent_id: QuotaProvider::Antigravity.agent_id().to_owned(),
         provider: QuotaProvider::Antigravity,
@@ -224,6 +235,7 @@ fn normalize_quota_summary(
         identity: QuotaIdentity::default(),
         captured_at: captured_at.to_owned(),
         stale_after_seconds: DEFAULT_STALE_AFTER_SECONDS,
+        balance: Some(balance),
     })
 }
 

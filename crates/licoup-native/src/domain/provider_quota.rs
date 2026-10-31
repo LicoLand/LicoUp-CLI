@@ -7,6 +7,7 @@
 //! here as the approach reference. No CodexBar code is copied.
 
 mod antigravity;
+mod balance;
 mod codex;
 mod command;
 mod contract;

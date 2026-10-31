@@ -28,7 +28,7 @@ fn usage(prompt: u64, effort: Option<&str>) -> HistoryUsageSummary {
 fn event(prompt: u64) -> String {
     format!(
         "{}\n",
-        json!({"type":"session_usage", "sessionId":minted_marker(),
+        json!({"type":"session_usage", "sessionId":"synthetic-session",
         "timestamp":"2026-07-15T10:00:00Z", "model":"raw-model", "effort":"high",
         "usage":{"input_tokens":prompt,"output_tokens":0}})
     )

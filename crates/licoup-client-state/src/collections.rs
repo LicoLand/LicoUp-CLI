@@ -1,6 +1,9 @@
-use anyhow::{Result, anyhow, ensure};
+use anyhow::{Context, Result, anyhow, ensure};
+use collection_store::CollectionStore;
 use fs2::FileExt;
-use licoup_foundation::platform::file_security::{ensure_private_dir, open_private_lock_file};
+use licoup_foundation::platform::file_security::{
+    ensure_private_dir, open_private_lock_file, read_existing_private_text_bounded, sync_directory,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 use std::collections::HashMap;
@@ -9,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use std::time::SystemTime;
 
-use super::{paths, policy, serialization};
+use super::{paths, policy};
 
 pub const TARGET_DISCOVERY_CACHE_COLLECTION: &str = "target-discovery-cache";
 pub const TARGET_DISCOVERY_CACHE_SCHEMA: &str = "licoup.target-discovery-cache.v1";
@@ -40,8 +43,12 @@ pub struct ClientStateStore {
     target_index: Arc<TargetCollectionIndex>,
 }
 
+/// The shared client-state owner. `CollectionStore` resolves every collection
+/// document; the target projection and its cross-process transaction lock stay
+/// here because they are typed LicoUp payloads, not generic storage.
 #[derive(Debug, Default)]
 struct TargetCollectionIndex {
+    collections: RwLock<Option<CollectionStore>>,
     state: RwLock<Option<IndexedTargetCollection>>,
 }
 
@@ -106,13 +113,17 @@ impl ClientStateStore {
     }
 
     pub fn new(root: PathBuf) -> Result<Self> {
+        // The client owns the data-home layout and ancestor hardening; the
+        // published store owns the collection documents beneath this root.
         ensure_private_dir(&root)?;
         ensure_private_dir(&paths::snapshot_root(&root))?;
         ensure_private_dir(&paths::activity_root(&root))?;
+        let collections = CollectionStore::new(root)?;
         let store = Self {
-            root,
+            root: collections.root().to_path_buf(),
             target_index: Arc::new(TargetCollectionIndex::default()),
         };
+        store.cache_collection_store(collections);
         store.ensure_collections()?;
         Ok(store)
     }
@@ -128,31 +139,18 @@ impl ClientStateStore {
 
     pub fn read_collection(&self, collection: &str) -> Result<Value> {
         let path = self.collection_path(collection)?;
-        reject_empty_existing_collection(&path)?;
-        let document = serialization::read_json_or_default(
-            &path,
-            policy::MAX_COLLECTION_DOCUMENT_BYTES,
-            || empty_collection(collection),
-        )?;
-        validate_current_collection_document(collection, &document)?;
-        Ok(document)
+        read_collection_document(collection, &path)
     }
 
     pub fn read_collection_read_only(&self, collection: &str) -> Result<Value> {
-        let path = self.collection_path(collection)?;
-        reject_empty_existing_collection(&path)?;
-        let document = serialization::read_json_or_default_read_only(
-            &path,
-            policy::MAX_COLLECTION_DOCUMENT_BYTES,
-            || empty_collection(collection),
-        )?;
-        validate_current_collection_document(collection, &document)?;
-        Ok(document)
+        self.read_collection(collection)
     }
 
     pub fn write_collection(&self, collection: &str, value: Value) -> Result<Value> {
-        let document = normalize_collection(collection, value)?;
-        self.write_normalized_collection(collection, document)
+        self.collection_path(collection)?;
+        let _target_transaction = self.target_transaction(collection)?;
+        let store = self.writable_collection_store()?;
+        write_collection_durably(&store, &self.root, collection, value)
     }
 
     /// Persist complete newest items from an oldest-first sequence, bounded
@@ -163,33 +161,48 @@ impl ClientStateStore {
         value: Value,
         max_items: usize,
     ) -> Result<Value> {
-        let mut document = normalize_collection(collection, value)?;
-        serialization::retain_latest_items(
-            &mut document,
-            max_items,
-            policy::MAX_COLLECTION_DOCUMENT_BYTES,
-        )?;
-        self.write_normalized_collection(collection, document)
+        self.collection_path(collection)?;
+        let _target_transaction = self.target_transaction(collection)?;
+        let store = self.writable_collection_store()?;
+        let document =
+            store.write_collection_retaining_latest_items(collection, value, max_items)?;
+        sync_collection_parent(&self.root)?;
+        Ok(document)
     }
 
-    fn write_normalized_collection(&self, collection: &str, document: Value) -> Result<Value> {
-        let path = self.collection_path(collection)?;
-        let _target_transaction = if collection == TARGET_DISCOVERY_CACHE_COLLECTION {
-            Some(TargetRouteTransactionGuard::acquire(&self.root)?)
+    fn cached_collection_store(&self) -> Option<CollectionStore> {
+        read_collections(&self.target_index).clone()
+    }
+
+    fn cache_collection_store(&self, store: CollectionStore) {
+        *write_collections(&self.target_index) = Some(store);
+    }
+
+    /// The store used for a write. A root that disappeared is recreated, as
+    /// the previous direct writer did.
+    fn writable_collection_store(&self) -> Result<CollectionStore> {
+        if let Some(store) = self.cached_collection_store() {
+            return Ok(store);
+        }
+        let store = CollectionStore::new(self.root.clone())?;
+        self.cache_collection_store(store.clone());
+        Ok(store)
+    }
+
+    fn target_transaction(&self, collection: &str) -> Result<Option<TargetRouteTransactionGuard>> {
+        if collection == TARGET_DISCOVERY_CACHE_COLLECTION {
+            Ok(Some(TargetRouteTransactionGuard::acquire(&self.root)?))
         } else {
-            None
-        };
-        serialization::atomic_write_json(&path, &document, policy::MAX_COLLECTION_DOCUMENT_BYTES)?;
-        Ok(document)
+            Ok(None)
+        }
     }
 
     /// Typed target-route read in document order. The projection is refreshed
     /// only when the persisted file generation changes, so repeated reads
     /// decode the collection exactly once per generation.
     pub fn read_target_routes(&self) -> Result<Vec<TargetRouteRecord>> {
-        let path = self.collection_path(TARGET_DISCOVERY_CACHE_COLLECTION)?;
         let mut guard = lock_target_index(&self.target_index);
-        refresh_target_index_locked(&mut guard, &path)?;
+        self.refresh_target_index_locked(&mut guard)?;
         let cached = guard
             .as_ref()
             .ok_or_else(|| anyhow!("target index projection is unavailable"))?;
@@ -215,7 +228,7 @@ impl ClientStateStore {
             }
         }
         let mut guard = lock_target_index(&self.target_index);
-        refresh_target_index_locked(&mut guard, &path)?;
+        self.refresh_target_index_locked(&mut guard)?;
         let cached = guard
             .as_ref()
             .ok_or_else(|| anyhow!("target index projection is unavailable"))?;
@@ -230,10 +243,9 @@ impl ClientStateStore {
     /// with the private atomic writer, and only then swaps the projection.
     pub fn write_target_routes(&self, records: &[TargetRouteRecord]) -> Result<()> {
         let _transaction = TargetRouteTransactionGuard::acquire(&self.root)?;
-        let path = self.collection_path(TARGET_DISCOVERY_CACHE_COLLECTION)?;
         let mut guard = lock_target_index(&self.target_index);
-        refresh_target_index_locked(&mut guard, &path)?;
-        write_target_routes_locked(&path, &mut guard, records)
+        self.refresh_target_index_locked(&mut guard)?;
+        self.write_target_routes_locked(&mut guard, records)
     }
 
     /// Transactional read-modify-write over the latest persisted route set.
@@ -244,16 +256,15 @@ impl ClientStateStore {
         F: FnOnce(&mut Vec<TargetRouteRecord>) -> Result<()>,
     {
         let _transaction = TargetRouteTransactionGuard::acquire(&self.root)?;
-        let path = self.collection_path(TARGET_DISCOVERY_CACHE_COLLECTION)?;
         let mut guard = lock_target_index(&self.target_index);
-        refresh_target_index_locked(&mut guard, &path)?;
+        self.refresh_target_index_locked(&mut guard)?;
         let mut records = guard
             .as_ref()
             .ok_or_else(|| anyhow!("target index projection is unavailable"))?
             .records
             .clone();
         update(&mut records)?;
-        write_target_routes_locked(&path, &mut guard, &records)
+        self.write_target_routes_locked(&mut guard, &records)
     }
 
     pub fn target_index_parse_count(&self) -> u64 {
@@ -267,57 +278,79 @@ impl ClientStateStore {
     }
 
     fn ensure_collections(&self) -> Result<()> {
+        let store = self.writable_collection_store()?;
         for collection in policy::COLLECTIONS {
             let path = self.collection_path(collection)?;
-            if *collection == TARGET_DISCOVERY_CACHE_COLLECTION {
-                let _transaction = TargetRouteTransactionGuard::acquire(&self.root)?;
-                if !path.try_exists()? {
-                    serialization::atomic_write_json(
-                        &path,
-                        &empty_collection(collection),
-                        policy::MAX_COLLECTION_DOCUMENT_BYTES,
-                    )?;
-                } else {
-                    validate_existing_collection(collection, &path)?;
-                }
-                continue;
-            }
-            if !path.try_exists()? {
-                serialization::atomic_write_json(
-                    &path,
-                    &empty_collection(collection),
-                    policy::MAX_COLLECTION_DOCUMENT_BYTES,
-                )?;
+            let _transaction = self.target_transaction(collection)?;
+            if path.try_exists()? {
+                read_collection_document(collection, &path)?;
             } else {
-                validate_existing_collection(collection, &path)?;
+                store.write_collection(collection, json!({ "items": [] }))?;
+                sync_collection_parent(&self.root)?;
             }
         }
         Ok(())
     }
-}
 
-fn write_target_routes_locked(
-    path: &Path,
-    index: &mut Option<IndexedTargetCollection>,
-    records: &[TargetRouteRecord],
-) -> Result<()> {
-    let (mut document, parses, invalidations) = {
-        let cached = index
-            .as_ref()
-            .ok_or_else(|| anyhow!("target index projection is unavailable"))?;
-        (cached.document.clone(), cached.parses, cached.invalidations)
-    };
-    document["items"] = serde_json::to_value(records)?;
-    serialization::atomic_write_json(path, &document, policy::MAX_COLLECTION_DOCUMENT_BYTES)?;
-    *index = Some(IndexedTargetCollection {
-        generation: file_generation(path),
-        parses,
-        invalidations,
-        records: records.to_vec(),
-        by_target: index_target_routes(records),
-        document,
-    });
-    Ok(())
+    fn write_target_routes_locked(
+        &self,
+        index: &mut Option<IndexedTargetCollection>,
+        records: &[TargetRouteRecord],
+    ) -> Result<()> {
+        let (mut document, parses, invalidations) = {
+            let cached = index
+                .as_ref()
+                .ok_or_else(|| anyhow!("target index projection is unavailable"))?;
+            (cached.document.clone(), cached.parses, cached.invalidations)
+        };
+        document["items"] = serde_json::to_value(records)?;
+        let path = self.collection_path(TARGET_DISCOVERY_CACHE_COLLECTION)?;
+        let store = self.writable_collection_store()?;
+        let document = write_collection_durably(
+            &store,
+            &self.root,
+            TARGET_DISCOVERY_CACHE_COLLECTION,
+            document,
+        )?;
+        *index = Some(IndexedTargetCollection {
+            generation: file_generation(&path),
+            parses,
+            invalidations,
+            records: records.to_vec(),
+            by_target: index_target_routes(records),
+            document,
+        });
+        Ok(())
+    }
+
+    fn refresh_target_index_locked(
+        &self,
+        index: &mut Option<IndexedTargetCollection>,
+    ) -> Result<()> {
+        let path = self.collection_path(TARGET_DISCOVERY_CACHE_COLLECTION)?;
+        let generation = file_generation(&path);
+        if let Some(cached) = index.as_ref()
+            && cached.generation == generation
+        {
+            return Ok(());
+        }
+        let document = self.read_collection(TARGET_DISCOVERY_CACHE_COLLECTION)?;
+        let routes = decode_target_routes(&document)?;
+        let prior = index.take();
+        let parses = prior.as_ref().map_or(0, |cached| cached.parses) + 1;
+        let invalidations =
+            prior.as_ref().map_or(0, |cached| cached.invalidations) + u64::from(prior.is_some());
+        let by_target = index_target_routes(&routes);
+        *index = Some(IndexedTargetCollection {
+            generation,
+            parses,
+            invalidations,
+            records: routes,
+            by_target,
+            document,
+        });
+        Ok(())
+    }
 }
 
 fn read_target_index(
@@ -338,36 +371,22 @@ fn lock_target_index(
         .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
-fn refresh_target_index_locked(
-    index: &mut Option<IndexedTargetCollection>,
-    path: &Path,
-) -> Result<()> {
-    let generation = file_generation(path);
-    if let Some(cached) = index.as_ref()
-        && cached.generation == generation
-    {
-        return Ok(());
-    }
-    let document =
-        serialization::read_json_or_default(path, policy::MAX_COLLECTION_DOCUMENT_BYTES, || {
-            empty_collection(TARGET_DISCOVERY_CACHE_COLLECTION)
-        })?;
-    validate_current_collection_document(TARGET_DISCOVERY_CACHE_COLLECTION, &document)?;
-    let routes = decode_target_routes(&document)?;
-    let prior = index.take();
-    let parses = prior.as_ref().map_or(0, |cached| cached.parses) + 1;
-    let invalidations =
-        prior.as_ref().map_or(0, |cached| cached.invalidations) + u64::from(prior.is_some());
-    let by_target = index_target_routes(&routes);
-    *index = Some(IndexedTargetCollection {
-        generation,
-        parses,
-        invalidations,
-        records: routes,
-        by_target,
-        document,
-    });
-    Ok(())
+fn read_collections(
+    index: &TargetCollectionIndex,
+) -> std::sync::RwLockReadGuard<'_, Option<CollectionStore>> {
+    index
+        .collections
+        .read()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+fn write_collections(
+    index: &TargetCollectionIndex,
+) -> std::sync::RwLockWriteGuard<'_, Option<CollectionStore>> {
+    index
+        .collections
+        .write()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn index_target_routes(records: &[TargetRouteRecord]) -> HashMap<String, usize> {
@@ -437,37 +456,40 @@ fn empty_collection(collection: &str) -> Value {
     })
 }
 
-fn normalize_collection(collection: &str, value: Value) -> Result<Value> {
-    if let Value::Object(mut object) = value {
-        if let Some(schema) = object.get("schemaVersion") {
-            ensure!(
-                schema.as_str() == Some(policy::STATE_SCHEMA_VERSION),
-                "client state collection requires startup migration"
-            );
-        }
-        if let Some(owner) = object.get("collection") {
-            ensure!(
-                owner.as_str() == Some(collection),
-                "client state collection owner mismatch"
-            );
-        }
-        object
-            .entry("schemaVersion".to_string())
-            .or_insert_with(|| json!(policy::STATE_SCHEMA_VERSION));
-        object
-            .entry("collection".to_string())
-            .or_insert_with(|| json!(collection));
-        Ok(Value::Object(object))
-    } else {
-        Ok(json!({
-            "schemaVersion": policy::STATE_SCHEMA_VERSION,
-            "collection": collection,
-            "items": value
-        }))
+/// Read one collection through the client's owned hardening boundary.
+///
+/// The published store wrote the document, so it owns its write and
+/// normalization rules; it also read it, but its reader validates a path and
+/// then reads that path again, and it validates the root rather than the
+/// document. A symlink swapped between the two calls could redirect the read,
+/// and a document whose owner or mode changed after the root check would still
+/// be parsed. This function reads the bytes with the foundation's
+/// no-follow/owner-and-mode-validated/bounded/identity-checked reader and then
+/// applies the same document admission the store applies, so a caller sees
+/// exactly the documents the published writer produces — or a refusal.
+fn read_collection_document(collection: &str, path: &Path) -> Result<Value> {
+    let Some(raw) =
+        read_existing_private_text_bounded(path, policy::MAX_COLLECTION_DOCUMENT_BYTES)?
+    else {
+        return Ok(empty_collection(collection));
+    };
+    // The store refuses a zero-length existing document but treats a
+    // whitespace-only document as the empty default; preserve both.
+    ensure!(!raw.is_empty(), "client state collection is empty");
+    if raw.trim().is_empty() {
+        return Ok(empty_collection(collection));
     }
+    let document: Value =
+        serde_json::from_str(&raw).context("client state collection JSON is invalid")?;
+    validate_collection_document(collection, &document)?;
+    Ok(document)
 }
 
-pub fn validate_current_collection_document(collection: &str, document: &Value) -> Result<()> {
+/// The document admission the published store applies on read: an object, the
+/// current schema marker, and the collection name that owns the file. Keeping
+/// it beside the hardened reader means a migration probe validates the bytes it
+/// actually read rather than re-reading the path through a second opener.
+pub(crate) fn validate_collection_document(collection: &str, document: &Value) -> Result<()> {
     ensure!(
         document.is_object(),
         "client state collection is not an object"
@@ -483,21 +505,45 @@ pub fn validate_current_collection_document(collection: &str, document: &Value) 
     Ok(())
 }
 
-fn validate_existing_collection(collection: &str, path: &Path) -> Result<()> {
-    reject_empty_existing_collection(path)?;
-    let document =
-        serialization::read_json_or_default(path, policy::MAX_COLLECTION_DOCUMENT_BYTES, || {
-            empty_collection(collection)
-        })?;
-    validate_current_collection_document(collection, &document)
+/// Write one normalized document and confirm the rename that publishes it.
+///
+/// `collection_store` fsyncs the staged file and renames it over the document,
+/// but it does not fsync the containing directory. A successful write is
+/// reported as durable only after that parent sync, which is what makes the
+/// rename itself survive a crash. On a platform that refuses a directory
+/// handle (Windows without the privilege), the foundation helper treats the
+/// sync as unsupported and returns success; the platform's replace semantics
+/// are then the documented durability boundary.
+fn write_collection_durably(
+    store: &CollectionStore,
+    root: &Path,
+    collection: &str,
+    value: Value,
+) -> Result<Value> {
+    let document = store.write_collection(collection, value)?;
+    sync_collection_parent(root)?;
+    Ok(document)
 }
 
-fn reject_empty_existing_collection(path: &Path) -> Result<()> {
-    if path.try_exists()? {
-        ensure!(
-            fs::symlink_metadata(path)?.len() > 0,
-            "client state collection is empty"
-        );
-    }
-    Ok(())
+fn sync_collection_parent(root: &Path) -> Result<()> {
+    #[cfg(test)]
+    record_parent_sync();
+    sync_directory(root)
+}
+
+#[cfg(test)]
+thread_local! {
+    static PARENT_SYNCS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+#[cfg(test)]
+fn record_parent_sync() {
+    PARENT_SYNCS.with(|count| count.set(count.get() + 1));
+}
+
+/// Test observation point: reset and read the parent-sync count for the
+/// current thread. Production builds compile this out.
+#[cfg(test)]
+pub(crate) fn take_parent_sync_count() -> usize {
+    PARENT_SYNCS.with(|count| count.replace(0))
 }

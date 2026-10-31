@@ -119,6 +119,11 @@ pub(super) struct ProviderQuotaSnapshot {
     /// RFC 3339 UTC capture time of the data in this snapshot.
     pub(super) captured_at: String,
     pub(super) stale_after_seconds: u64,
+    /// The same read bound to the host-known account, in the balance-detector
+    /// fact vocabulary. In-process only: the wire projection carries the
+    /// windows; a cached snapshot deserializes this as absent.
+    #[serde(skip)]
+    pub(super) balance: Option<balance_detector::BoundBalance>,
 }
 
 impl ProviderQuotaSnapshot {

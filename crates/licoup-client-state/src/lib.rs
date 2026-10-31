@@ -1,11 +1,12 @@
-//! Bounded client persistence types and the collection store that writes them.
+//! Bounded client persistence types over the published collection store.
 //!
-//! `ClientStateStore` owns the privately written collection documents under the
-//! portable state root, including the target-discovery cache and its typed
-//! route records; `paths`, `policy` and `serialization` are its location, bound
-//! and write rules. `ClientResourcePolicy` is the single configuration surface
-//! for history pages, parser buffers, search results, archive workers, spools,
-//! log segments, state quotas, and maintenance batches.
+//! `ClientStateStore` composes `collection_store::CollectionStore` for the
+//! privately written collection documents under the portable state root and
+//! keeps the typed target-discovery projection and its cross-process
+//! transaction lock; `paths`, `policy` and `serialization` are its location,
+//! bound and write rules. `ClientResourcePolicy` is the single configuration
+//! surface for history pages, parser buffers, search results, archive workers,
+//! spools, log segments, state quotas, and maintenance batches.
 //!
 //! The journal owners above the store (`ActivityLog`, `SnapshotStore`) still
 //! live in `licoup-native` and read the store's rules from here through their

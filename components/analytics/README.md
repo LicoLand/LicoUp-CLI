@@ -54,10 +54,12 @@ that was already settled — only a retraction withdraws its own observation.
 cargo test --locked --manifest-path components/analytics/Cargo.toml
 ```
 
-That runs the package's unit tests and the V7-U6 component-integration suite in
-`tests/integration/usage_sources/` (A34 and the component-level part of
-A31). Everything is synthetic; no account, ledger, usage file or network is
-involved.
+That runs the package's unit tests and the committed-payload test in
+`components/analytics/tests/package_artifact.rs`. The C11 input mapping and its
+A34/A31 integration suite moved to the published `token-usage-detector` crate
+with the detector extraction; this package consumes that owner instead of
+carrying a second copy. Everything here is synthetic; no account, ledger, usage
+file or network is involved.
 
 ## Wiring this package needs from its owners
 

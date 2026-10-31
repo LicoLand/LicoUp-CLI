@@ -53,7 +53,7 @@ fn settled_conversation(root: &Path) -> (ConversationStore, String, String) {
     let scope = store
         .prepare_runtime_dispatch(
             "synthetic",
-            minted_marker(),
+            "synthetic-session",
             "synthetic request",
             None,
             None,
@@ -401,7 +401,7 @@ fn cold_recovery_settles_interrupted_local_work_and_the_decision_returns_to_idle
         store
             .prepare_runtime_dispatch(
                 "synthetic",
-                minted_marker(),
+                "synthetic-session",
                 "synthetic request",
                 None,
                 None,
@@ -487,7 +487,7 @@ fn unfinished_work_refuses_the_barrier_and_holds_no_barrier_record() {
     store
         .prepare_runtime_dispatch(
             "synthetic",
-            minted_marker(),
+            "synthetic-session",
             "synthetic request",
             None,
             None,
@@ -548,7 +548,7 @@ fn the_layer_neutral_package_entries_wrap_the_same_decision() {
     store
         .prepare_runtime_dispatch(
             "synthetic",
-            minted_marker(),
+            "synthetic-session",
             "synthetic request",
             None,
             None,

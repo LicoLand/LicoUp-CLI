@@ -1,10 +1,10 @@
 use super::event_hash::advance_event_chain;
 use super::models::{ParserState, TokenTotals};
 use super::utils::{to_i64, turn_id};
-use anyhow::{Context, Result};
 use agent_statistics::contract::{UsageVariant, text_field};
 use agent_statistics::variant::{compatible_recorded_models, model_label, prefer_recorded_model};
 use agent_statistics::window::UsageWindow;
+use anyhow::{Context, Result};
 use rusqlite::{Statement, Transaction, params};
 use serde_json::Value;
 use std::fs;

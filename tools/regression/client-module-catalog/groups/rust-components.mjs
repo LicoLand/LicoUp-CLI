@@ -22,7 +22,6 @@ export const RUST_COMPONENT_MODULES = Object.freeze([
     summary: "Optional metrics correction/correlation and borrowed core-fact preservation on removal",
     inputs: [
       "components/analytics/**",
-      "sdk/usage-source/**",
       "tests/integration/usage_sources/**",
       "crates/licoup-extension-contracts/src/usage.rs",
     ],

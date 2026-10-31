@@ -1,6 +1,7 @@
 mod catalog;
 mod codex;
 mod cursor_openagent;
+mod deepseek;
 mod generic;
 mod kimi;
 mod message_projection;

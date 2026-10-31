@@ -221,6 +221,7 @@ fn project_retained(
             identity: Default::default(),
             captured_at: scheduler::format_rfc3339(now),
             stale_after_seconds: super::contract::DEFAULT_STALE_AFTER_SECONDS,
+            balance: None,
         }
         .wire_value(),
     }

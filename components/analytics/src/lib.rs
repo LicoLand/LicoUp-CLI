@@ -28,7 +28,7 @@
 //!
 //! Deduplication, corrections, cumulative resets and the single settlement of a
 //! call reported by several sources are [`index`] and [`correlation`]; the input
-//! mapping they consume is the usage-source SDK's.
+//! mapping they consume is the published `token-usage-detector` crate's.
 
 pub mod correlation;
 pub mod facts;
@@ -77,4 +77,90 @@ pub(crate) fn refusal(code: &str) -> ApplicationFailure {
 /// package, or reconcile before retrying.
 pub(crate) fn refusal_with(code: &str, recovery: RecoveryAction) -> ApplicationFailure {
     refusal(code).with_recovery(recovery)
+}
+
+/// Project a usage-source refusal onto the application failure vocabulary.
+///
+/// The published detector owns the C11 refusal: its code, stage, component,
+/// retryability, offending field and public arguments cross this boundary
+/// unchanged. Only the two vocabularies' recovery enums are projected, because
+/// the client reports application failures while the detector reports usage
+/// failures; no failure code is renamed or re-interpreted here.
+pub(crate) fn usage_failure(failure: token_usage_detector::UsageFailure) -> ApplicationFailure {
+    let projected = if failure.retryable {
+        ApplicationFailure::retryable(failure.code, failure.stage)
+    } else {
+        ApplicationFailure::permanent(failure.code, failure.stage)
+    };
+    let projected = if failure.component.is_empty() {
+        projected
+    } else {
+        projected.with_component(&failure.component)
+    };
+    let projected = projected.with_recovery(match failure.recovery {
+        token_usage_detector::RecoveryAction::CorrectRequest => RecoveryAction::CorrectRequest,
+        token_usage_detector::RecoveryAction::RetryAfterRecovery => {
+            RecoveryAction::RetryAfterRecovery
+        }
+        token_usage_detector::RecoveryAction::ReconcileBeforeRetry => {
+            RecoveryAction::ReconcileBeforeRetry
+        }
+    });
+    let projected = match failure.field {
+        Some(field) => projected.with_field(field),
+        None => projected,
+    };
+    failure
+        .presentation_args
+        .iter()
+        .fold(projected, |failure, (key, value)| {
+            failure.with_presentation_arg(key, value)
+        })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The detector owns the refusal vocabulary; this boundary projects the
+    /// recovery enum but must not rename a code, drop a field or invent a
+    /// component. A projected refusal is what the client reports.
+    #[test]
+    fn a_usage_refusal_keeps_its_code_stage_and_field_across_the_boundary() {
+        let failure = token_usage_detector::UsageFailure::permanent(
+            "usage_cursor_epoch_mismatch",
+            "usage-source",
+        )
+        .with_component("token_usage_detector")
+        .with_field("cursor")
+        .with_presentation_arg("sourceRef", "source:vendor#1");
+
+        let projected = usage_failure(failure);
+        assert_eq!(projected.code, "usage_cursor_epoch_mismatch");
+        assert_eq!(projected.stage, "usage-source");
+        assert_eq!(projected.component.as_ref(), "token_usage_detector");
+        assert!(!projected.retryable);
+        assert_eq!(projected.recovery, RecoveryAction::CorrectRequest);
+        assert_eq!(projected.field.as_deref(), Some("cursor"));
+        assert_eq!(
+            projected.presentation_args.get("sourceRef"),
+            Some("source:vendor#1")
+        );
+    }
+
+    /// Retryability and the recovery projection are the two things that are
+    /// not carried by value: a retryable detector refusal must remain
+    /// retryable and point at the same next step.
+    #[test]
+    fn a_retryable_usage_refusal_keeps_its_recovery() {
+        let failure = token_usage_detector::UsageFailure::retryable(
+            "usage_source_unavailable",
+            "usage-source",
+        )
+        .with_recovery(token_usage_detector::RecoveryAction::RetryAfterRecovery);
+
+        let projected = usage_failure(failure);
+        assert!(projected.retryable);
+        assert_eq!(projected.recovery, RecoveryAction::RetryAfterRecovery);
+    }
 }

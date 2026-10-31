@@ -365,7 +365,7 @@ mod tests {
             .execute(
                 "INSERT INTO sessions VALUES (?1, ?2, ?3, NULL, 25, 12, 4, 1)",
                 rusqlite::params![
-                    minted_marker(),
+                    "synthetic-session",
                     "hermes-test",
                     epoch("2026-07-15T09:59:00Z")
                 ],
@@ -374,7 +374,7 @@ mod tests {
         connection
             .execute(
                 "INSERT INTO messages VALUES (?1, ?2)",
-                rusqlite::params![minted_marker(), epoch("2026-07-15T10:00:04Z")],
+                rusqlite::params!["synthetic-session", epoch("2026-07-15T10:00:04Z")],
             )
             .unwrap();
         connection
@@ -383,7 +383,7 @@ mod tests {
                     (?1, ?2, '', '', '', '', 10, 5, 2, 0, 1, ?3, ?4),
                     (?1, ?2, '', '', '', 'compression', 7, 3, 1, 0, 2, ?5, ?6)",
                 rusqlite::params![
-                    minted_marker(),
+                    "synthetic-session",
                     "hermes-test",
                     epoch("2026-07-15T10:00:00Z"),
                     epoch("2026-07-15T10:00:01Z"),

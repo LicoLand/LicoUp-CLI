@@ -83,8 +83,7 @@ impl UsageLedgerPort for ProductionUsageLedger {
     }
 
     fn workflow_report(&self, payload: &Value) -> anyhow::Result<Value> {
-        acativa::usage_ledger::workflow_report(payload)
-            .map_err(|error| anyhow::anyhow!(error.code))
+        acativa::usage_ledger::workflow_report(payload).map_err(|error| anyhow::anyhow!(error.code))
     }
 }
 

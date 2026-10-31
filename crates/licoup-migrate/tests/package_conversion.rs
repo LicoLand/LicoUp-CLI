@@ -716,7 +716,7 @@ fn unfinished_local_work_and_a_held_admission_barrier_each_refuse_a_conversion()
     let scope = conversation
         .prepare_runtime_dispatch(
             "synthetic",
-            minted_marker(),
+            "synthetic-session",
             "synthetic request",
             None,
             None,

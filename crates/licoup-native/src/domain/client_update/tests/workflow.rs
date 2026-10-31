@@ -122,7 +122,7 @@ fn client_update_live_apply_is_refused_while_local_work_is_unfinished() {
     store
         .prepare_runtime_dispatch(
             "synthetic",
-            minted_marker(),
+            "synthetic-session",
             "synthetic request",
             None,
             None,

@@ -42,13 +42,15 @@ pub const DRIVER_ID: &str = "copilot-acp";
 /// The error prefix Copilot's protocol failures are worded with.
 pub const ERROR_PREFIX: &str = "copilot_acp";
 
-/// Copilot's ACP entry point: the one canonical invocation this Agent is
-/// reached through.
-pub const LAUNCH_ARGS: &[&str] = &["--acp", "--stdio", "--no-auto-update"];
-
-/// Copilot's immutable launch declaration, as the shared engine reads it.
-pub const DRIVER: AcpDriverSpec =
-    AcpDriverSpec::new(RUNTIME_PROTOCOL, LAUNCH_ARGS).with_identity(DRIVER_ID, ERROR_PREFIX);
+/// Copilot's launch declaration, materialized from the published card.
+///
+/// The arguments are the constants `build.rs` read from `a4aa-copilot`'s ACP
+/// lane; this package contributes only the identities the shared ACP engine
+/// pools and reports sessions by.
+pub fn driver() -> AcpDriverSpec {
+    AcpDriverSpec::new(RUNTIME_PROTOCOL, crate::upstream::launch_args())
+        .with_identity(DRIVER_ID, ERROR_PREFIX)
+}
 
 /// Probe Copilot's executable for the ACP capabilities one session needs,
 /// through the same canonical entry point a turn uses.
@@ -59,7 +61,14 @@ pub fn capability_probe(
     max_stdout: Option<usize>,
     max_stderr: usize,
 ) -> Result<CapabilityProbe, ProtocolFailure> {
-    probe_acp(DRIVER, executable, cwd, timeout_ms, max_stdout, max_stderr)
+    probe_acp(
+        driver(),
+        executable,
+        cwd,
+        timeout_ms,
+        max_stdout,
+        max_stderr,
+    )
 }
 
 /// Run one Copilot turn through the shared ACP engine.
@@ -78,7 +87,15 @@ pub fn execute(
     max_stderr: usize,
 ) -> RunResult {
     execute_acp(
-        DRIVER, executable, params, prompt, session_id, cwd, timeout_ms, max_stdout, max_stderr,
+        driver(),
+        executable,
+        params,
+        prompt,
+        session_id,
+        cwd,
+        timeout_ms,
+        max_stdout,
+        max_stderr,
     )
 }
 
@@ -87,5 +104,5 @@ pub fn execute(
 /// The active-turn registry belongs to the shared control plane; this package
 /// supplies only the identity its own sessions are pooled by.
 pub fn cancel(session_id: &str) -> ControlDisposition {
-    cancel_active_turn(DRIVER.agent_id, session_id)
+    cancel_active_turn(driver().agent_id, session_id)
 }

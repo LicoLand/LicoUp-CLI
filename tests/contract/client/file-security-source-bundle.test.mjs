@@ -18,6 +18,7 @@ const productionLeaves = Object.freeze([
   "validation.rs",
   "windows_acl.rs",
 ]);
+const testOnlyLeaves = Object.freeze(["race_observation.rs"]);
 
 async function read(relativePath) {
   return fs.readFile(path.join(repoRoot, relativePath), "utf8");
@@ -44,10 +45,35 @@ test("file security root is an exact thin facade over dedicated production leave
     assert.match(facade, new RegExp(`mod ${leaf.replace(".rs", "")};`, "u"));
     await fs.access(path.join(repoRoot, root, leaf));
   }
+  for (const leaf of testOnlyLeaves) {
+    const module = leaf.replace(".rs", "");
+    assert.equal(
+      (facade.match(new RegExp(`^mod ${module};$`, "gmu")) ?? []).length,
+      1,
+      leaf,
+    );
+    assert.match(
+      facade,
+      new RegExp(
+        `^#\\[cfg\\(any\\(test, feature = "test-support"\\)\\)\\]\\nmod ${module};$`,
+        "mu",
+      ),
+      leaf,
+    );
+    assert.match(
+      facade,
+      new RegExp(
+        `^#\\[cfg\\(any\\(test, feature = "test-support"\\)\\)\\]\\npub use ${module}::`,
+        "mu",
+      ),
+      leaf,
+    );
+    await fs.access(path.join(repoRoot, root, leaf));
+  }
   const entries = await fs.readdir(path.join(repoRoot, root), { withFileTypes: true });
   assert.deepEqual(
     entries.filter((entry) => entry.isFile()).map((entry) => entry.name).sort(),
-    [...productionLeaves].sort(),
+    [...productionLeaves, ...testOnlyLeaves].sort(),
   );
   for (const forbidden of ["fn ", "OpenOptions", "fs::", "include!(", "#[path"])
     assert.equal(facade.includes(forbidden), false, forbidden);

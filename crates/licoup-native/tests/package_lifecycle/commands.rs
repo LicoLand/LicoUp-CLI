@@ -1027,7 +1027,7 @@ fn unfinished_local_work_refuses_the_mutating_routes_through_the_guard() {
     store
         .prepare_runtime_dispatch(
             "synthetic",
-            minted_marker(),
+            "synthetic-session",
             "synthetic request",
             None,
             None,

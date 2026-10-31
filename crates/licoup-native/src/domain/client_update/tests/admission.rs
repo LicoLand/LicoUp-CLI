@@ -33,7 +33,7 @@ impl HostDataRoot {
         let scope = store
             .prepare_runtime_dispatch(
                 "synthetic",
-                minted_marker(),
+                "synthetic-session",
                 "synthetic request",
                 None,
                 None,

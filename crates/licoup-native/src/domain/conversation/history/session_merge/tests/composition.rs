@@ -22,6 +22,7 @@ fn composition_keeps_only_matching_user_authored_sessions() {
         session_ids: Vec::new(),
         match_terms: Vec::new(),
         match_project_paths: Vec::new(),
+        hydrate_session_ids: std::collections::BTreeSet::new(),
         page: HistoryPageConfig {
             offset: 0,
             limit: None,
@@ -44,6 +45,7 @@ fn composition_keeps_agent_owned_empty_copilot_conversations() {
         session_ids: Vec::new(),
         match_terms: Vec::new(),
         match_project_paths: Vec::new(),
+        hydrate_session_ids: std::collections::BTreeSet::new(),
         page: HistoryPageConfig {
             offset: 0,
             limit: None,

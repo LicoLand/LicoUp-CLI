@@ -3,6 +3,8 @@ mod atomic_replace;
 mod hardening;
 mod marker;
 mod policy;
+#[cfg(any(test, feature = "test-support"))]
+mod race_observation;
 mod sync;
 #[cfg(unix)]
 mod unix_hardening;
@@ -22,6 +24,8 @@ pub use marker::{
     read_private_state_marker, read_private_text_bounded, remove_private_state_marker,
     validate_private_file_unchanged,
 };
+#[cfg(any(test, feature = "test-support"))]
+pub use race_observation::{BeforePrivateFileOpenGuard, observe_before_private_file_open};
 pub use sync::directory as sync_directory;
 pub use validation::{
     validate_export_destination, validate_no_symlink_ancestors, validate_path_owner,

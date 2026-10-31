@@ -37,6 +37,11 @@ pub(crate) struct HistoryScanConfig {
     session_ids: Vec<String>,
     match_terms: Vec<String>,
     match_project_paths: Vec<String>,
+    /// Catalog page hydration scope: the shared-store session identities the
+    /// current page actually renders. Browse hydration fills this so a
+    /// multi-session store (one OpenCode/Kilo database) only parses the page's
+    /// sessions and their lineage instead of the whole store.
+    pub(crate) hydrate_session_ids: std::collections::BTreeSet<String>,
     pub(crate) page: HistoryPageConfig,
 }
 
@@ -49,6 +54,7 @@ pub(crate) struct HistoryPageConfig {
 mod catalog;
 mod codex;
 mod cursor_openagent;
+mod deepseek;
 mod delegated_transcripts;
 mod execution_provenance;
 mod generic;
@@ -93,6 +99,7 @@ use session_metadata::*;
 
 pub(crate) use codex::parse_codex_rollout_sessions;
 pub(crate) use cursor_openagent::parse_sqlite_sessions;
+pub(crate) use deepseek::parse_deepseek_session;
 pub(crate) use generic::{parse_json_sessions, parse_jsonl_sessions, parse_text_session};
 pub(crate) use kimi::parse_kimi_code_wire_session;
 pub(crate) use pi_copilot::{

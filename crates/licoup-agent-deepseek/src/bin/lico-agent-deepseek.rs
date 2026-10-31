@@ -76,6 +76,7 @@ fn read_failure(error: &SessionReadError) -> &'static str {
         SessionReadError::Io(_) => "deepseek_package_artifact_unreadable",
         SessionReadError::Malformed(_) => "deepseek_package_artifact_malformed",
         SessionReadError::UnsupportedFormatVersion(_) => "deepseek_package_artifact_unsupported",
+        SessionReadError::ResourceLimit(_) => "deepseek_package_artifact_oversized",
     }
 }
 

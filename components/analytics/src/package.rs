@@ -23,10 +23,10 @@
 use licoup_extension_contracts::deployment::{CapabilityAvailability, PackageFacts, availability};
 use licoup_extension_contracts::usage::{MetricValue, UsageOperation};
 use licoup_extension_contracts::{ApplicationFailure, RecoveryAction};
-use licoup_usage_source_sdk::binding::{BoundObservation, SourceBinding};
-use licoup_usage_source_sdk::collection::{Cursor, QueryPage, QueryRequest};
-use licoup_usage_source_sdk::metrics as general;
 use std::collections::{BTreeMap, BTreeSet};
+use token_usage_detector::binding::{BoundObservation, SourceBinding};
+use token_usage_detector::collection::{Cursor, QueryPage, QueryRequest};
+use token_usage_detector::metrics as general;
 
 use crate::correlation::{CorrelationPolicy, Reconciliation, reconcile};
 use crate::facts::{CoreUsageFacts, FactOutcome, FactReceipt, MeteringFact};
@@ -34,7 +34,7 @@ use crate::index::{IngestOutcome, ObservationIndex};
 use crate::metrics::MetricCatalog;
 use crate::panels::PanelRegistry;
 use crate::policy::AuthorityPolicy;
-use crate::{refusal, refusal_with};
+use crate::{refusal, refusal_with, usage_failure};
 
 /// The capability this package provides.
 pub const CAPABILITY: &str = "analytics.v1";
@@ -397,15 +397,17 @@ impl<'a, F: CoreUsageFacts> AnalyticsPackage<'a, F> {
         let Some(binding) = self.sources.get(source_ref).cloned() else {
             return Err(self.authority.refusal(source_ref));
         };
-        request.validate()?;
+        request.validate().map_err(usage_failure)?;
         if !binding.authorizes_scope(&request.scope_ref) {
             return Err(refusal("usage_scope_not_authorized").with_field("scopeRef"));
         }
         let start = match &request.cursor {
             None => 0usize,
             Some(text) => {
-                let cursor = Cursor::parse(text)?;
-                cursor.check_epoch(&binding.source_epoch)?;
+                let cursor = Cursor::parse(text).map_err(usage_failure)?;
+                cursor
+                    .check_epoch(&binding.source_epoch)
+                    .map_err(usage_failure)?;
                 cursor.sequence() as usize
             }
         };
@@ -424,7 +426,11 @@ impl<'a, F: CoreUsageFacts> AnalyticsPackage<'a, F> {
             QueryPage::empty(&binding.source_epoch, &request.scope_ref)
         } else {
             let next_cursor = if end < observations.len() {
-                Some(Cursor::new(&binding.source_epoch, end as u64)?.encode())
+                Some(
+                    Cursor::new(&binding.source_epoch, end as u64)
+                        .map_err(usage_failure)?
+                        .encode(),
+                )
             } else {
                 None
             };
@@ -439,7 +445,7 @@ impl<'a, F: CoreUsageFacts> AnalyticsPackage<'a, F> {
                 next_cursor,
             }
         };
-        page.validate()?;
+        page.validate().map_err(usage_failure)?;
         Ok(page)
     }
 
@@ -539,7 +545,7 @@ impl<'a, F: CoreUsageFacts> AnalyticsPackage<'a, F> {
         &mut self,
         scope_ref: &str,
         metric: &str,
-        ingested: &licoup_usage_source_sdk::binding::BoundObservationKey,
+        ingested: &token_usage_detector::binding::BoundObservationKey,
     ) -> Result<GroupOutcome, ApplicationFailure> {
         let group: Vec<BoundObservation> = self
             .index

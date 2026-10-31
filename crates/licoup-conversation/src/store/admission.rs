@@ -387,7 +387,7 @@ mod tests {
             DispatchState::CancelRequested,
         ] {
             let store = store();
-            let (conversation_id, membership_id) = single_agent(&store, minted_marker());
+            let (conversation_id, membership_id) = single_agent(&store, "synthetic-session");
             let dispatch = store
                 .create_dispatch(
                     &conversation_id,
@@ -423,7 +423,7 @@ mod tests {
             DispatchState::Cancelled,
         ] {
             let store = store();
-            let (conversation_id, membership_id) = single_agent(&store, minted_marker());
+            let (conversation_id, membership_id) = single_agent(&store, "synthetic-session");
             let dispatch = store
                 .create_dispatch(
                     &conversation_id,
@@ -514,7 +514,7 @@ mod tests {
     fn unfinalized_events_block_until_they_are_finalized() {
         let store = store();
         let (conversation_id, _, dispatch_id, event_id) =
-            admitted_single_agent(&store, minted_marker());
+            admitted_single_agent(&store, "synthetic-session");
         let work = store.unfinished_local_work().expect("read");
         assert_eq!(
             find(&work, LocalWorkKind::UnfinalizedEvent, &event_id),
@@ -700,7 +700,7 @@ mod tests {
     #[test]
     fn the_read_is_bounded_and_reports_truncation() {
         let store = store();
-        let (conversation_id, membership_id) = single_agent(&store, minted_marker());
+        let (conversation_id, membership_id) = single_agent(&store, "synthetic-session");
         for _ in 0..(MAX_UNFINISHED_LOCAL_WORK + 4) {
             store
                 .append_event(

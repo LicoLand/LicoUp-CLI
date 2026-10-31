@@ -1,7 +1,7 @@
 use super::models::SourceMetadata;
 use crate::domain::conversation::source_catalog::{HistoryAdapter, HistoryRoot};
-use anyhow::{Context, Result};
 use agent_statistics::window::UsageWindow;
+use anyhow::{Context, Result};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 use std::fs;

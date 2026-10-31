@@ -41,6 +41,7 @@ fn generic_fallback_projects_only_adapter_accepted_rows() {
             session_ids: Vec::new(),
             match_terms: Vec::new(),
             match_project_paths: Vec::new(),
+            hydrate_session_ids: std::collections::BTreeSet::new(),
             page: HistoryPageConfig {
                 offset: 0,
                 limit: None,
@@ -96,6 +97,7 @@ fn generic_sqlite_reads_all_pages_and_large_values() {
             session_ids: Vec::new(),
             match_terms: Vec::new(),
             match_project_paths: Vec::new(),
+            hydrate_session_ids: std::collections::BTreeSet::new(),
             page: HistoryPageConfig {
                 offset: 0,
                 limit: None,

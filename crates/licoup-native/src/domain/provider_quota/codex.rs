@@ -8,6 +8,7 @@
 //! through the same `codex app-server --stdio` invocation contract as the
 //! existing Codex launch binding.
 
+use super::balance;
 use super::contract::{
     DEFAULT_STALE_AFTER_SECONDS, ProviderQuotaSnapshot, QuotaFetchError, QuotaIdentity,
     QuotaProvider, QuotaStatus, QuotaWindow,
@@ -85,6 +86,15 @@ impl CodexSource {
             .and_then(|path| credentials::read_bounded_utf8(path).ok())
             .and_then(|text| serde_json::from_str::<Value>(&text).ok());
         let identity = auth.as_ref().map(identity_from_auth).unwrap_or_default();
+        let hint = auth
+            .as_ref()
+            .map(binding_hint_from_auth)
+            .unwrap_or_else(|| {
+                (
+                    balance::LOCAL_ACCOUNT.to_owned(),
+                    balance::FIXED_EPOCH.to_owned(),
+                )
+            });
 
         if let Some(access_token) = auth
             .as_ref()
@@ -92,7 +102,7 @@ impl CodexSource {
             .and_then(Value::as_str)
             && let Ok(payload) = (self.fetch_usage)(WHAM_USAGE_URL, access_token)
         {
-            return normalize_wham_usage(&payload, identity, &captured_at);
+            return normalize_wham_usage(&payload, identity, &hint, &captured_at);
         }
 
         // Fallback lane: app-server rate limits through the existing Codex
@@ -102,7 +112,7 @@ impl CodexSource {
             .clone()
             .ok_or_else(|| QuotaFetchError::new("codex_app_server_unavailable"))?;
         let payload = (self.read_rate_limits)(&executable)?;
-        normalize_app_server_rate_limits(&payload, identity, &captured_at)
+        normalize_app_server_rate_limits(&payload, identity, &hint, &captured_at)
     }
 }
 
@@ -150,14 +160,50 @@ fn identity_from_auth(auth: &Value) -> QuotaIdentity {
     }
 }
 
+/// The binding hint the host knows: the account and epoch the local auth
+/// store claims (the id_token is custody material, not payload-asserted).
+fn binding_hint_from_auth(auth: &Value) -> (String, String) {
+    let claims = auth
+        .pointer("/tokens/id_token")
+        .and_then(Value::as_str)
+        .and_then(credentials::decode_jwt_payload);
+    let account = claims
+        .as_ref()
+        .and_then(|claims| claims.get("sub").or_else(|| claims.get("email")))
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+        .unwrap_or_else(|| balance::LOCAL_ACCOUNT.to_owned());
+    let epoch = claims
+        .as_ref()
+        .and_then(|claims| claims.get("exp"))
+        .and_then(Value::as_i64)
+        .map(|expiry| expiry.to_string())
+        .or_else(|| {
+            auth.pointer("/tokens/access_token")
+                .and_then(Value::as_str)
+                .and_then(credentials::jwt_expiry_epoch_seconds)
+                .map(|expiry| expiry.to_string())
+        })
+        .unwrap_or_else(|| balance::FIXED_EPOCH.to_owned());
+    (account, epoch)
+}
+
 fn snapshot(
     windows: Vec<QuotaWindow>,
     identity: QuotaIdentity,
+    hint: &(String, String),
     captured_at: &str,
 ) -> Result<ProviderQuotaSnapshot, QuotaFetchError> {
     if windows.is_empty() {
         return Err(QuotaFetchError::new("codex_quota_windows_missing"));
     }
+    let balance = balance::bind(
+        QuotaProvider::Codex,
+        &hint.0,
+        &hint.1,
+        &windows,
+        captured_at,
+    )?;
     Ok(ProviderQuotaSnapshot {
         agent_id: QuotaProvider::Codex.agent_id().to_owned(),
         provider: QuotaProvider::Codex,
@@ -166,6 +212,7 @@ fn snapshot(
         identity,
         captured_at: captured_at.to_owned(),
         stale_after_seconds: DEFAULT_STALE_AFTER_SECONDS,
+        balance: Some(balance),
     })
 }
 
@@ -174,8 +221,10 @@ fn snapshot(
 fn normalize_wham_usage(
     payload: &Value,
     mut identity: QuotaIdentity,
+    hint: &(String, String),
     captured_at: &str,
 ) -> Result<ProviderQuotaSnapshot, QuotaFetchError> {
+    balance::refuse_self_asserted(payload)?;
     let rate_limit = payload
         .get("rate_limit")
         .or_else(|| payload.get("rateLimit"))
@@ -213,7 +262,7 @@ fn normalize_wham_usage(
             .and_then(Value::as_str)
             .map(str::to_owned);
     }
-    snapshot(windows, identity, captured_at)
+    snapshot(windows, identity, hint, captured_at)
 }
 
 fn normalize_hosted_window(window: &Value, label: &str) -> Option<QuotaWindow> {
@@ -250,8 +299,10 @@ fn normalize_hosted_window(window: &Value, label: &str) -> Option<QuotaWindow> {
 fn normalize_app_server_rate_limits(
     payload: &Value,
     identity: QuotaIdentity,
+    hint: &(String, String),
     captured_at: &str,
 ) -> Result<ProviderQuotaSnapshot, QuotaFetchError> {
+    balance::refuse_self_asserted(payload)?;
     let rate_limits = payload
         .get("rateLimits")
         .or_else(|| payload.get("rate_limits"))
@@ -270,7 +321,7 @@ fn normalize_app_server_rate_limits(
     {
         append_app_server_additional_windows(&mut windows, additional);
     }
-    snapshot(windows, identity, captured_at)
+    snapshot(windows, identity, hint, captured_at)
 }
 
 fn string_field<'a>(value: &'a Value, keys: &[&str]) -> Option<&'a str> {

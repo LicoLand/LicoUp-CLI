@@ -133,13 +133,13 @@ fn a_durable_identity_is_decided_by_the_rollout_record_it_names() {
     let mut file = std::fs::File::create(&rollout).expect("a synthetic rollout record");
     writeln!(
         file,
-        r#"{{"type":"session_meta","payload":{{"id":minted_marker()}}}}"#
+        r#"{{"type":"session_meta","payload":{{"id":"synthetic-session"}}}}"#
     )
     .expect("the metadata line is written");
     drop(file);
 
     let valid = registration::valid_identity(&DurableIdentityRequest {
-        session_id: minted_marker(),
+        session_id: "synthetic-session",
         location: Some(rollout.as_path()),
     });
     assert!(valid, "the record itself names this identity");
@@ -152,7 +152,7 @@ fn a_durable_identity_is_decided_by_the_rollout_record_it_names() {
     assert!(!mismatched);
 
     let absent = registration::valid_identity(&DurableIdentityRequest {
-        session_id: minted_marker(),
+        session_id: "synthetic-session",
         location: Some(directory.join("absent.jsonl").as_path()),
     });
     assert!(!absent, "an unreadable record is not a valid identity");
@@ -160,7 +160,7 @@ fn a_durable_identity_is_decided_by_the_rollout_record_it_names() {
     // No location: there is nothing to read, so the identity is judged on its
     // own shape exactly as this host's exact-identity resolution judges it.
     assert!(registration::valid_identity(&DurableIdentityRequest {
-        session_id: minted_marker(),
+        session_id: "synthetic-session",
         location: None,
     }));
     assert!(!registration::valid_identity(&DurableIdentityRequest {

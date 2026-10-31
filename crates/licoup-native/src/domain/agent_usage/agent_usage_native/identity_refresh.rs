@@ -1,9 +1,9 @@
 //! Reproject attributable current-day model rows without changing the usage ledger.
 
 use super::cache::RefreshStatements;
-use anyhow::Result;
 use agent_statistics::contract::{HistoryUsageSummary, ModelTokenUsageSummary, UsageVariant};
 use agent_statistics::variant::{is_placeholder_id, model_selection};
+use anyhow::Result;
 use rusqlite::{Connection, OptionalExtension, params};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -150,7 +150,7 @@ mod tests {
         let history = root.join("history");
         fs::create_dir_all(&history).unwrap();
         let event = if cumulative {
-            json!({"type":"session_usage","sessionId":minted_marker(),"timestamp":"2026-07-15T10:00:00Z",
+            json!({"type":"session_usage","sessionId":"synthetic-session","timestamp":"2026-07-15T10:00:00Z",
                 "model":"actual-model","usage":{"input_tokens":10,"cached_input_tokens":4,"output_tokens":2}})
         } else {
             json!({"type":"assistant","timestamp":"2026-07-15T10:00:00Z","model":"Default",

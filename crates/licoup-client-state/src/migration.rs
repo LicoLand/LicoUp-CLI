@@ -1,9 +1,14 @@
-use std::{fs, path::Path};
+use std::path::Path;
 
 use anyhow::{Context, Result, bail, ensure};
+use collection_store::CollectionStore;
+use licoup_foundation::platform::file_security::{
+    read_existing_private_text_bounded, sync_directory,
+};
 use serde_json::{Value, json};
 
-use super::{collections::validate_current_collection_document, paths, policy, serialization};
+use super::collections::validate_collection_document;
+use super::{paths, policy};
 
 pub fn probe_collections(portable_root: &Path) -> Result<(u32, bool)> {
     let root = portable_root.join(policy::CLIENT_STATE_DIR);
@@ -11,19 +16,13 @@ pub fn probe_collections(portable_root: &Path) -> Result<(u32, bool)> {
     let mut legacy = false;
     for collection in policy::COLLECTIONS {
         let path = paths::collection_path(&root, collection);
-        match fs::symlink_metadata(&path) {
-            Ok(metadata) => ensure!(
-                metadata.is_file() && !metadata.file_type().is_symlink(),
-                "client state collection must be a regular file"
-            ),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-            Err(error) => return Err(error.into()),
-        }
+        let Some(document) = read_collection_document(&path)? else {
+            continue;
+        };
         found = true;
-        let document = read_collection(&path)?;
         match document.get("schemaVersion").and_then(Value::as_str) {
             Some(policy::STATE_SCHEMA_VERSION) => {
-                validate_current_collection_document(collection, &document)?;
+                validate_collection_document(collection, &document)?;
             }
             None => {
                 validate_legacy_owner(collection, &document)?;
@@ -37,15 +36,15 @@ pub fn probe_collections(portable_root: &Path) -> Result<(u32, bool)> {
 
 pub fn migrate_collections(portable_root: &Path) -> Result<()> {
     let root = portable_root.join(policy::CLIENT_STATE_DIR);
+    let store = open_existing_store(&root)?;
     for collection in policy::COLLECTIONS {
         let path = paths::collection_path(&root, collection);
-        if !path.exists() {
+        let Some(mut document) = read_collection_document(&path)? else {
             continue;
-        }
-        let mut document = read_collection(&path)?;
+        };
         match document.get("schemaVersion").and_then(Value::as_str) {
             Some(policy::STATE_SCHEMA_VERSION) => {
-                validate_current_collection_document(collection, &document)?;
+                validate_collection_document(collection, &document)?;
                 continue;
             }
             None => validate_legacy_owner(collection, &document)?,
@@ -61,30 +60,43 @@ pub fn migrate_collections(portable_root: &Path) -> Result<()> {
         object
             .entry("collection".to_owned())
             .or_insert_with(|| json!(collection));
-        serialization::atomic_write_json(&path, &document, policy::MAX_COLLECTION_DOCUMENT_BYTES)?;
-        validate_current_collection_document(collection, &document)?;
+        let store = store
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("client state store is unavailable"))?;
+        store.write_collection(collection, document)?;
+        // The store syncs the staged file before its rename; the parent sync
+        // is what makes the published rename durable.
+        sync_directory(&root)?;
     }
     Ok(())
 }
 
-fn read_collection(path: &Path) -> Result<Value> {
-    let metadata = fs::symlink_metadata(path).context("client state collection metadata failed")?;
+/// Open the published store only when the collection directory already exists;
+/// probing or migrating an absent data home must not create it.
+fn open_existing_store(root: &Path) -> Result<Option<CollectionStore>> {
+    if !root.is_dir() {
+        return Ok(None);
+    }
+    Ok(Some(CollectionStore::new(root.to_path_buf())?))
+}
+
+fn read_collection_document(path: &Path) -> Result<Option<Value>> {
+    let Some(raw) =
+        read_existing_private_text_bounded(path, policy::MAX_COLLECTION_DOCUMENT_BYTES)?
+    else {
+        return Ok(None);
+    };
     ensure!(
-        metadata.is_file() && !metadata.file_type().is_symlink(),
-        "client state collection must be a regular file"
-    );
-    let raw = fs::read(path).context("client state collection read failed")?;
-    ensure!(
-        !raw.is_empty() && raw.len() <= policy::MAX_COLLECTION_DOCUMENT_BYTES,
+        !raw.trim().is_empty(),
         "client state collection size is invalid"
     );
     let document: Value =
-        serde_json::from_slice(&raw).context("client state collection JSON is invalid")?;
+        serde_json::from_str(&raw).context("client state collection JSON is invalid")?;
     ensure!(
         document.is_object(),
         "client state collection is not an object"
     );
-    Ok(document)
+    Ok(Some(document))
 }
 
 fn validate_legacy_owner(collection: &str, document: &Value) -> Result<()> {

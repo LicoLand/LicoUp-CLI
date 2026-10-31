@@ -3,6 +3,8 @@ use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
 
+#[cfg(any(test, feature = "test-support"))]
+use super::race_observation;
 use super::{policy, sync, validation};
 
 pub fn create_private_state_marker(path: &Path, content: &[u8]) -> Result<()> {
@@ -63,6 +65,8 @@ pub fn open_private_text_bounded(
         return Ok(None);
     };
     validation::validate_private_file_metadata(&path_metadata)?;
+    #[cfg(any(test, feature = "test-support"))]
+    race_observation::notify(path);
     let file = validation::open_read_no_follow(path)?;
     let opened_metadata = file.metadata()?;
     validation::validate_private_file_metadata(&opened_metadata)?;
@@ -137,6 +141,8 @@ fn read_private_bytes_bounded_with_parent(
         return Ok(None);
     };
     validation::validate_private_file_metadata(&path_metadata)?;
+    #[cfg(any(test, feature = "test-support"))]
+    race_observation::notify(path);
     let mut file = validation::open_read_no_follow(path)?;
     let opened_metadata = file.metadata()?;
     validation::validate_private_file_metadata(&opened_metadata)?;

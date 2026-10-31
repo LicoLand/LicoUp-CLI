@@ -275,7 +275,7 @@ mod tests {
     fn native_agent_interaction_is_single_use_and_has_no_expiry() {
         let parked = park(InteractionRequest {
             adapter_id: "pi".into(),
-            session_id: minted_marker().into(),
+            session_id: "synthetic-session".into(),
             turn_id: "synthetic-turn".into(),
             request_id: json!(7),
             method: "select".into(),

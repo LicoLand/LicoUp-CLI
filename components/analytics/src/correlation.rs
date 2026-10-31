@@ -19,8 +19,8 @@
 //! A single source reporting several observations for one scope is not a
 //! conflict: those are separate calls, and each settles on its own identity.
 
-use licoup_usage_source_sdk::binding::BoundObservation;
 use std::collections::{BTreeMap, BTreeSet};
+use token_usage_detector::binding::BoundObservation;
 
 /// The explicit order in which sources are believed.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -277,8 +277,8 @@ mod tests {
     use licoup_extension_contracts::usage::{
         MetricValue, Quality, Temporality, UsageObservation, UsageOperation,
     };
-    use licoup_usage_source_sdk::binding::SourceBinding;
     use std::collections::BTreeMap;
+    use token_usage_detector::binding::SourceBinding;
 
     fn bound(source: &str, id: &str, value: &str, measurement: Option<&str>) -> BoundObservation {
         let observation = UsageObservation {

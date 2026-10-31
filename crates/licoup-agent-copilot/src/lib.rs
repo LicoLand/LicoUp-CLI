@@ -44,6 +44,14 @@ pub mod driver;
 pub mod parser;
 pub mod registration;
 
+/// The published Copilot card, ACP spec and mechanism dialect this package
+/// composes.
+///
+/// The upstream declaration owns the launch command, the ACP lane and the
+/// mechanism locations; this package keeps only the frame policy and the
+/// LicoUp package identity.
+pub mod upstream;
+
 /// The recorded-transcript replay arm.
 ///
 /// It drives the shared ACP reducer, so it is compiled only where that reducer's

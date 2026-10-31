@@ -8,6 +8,7 @@ use super::contract::{
 use super::persistence::{client_state_store, load_retained};
 use super::scheduler::{self, RefreshGate};
 use super::{antigravity, codex, cursor, kimi_code, redaction};
+use balance_detector::{BalanceFact, QuotaWindow as BalanceWindow};
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use serde_json::{Value, json};
@@ -573,6 +574,62 @@ fn provider_quota_kimi_code_source_normalizes_synthetic_payload() {
     assert!(!wire.contains(&credentials.access_token));
     assert!(!wire.contains(&credentials.refresh_token));
     assert!(!wire.contains("fixture-device-id"));
+
+    // The same read bound to the credential-derived account: weekly and
+    // session windows in the balance-detector fact vocabulary.
+    let balance = snapshot.balance.as_ref().expect("bound read");
+    assert_eq!(balance.binding.provider_ref, "licoup.kimi-code");
+    assert_eq!(balance.binding.account_ref, "fixture-kimi-user");
+    assert_eq!(balance.binding.account_epoch, "2000000000");
+    assert_eq!(
+        balance.facts,
+        vec![
+            BalanceFact::Quota {
+                window: BalanceWindow::Weekly,
+                remaining_percent: Some("69".to_owned()),
+                remaining_amount: None,
+                unit: None,
+                resets_at: Some("2033-06-01T00:00:00Z".to_owned()),
+            },
+            BalanceFact::Quota {
+                window: BalanceWindow::Session,
+                remaining_percent: Some("90".to_owned()),
+                remaining_amount: None,
+                unit: None,
+                resets_at: Some("2033-05-01T05:00:00Z".to_owned()),
+            },
+        ]
+    );
+    // The wire projection stays on the windows: the bound read and its
+    // binding structure never serialize.
+    assert!(!wire.contains("providerRef"));
+    assert!(!wire.contains("accountEpoch"));
+    assert!(!wire.contains("remainingPercent"));
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+/// A payload that names the account it describes is refused before any field
+/// is read: identity belongs to the host's binding, not the response.
+#[test]
+fn provider_quota_kimi_code_source_refuses_self_asserted_payload() {
+    let root = temp_root("kimi-code-self-asserted");
+    let credentials = synthetic_kimi_credentials(2_000_000_000);
+    let credentials_dir = root.join("credentials");
+    std::fs::create_dir_all(&credentials_dir).unwrap();
+    let credentials_path = credentials_dir.join("kimi-code.json");
+    std::fs::write(&credentials_path, &credentials.document).unwrap();
+    let source = kimi_code::KimiCodeSource::for_testing(
+        Some(credentials_path),
+        Some(root.join("device_id")),
+        Box::new(|_, _| {
+            Ok(json!({
+                "usage": {"limit": 100, "used": 31, "resetTime": "2033-06-01T00:00:00Z"},
+                "account": {"id": "payload-asserted"}
+            }))
+        }),
+    );
+    let error = source.fetch_snapshot(fixed_now()).unwrap_err();
+    assert_eq!(error.code, "balance_self_asserted");
     std::fs::remove_dir_all(root).unwrap();
 }
 
@@ -781,6 +838,7 @@ fn synthetic_snapshot(provider: QuotaProvider, resets_at: Option<&str>) -> Provi
         identity: Default::default(),
         captured_at: SYNTHETIC_NOW.to_owned(),
         stale_after_seconds: 3600,
+        balance: None,
     }
 }
 

@@ -490,9 +490,12 @@ mod tests {
         );
         let parsed = parse_openagent_connection(&connection, &calendar()).unwrap();
         assert_eq!(parsed.summary.total_tokens(), 25);
-        let models = &parsed
-            .summary
-            .to_json_for_agent(None, &crate::domain::model_registry::snapshot())["dailyUsage"][0]["modelTokenUsage"];
+        let models = &parsed.summary.to_json_for_agent(
+            None,
+            &*crate::domain::agent_usage::host::model_registry_for_snapshot(
+                crate::domain::model_registry::snapshot(),
+            ),
+        )["dailyUsage"][0]["modelTokenUsage"];
         assert_eq!(
             models["actual-parent"]["variants"]["High"]["totalTokens"],
             12

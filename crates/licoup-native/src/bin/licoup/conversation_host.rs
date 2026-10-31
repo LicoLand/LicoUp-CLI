@@ -34,6 +34,11 @@ use super::stdio_rpc::{
 
 const CONNECT_ATTEMPTS: usize = 80;
 const CONNECT_RETRY: Duration = Duration::from_millis(25);
+/// Cadence of the background attendance worker. Attendance only serves
+/// time-due goals/wakes and recovery — turn settlement runs synchronously
+/// through the runtime settlement hook — so a one-second cadence bounds
+/// attendance latency without burning a core while the host is idle.
+const ATTENDANCE_INTERVAL: Duration = Duration::from_secs(1);
 const CONNECT_ATTEMPT_TIMEOUT: Duration = Duration::from_millis(25);
 const STALE_HOST_WAIT: Duration = Duration::from_secs(2);
 #[allow(dead_code)]
@@ -642,7 +647,7 @@ impl AttendanceOwner {
                     }
                     let (lock, cv) = &*wake_w;
                     let guard = lock.lock().unwrap_or_else(|poison| poison.into_inner());
-                    let _ = cv.wait_timeout(guard, CONNECT_RETRY);
+                    let _ = cv.wait_timeout(guard, ATTENDANCE_INTERVAL);
                 }
             })
             .context("conversation attendance worker failed")?;

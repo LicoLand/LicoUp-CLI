@@ -36,6 +36,15 @@ licoup-agent-drivers = { path = "../licoup-agent-drivers" }
 licoup-foundation = { path = "../licoup-foundation" }
 serde_json.workspace = true
 
+# The published Copilot card and mechanism dialect are consumed at build time.
+# `a4aa` links the ACP runtime, whose feature set turns on serde_json's
+# `preserve_order`; keeping the dependency in the build graph leaves the
+# client's own JSON ordering (and the tests that pin it) unchanged while the
+# generated launch and mechanism facts still come from the published crate.
+[build-dependencies]
+a4aa.workspace = true
+a4aa-copilot.workspace = true
+
 [[bin]]
 name = "lico-agent-copilot"
 path = "src/bin/lico-agent-copilot.rs"

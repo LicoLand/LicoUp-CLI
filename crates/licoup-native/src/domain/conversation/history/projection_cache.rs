@@ -22,7 +22,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub(crate) const HISTORY_PROJECTION_CACHE_SCHEMA: &str = "licoup.history-projection-cache/v5";
+pub(crate) const HISTORY_PROJECTION_CACHE_SCHEMA: &str = "licoup.history-projection-cache/v6";
 pub(crate) const MAX_PROJECTION_CACHE_ENTRIES: usize = 256;
 pub(crate) const MAX_PROJECTION_CACHE_BYTES: usize = 8 * 1024 * 1024;
 const MAX_PROJECTION_CACHE_FILE_BYTES: usize = MAX_PROJECTION_CACHE_BYTES + 4096;
@@ -57,9 +57,10 @@ pub(super) fn modified_ns(metadata: &fs::Metadata) -> u64 {
 }
 
 /// Identity of one hydration unit: the adapter, the layout kind, every source
-/// file that shaped the projection, and any store the parser consulted beyond
-/// the unit files themselves (Codex delegated labels come from its thread
-/// database, so that database is part of the key).
+/// file that shaped the projection, the session identities the unit was asked
+/// to materialize (a shared store only parses the page's scope), and any store
+/// the parser consulted beyond the unit files themselves (Codex delegated
+/// labels come from its thread database, so that database is part of the key).
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub(crate) struct ProjectionCacheKey {
     pub(crate) adapter_id: String,
@@ -67,6 +68,7 @@ pub(crate) struct ProjectionCacheKey {
     pub(crate) kind: String,
     pub(crate) sources: Vec<SourceFingerprint>,
     pub(crate) authority: Option<SourceFingerprint>,
+    pub(crate) scope: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -383,6 +385,7 @@ mod tests {
                 .map(|path| SourceFingerprint::from_path(path).unwrap())
                 .collect(),
             authority: None,
+            scope: Vec::new(),
         }
     }
 
@@ -565,7 +568,8 @@ mod tests {
                         "sourceKind": "codex-session-store",
                         "kind": "file",
                         "sources": [],
-                        "authority": null
+                        "authority": null,
+                        "scope": []
                     },
                     "sessions": [{"nativeSessionId": "s1"}],
                     "lastUsedNs": 1

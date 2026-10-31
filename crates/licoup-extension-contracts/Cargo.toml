@@ -9,6 +9,9 @@ description = "Language-agnostic extension SDK contract: the C09-C13 profiles, p
 
 [dependencies]
 licoup-application = { path = "../licoup-application", version = "0.3.0" }
+# The C11 usage vocabulary is owned by the published detector crate; this
+# contract re-exports it at the path extensions already import.
+token-usage-detector.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 # A provider endpoint is parsed by the standard URL parser: an origin that a

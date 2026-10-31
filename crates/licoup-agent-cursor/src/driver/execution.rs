@@ -876,7 +876,7 @@ mod raw_execution_tests {
         let mut command = Command::new("synthetic-cursor");
         command.args([
             "--resume",
-            minted_marker(),
+            "synthetic-session",
             "literal 'quoted'\nand multiline prompt",
         ]);
         observe_command(&command);
@@ -889,7 +889,7 @@ mod raw_execution_tests {
             vec![
                 "synthetic-cursor",
                 "--resume",
-                minted_marker(),
+                "synthetic-session",
                 "literal 'quoted'\nand multiline prompt"
             ]
         );

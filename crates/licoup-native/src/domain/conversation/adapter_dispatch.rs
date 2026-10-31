@@ -1,7 +1,7 @@
 //! Single routing authority from an agent history source to its parser.
 
 use super::parser_port::{HistoryParserKind, HistoryScanConfig, parse_history};
-use super::source_catalog::HistoryAdapter;
+use super::source_catalog::{HistoryAdapter, deepseek_generation};
 use serde_json::Value;
 use std::fs;
 use std::path::Path;
@@ -20,10 +20,13 @@ pub(crate) fn parse_history_file(
 }
 
 fn parser_kind(adapter: HistoryAdapter, path: &Path) -> Option<HistoryParserKind> {
-    // Harness historical usage has a separate exact metadata reader. Its
-    // compressed event log must never enter a generic transcript parser.
+    // The Harness session log is a versioned, possibly compressed event
+    // container — only the dedicated reader decodes it, never a generic
+    // transcript parser.
     if adapter == HistoryAdapter::DeepSeekHarness {
-        return None;
+        return deepseek_generation(path)
+            .is_some()
+            .then_some(HistoryParserKind::DeepSeekSession);
     }
     let extension = path
         .extension()
@@ -87,13 +90,27 @@ mod tests {
     #[test]
     fn rejects_files_outside_the_selected_adapter_contract() {
         use super::super::source_catalog::{adapter_for_agent, usage_adapter_for_agent};
-        assert_eq!(adapter_for_agent("deepseek-harness"), None);
+        assert_eq!(
+            adapter_for_agent("deepseek-harness"),
+            Some(HistoryAdapter::DeepSeekHarness)
+        );
         assert_eq!(
             usage_adapter_for_agent("deepseek-harness"),
             Some(HistoryAdapter::DeepSeekHarness)
         );
         assert_eq!(
             parser_kind(HistoryAdapter::DeepSeekHarness, Path::new("session.jsonl")),
+            Some(HistoryParserKind::DeepSeekSession)
+        );
+        assert_eq!(
+            parser_kind(
+                HistoryAdapter::DeepSeekHarness,
+                Path::new("session.v4.jsonl.zstd")
+            ),
+            Some(HistoryParserKind::DeepSeekSession)
+        );
+        assert_eq!(
+            parser_kind(HistoryAdapter::DeepSeekHarness, Path::new("notes.jsonl")),
             None
         );
         assert_eq!(

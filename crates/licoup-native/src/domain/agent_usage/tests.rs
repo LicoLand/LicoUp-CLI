@@ -242,7 +242,7 @@ fn command_hermes_uses_reconciled_gateway_counters_without_text_estimates() {
         .execute(
             "INSERT INTO sessions VALUES (?1, 'gateway', ?2, ?3, NULL, 25, 12, 4, 1)",
             rusqlite::params![
-                minted_marker(),
+                "synthetic-session",
                 "hermes-test",
                 epoch("2026-07-15T09:59:00Z")
             ],
@@ -251,7 +251,7 @@ fn command_hermes_uses_reconciled_gateway_counters_without_text_estimates() {
     connection
         .execute(
             "INSERT INTO messages VALUES (?1, ?2)",
-            rusqlite::params![minted_marker(), epoch("2026-07-15T10:00:04Z")],
+            rusqlite::params!["synthetic-session", epoch("2026-07-15T10:00:04Z")],
         )
         .unwrap();
     connection
@@ -260,7 +260,7 @@ fn command_hermes_uses_reconciled_gateway_counters_without_text_estimates() {
                 (?1, ?2, '', '', '', '', 10, 5, 2, 0, 1, ?3, ?4),
                 (?1, ?2, '', '', '', 'compression', 7, 3, 1, 0, 2, ?5, ?6)",
             rusqlite::params![
-                minted_marker(),
+                "synthetic-session",
                 "hermes-test",
                 epoch("2026-07-15T10:00:00Z"),
                 epoch("2026-07-15T10:00:01Z"),
@@ -363,7 +363,7 @@ fn lico_agent_native_transcript_preserves_exact_model_and_request_effort_without
     let state_root = temp_root("lico-state");
     fs::create_dir_all(&history_root).unwrap();
     fs::write(history_root.join("fixture.jsonl"),[
-        json!({"type":"session","id":minted_marker()}),
+        json!({"type":"session","id":"synthetic-session"}),
         json!({"type":"message","role":"assistant","text":"synthetic response","timestamp":"2026-07-15T10:00:00Z","model":"fixture-model","reasoning_effort":"high","usage":{"input_tokens":12,"output_tokens":3}})
     ].iter().map(Value::to_string).collect::<Vec<_>>().join("\n")+"\n").unwrap();
     let result=scan(&json!({"agent":"lico-agent","root":history_root.to_string_lossy(),"stateRoot":state_root.to_string_lossy(),"now":"2026-07-15T12:00:00Z"})).unwrap();

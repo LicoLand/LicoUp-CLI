@@ -13,7 +13,22 @@ impl HistoryScanConfig {
                 params,
                 &["matchProjectPaths", "matchProjectPath"],
             ),
+            hydrate_session_ids: std::collections::BTreeSet::new(),
             page: HistoryPageConfig::from_params(params),
+        }
+    }
+
+    /// Sessions a shared-store parse may narrow to: the explicitly requested
+    /// identities, or the catalog page's hydration scope. `None` parses the
+    /// whole store. The caller-side filters still decide the final page; this
+    /// only bounds which records the parser materializes.
+    pub(crate) fn shared_store_session_scope(&self) -> Option<std::collections::BTreeSet<String>> {
+        if !self.session_ids.is_empty() {
+            Some(self.session_ids.iter().cloned().collect())
+        } else if !self.hydrate_session_ids.is_empty() {
+            Some(self.hydrate_session_ids.clone())
+        } else {
+            None
         }
     }
 

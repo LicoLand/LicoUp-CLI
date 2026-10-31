@@ -17,7 +17,7 @@ pub(super) fn parse_cursor_sqlite_sessions(
     source_kind: &str,
     metadata: &fs::Metadata,
     connection: &mut Connection,
-    only_session_id: Option<&str>,
+    requested_sessions: Option<&std::collections::BTreeSet<String>>,
 ) -> Vec<Value> {
     let transaction = match connection.transaction_with_behavior(TransactionBehavior::Deferred) {
         Ok(transaction) => transaction,
@@ -31,7 +31,7 @@ pub(super) fn parse_cursor_sqlite_sessions(
     if composers.is_empty() {
         return Vec::new();
     }
-    let composers = retain_requested_composer_lineage(composers, only_session_id);
+    let composers = retain_requested_composer_lineage(composers, requested_sessions);
     if composers.is_empty() {
         return Vec::new();
     }
@@ -91,21 +91,21 @@ pub(super) fn parse_cursor_sqlite_sessions(
     sessions.into_iter().map(|(_, session)| session).collect()
 }
 
-/// Keep only the requested conversation and the delegated tasks below it.
+/// Keep only the requested conversations and the delegated tasks below them.
 ///
 /// The IDE store holds every Cursor conversation in one database. Reading one
-/// conversation must not walk the message bubbles of all the others, so the
-/// composer list is narrowed before any bubble is touched. Delegated descendants
-/// stay because they fold into the conversation as task cards.
+/// conversation or one catalog page must not walk the message bubbles of all
+/// the others, so the composer list is narrowed before any bubble is touched.
+/// Delegated descendants stay because they fold into the conversation as task
+/// cards.
 fn retain_requested_composer_lineage(
     composers: Vec<CursorComposerMeta>,
-    only_session_id: Option<&str>,
+    requested_sessions: Option<&std::collections::BTreeSet<String>>,
 ) -> Vec<CursorComposerMeta> {
-    let Some(requested) = only_session_id.map(str::trim).filter(|id| !id.is_empty()) else {
+    let Some(seed) = requested_sessions.filter(|ids| !ids.is_empty()) else {
         return composers;
     };
-    let mut wanted = HashSet::<String>::new();
-    wanted.insert(requested.to_string());
+    let mut wanted = HashSet::<String>::from_iter(seed.iter().cloned());
     // Delegated composers appear after their parent in insertion order but the
     // store gives no ordering guarantee, so repeat until the closure is stable.
     loop {

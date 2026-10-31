@@ -27,6 +27,9 @@ use crate::domain::conversation::parameters::param_bool;
 use crate::domain::conversation::source_catalog::{
     HistoryAdapter, history_roots, usage_adapter_for_agent,
 };
+use agent_statistics::contract::{AgentDef, HistoryUsageSummary};
+use agent_statistics::persistence::client_state_store;
+use agent_statistics::window::UsageWindow;
 use anyhow::{Context, Result};
 use cache::{
     RefreshStatements, aggregate_usage, cache_has_baseline, cache_is_fresh, cache_path,
@@ -36,9 +39,6 @@ use files::{
     append_guard, append_guard_matches, is_append_format, is_usage_source, roots_fingerprint,
     source_is_closed, source_key, source_metadata, usage_roots,
 };
-use agent_statistics::contract::{AgentDef, HistoryUsageSummary};
-use agent_statistics::persistence::client_state_store;
-use agent_statistics::window::UsageWindow;
 use models::{
     CachedSource, ParseResult, PlannedSource, PlannedSourceAction, RefreshPlan, ScanStats,
     SourceMetadata,

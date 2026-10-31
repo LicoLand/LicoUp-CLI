@@ -8,7 +8,7 @@
 //! (match terms), archive discovery, single-session readback, and root overrides
 //! keep the legacy full-scan path in `query.rs`.
 
-use std::collections::{BTreeMap, HashSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, HashSet, VecDeque};
 use std::fs;
 use std::io::{BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
@@ -233,6 +233,7 @@ pub(crate) fn load_session_catalog(
         HistoryAdapter::Pi | HistoryAdapter::LicoAgent => {
             pi_catalog(&roots, cutoff, &mut catalog);
         }
+        HistoryAdapter::DeepSeekHarness => deepseek_catalog(&roots, cutoff, &mut catalog),
         HistoryAdapter::Antigravity => antigravity_catalog(&roots, cutoff, &mut catalog),
         _ => generic_file_catalog(adapter, &roots, cutoff, &mut catalog),
     }
@@ -428,8 +429,19 @@ fn hydrate_catalog_page(
     let mut resolved = BTreeMap::<usize, Value>::new();
     let mut units_with_content = HashSet::<&PathBuf>::new();
     for (unit_path, (source_kind, hydration, indexes)) in &units {
-        // A hydration unit is shared by every page entry that names it.
-        let key = projection_cache_key(adapter, source_kind, hydration, params);
+        // A hydration unit is shared by every page entry that names it. A
+        // shared store (one OpenCode/Kilo database) must not pay a whole-store
+        // parse for a page slice: the unit parse and its cache key are scoped
+        // to the sessions this page renders.
+        let unit_scope = indexes
+            .iter()
+            .map(|index| page[*index].native_session_id.trim())
+            .filter(|id| !id.is_empty())
+            .map(str::to_string)
+            .collect::<BTreeSet<_>>();
+        let mut unit_scan_config = scan_config.clone();
+        unit_scan_config.hydrate_session_ids = unit_scope.clone();
+        let key = projection_cache_key(adapter, source_kind, hydration, params, &unit_scope);
         let sessions = match key.as_ref().and_then(|key| cache.get(key)) {
             Some(cached) => {
                 counters.cache_hits += 1;
@@ -445,8 +457,9 @@ fn hydrate_catalog_page(
                     source_kind,
                     hydration,
                     params,
-                    scan_config,
+                    &unit_scan_config,
                 );
+                counters.parsed_sessions += parsed.len();
                 let parsed = catalog_cache_projection(parsed);
                 if let Some(key) = key.as_ref().filter(|_| !parsed.is_empty()) {
                     cache.insert(key.clone(), parsed.clone());
@@ -845,6 +858,10 @@ pub(crate) struct BrowseWorkCounters {
     pub(crate) cache_entries: usize,
     pub(crate) cache_bytes: usize,
     pub(crate) cache_discards: usize,
+    /// Sessions materialized by content parses on cache misses. Cache hits
+    /// parse nothing; a scoped shared-store unit counts only the page's
+    /// sessions and their lineage children.
+    pub(crate) parsed_sessions: usize,
 }
 
 /// Cache identity of one hydration unit: every source file that shaped the
@@ -856,9 +873,11 @@ fn projection_cache_key(
     source_kind: &str,
     hydration: &CatalogHydration,
     params: &Value,
+    scope: &BTreeSet<String>,
 ) -> Option<ProjectionCacheKey> {
     let adapter_id = adapter.id().to_string();
     let source_kind = source_kind.to_string();
+    let scope = scope.iter().cloned().collect();
     match hydration {
         CatalogHydration::File(path) => Some(ProjectionCacheKey {
             adapter_id,
@@ -866,6 +885,7 @@ fn projection_cache_key(
             kind: "file".to_string(),
             sources: catalog_source_fingerprints(path)?,
             authority: None,
+            scope,
         }),
         CatalogHydration::KimiWireDirectory(directory) => {
             let sources = kimi_wire_files(directory)
@@ -881,6 +901,7 @@ fn projection_cache_key(
                 kind: "kimi-wire-directory".to_string(),
                 sources,
                 authority: None,
+                scope,
             })
         }
         CatalogHydration::TranscriptWithDelegatedTasks {
@@ -908,6 +929,7 @@ fn projection_cache_key(
                 kind: "transcript-delegated".to_string(),
                 sources,
                 authority,
+                scope,
             })
         }
         CatalogHydration::None => None,
@@ -2611,6 +2633,82 @@ fn pi_header(path: &Path) -> (String, Option<SystemTime>, Option<String>) {
             .and_then(rfc3339_to_system_time),
         header.working_directory,
     )
+}
+
+// ---------------------------------------------------------------------------
+// DeepSeek Harness: session-directory layout plus a header-only artifact read.
+// ---------------------------------------------------------------------------
+
+/// The Harness names each session directory by the session's durable identity
+/// and keeps the artifact's own header as the first row, so a catalog entry
+/// costs one header line — never a full event-log decode. Discovery already
+/// collapsed each directory to its newest readable generation.
+fn deepseek_catalog(roots: &[HistoryRoot], cutoff: SystemTime, catalog: &mut SessionCatalog) {
+    for root in roots {
+        let discovery = discover_history_files(
+            HistoryAdapter::DeepSeekHarness,
+            std::slice::from_ref(root),
+            HistoryDiscoveryOptions::default(),
+        );
+        catalog.files_seen += discovery.files_seen;
+        catalog.directory_entries_seen += discovery.directory_entries_seen;
+        catalog.skipped.extend(discovery.skipped);
+        for candidate in discovery.candidates {
+            if candidate.modified_at < cutoff {
+                continue;
+            }
+            let Ok(log) =
+                licoup_agent_deepseek::session_store::read_session_header(&candidate.path)
+            else {
+                catalog.skipped.push(json!({
+                    "path": candidate.path.to_string_lossy(),
+                    "reason": "catalog_source_header_unreadable"
+                }));
+                continue;
+            };
+            let native_session_id = if log.header.id.trim().is_empty() {
+                candidate
+                    .path
+                    .parent()
+                    .and_then(|directory| directory.file_name())
+                    .and_then(|name| name.to_str())
+                    .unwrap_or_default()
+                    .to_string()
+            } else {
+                log.header.id
+            };
+            if native_session_id.trim().is_empty() {
+                catalog.skipped.push(json!({
+                    "path": candidate.path.to_string_lossy(),
+                    "reason": "catalog_session_identity_missing"
+                }));
+                continue;
+            }
+            let created_at = log
+                .header_row
+                .get("createdAt")
+                .and_then(Value::as_u64)
+                .map(|millis| UNIX_EPOCH + std::time::Duration::from_millis(millis));
+            let working_directory = log
+                .header_row
+                .get("cwd")
+                .and_then(Value::as_str)
+                .and_then(super::project_workspace::bounded_project_workspace);
+            catalog.sessions.push(CatalogSession {
+                native_session_id,
+                source_path: candidate.path.clone(),
+                source_kind: candidate.source_kind,
+                title: None,
+                created_at,
+                updated_at: Some(candidate.modified_at),
+                working_directory,
+                message_count: None,
+                model: None,
+                running: false,
+                hydrate: CatalogHydration::File(candidate.path),
+            });
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

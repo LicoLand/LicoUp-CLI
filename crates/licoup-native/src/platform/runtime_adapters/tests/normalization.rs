@@ -179,7 +179,7 @@ fn unmatched_failure_response_carries_unknown_root_cause_with_review_hint() {
 fn cursor_usage_limit_response_preserves_safe_resolution_contract() {
     super::compose();
     let failure = licoup_agent_cursor::errors::CursorFailureKind::UsageLimitExceeded
-        .failure(Some(minted_marker()));
+        .failure(Some("synthetic-session"));
     let response = execution_response(
         RuntimeAdapter::Cursor,
         normalize_cursor(cursor_driven(licoup_agent_cursor::driver::RunResult {
@@ -187,8 +187,8 @@ fn cursor_usage_limit_response_preserves_safe_resolution_contract() {
             output: String::new(),
             transitions: Vec::new(),
             error: Some(failure),
-            session_id: minted_marker().to_owned(),
-            thread_id: minted_marker().to_owned(),
+            session_id: "synthetic-session".to_owned(),
+            thread_id: "synthetic-session".to_owned(),
             turn_id: String::new(),
             turn_status: "usage_limit_exceeded".to_owned(),
             effective: licoup_agent_cursor::model::EffectiveSettings::default(),

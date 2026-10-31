@@ -21,7 +21,9 @@ lico-catalog-convergence = { path = "../lico-catalog-convergence" }
 licoup-foundation = { path = "../licoup-foundation" }
 licoup-protocol-bindings = { path = "../licoup-protocol-bindings" }
 licoup-client-state = { path = "../licoup-client-state" }
-agent-statistics = "0.1.1"
+agent-statistics.workspace = true
+# Balance boundary vocabulary: bound quota/credit facts per provider account.
+balance-detector.workspace = true
 # The flywheel's usage store: the graph-run ledger and budget reservations
 # this host records into.
 acativa = "0.2.0"
@@ -103,7 +105,7 @@ licoup-workflow-runtime = { path = "../licoup-workflow-runtime" }
 licoup-conversation = { path = "../licoup-conversation" }
 licoup-private-gateway = { path = "../licoup-private-gateway" }
 licoup-public-gateway = { path = "../licoup-public-gateway", default-features = false }
-credential-lease = { version = "0.2.0" }
+credential-lease = { version = "0.3.0", path = "../../../../Silverboom/Credential-Lease/crates/credential-lease" }
 anyhow.workspace = true
 thiserror.workspace = true
 base64.workspace = true
@@ -193,6 +195,9 @@ licoup-agent-copilot = { path = "../licoup-agent-copilot", features = ["test-sup
 licoup-private-gateway = { path = "../licoup-private-gateway" }
 licoup-foundation = { path = "../licoup-foundation", features = ["test-support"] }
 trybuild = { path = "../trybuild" }
+# Compressed DeepSeek Harness session fixtures: the decoder lives in the
+# agent package, and the tests stage real concatenated-frame artifacts.
+zstd.workspace = true
 criterion = "0.5"
 rand_chacha = "0.3"
 # Bench-only async runtime: production target builds without tokio; benches

@@ -16,6 +16,7 @@
 //! [`resolve_session`] and keep it inside the fetch scope, so credentials
 //! never enter retained state.
 
+use super::balance;
 use super::contract::{
     DEFAULT_STALE_AFTER_SECONDS, ProviderQuotaSnapshot, QuotaFetchError, QuotaIdentity,
     QuotaProvider, QuotaStatus, QuotaWindow,
@@ -67,6 +68,10 @@ impl CursorSessionError {
 pub(crate) struct CursorSession {
     cookie: String,
     email_claim: Option<String>,
+    /// JWT `sub` and `exp` retained only for the balance binding's account
+    /// identity and epoch; they are custody-derived, never payload claims.
+    subject_claim: Option<String>,
+    expiry_epoch: Option<i64>,
 }
 
 impl CursorSession {
@@ -97,9 +102,12 @@ pub(crate) fn resolve_session(
     }
     let cookie = derive_session_cookie(&token).ok_or(CursorSessionError::SessionUnderivable)?;
     let email_claim = credentials::jwt_string_claim(&token, "email");
+    let subject_claim = credentials::jwt_string_claim(&token, "sub");
     Ok(CursorSession {
         cookie,
         email_claim,
+        subject_claim,
+        expiry_epoch: expiry,
     })
 }
 
@@ -187,7 +195,13 @@ impl CursorSource {
             .ok()
             .and_then(|me| me.get("email").and_then(Value::as_str).map(str::to_owned))
             .or_else(|| session.email_claim());
-        normalize_usage_summary(&payload, &captured_at, account_label)
+        normalize_usage_summary(
+            &payload,
+            &captured_at,
+            account_label,
+            session.subject_claim.as_deref(),
+            session.expiry_epoch,
+        )
     }
 }
 
@@ -267,7 +281,10 @@ fn normalize_usage_summary(
     payload: &Value,
     captured_at: &str,
     account_label: Option<String>,
+    account_ref: Option<&str>,
+    account_epoch: Option<i64>,
 ) -> Result<ProviderQuotaSnapshot, QuotaFetchError> {
+    balance::refuse_self_asserted(payload)?;
     let plan = payload
         .pointer("/individualUsage/plan")
         .ok_or_else(|| QuotaFetchError::new("cursor_usage_contract_invalid"))?;
@@ -341,6 +358,16 @@ fn normalize_usage_summary(
             .and_then(Value::as_str)
             .map(str::to_owned),
     };
+    let epoch = account_epoch
+        .map(|epoch| epoch.to_string())
+        .unwrap_or_else(|| balance::FIXED_EPOCH.to_owned());
+    let balance = balance::bind(
+        QuotaProvider::Cursor,
+        account_ref.unwrap_or(balance::LOCAL_ACCOUNT),
+        &epoch,
+        &windows,
+        captured_at,
+    )?;
     Ok(ProviderQuotaSnapshot {
         agent_id: QuotaProvider::Cursor.agent_id().to_owned(),
         provider: QuotaProvider::Cursor,
@@ -349,6 +376,7 @@ fn normalize_usage_summary(
         identity,
         captured_at: captured_at.to_owned(),
         stale_after_seconds: DEFAULT_STALE_AFTER_SECONDS,
+        balance: Some(balance),
     })
 }
 

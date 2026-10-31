@@ -57,7 +57,7 @@ fn value_dialogs_emit_one_matching_native_response_shape() {
         )
         .unwrap();
         let mut protocol = PiProtocol::new(config);
-        protocol.session_id = Some(minted_marker().to_string());
+        protocol.session_id = Some("synthetic-session".to_string());
         let mut request = json!({
             "type": "extension_ui_request",
             "id": format!("ui-{method}"),
@@ -75,7 +75,7 @@ fn value_dialogs_emit_one_matching_native_response_shape() {
         };
         licoup_foundation::platform::native_agent_interaction::resolve_scoped(
             interaction.callback_token(),
-            Some(minted_marker()),
+            Some("synthetic-session"),
             Some(&protocol.config.turn_id),
             structured,
         )
@@ -132,7 +132,7 @@ fn unknown_and_missing_extension_ui_methods_fail_exactly() {
         )
         .unwrap(),
     );
-    missing_id.session_id = Some(minted_marker().to_string());
+    missing_id.session_id = Some("synthetic-session".to_string());
     let effects = missing_id.handle_message(json!({
         "type": "extension_ui_request",
         "method": "input"

@@ -116,7 +116,6 @@ export const REGRESSION_MODULES = Object.freeze([
     summary: "Canonical publication-candidate local-information and privacy hygiene scan",
     inputs: [
       "tools/scripts/repo-local-info-hygiene.mjs",
-      "tests/contract/client/gate-identity-policy.test.mjs",
       "package.json",
       "package-lock.json",
     ],
@@ -319,7 +318,6 @@ export const REGRESSION_MODULES = Object.freeze([
       "tests/contract/client/macos-release-adapters.test.mjs",
       "tests/contract/client/macos-release-candidate.test.mjs",
       "tests/contract/client/readme-fast-path.test.mjs",
-      "tests/contract/client/gate-identity-policy.test.mjs",
     ],
   ),
   nodeTestModule(
@@ -2075,6 +2073,7 @@ export const REGRESSION_MODULES = Object.freeze([
         "crates/licoup-foundation/src/platform/file_security/hardening.rs",
         "crates/licoup-foundation/src/platform/file_security/marker.rs",
         "crates/licoup-foundation/src/platform/file_security/policy.rs",
+        "crates/licoup-foundation/src/platform/file_security/race_observation.rs",
         "crates/licoup-foundation/src/platform/file_security/sync.rs",
         "crates/licoup-foundation/src/platform/file_security/unix_hardening.rs",
         "crates/licoup-foundation/src/platform/file_security/validation.rs",

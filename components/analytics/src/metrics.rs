@@ -21,11 +21,11 @@
 
 use licoup_extension_contracts::usage::{ExactNumber, MetricValue, Temporality};
 use licoup_extension_contracts::{ApplicationFailure, is_namespaced};
-use licoup_usage_source_sdk::describe::Aggregation;
-use licoup_usage_source_sdk::metrics as general;
 use std::collections::BTreeMap;
+use token_usage_detector::describe::Aggregation;
+use token_usage_detector::metrics as general;
 
-use crate::refusal;
+use crate::{refusal, usage_failure};
 
 /// One declared metric.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -127,9 +127,9 @@ impl MetricCatalog {
     /// [`Self::define`] exactly as if it had been written here.
     pub fn declare_source(
         &mut self,
-        description: &licoup_usage_source_sdk::describe::SourceDescription,
+        description: &token_usage_detector::describe::SourceDescription,
     ) -> Result<(), ApplicationFailure> {
-        description.validate()?;
+        description.validate().map_err(usage_failure)?;
         for field in &description.fields {
             self.define(MetricDefinition {
                 metric: field.metric.clone(),
@@ -457,14 +457,14 @@ mod tests {
 
     #[test]
     fn a_source_declaration_defines_its_specialist_metrics() {
-        let description = licoup_usage_source_sdk::describe::SourceDescription::new(
-            vec![licoup_usage_source_sdk::describe::MetricField::new(
+        let description = token_usage_detector::describe::SourceDescription::new(
+            vec![token_usage_detector::describe::MetricField::new(
                 "example.specialist/items",
                 "items",
                 Temporality::Delta,
                 Aggregation::Sum,
             )],
-            vec![licoup_usage_source_sdk::describe::SeriesDeclaration::new(
+            vec![token_usage_detector::describe::SeriesDeclaration::new(
                 "example.specialist/items",
                 "Items",
                 "items",

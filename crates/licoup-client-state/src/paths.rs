@@ -9,13 +9,16 @@ use std::path::{Path, PathBuf};
 
 use super::policy;
 
+/// The portable data home stays resolved by the client (boot locator, test
+/// override and saved-volume availability); the collection layout below it is
+/// projected by the published store.
 pub fn portable_state_root() -> Result<PathBuf> {
     Ok(state_root_for_data_home(&portable_data_dir()?))
 }
 
 /// Project the owned layout without opening or initializing a data home.
 pub fn state_root_for_data_home(root: &Path) -> PathBuf {
-    root.join(policy::CLIENT_STATE_DIR)
+    collection_store::state_root_for_data_home(root)
 }
 
 pub fn portable_state_root_read_only() -> Result<PathBuf> {
@@ -36,6 +39,8 @@ pub fn snapshot_root(root: &Path) -> PathBuf {
     root.join(policy::SNAPSHOT_DIR)
 }
 
+/// The file one collection is persisted to. `CollectionStore::collection_path`
+/// resolves this same leaf under the store root.
 pub fn collection_path(root: &Path, collection: &str) -> PathBuf {
     root.join(format!("{collection}.json"))
 }

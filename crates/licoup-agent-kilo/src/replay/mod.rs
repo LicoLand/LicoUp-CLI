@@ -155,7 +155,7 @@ mod tests {
             .feed(&frame(
                 FRAMING,
                 "agent-to-client",
-                r#"{"id":"kilo-1","title":minted_marker()}"#,
+                r#"{"id":"kilo-1","title":"synthetic-session"}"#,
             ))
             .unwrap();
         assert_eq!(

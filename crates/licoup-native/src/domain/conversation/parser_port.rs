@@ -2,9 +2,9 @@
 
 pub(crate) use super::history::HistoryScanConfig;
 use super::history::{
-    parse_codex_rollout_sessions, parse_copilot_transcript_session, parse_json_sessions,
-    parse_jsonl_sessions, parse_kimi_code_wire_session, parse_lico_agent_session, parse_pi_session,
-    parse_sqlite_sessions, parse_text_session,
+    parse_codex_rollout_sessions, parse_copilot_transcript_session, parse_deepseek_session,
+    parse_json_sessions, parse_jsonl_sessions, parse_kimi_code_wire_session,
+    parse_lico_agent_session, parse_pi_session, parse_sqlite_sessions, parse_text_session,
 };
 use super::source_catalog::HistoryAdapter;
 use serde_json::Value;
@@ -19,6 +19,7 @@ pub(crate) enum HistoryParserKind {
     PiJsonLines,
     LicoAgentJsonLines,
     GenericJsonLines,
+    DeepSeekSession,
     JsonDocument,
     TextTranscript,
     SqliteDatabase,
@@ -64,6 +65,9 @@ pub(crate) fn parse_history(
         HistoryParserKind::GenericJsonLines => {
             parse_jsonl_sessions(adapter, path, source_kind, metadata, scan_config)
         }
+        HistoryParserKind::DeepSeekSession => parse_deepseek_session(path, source_kind, metadata)
+            .map(|session| vec![session])
+            .unwrap_or_default(),
         HistoryParserKind::JsonDocument => {
             parse_json_sessions(adapter, path, source_kind, metadata, scan_config)
         }

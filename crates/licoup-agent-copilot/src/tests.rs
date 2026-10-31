@@ -11,7 +11,7 @@ use licoup_agent_adapter_sdk::replay::{SCENARIOS, fixture_root, replay_corpus};
 use serde_json::json;
 
 use crate::dialect;
-use crate::driver::{DRIVER, DRIVER_ID, LAUNCH_ARGS, RUNTIME_PROTOCOL};
+use crate::driver::{DRIVER_ID, RUNTIME_PROTOCOL, driver};
 use crate::registration::{self, ADAPTER_ID, CONTRACT, DIALECT, FRAMING};
 
 /// The five recorded transcripts, in the order the harness checks them.
@@ -63,17 +63,18 @@ fn the_copilot_declaration_reports_the_complete_l4_signal_set() {
     // cancels Copilot sessions by, so the composition can install it, and the
     // framing the corpus records is the framing the contract declares.
     assert_eq!(DIALECT.driver_id, DRIVER_ID);
-    assert_eq!(DRIVER.runtime_protocol, RUNTIME_PROTOCOL);
-    assert_eq!(DRIVER.agent_id, DRIVER_ID);
+    assert_eq!(driver().runtime_protocol, RUNTIME_PROTOCOL);
+    assert_eq!(driver().agent_id, DRIVER_ID);
     assert_eq!(FRAMING, "lf-ndjson-acp");
 }
 
 #[test]
-fn copilot_launch_arguments_are_fixed_and_private_values_use_acp_stdin() {
-    assert_eq!(LAUNCH_ARGS, &["--acp", "--stdio", "--no-auto-update"]);
-    assert_eq!(DRIVER.launch_args, LAUNCH_ARGS);
+fn copilot_launch_arguments_come_from_the_published_card_and_keep_prompts_off_the_command_line() {
+    let expected = crate::upstream::acp_launch();
+    assert_eq!(expected.0, "copilot");
+    assert_eq!(driver().launch_args, expected.1);
     assert!(
-        !DRIVER
+        !driver()
             .launch_args
             .iter()
             .any(|arg| *arg == "private-prompt" || *arg == concat!("/", "private", "/workspace")),
@@ -88,14 +89,14 @@ fn the_dialect_projects_this_agents_own_client_request() {
         "id": 7,
         "method": "session/request_permission",
         "params": {
-            "sessionId": minted_marker(),
+            "sessionId": "synthetic-session",
             "options": [{"kind": "allow_once", "optionId": "once"}],
         },
     });
     let projected = (DIALECT.client_request)(&message).expect("a client request frame");
     assert_eq!(projected.id, json!(7));
     assert_eq!(projected.method, "session/request_permission");
-    assert_eq!(projected.session_id.as_deref(), Some(minted_marker()));
+    assert_eq!(projected.session_id.as_deref(), Some("synthetic-session"));
     assert_eq!(projected.allow_once_option.as_deref(), Some("once"));
 
     // A response is not a client request, and this profile never asks a
@@ -206,7 +207,7 @@ fn the_package_answers_the_sdk_queries_fail_closed_rather_than_borrowing() {
         set.valid_identity(
             ADAPTER_ID,
             &licoup_agent_adapter_sdk::port::DurableIdentityRequest {
-                session_id: minted_marker(),
+                session_id: "synthetic-session",
                 location: None,
             },
         ),

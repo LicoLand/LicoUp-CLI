@@ -100,7 +100,7 @@ fn pty_controls_are_isolated_before_strict_ndjson_decoding() {
     let isolated = isolate_pty_protocol_line(
         b"\x1b[?25l{\"type\":\"result\",\"subtype\":\"success\",\"result\":\"ok\"}\x1b[0m\r\n",
     );
-    let mut parser = CursorParser::new(minted_marker(), "prompt", EffectiveSettings::default());
+    let mut parser = CursorParser::new("synthetic-session", "prompt", EffectiveSettings::default());
     let acknowledged = isolate_pty_protocol_line(
         br#"{"type":"user","message":{"role":"user","content":[{"type":"text","text":"prompt"}]}}"#,
     );
@@ -202,7 +202,7 @@ fn stderr_classifier_uses_only_the_closed_cursor_failure_vocabulary() {
     ];
     for (stderr, expected) in cases {
         assert_eq!(CursorFailureKind::from_stderr(stderr), Some(expected));
-        let failure = expected.failure(Some(minted_marker()));
+        let failure = expected.failure(Some("synthetic-session"));
         assert!(!format!("{failure:?}").contains("private"));
     }
     assert_eq!(

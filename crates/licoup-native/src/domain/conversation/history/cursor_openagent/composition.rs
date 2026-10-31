@@ -38,7 +38,7 @@ pub(crate) fn parse_sqlite_sessions(
             source_kind,
             metadata,
             &mut connection,
-            scan_config.single_session_id(),
+            scan_config.shared_store_session_scope().as_ref(),
         );
         if !precise_sessions.is_empty() {
             return precise_sessions;
@@ -75,7 +75,7 @@ pub(crate) fn parse_sqlite_sessions(
                 source_kind,
                 metadata,
                 &mut connection,
-                scan_config.single_session_id(),
+                scan_config.shared_store_session_scope().as_ref(),
             );
         }
     }

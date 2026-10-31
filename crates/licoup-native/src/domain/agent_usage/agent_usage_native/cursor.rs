@@ -434,16 +434,13 @@ fn window_days(window: &UsageWindow) -> Vec<String> {
 }
 
 fn load_coverage(scan_params: &Value, window: &UsageWindow) -> HostedCoverage {
-    let Ok(reports) = read_retained_reports(
-        scan_params,
-        Some("cursor"),
-        1,
-        &crate::domain::model_registry::refresh_cached_snapshot_for_state_root(
-            agent_statistics::contract::text_field(scan_params, &["stateRoot"])
-                .as_deref()
-                .map(std::path::Path::new),
-        ),
-    ) else {
+    let registry = crate::domain::agent_usage::host::model_registry_snapshot(
+        agent_statistics::contract::text_field(scan_params, &["stateRoot"])
+            .as_deref()
+            .map(std::path::Path::new),
+    );
+    let Ok(reports) = read_retained_reports(scan_params, Some("cursor"), 1, registry.as_ref())
+    else {
         return HostedCoverage::default();
     };
     reports
@@ -643,7 +640,12 @@ mod tests {
         // A tokenless request never turns into tokens or estimates, and the
         // source never claims high confidence for it.
         assert_eq!(summary.confidence(), "medium");
-        let contract = summary.to_json_for_agent(None, &crate::domain::model_registry::snapshot());
+        let contract = summary.to_json_for_agent(
+            None,
+            &*crate::domain::agent_usage::host::model_registry_for_snapshot(
+                crate::domain::model_registry::snapshot(),
+            ),
+        );
         assert_eq!(contract["source"], SOURCE);
         assert_eq!(
             contract["dailyUsage"][0]["modelTokenUsage"]["grok-bot-automation"]["totalTokens"],
@@ -665,7 +667,12 @@ mod tests {
         linked["tokenUsage"]["model"] = json!("actual-response-model");
         let unknown = event(1_784_080_800_001, "auto", Some((5, 1, 0)));
         let summary = aggregate_events(&[linked, unknown], &window());
-        let report = summary.to_json_for_agent(None, &crate::domain::model_registry::snapshot());
+        let report = summary.to_json_for_agent(
+            None,
+            &*crate::domain::agent_usage::host::model_registry_for_snapshot(
+                crate::domain::model_registry::snapshot(),
+            ),
+        );
         assert_eq!(summary.total_tokens(), 18);
         assert_eq!(
             report["dailyUsage"][0]["modelUsage"]["actual-response-model"],

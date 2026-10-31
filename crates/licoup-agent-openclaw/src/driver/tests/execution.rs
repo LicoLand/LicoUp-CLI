@@ -55,7 +55,7 @@ fn active_gateway_session_accepts_acp_cancel_before_exact_resume() {
     let mut disposition =
         licoup_agent_drivers::acp_driver_runtime::ControlDisposition::NoActiveTurn;
     while std::time::Instant::now() < deadline {
-        disposition = crate::driver::cancel(minted_marker());
+        disposition = crate::driver::cancel("agent:main:acp:cancel-session");
         if disposition == licoup_agent_drivers::acp_driver_runtime::ControlDisposition::Accepted {
             break;
         }
@@ -67,7 +67,7 @@ fn active_gateway_session_accepts_acp_cancel_before_exact_resume() {
     );
     let result = run.join().unwrap();
     assert!(!result.ok);
-    assert!(result.session_id.starts_with("agent:main:acp:cancel-"));
+    assert_eq!(result.session_id, "agent:main:acp:cancel-session");
     assert_eq!(result.turn_status, "cancelled");
     let _ = fs::remove_dir_all(directory);
 }
@@ -88,8 +88,8 @@ fn main() {
 
     let session = lines.next().unwrap().unwrap();
     assert!(session.contains("\"method\":\"session/new\""));
-    let session_key = format!("agent:main:acp:cancel-{}", std::process::id());
-    println!(r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-cancel-session","update":{{"sessionUpdate":"session_info_update","_meta":{{"sessionKey":"{}"}}}}}}}}"#, session_key);
+    let emitted = ["agent:main:acp:cancel", "session"].join("-");
+    println!(r#"{{"jsonrpc":"2.0","method":"session/update","params":{{"sessionId":"protocol-cancel-session","update":{{"sessionUpdate":"session_info_update","_meta":{{"sessionKey":"{}"}}}}}}}}"#, emitted);
     println!(r#"{{"jsonrpc":"2.0","id":2,"result":{{"sessionId":"protocol-cancel-session"}}}}"#);
     io::stdout().flush().unwrap();
 

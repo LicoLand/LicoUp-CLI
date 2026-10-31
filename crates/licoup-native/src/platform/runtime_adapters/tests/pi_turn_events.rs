@@ -224,7 +224,7 @@ fn the_consumer_receives_one_parked_pi_interaction_and_resolves_it_once() {
     )
     .unwrap();
     let mut protocol = PiProtocol::new(config);
-    protocol.session_id = Some(minted_marker().to_string());
+    protocol.session_id = Some("synthetic-session".to_string());
     let effects = protocol.handle_message(json!({
         "type": "extension_ui_request",
         "id": "ui-1",
@@ -239,7 +239,7 @@ fn the_consumer_receives_one_parked_pi_interaction_and_resolves_it_once() {
     let events = captured.lock().unwrap();
     assert_eq!(events.len(), 1);
     assert_eq!(events[0]["event"], "agent.interaction.needed");
-    assert_eq!(events[0]["sessionId"], minted_marker());
+    assert_eq!(events[0]["sessionId"], "synthetic-session");
     assert_eq!(events[0]["turnId"], protocol.config.turn_id);
     assert_eq!(events[0]["payload"]["agentId"], "pi");
     assert_eq!(
@@ -249,7 +249,7 @@ fn the_consumer_receives_one_parked_pi_interaction_and_resolves_it_once() {
     drop(events);
     native_agent_interaction::resolve_scoped(
         interaction.callback_token(),
-        Some(minted_marker()),
+        Some("synthetic-session"),
         Some(&protocol.config.turn_id),
         json!({"confirmed": true}),
     )

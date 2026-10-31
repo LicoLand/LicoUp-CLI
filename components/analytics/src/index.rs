@@ -22,10 +22,10 @@ use licoup_extension_contracts::ApplicationFailure;
 use licoup_extension_contracts::usage::{
     ExactNumber, MetricValue, SeriesOrigin, Temporality, cumulative_delta,
 };
-use licoup_usage_source_sdk::binding::{BoundObservation, BoundObservationKey};
 use std::collections::BTreeMap;
+use token_usage_detector::binding::{BoundObservation, BoundObservationKey};
 
-use crate::refusal;
+use crate::{refusal, usage_failure};
 
 /// What one ingestion did.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -219,7 +219,7 @@ impl ObservationIndex {
             Err(failure) if failure.code == "usage_metric_unknown" => {
                 Ok(CounterStep::UnknownReading)
             }
-            Err(failure) => Err(failure),
+            Err(failure) => Err(usage_failure(failure)),
         }
     }
 }
@@ -230,8 +230,8 @@ mod tests {
     use licoup_extension_contracts::usage::{
         MetricValue, Quality, UsageObservation, UsageOperation,
     };
-    use licoup_usage_source_sdk::binding::SourceBinding;
     use std::collections::BTreeMap;
+    use token_usage_detector::binding::SourceBinding;
 
     fn binding() -> SourceBinding {
         SourceBinding::new(

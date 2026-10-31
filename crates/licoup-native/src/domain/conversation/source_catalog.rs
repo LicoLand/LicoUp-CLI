@@ -237,6 +237,7 @@ pub(crate) fn adapter_for_agent(agent_id: &str) -> Option<HistoryAdapter> {
         "codex" => Some(HistoryAdapter::Codex),
         "copilot" | "github-copilot" => Some(HistoryAdapter::Copilot),
         "cursor" => Some(HistoryAdapter::Cursor),
+        "deepseek-harness" => Some(HistoryAdapter::DeepSeekHarness),
         "hermes" | "hermes-agent" => Some(HistoryAdapter::Hermes),
         "kilo" | "kilo-code" => Some(HistoryAdapter::KiloCode),
         "kimi-code" | "kimi_code" | "kimicode" => Some(HistoryAdapter::KimiCode),
@@ -254,10 +255,7 @@ pub(crate) fn adapter_for_agent(agent_id: &str) -> Option<HistoryAdapter> {
 
 /// Usage metadata can be readable even when transcript history is unavailable.
 pub(crate) fn usage_adapter_for_agent(agent_id: &str) -> Option<HistoryAdapter> {
-    match agent_id {
-        "deepseek-harness" => Some(HistoryAdapter::DeepSeekHarness),
-        _ => adapter_for_agent(agent_id),
-    }
+    adapter_for_agent(agent_id)
 }
 
 /// Canonical immutable Harness generations. Temporary/backup artifacts are not
