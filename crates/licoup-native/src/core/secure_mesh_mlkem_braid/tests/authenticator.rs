@@ -1,11 +1,11 @@
 use super::{
     super::authenticator::RatchetedAuthenticator,
-    support::{TEST_MATERIAL, hex},
+    support::{hex, test_secret},
 };
 
 #[test]
 fn authenticator_known_answer() {
-    let auth = RatchetedAuthenticator::initialize(1, &TEST_MATERIAL).unwrap();
+    let auth = RatchetedAuthenticator::initialize(1, &test_secret()).unwrap();
     assert_eq!(
         hex(auth.root_key.as_slice()),
         "330afd0d383ea018119058e666e7837cea1ba96ecd7b665db08568d84bdd3608"

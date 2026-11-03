@@ -6,14 +6,14 @@ use super::{
         session::MlKemBraidSession,
         transition::{checked_next_epoch, previous_epoch},
     },
-    support::TEST_MATERIAL,
+    support::test_secret,
 };
 
 #[test]
 fn duplicate_chunk_poisoning_is_fail_closed() {
     let mut rng = StdRng::seed_from_u64(7);
-    let mut alice = MlKemBraidSession::new_initiator(&TEST_MATERIAL).unwrap();
-    let mut bob = MlKemBraidSession::new_responder(&TEST_MATERIAL).unwrap();
+    let mut alice = MlKemBraidSession::new_initiator(&test_secret()).unwrap();
+    let mut bob = MlKemBraidSession::new_responder(&test_secret()).unwrap();
     let sent = alice.send_with_rng(&mut rng).unwrap();
     bob.receive(&sent.message).unwrap();
     assert!(bob.receive(&sent.message).is_err());
@@ -24,8 +24,8 @@ fn duplicate_chunk_poisoning_is_fail_closed() {
 #[test]
 fn header_tamper_poisons_session() {
     let mut rng = StdRng::seed_from_u64(11);
-    let mut alice = MlKemBraidSession::new_initiator(&TEST_MATERIAL).unwrap();
-    let mut bob = MlKemBraidSession::new_responder(&TEST_MATERIAL).unwrap();
+    let mut alice = MlKemBraidSession::new_initiator(&test_secret()).unwrap();
+    let mut bob = MlKemBraidSession::new_responder(&test_secret()).unwrap();
     for index in 0..3 {
         let mut sent = alice.send_with_rng(&mut rng).unwrap();
         if index == 1 {

@@ -620,7 +620,9 @@ impl SecureMeshMlsSecurityLedger {
             "#,
         )?;
         let ids = statement
-            .query_map(params![scope, "participant-writer"], |row| row.get::<_, String>(0))?
+            .query_map(params![scope, "participant-writer"], |row| {
+                row.get::<_, String>(0)
+            })?
             .collect::<std::result::Result<Vec<_>, _>>()?;
         ids.into_iter()
             .map(|operation_id| {

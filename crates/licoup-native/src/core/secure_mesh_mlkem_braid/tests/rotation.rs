@@ -3,14 +3,14 @@ use rand_core::SeedableRng;
 
 use super::{
     super::{protocol_state::MlKemBraidStateName, session::MlKemBraidSession},
-    support::{TEST_MATERIAL, drive_until_epoch_one, record_key},
+    support::{drive_until_epoch_one, record_key, test_secret},
 };
 
 #[test]
 fn full_rotation_emits_equal_epoch_key_and_restores_state() {
     let mut rng = StdRng::seed_from_u64(23);
-    let mut alice = MlKemBraidSession::new_initiator(&TEST_MATERIAL).unwrap();
-    let mut bob = MlKemBraidSession::new_responder(&TEST_MATERIAL).unwrap();
+    let mut alice = MlKemBraidSession::new_initiator(&test_secret()).unwrap();
+    let mut bob = MlKemBraidSession::new_responder(&test_secret()).unwrap();
     let first = alice.send_with_rng(&mut rng).unwrap();
     bob.receive(&first.message).unwrap();
     let persisted = alice.persist().unwrap();
@@ -30,8 +30,8 @@ fn full_rotation_emits_equal_epoch_key_and_restores_state() {
 #[test]
 fn reordered_and_lost_chunks_still_make_pcs_progress() {
     let mut rng = StdRng::seed_from_u64(31);
-    let mut alice = MlKemBraidSession::new_initiator(&TEST_MATERIAL).unwrap();
-    let mut bob = MlKemBraidSession::new_responder(&TEST_MATERIAL).unwrap();
+    let mut alice = MlKemBraidSession::new_initiator(&test_secret()).unwrap();
+    let mut bob = MlKemBraidSession::new_responder(&test_secret()).unwrap();
     let mut a_to_b = Vec::new();
     let mut b_to_a = Vec::new();
     let mut alice_key = None;

@@ -3246,7 +3246,11 @@ fn production_settlement_refines_authorized_read_and_hides_invalid_read() {
     .unwrap();
     invalid.commitment_proposals.clear();
     invalid.task_child_admission = None;
-    invalid.requested_reads = vec![live_event_source(service.store(), &other_id, &guarded_event)];
+    invalid.requested_reads = vec![live_event_source(
+        service.store(),
+        &other_id,
+        &guarded_event,
+    )];
     service
         .after_runtime_settlement(
             &conversation_id,

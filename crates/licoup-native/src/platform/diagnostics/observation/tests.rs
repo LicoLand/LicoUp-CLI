@@ -490,7 +490,8 @@ fn probe_is_shareable_across_threads() {
 
 #[test]
 fn correlation_ids_round_trip_the_contract_wire_shape() {
-    let fixture = format!(r#"{{
+    let fixture = format!(
+        r#"{{
       "userInteractionId": "interaction-1",
       "requestId": "request-1",
       "conversationId": "conversation-1",
@@ -501,7 +502,9 @@ fn correlation_ids_round_trip_the_contract_wire_shape() {
       "noticeId": "notice-1",
       "sourcePosition": "crates/x.rs:12",
       "prepareId": "prepare-1"
-    }}"#, "attempt-1");
+    }}"#,
+        "attempt-1"
+    );
     let ids: CorrelationIds = serde_json::from_str(&fixture).expect("wire shape");
     assert_eq!(CorrelationField::ALL.len(), 10);
     for field in CorrelationField::ALL {

@@ -124,7 +124,10 @@ impl std::fmt::Display for SessionReadError {
             Self::Io(error) => write!(formatter, "session artifact could not be read: {error}"),
             Self::Malformed(reason) => write!(formatter, "session artifact is malformed: {reason}"),
             Self::ResourceLimit(reason) => {
-                write!(formatter, "session artifact exceeds a resource bound: {reason}")
+                write!(
+                    formatter,
+                    "session artifact exceeds a resource bound: {reason}"
+                )
             }
             Self::UnsupportedFormatVersion(version) => write!(
                 formatter,

@@ -688,12 +688,9 @@ dependencies = [
 
 [[package]]
 name = "credential-lease"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e51551157583b89a4c8aaf6af0ce5da4520f82f3411670db295899f1682f2d23"
+version = "0.3.0"
 dependencies = [
  "anyhow",
- "licoup-foundation",
  "serde",
  "serde_json",
  "uuid",

@@ -675,9 +675,7 @@ fn local_recovery_a_version_marker_alone_does_not_satisfy_the_oracle() {
     );
     let marker_settings = settings(&marker_only);
     assert!(
-        marker_settings
-            .get(SNAPSHOT_ROOT)
-            .is_none(),
+        marker_settings.get(SNAPSHOT_ROOT).is_none(),
         "a marker-only root holds no arranged collection: {marker_settings}"
     );
 
