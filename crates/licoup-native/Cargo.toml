@@ -67,6 +67,22 @@ licoup-agent-cursor = { path = "../licoup-agent-cursor" }
 # Node worker, while the extension host's binary route is completed by the
 # agent-execution port.
 licoup-agent-deepseek = { path = "../licoup-agent-deepseek" }
+# Agent Context Operators: the ACOP codecs own persisted-session decoding
+# for every adapter backed by an a4aa store card. Local path deps during
+# development; the published versions replace them at release time.
+acop = { path = "../../../../Silverboom/ACOP/crates/acop" }
+acop-antigravity = { path = "../../../../Silverboom/ACOP/crates/acop-antigravity" }
+acop-claude = { path = "../../../../Silverboom/ACOP/crates/acop-claude" }
+acop-codex = { path = "../../../../Silverboom/ACOP/crates/acop-codex" }
+acop-copilot = { path = "../../../../Silverboom/ACOP/crates/acop-copilot" }
+acop-cursor = { path = "../../../../Silverboom/ACOP/crates/acop-cursor" }
+acop-dsh = { path = "../../../../Silverboom/ACOP/crates/acop-dsh" }
+acop-hermes = { path = "../../../../Silverboom/ACOP/crates/acop-hermes" }
+acop-kilo-code = { path = "../../../../Silverboom/ACOP/crates/acop-kilo-code" }
+acop-kimi-code = { path = "../../../../Silverboom/ACOP/crates/acop-kimi-code" }
+acop-openclaw = { path = "../../../../Silverboom/ACOP/crates/acop-openclaw" }
+acop-opencode = { path = "../../../../Silverboom/ACOP/crates/acop-opencode" }
+acop-pi = { path = "../../../../Silverboom/ACOP/crates/acop-pi" }
 # The Kimi Code adapter package. Composition names it for its ACP frame
 # dialect, its parser registration and its replay arm while the extension
 # host's binary route is completed by the agent-execution port.
@@ -106,6 +122,10 @@ licoup-conversation = { path = "../licoup-conversation" }
 licoup-private-gateway = { path = "../licoup-private-gateway" }
 licoup-public-gateway = { path = "../licoup-public-gateway", default-features = false }
 credential-lease = { version = "0.3.0", path = "../../../../Silverboom/Credential-Lease/crates/credential-lease" }
+# The OS-keychain custody backend on the same Credential-Lease surface: every
+# SecItem effect — secure-mesh store items, gateway credentials, the authorized
+# secure-record ledger — goes through it instead of a host-local copy.
+credential-lease-keychain = { path = "../../../../Silverboom/Credential-Lease/crates/credential-lease-keychain" }
 anyhow.workspace = true
 thiserror.workspace = true
 base64.workspace = true

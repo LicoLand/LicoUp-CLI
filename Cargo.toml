@@ -63,7 +63,15 @@ license = "AGPL-3.0-or-later"
 # reviewable manifest edit.
 a4aa = "=0.4.1"
 a4aa-copilot = "=0.4.1"
-a4mp = { version = "=0.1.0", default-features = false }
+# The forwarding core lives in Fairliny: the private gateway composes the same
+# sibling checkout fairliny-gateway binds, so adapter, wire and canonical types
+# are one package instance — never two copies drifting apart across the seam.
+a4mp = { version = "0.3.2", default-features = false, path = "../../Silverboom/Adapters-For-Model-Providers" }
+# The messenger-channel contract and the Telegram dialect live in A4MC: the
+# public gateway composes the same sibling checkout, so contract, dialect and
+# product binding stay one package instance across the seam.
+a4mc = { version = "0.1.0", path = "../../Silverboom/A4MC/crates/a4mc" }
+a4mc-telegram = { version = "0.1.0", path = "../../Silverboom/A4MC/crates/a4mc-telegram" }
 agent-statistics = "=0.2.0"
 balance-detector = "=0.2.0"
 collection-store = "=0.1.0"
@@ -134,9 +142,6 @@ zstd = "0.13"
 # Revisit when hax publishes a release with the fix.
 [patch.crates-io]
 hax-lib = { git = "https://github.com/hacspec/hax.git", rev = "8f9cb576e58f6cc7e9ed249a7d4439b0f7ed0da7" }
-# credential-lease builds against the published foundation; inside this unified
-# build the same crate is the workspace member, so `SecretBytes` stays one type.
-licoup-foundation = { path = "crates/licoup-foundation" }
 
 [profile.release]
 codegen-units = 1
