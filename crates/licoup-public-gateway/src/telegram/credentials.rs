@@ -113,6 +113,44 @@ pub fn credentials_status() -> Result<Value> {
     }))
 }
 
+/// The custody port the channel adapter asks for its bot token: this host's
+/// store-and-env custody, never the adapter's own read. Secret material is
+/// handed over as `SecretToken` — zeroizing, redacted, never serialized.
+struct ProductTokenCustody;
+
+impl a4mc::CustodyPort for ProductTokenCustody {
+    fn channel_token(
+        &self,
+        channel: &a4mc::ChannelId,
+    ) -> Result<Option<a4mc::SecretToken>, a4mc::ChannelError> {
+        if channel.as_str() != a4mc_telegram::CHANNEL {
+            return Ok(None);
+        }
+        load_bot_token()
+            .map_err(|_| {
+                a4mc::ChannelError::new(
+                    "licoup_telegram_custody_failed",
+                    "bot token custody read failed",
+                )
+            })?
+            .map(|token| {
+                a4mc::SecretToken::try_from_string(token).map_err(|_| {
+                    a4mc::ChannelError::new(
+                        "licoup_telegram_token_invalid",
+                        "stored bot token failed validation",
+                    )
+                })
+            })
+            .transpose()
+    }
+}
+
+/// Install this host's token custody on the a4mc contract. One composition
+/// owns the port per process; the channel process calls this once at startup.
+pub fn install_custody() -> Result<(), &'static str> {
+    a4mc::custody::install(std::sync::Arc::new(ProductTokenCustody))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

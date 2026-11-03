@@ -13,20 +13,24 @@ description = "LicoUp Public Gateway: the public-facing optional services — th
 # optional subagent MCP package: the five-tool subagent application, the stdio
 # connector, the authenticated loopback service and its lifecycle. Building
 # without the default feature yields the neutral engine alone, so a consumer
-# of the engine never links the optional payload. `telegram` is the
-# communication-channel stack behind the optional Telegram channel package.
-# The kernel links this library for channel custody and status; the package
-# processes it ships are what stay optional.
+# of the engine never links the optional payload. `telegram` is the product
+# binding behind the optional Telegram channel package: it composes the
+# `a4mc-telegram` dialect (polling, pairing, commands, sends) with the ports
+# this host installs — the lane port for conversation work and the custody
+# port backed by the product token store. The kernel links this library for
+# channel custody and status; the package processes it ships are what stay
+# optional.
 [features]
 default = ["service"]
 service = []
 
 [dependencies]
+a4mc.workspace = true
+a4mc-telegram.workspace = true
 anyhow = "1.0"
 fs2 = "0.4"
 licoup-foundation = { path = "../licoup-foundation", version = "0.3.0" }
 libc = "0.2"
-rand_core = { version = "0.6", features = ["getrandom"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 # The serving process measures its own bytes against the digest the launcher

@@ -10,9 +10,10 @@
 //!   the `connector` module mapping one stdio frame to one authenticated
 //!   request;
 //! * `telegram` — the optional `org.licoland.channel.telegram` communication
-//!   channel: Bot API transport, update loop, lane bridge, binding store and
-//!   bot-token custody. It reaches local Agent work only through [`lane`],
-//!   which the composing host installs once per process.
+//!   channel's product binding: it composes the `a4mc-telegram` dialect
+//!   (transport, update loop, pairing, commands, sends) with this host's
+//!   ports — bot-token custody and the [`lane`] answers the composing host
+//!   installs once per process.
 //!
 //! Only the public CLI process contract crosses into LicoUp; no scheduler,
 //! history store or kernel source is linked.
