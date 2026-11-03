@@ -9,9 +9,6 @@
 //! socket; spawn-time fd handoff remains the cold-start path.
 
 #[cfg(unix)]
-#[cfg(test)]
-use crate::core::secure_mesh_secret_store::SecretBytes;
-#[cfg(unix)]
 use crate::core::secure_mesh_secret_store::SecretStoreAuthorizationSession;
 use anyhow::{Result, anyhow, ensure};
 use credential_lease::HandoffDocument;
@@ -1403,9 +1400,7 @@ mod tests {
             &gateway,
             "/v1/chat/completions",
             &serde_json::to_vec(&request).unwrap(),
-            None,
-            None,
-            &credentials,
+            &std::sync::Arc::new(credentials),
         )
         .unwrap_err();
         assert_eq!(
@@ -1474,9 +1469,15 @@ mod tests {
 
     #[test]
     fn old_gateway_health_requires_replacement_for_live_provider_models() {
-        let old = format!(r#"{{"protocols":["openai-responses","openai-chat-completions","anthropic-messages"],"clientAuth":"{}"}}"#, "bearer-or-x-api-key");
+        let old = format!(
+            r#"{{"protocols":["openai-responses","openai-chat-completions","anthropic-messages"],"clientAuth":"{}"}}"#,
+            "bearer-or-x-api-key"
+        );
         assert!(!health_supports_current_protocols(&old));
-        let current = format!(r#"{{"protocols":["openai-responses","openai-chat-completions","anthropic-messages","live-provider-models"],"clientAuth":"{}"}}"#, "bearer-or-x-api-key");
+        let current = format!(
+            r#"{{"protocols":["openai-responses","openai-chat-completions","anthropic-messages","live-provider-models"],"clientAuth":"{}"}}"#,
+            "bearer-or-x-api-key"
+        );
         assert!(health_supports_current_protocols(&current));
     }
 
@@ -1594,7 +1595,8 @@ mod tests {
             vec![
                 licoup_private_gateway::credential::GatewayCredential::new(
                     uuid::Uuid::new_v4().to_string(),
-                    SecretBytes::try_from_string("synthetic-secret".to_owned()).unwrap(),
+                    credential_lease::SecretBytes::try_from_string("synthetic-secret".to_owned())
+                        .unwrap(),
                     None,
                 )
                 .unwrap(),

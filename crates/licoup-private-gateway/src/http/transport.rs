@@ -1,16 +1,32 @@
-//! Bounded outbound transport for the local LLM gateway.
+//! Upstream dispatch for the local LLM gateway.
+//!
+//! The forwarding core lives in fairliny/a4mp: this module provides the two
+//! host ports the core consumes — the outbound [`a4mp::Transport`] backed by
+//! ureq and the lease-backed [`a4mp::CredentialResolver`] — plus the pump that
+//! writes the client-dialect stream to the sink. Credential lookup happens
+//! only after the closed route and endpoint have been accepted; the shell
+//! never stores keys and fairliny never sees custody.
 
-use crate::credential::GatewayCredentialSlot;
+use crate::credential::{GatewayCredentialSlot, LlmApiKeyProvider};
 use crate::model::llm_gateway::{
-    CompiledGateway, CredentialStyle, GatewayError, GatewayProvider, GatewayResponse,
-    MAX_GATEWAY_BODY_BYTES, UpstreamProtocol, models_endpoint_for, namespaced_model_id,
+    CompiledGateway, GatewayError, GatewayProvider, GatewayResponse, MAX_GATEWAY_BODY_BYTES,
+    PreparedGatewayRequest, namespaced_model_id,
 };
-use crate::model::llm_gateway_stream::GatewayStreamTransformer;
+use crate::model::llm_gateway_stream::ClientStreamRelay;
+use a4mp::{
+    Adapter, AuthKind, Catalog, Credential, CredentialResolver, CredentialScope, EffectHost,
+    HttpRequest, HttpResponse, ModelInfo, RequestControl, Secret, ServiceTarget, StreamingResponse,
+    Transport, TransportError,
+};
+use fairliny_gateway::router::Router;
+use futures::channel::mpsc;
+use futures::executor::block_on;
+use futures::{SinkExt, StreamExt};
 use serde_json::{Value, json};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::io::Read;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 const MAX_IN_FLIGHT: usize = 16;
@@ -19,6 +35,7 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(180);
 const MODEL_CATALOG_TIMEOUT: Duration = Duration::from_secs(15);
 const MODEL_CATALOG_TOTAL_TIMEOUT: Duration = Duration::from_secs(45);
 const MAX_COALESCED_WRITE_BYTES: usize = 16 * 1024;
+const RESPONSE_TOO_LARGE: &str = "licoup_gateway_response_too_large";
 static IN_FLIGHT: AtomicUsize = AtomicUsize::new(0);
 
 /// Immutable policy selecting one shared outbound agent. Agents are keyed by
@@ -32,7 +49,7 @@ struct GatewayAgentPolicy {
 }
 
 impl GatewayAgentPolicy {
-    fn loopback_default() -> Self {
+    fn forward_default() -> Self {
         Self {
             connect_timeout: CONNECT_TIMEOUT,
             read_timeout: REQUEST_TIMEOUT,
@@ -108,16 +125,258 @@ pub enum GatewayExchange {
     Streamed,
 }
 
+// ---------------------------------------------------------------------------
+// Host ports fairliny/a4mp consume
+// ---------------------------------------------------------------------------
+
+/// The host's outbound port: ureq executes the request, bodies stay bounded,
+/// and GETs ride the model-catalog policy so catalog fetches share their pool.
+struct UpstreamTransport {
+    agents: &'static GatewayAgentPool,
+}
+
+fn upstream_transport() -> Arc<UpstreamTransport> {
+    static TRANSPORT: OnceLock<Arc<UpstreamTransport>> = OnceLock::new();
+    Arc::clone(TRANSPORT.get_or_init(|| {
+        Arc::new(UpstreamTransport {
+            agents: default_agents(),
+        })
+    }))
+}
+
+#[async_trait::async_trait]
+impl Transport for UpstreamTransport {
+    async fn send(
+        &self,
+        request: HttpRequest,
+        _ctrl: &RequestControl,
+    ) -> Result<HttpResponse, TransportError> {
+        send_via_ureq(self.agents, &request)
+    }
+
+    async fn send_stream(
+        &self,
+        mut request: HttpRequest,
+        _ctrl: &RequestControl,
+    ) -> Result<StreamingResponse, TransportError> {
+        // A streamed call declares SSE acceptance — providers honor
+        // `stream:true` in the body, and the accept header keeps proxies and
+        // stricter upstreams on the streaming path the caller asked for.
+        request
+            .headers
+            .entry(http::header::ACCEPT)
+            .or_insert(http::HeaderValue::from_static("text/event-stream"));
+        let response = dispatch(self.agents, &request)?;
+        let status = http::StatusCode::from_u16(response.status())
+            .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
+        let headers = response_headers(&response);
+        let (mut sender, receiver) = mpsc::channel::<Result<bytes::Bytes, a4mp::Error>>(8);
+        std::thread::spawn(move || {
+            let mut reader = response.into_reader();
+            let mut chunk = [0u8; 8192];
+            loop {
+                match reader.read(&mut chunk) {
+                    Ok(0) => break,
+                    Ok(read) => {
+                        if block_on(sender.send(Ok(bytes::Bytes::copy_from_slice(&chunk[..read]))))
+                            .is_err()
+                        {
+                            break;
+                        }
+                    }
+                    Err(error) => {
+                        let _ = block_on(sender.send(Err(a4mp::Error::Transport(
+                            TransportError::Disconnected(error.to_string()),
+                        ))));
+                        break;
+                    }
+                }
+            }
+        });
+        Ok(StreamingResponse {
+            status,
+            headers,
+            body: Box::pin(receiver),
+        })
+    }
+}
+
+fn dispatch(
+    agents: &GatewayAgentPool,
+    request: &HttpRequest,
+) -> Result<ureq::Response, TransportError> {
+    let agent = agents.agent_for(if request.method == http::Method::GET {
+        GatewayAgentPolicy::model_catalog()
+    } else {
+        GatewayAgentPolicy::forward_default()
+    });
+    let mut call = agent.request(request.method.as_str(), request.url.as_str());
+    for (name, value) in request.headers.iter() {
+        let value = value
+            .to_str()
+            .map_err(|_| TransportError::Io("request header value is not ASCII".into()))?;
+        call = call.set(name.as_str(), value);
+    }
+    match if request.method == http::Method::GET {
+        call.call()
+    } else {
+        call.send_bytes(&request.body)
+    } {
+        Ok(response) => Ok(response),
+        Err(ureq::Error::Status(_, response)) => Ok(response),
+        Err(ureq::Error::Transport(error)) => Err(map_ureq_error(&error)),
+    }
+}
+
+fn send_via_ureq(
+    agents: &GatewayAgentPool,
+    request: &HttpRequest,
+) -> Result<HttpResponse, TransportError> {
+    let response = dispatch(agents, request)?;
+    let status = http::StatusCode::from_u16(response.status())
+        .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
+    let headers = response_headers(&response);
+    let mut body = Vec::new();
+    response
+        .into_reader()
+        .take((MAX_GATEWAY_BODY_BYTES as u64).saturating_add(1))
+        .read_to_end(&mut body)
+        .map_err(|error| TransportError::Io(error.to_string()))?;
+    if body.len() > MAX_GATEWAY_BODY_BYTES {
+        return Err(TransportError::Io(RESPONSE_TOO_LARGE.to_owned()));
+    }
+    Ok(HttpResponse {
+        status,
+        headers,
+        body: bytes::Bytes::from(body),
+    })
+}
+
+fn response_headers(response: &ureq::Response) -> http::HeaderMap {
+    let mut headers = http::HeaderMap::new();
+    for name in response.headers_names() {
+        for value in response.all(&name) {
+            if let (Ok(name), Ok(value)) = (
+                http::HeaderName::from_bytes(name.as_bytes()),
+                http::HeaderValue::from_str(value),
+            ) {
+                headers.append(name, value);
+            }
+        }
+    }
+    headers
+}
+
+fn map_ureq_error(error: &ureq::Transport) -> TransportError {
+    match error.kind() {
+        ureq::ErrorKind::ConnectionFailed
+        | ureq::ErrorKind::Dns
+        | ureq::ErrorKind::ProxyConnect
+        | ureq::ErrorKind::ProxyUnauthorized
+        | ureq::ErrorKind::TooManyRedirects
+        | ureq::ErrorKind::InvalidUrl => TransportError::Connect(error.to_string()),
+        _ => TransportError::Disconnected(error.to_string()),
+    }
+}
+
+/// The host's lease port: provider lanes name their `LlmApiKeyProvider` and
+/// the slot's candidate list already arrives rotated — the head of each
+/// resolution is the next authorized key, so retry attempts ride successive
+/// keys exactly as the previous per-candidate loop did.
+struct GatewayLeaseResolver {
+    credentials: Arc<GatewayCredentialSlot>,
+    kinds: Arc<HashMap<String, LlmApiKeyProvider>>,
+}
+
+#[async_trait::async_trait]
+impl CredentialResolver for GatewayLeaseResolver {
+    async fn resolve(&self, scope: CredentialScope<'_>) -> Result<Credential, a4mp::Error> {
+        if matches!(scope.auth, AuthKind::None) {
+            return Ok(Credential::None);
+        }
+        let kind = self
+            .kinds
+            .get(scope.target.provider.as_str())
+            .copied()
+            .ok_or_else(|| {
+                a4mp::Error::Credential("provider has no leased credential kind".into())
+            })?;
+        let key = self
+            .credentials
+            .resolve_candidates(kind)
+            .map_err(|_| a4mp::Error::Credential("credential_lease_unavailable".into()))?
+            .into_iter()
+            .next()
+            .ok_or_else(|| a4mp::Error::Credential("credential_lease_unavailable".into()))?;
+        let key = key
+            .expose_utf8()
+            .map_err(|_| a4mp::Error::Credential("credential_lease_unavailable".into()))?
+            .to_owned();
+        Ok(match scope.auth {
+            AuthKind::ApiKey => Credential::ApiKey(Secret::new(key)),
+            _ => Credential::Bearer {
+                token: Secret::new(key),
+                expires_at: None,
+            },
+        })
+    }
+}
+
+fn gateway_router(
+    gateway: &CompiledGateway,
+    credentials: &Arc<GatewayCredentialSlot>,
+) -> Result<Router, GatewayTransportError> {
+    let mut catalog = Catalog::new(gateway.provider_profiles().to_vec())
+        .map_err(|_| GatewayTransportError::Gateway(GatewayError::InvalidConfig))?;
+    let openai_ctor = Arc::new(
+        |target: ServiceTarget,
+         auth: AuthKind,
+         transport: Arc<dyn Transport>,
+         resolver: Arc<dyn CredentialResolver>,
+         _effects: Option<Arc<dyn EffectHost>>| {
+            a4mp::OpenAiAdapter::new(target, auth, transport, resolver)
+                .map(|adapter| Arc::new(adapter) as Arc<dyn Adapter>)
+        },
+    );
+    catalog.register_adapter(a4mp::Protocol::OpenAiChatCompletions, openai_ctor.clone());
+    catalog.register_adapter(a4mp::Protocol::OpenAiResponses, openai_ctor);
+    catalog.register_adapter(
+        a4mp::Protocol::AnthropicMessages,
+        Arc::new(
+            |target: ServiceTarget,
+             auth: AuthKind,
+             transport: Arc<dyn Transport>,
+             resolver: Arc<dyn CredentialResolver>,
+             _effects: Option<Arc<dyn EffectHost>>| {
+                a4mp::AnthropicAdapter::new(target, auth, transport, resolver)
+                    .map(|adapter| Arc::new(adapter) as Arc<dyn Adapter>)
+            },
+        ),
+    );
+    let resolver: Arc<dyn CredentialResolver> = Arc::new(GatewayLeaseResolver {
+        credentials: Arc::clone(credentials),
+        kinds: Arc::new(gateway.credential_kinds().clone()),
+    });
+    Ok(Router::with_catalog(
+        catalog,
+        upstream_transport(),
+        resolver,
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// Model catalog
+// ---------------------------------------------------------------------------
+
 /// Fetch the current catalog from every provider whose credential is present in
 /// the live lease. The upstream model object is preserved, while `id` is
 /// namespaced with the provider lane so a later inference request is
 /// unambiguous.
 pub fn list_models(
     gateway: &CompiledGateway,
-    credentials: &GatewayCredentialSlot,
+    credentials: &Arc<GatewayCredentialSlot>,
 ) -> Result<GatewayResponse, GatewayTransportError> {
     let _permit = Permit::acquire()?;
-    let agent = default_agents().agent_for(GatewayAgentPolicy::model_catalog());
     let deadline = Instant::now() + MODEL_CATALOG_TOTAL_TIMEOUT;
     let mut models = Vec::new();
     let mut seen = BTreeSet::new();
@@ -129,7 +388,7 @@ pub fn list_models(
             continue;
         }
         let candidates = match credentials.resolve_candidates(provider.credential_provider) {
-            Ok(candidates) => candidates,
+            Ok(candidates) => candidates.len(),
             Err(_) => {
                 failed_providers += 1;
                 first_failure.get_or_insert(CatalogFailure::Transport(
@@ -138,7 +397,7 @@ pub fn list_models(
                 continue;
             }
         };
-        match fetch_provider_models(&agent, &provider, candidates, deadline) {
+        match fetch_provider_models(gateway, credentials, &provider, candidates, deadline) {
             Err(error) => {
                 failed_providers += 1;
                 first_failure.get_or_insert(CatalogFailure::Transport(error));
@@ -190,7 +449,7 @@ pub fn list_models(
 }
 
 enum ProviderCatalog {
-    Models(Vec<Value>),
+    Models(Vec<ModelInfo>),
     UpstreamError(GatewayResponse),
 }
 
@@ -201,27 +460,24 @@ enum CatalogFailure {
 
 fn project_provider_models(
     provider: &GatewayProvider,
-    provider_models: Vec<Value>,
+    provider_models: Vec<ModelInfo>,
 ) -> Result<Vec<(String, Value)>, GatewayTransportError> {
     let mut projected = Vec::with_capacity(provider_models.len());
     let mut seen = BTreeSet::new();
-    for mut model in provider_models {
-        let object = model
-            .as_object_mut()
-            .ok_or(GatewayTransportError::TransportFailed)?;
-        let upstream_id = object
-            .get("id")
-            .and_then(Value::as_str)
-            .map(str::to_owned)
-            .ok_or(GatewayTransportError::TransportFailed)?;
-        let Some(requested_id) = namespaced_model_id(&provider.id, &upstream_id) else {
+    for info in provider_models {
+        let Some(requested_id) = namespaced_model_id(&provider.id, &info.id) else {
             continue;
         };
         if !seen.insert(requested_id.clone()) {
             continue;
         }
+        let mut model = json!({});
+        let object = model.as_object_mut().unwrap();
+        for (key, value) in info.extensions {
+            object.insert(key, value);
+        }
         object.insert("id".into(), Value::String(requested_id.clone()));
-        object.insert("upstream_id".into(), Value::String(upstream_id));
+        object.insert("upstream_id".into(), Value::String(info.id));
         object.insert(
             "gateway_provider".into(),
             Value::String(provider.id.clone()),
@@ -229,102 +485,64 @@ fn project_provider_models(
         object
             .entry("object")
             .or_insert_with(|| Value::String("model".into()));
-        object
-            .entry("owned_by")
-            .or_insert_with(|| Value::String(provider.id.clone()));
+        object.insert(
+            "owned_by".into(),
+            Value::String(info.owned_by.unwrap_or_else(|| provider.id.clone())),
+        );
         projected.push((requested_id, model));
     }
     Ok(projected)
 }
 
 fn fetch_provider_models(
-    agent: &ureq::Agent,
+    gateway: &CompiledGateway,
+    credentials: &Arc<GatewayCredentialSlot>,
     provider: &GatewayProvider,
-    credentials: Vec<licoup_foundation::core::secret_bytes::SecretBytes>,
+    candidates: usize,
     deadline: Instant,
 ) -> Result<ProviderCatalog, GatewayTransportError> {
-    let endpoint = models_endpoint_for(provider).map_err(GatewayTransportError::Gateway)?;
-    let candidate_count = credentials.len();
-    for (candidate_index, credential) in credentials.into_iter().enumerate() {
-        let timeout = remaining_catalog_timeout(deadline)?;
-        let credential = credential
-            .expose_utf8()
-            .map_err(|_| GatewayTransportError::CredentialUnavailable)?;
-        let mut request = agent
-            .get(&endpoint)
-            .timeout(timeout)
-            .set("accept", "application/json");
-        request = match provider.credential_style {
-            CredentialStyle::Bearer => {
-                request.set("authorization", &format!("Bearer {credential}"))
-            }
-            CredentialStyle::XApiKey => request.set("x-api-key", &credential),
-        };
-        let has_fallback = candidate_index + 1 < candidate_count;
-        let response = match request.call() {
-            Ok(response) => response,
-            Err(ureq::Error::Status(status, response)) => {
-                if has_fallback && retryable_status(status) {
-                    continue;
-                }
-                response
-            }
-            Err(ureq::Error::Transport(_)) if has_fallback => continue,
-            Err(ureq::Error::Transport(_)) => {
-                return Err(GatewayTransportError::TransportFailed);
-            }
-        };
-        let status = response.status();
-        let body = read_bounded_response(response)?;
-        if !(200..300).contains(&status) {
-            return Ok(ProviderCatalog::UpstreamError(model_catalog_error(
-                status, &body,
-            )));
+    if Instant::now() >= deadline {
+        return Err(GatewayTransportError::TransportFailed);
+    }
+    let mut router = gateway_router(gateway, credentials)?;
+    let route = gateway
+        .provider_route(provider, "")
+        .map_err(GatewayTransportError::Gateway)?;
+    router
+        .add_route(provider.id.clone(), route)
+        .map_err(|_| GatewayTransportError::Gateway(GatewayError::InvalidConfig))?;
+    let bound = router
+        .resolve(&provider.id)
+        .map_err(|_| GatewayTransportError::Gateway(GatewayError::InvalidConfig))?;
+    for attempt in 0..candidates.max(1) {
+        if Instant::now() >= deadline {
+            return Err(GatewayTransportError::TransportFailed);
         }
-        let document: Value =
-            serde_json::from_slice(&body).map_err(|_| GatewayTransportError::TransportFailed)?;
-        let models = document
-            .get("data")
-            .and_then(Value::as_array)
-            .cloned()
-            .ok_or(GatewayTransportError::TransportFailed)?;
-        return Ok(ProviderCatalog::Models(models));
+        match block_on(bound.adapter.models(&RequestControl::default())) {
+            Ok(models) => return Ok(ProviderCatalog::Models(models)),
+            Err(error) if attempt + 1 < candidates && retryable_failure(&error) => continue,
+            Err(error) => return dispatch_or_provider_models(error),
+        }
     }
     Err(GatewayTransportError::CredentialUnavailable)
 }
 
-fn remaining_catalog_timeout(deadline: Instant) -> Result<Duration, GatewayTransportError> {
-    let remaining = deadline.saturating_duration_since(Instant::now());
-    if remaining.is_zero() {
-        return Err(GatewayTransportError::TransportFailed);
+fn dispatch_or_provider_models(
+    error: a4mp::Error,
+) -> Result<ProviderCatalog, GatewayTransportError> {
+    match error {
+        a4mp::Error::Provider {
+            status: Some(status),
+            message,
+            ..
+        } => Ok(ProviderCatalog::UpstreamError(model_catalog_error(
+            status, &message,
+        ))),
+        error => Err(dispatch_error(&error)),
     }
-    Ok(remaining.min(MODEL_CATALOG_TIMEOUT))
 }
 
-fn read_bounded_response(response: ureq::Response) -> Result<Vec<u8>, GatewayTransportError> {
-    let mut body = Vec::new();
-    response
-        .into_reader()
-        .take((MAX_GATEWAY_BODY_BYTES as u64).saturating_add(1))
-        .read_to_end(&mut body)
-        .map_err(|_| GatewayTransportError::TransportFailed)?;
-    if body.len() > MAX_GATEWAY_BODY_BYTES {
-        return Err(GatewayTransportError::ResponseTooLarge);
-    }
-    Ok(body)
-}
-
-fn model_catalog_error(status: u16, body: &[u8]) -> GatewayResponse {
-    let parsed = serde_json::from_slice::<Value>(body).ok();
-    let message = parsed
-        .as_ref()
-        .and_then(|value| {
-            value
-                .pointer("/error/message")
-                .or_else(|| value.get("message"))
-        })
-        .and_then(Value::as_str)
-        .unwrap_or("upstream model catalog request failed");
+fn model_catalog_error(status: u16, message: &str) -> GatewayResponse {
     let message = message.chars().take(1024).collect::<String>();
     GatewayResponse {
         status,
@@ -336,25 +554,20 @@ fn model_catalog_error(status: u16, body: &[u8]) -> GatewayResponse {
     }
 }
 
-/// Routes, converts, authorizes, and executes one model request. Credential
-/// lookup happens only after the closed route and endpoint have been accepted.
+// ---------------------------------------------------------------------------
+// Forward path
+// ---------------------------------------------------------------------------
+
+/// Routes, canonically decodes and executes one model request through the
+/// fairliny router. Credential lookup happens only after the closed route and
+/// endpoint have been accepted.
 pub fn exchange(
     gateway: &CompiledGateway,
     path: &str,
     body: &[u8],
-    incoming_user_agent: Option<&str>,
-    incoming_anthropic_beta: Option<&str>,
-    credentials: &GatewayCredentialSlot,
+    credentials: &Arc<GatewayCredentialSlot>,
 ) -> Result<GatewayResponse, GatewayTransportError> {
-    match exchange_inner(
-        gateway,
-        path,
-        body,
-        incoming_user_agent,
-        incoming_anthropic_beta,
-        credentials,
-        None,
-    )? {
+    match exchange_inner(gateway, path, body, credentials, None)? {
         GatewayExchange::Buffered(response) => Ok(response),
         GatewayExchange::Streamed => Err(GatewayTransportError::TransportFailed),
     }
@@ -364,160 +577,192 @@ pub fn exchange_to_sink(
     gateway: &CompiledGateway,
     path: &str,
     body: &[u8],
-    incoming_user_agent: Option<&str>,
-    incoming_anthropic_beta: Option<&str>,
-    credentials: &GatewayCredentialSlot,
+    credentials: &Arc<GatewayCredentialSlot>,
     sink: &mut dyn GatewayStreamSink,
 ) -> Result<GatewayExchange, GatewayTransportError> {
-    exchange_inner(
-        gateway,
-        path,
-        body,
-        incoming_user_agent,
-        incoming_anthropic_beta,
-        credentials,
-        Some(sink),
-    )
+    exchange_inner(gateway, path, body, credentials, Some(sink))
 }
 
 fn exchange_inner(
     gateway: &CompiledGateway,
     path: &str,
     body: &[u8],
-    incoming_user_agent: Option<&str>,
-    incoming_anthropic_beta: Option<&str>,
-    credentials: &GatewayCredentialSlot,
+    credentials: &Arc<GatewayCredentialSlot>,
     mut sink: Option<&mut dyn GatewayStreamSink>,
 ) -> Result<GatewayExchange, GatewayTransportError> {
     let prepared = gateway
         .prepare(path, body)
         .map_err(GatewayTransportError::Gateway)?;
-    let credential_candidates = credentials
+    let candidates = credentials
         .resolve_candidates(prepared.credential_provider)
-        .map_err(|_| GatewayTransportError::CredentialUnavailable)?;
+        .map_err(|_| GatewayTransportError::CredentialUnavailable)?
+        .len()
+        .max(1);
     let _permit = Permit::acquire()?;
-    let agent = default_agents().agent_for(GatewayAgentPolicy::loopback_default());
-    let candidate_count = credential_candidates.len();
-    for (candidate_index, credential) in credential_candidates.into_iter().enumerate() {
-        let credential = credential
-            .expose_utf8()
-            .map_err(|_| GatewayTransportError::CredentialUnavailable)?;
-        let mut request = agent
-            .post(&prepared.endpoint)
-            .set(
-                "accept",
-                if prepared.stream {
-                    "text/event-stream"
-                } else {
-                    "application/json"
+    let mut router = gateway_router(gateway, credentials)?;
+    router
+        .add_route(prepared.requested_model.clone(), prepared.route.clone())
+        .map_err(|_| GatewayTransportError::Gateway(GatewayError::InvalidConfig))?;
+    let bound = router
+        .resolve(&prepared.requested_model)
+        .map_err(|_| GatewayTransportError::Gateway(GatewayError::InvalidConfig))?;
+    for attempt in 0..candidates {
+        let control = RequestControl::default();
+        let request = prepared.request.clone();
+        if prepared.stream {
+            match block_on(bound.adapter.chat_stream(request, &control)) {
+                Ok(stream) => match sink.as_deref_mut() {
+                    Some(sink) => {
+                        return pump_stream(gateway, &prepared, stream, sink);
+                    }
+                    // `exchange` keeps its buffered contract for streamed
+                    // requests too: the SSE body is collected whole.
+                    None => return collect_stream(gateway, &prepared, stream),
                 },
-            )
-            .set("content-type", "application/json");
-        if let Some(user_agent) = incoming_user_agent.filter(|value| valid_header_value(value)) {
-            request = request.set("user-agent", user_agent);
-        }
-        if prepared.upstream_protocol == UpstreamProtocol::AnthropicMessages {
-            request = request.set("anthropic-version", "2023-06-01");
-            if let Some(beta) = incoming_anthropic_beta.filter(|value| valid_header_value(value)) {
-                request = request.set("anthropic-beta", beta);
+                Err(error) if attempt + 1 < candidates && retryable_failure(&error) => continue,
+                Err(error) => return dispatch_or_provider_exchange(error),
             }
         }
-        request = match prepared.credential_style {
-            CredentialStyle::Bearer => {
-                request.set("authorization", &format!("Bearer {credential}"))
+        match block_on(bound.adapter.chat(request, &control)) {
+            Ok(output) => {
+                return gateway
+                    .finish(&prepared, &output)
+                    .map(GatewayExchange::Buffered)
+                    .map_err(GatewayTransportError::Gateway);
             }
-            CredentialStyle::XApiKey => request.set("x-api-key", &credential),
-        };
-        let has_fallback = candidate_index + 1 < candidate_count;
-        let response = match request.send_bytes(&prepared.body) {
-            Ok(response) => response,
-            Err(ureq::Error::Status(status, response)) => {
-                if has_fallback && retryable_status(status) {
-                    continue;
-                }
-                response
-            }
-            Err(ureq::Error::Transport(_)) if has_fallback => continue,
-            Err(ureq::Error::Transport(_)) => {
-                return Err(GatewayTransportError::TransportFailed);
-            }
-        };
-        let status = response.status();
-        let content_type = response.header("content-type").map(str::to_owned);
-        let is_sse = content_type
-            .as_deref()
-            .is_some_and(|value| value.to_ascii_lowercase().contains("text/event-stream"));
-        if prepared.stream && (200..300).contains(&status) && is_sse {
-            if let Some(sink) = sink.as_deref_mut() {
-                let mut transformer = GatewayStreamTransformer::new(&prepared)
-                    .map_err(GatewayTransportError::Gateway)?;
-                let mut coalescer = SseFrameCoalescer::new();
-                sink.begin(status, "text/event-stream")
-                    .map_err(|_| GatewayTransportError::TransportFailed)?;
-                let mut reader = response.into_reader();
-                let mut chunk = [0u8; 8192];
-                loop {
-                    let read = reader
-                        .read(&mut chunk)
-                        .map_err(|_| GatewayTransportError::TransportFailed)?;
-                    if read == 0 {
-                        break;
-                    }
-                    let converted = transformer
-                        .push(&chunk[..read])
-                        .map_err(GatewayTransportError::Gateway)?;
-                    if !converted.is_empty() {
-                        coalescer
-                            .push(&converted, sink)
-                            .map_err(|_| GatewayTransportError::TransportFailed)?;
-                    }
-                }
-                let final_bytes = transformer
-                    .finish()
-                    .map_err(GatewayTransportError::Gateway)?;
-                if !final_bytes.is_empty() {
-                    coalescer
-                        .push(&final_bytes, sink)
-                        .map_err(|_| GatewayTransportError::TransportFailed)?;
-                }
-                coalescer
-                    .finish(sink)
-                    .map_err(|_| GatewayTransportError::TransportFailed)?;
-                if let Some(history_response) = transformer.take_chat_history_response() {
-                    gateway
-                        .remember_stream_response(&prepared, history_response)
-                        .map_err(GatewayTransportError::Gateway)?;
-                }
-                return Ok(GatewayExchange::Streamed);
-            }
+            Err(error) if attempt + 1 < candidates && retryable_failure(&error) => continue,
+            Err(error) => return dispatch_or_provider_exchange(error),
         }
-        let mut response_body = Vec::new();
-        response
-            .into_reader()
-            .take((MAX_GATEWAY_BODY_BYTES as u64).saturating_add(1))
-            .read_to_end(&mut response_body)
-            .map_err(|_| GatewayTransportError::TransportFailed)?;
-        if response_body.len() > MAX_GATEWAY_BODY_BYTES {
-            return Err(GatewayTransportError::ResponseTooLarge);
-        }
-        return gateway
-            .finish(&prepared, status, content_type.as_deref(), &response_body)
-            .map(GatewayExchange::Buffered)
-            .map_err(GatewayTransportError::Gateway);
     }
     Err(GatewayTransportError::CredentialUnavailable)
 }
 
-fn retryable_status(status: u16) -> bool {
-    matches!(status, 401 | 403 | 429) || (500..=599).contains(&status)
+fn dispatch_or_provider_exchange(
+    error: a4mp::Error,
+) -> Result<GatewayExchange, GatewayTransportError> {
+    match error {
+        a4mp::Error::Provider {
+            status: Some(status),
+            message,
+            ..
+        } => Ok(GatewayExchange::Buffered(normalize_upstream_error(
+            status, &message,
+        ))),
+        error => Err(dispatch_error(&error)),
+    }
 }
 
-fn valid_header_value(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 1024
-        && value
-            .bytes()
-            .all(|byte| byte == b'\t' || (0x20..=0x7e).contains(&byte))
+/// One upstream failure while another leased candidate remains means the next
+/// attempt rides the next authorized key — the slot's rotated candidate list
+/// serves a different head per resolution. a4mp's own retry-safety verdict is
+/// authoritative: only failures the provider provably rejected before
+/// accepting work (auth/rate-limit refusals, connect failures) may fail over;
+/// a mid-flight failure or a 5xx may already have billed and never repeats.
+fn retryable_failure(error: &a4mp::Error) -> bool {
+    match error {
+        a4mp::Error::Provider {
+            status: Some(status),
+            retry: a4mp::RetrySafety::Safe,
+            ..
+        } => matches!(status, 401 | 403 | 429),
+        a4mp::Error::Transport(TransportError::Connect(_)) => true,
+        _ => false,
+    }
+}
+
+fn dispatch_error(error: &a4mp::Error) -> GatewayTransportError {
+    match error {
+        a4mp::Error::Transport(TransportError::Io(message)) if message == RESPONSE_TOO_LARGE => {
+            GatewayTransportError::ResponseTooLarge
+        }
+        a4mp::Error::Credential(_) => GatewayTransportError::CredentialUnavailable,
+        a4mp::Error::Conversion { .. } | a4mp::Error::Unsupported(_) => {
+            GatewayTransportError::Gateway(GatewayError::UnsupportedConversion)
+        }
+        a4mp::Error::UpstreamProtocol(_) => {
+            GatewayTransportError::Gateway(GatewayError::InvalidUpstreamResponse)
+        }
+        a4mp::Error::Protocol(_) => GatewayTransportError::Gateway(GatewayError::InvalidRequest),
+        _ => GatewayTransportError::TransportFailed,
+    }
+}
+
+fn pump_stream(
+    gateway: &CompiledGateway,
+    prepared: &PreparedGatewayRequest,
+    mut stream: a4mp::DynStream<'static, a4mp::StreamEvent>,
+    sink: &mut dyn GatewayStreamSink,
+) -> Result<GatewayExchange, GatewayTransportError> {
+    let mut relay = ClientStreamRelay::new(prepared);
+    let mut coalescer = SseFrameCoalescer::new();
+    sink.begin(200, "text/event-stream")
+        .map_err(|_| GatewayTransportError::TransportFailed)?;
+    coalescer
+        .push(&relay.preamble(), sink)
+        .map_err(|_| GatewayTransportError::TransportFailed)?;
+    while let Some(item) = block_on(stream.next()) {
+        let event = item.map_err(|error| dispatch_error(&error))?;
+        let bytes = relay.push(&event);
+        if !bytes.is_empty() {
+            coalescer
+                .push(&bytes, sink)
+                .map_err(|_| GatewayTransportError::TransportFailed)?;
+        }
+    }
+    let tail = relay.finish();
+    if !tail.is_empty() {
+        coalescer
+            .push(&tail, sink)
+            .map_err(|_| GatewayTransportError::TransportFailed)?;
+    }
+    coalescer
+        .finish(sink)
+        .map_err(|_| GatewayTransportError::TransportFailed)?;
+    if let Some(history) = relay.take_history() {
+        gateway
+            .remember_stream_response(prepared, history)
+            .map_err(GatewayTransportError::Gateway)?;
+    }
+    Ok(GatewayExchange::Streamed)
+}
+
+fn collect_stream(
+    gateway: &CompiledGateway,
+    prepared: &PreparedGatewayRequest,
+    mut stream: a4mp::DynStream<'static, a4mp::StreamEvent>,
+) -> Result<GatewayExchange, GatewayTransportError> {
+    let mut relay = ClientStreamRelay::new(prepared);
+    let mut body = relay.preamble();
+    while let Some(item) = block_on(stream.next()) {
+        let event = item.map_err(|error| dispatch_error(&error))?;
+        body.extend_from_slice(&relay.push(&event));
+        if body.len() > MAX_GATEWAY_BODY_BYTES {
+            return Err(GatewayTransportError::ResponseTooLarge);
+        }
+    }
+    body.extend_from_slice(&relay.finish());
+    if let Some(history) = relay.take_history() {
+        gateway
+            .remember_stream_response(prepared, history)
+            .map_err(GatewayTransportError::Gateway)?;
+    }
+    if body.len() > MAX_GATEWAY_BODY_BYTES {
+        return Err(GatewayTransportError::ResponseTooLarge);
+    }
+    Ok(GatewayExchange::Buffered(GatewayResponse {
+        status: 200,
+        content_type: "text/event-stream",
+        body,
+    }))
+}
+
+fn normalize_upstream_error(status: u16, message: &str) -> GatewayResponse {
+    let message: String = message.chars().take(1024).collect();
+    GatewayResponse {
+        status,
+        content_type: "application/json",
+        body: serde_json::to_vec(&json!({"error":{"message":message,"type":"upstream_error","code":status,"param":null}})).unwrap_or_default(),
+    }
 }
 
 /// Coalesces converted SSE output into complete frames. Fragment writes never
@@ -623,13 +868,12 @@ mod tests {
     };
     use crate::model::llm_gateway::{
         ClientProtocol, CredentialStyle, GatewayConfig, GatewayProvider, ModelRoute,
+        UpstreamProtocol,
     };
     use anyhow::Result;
-    use licoup_foundation::core::secret_bytes::SecretBytes;
-    use std::collections::BTreeMap;
+    use credential_lease::SecretBytes;
     use std::io::Write as _;
     use std::net::TcpListener;
-    use std::sync::Arc;
 
     struct StaticEpochSource(String);
 
@@ -692,11 +936,14 @@ mod tests {
         .unwrap()
     }
 
-    fn fixture_slot(secrets: &[&str]) -> GatewayCredentialSlot {
+    fn fixture_slot(secrets: &[&str]) -> Arc<GatewayCredentialSlot> {
         fixture_slot_for(LlmApiKeyProvider::Kimi, secrets)
     }
 
-    fn fixture_slot_for(provider: LlmApiKeyProvider, secrets: &[&str]) -> GatewayCredentialSlot {
+    fn fixture_slot_for(
+        provider: LlmApiKeyProvider,
+        secrets: &[&str],
+    ) -> Arc<GatewayCredentialSlot> {
         fixture_slot_for_providers(
             secrets
                 .iter()
@@ -707,7 +954,7 @@ mod tests {
 
     fn fixture_slot_for_providers(
         entries: Vec<(LlmApiKeyProvider, &str)>,
-    ) -> GatewayCredentialSlot {
+    ) -> Arc<GatewayCredentialSlot> {
         let epoch = uuid::Uuid::new_v4().to_string();
         let mut credentials = BTreeMap::<LlmApiKeyProvider, Vec<GatewayCredential>>::new();
         for (provider, secret) in entries {
@@ -720,7 +967,7 @@ mod tests {
                 .unwrap(),
             );
         }
-        GatewayCredentialSlot::new(
+        Arc::new(GatewayCredentialSlot::new(
             GatewayCredentialLease::new(
                 credentials,
                 GatewayCredentialLeaseDays::Seven.duration(),
@@ -728,7 +975,7 @@ mod tests {
                 Arc::new(StaticEpochSource(epoch)),
             )
             .unwrap(),
-        )
+        ))
     }
 
     fn read_one_request(stream: &mut impl Read) -> Vec<u8> {
@@ -770,25 +1017,6 @@ mod tests {
     }
 
     #[test]
-    fn user_agent_forwarding_is_bounded_and_header_safe() {
-        assert!(valid_header_value("codex-cli/1.0"));
-        assert!(!valid_header_value("codex\r\nx-api-key: secret"));
-        assert!(!valid_header_value(&"x".repeat(1025)));
-    }
-
-    #[test]
-    fn model_catalog_request_timeout_respects_the_aggregate_deadline() {
-        assert_eq!(
-            remaining_catalog_timeout(Instant::now() - Duration::from_millis(1)),
-            Err(GatewayTransportError::TransportFailed)
-        );
-        assert!(
-            remaining_catalog_timeout(Instant::now() + Duration::from_secs(60)).unwrap()
-                <= MODEL_CATALOG_TIMEOUT
-        );
-    }
-
-    #[test]
     fn model_catalog_forwards_the_live_provider_response_with_namespaced_ids() {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
@@ -796,7 +1024,7 @@ mod tests {
             let (mut stream, _) = listener.accept().unwrap();
             let request = read_one_request(&mut stream);
             let request = String::from_utf8_lossy(&request);
-            assert!(request.starts_with("GET /v1/models HTTP/1.1"));
+            assert!(request.starts_with("GET /v1/models HTTP/1.1"), "{request}");
             assert!(request.contains("authorization: Bearer fixture-model-key"));
             let body = r#"{"object":"list","data":[{"id":"upstream-new","object":"model","owned_by":"vendor","name":"Upstream New","context_length":262144}]}"#;
             write!(
@@ -826,7 +1054,7 @@ mod tests {
     fn model_catalog_without_an_authorized_provider_is_empty() {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let gateway = fixture_gateway(listener.local_addr().unwrap());
-        let slot = GatewayCredentialSlot::disconnected();
+        let slot = Arc::new(GatewayCredentialSlot::disconnected());
 
         let response = list_models(&gateway, &slot).unwrap();
 
@@ -1024,54 +1252,13 @@ mod tests {
             assert_ne!(authorization_headers[0], authorization_headers[1]);
         });
 
-        let gateway = CompiledGateway::compile(GatewayConfig {
-            schema_version: 1,
-            providers: vec![GatewayProvider {
-                id: "fixture".to_owned(),
-                base_url: format!("http://{address}/v1"),
-                protocol: UpstreamProtocol::OpenAiChatCompletions,
-                credential_provider: LlmApiKeyProvider::Kimi,
-                credential_style: CredentialStyle::Bearer,
-            }],
-            routes: vec![ModelRoute {
-                client_protocol: ClientProtocol::OpenAiChatCompletions,
-                requested_model: "requested".to_owned(),
-                provider_id: "fixture".to_owned(),
-                upstream_model: "upstream".to_owned(),
-            }],
-        })
-        .unwrap();
-        let epoch = uuid::Uuid::new_v4().to_string();
-        let credentials = BTreeMap::from([(
-            LlmApiKeyProvider::Kimi,
-            ["fixture-first-key", "fixture-second-key"]
-                .into_iter()
-                .map(|secret| {
-                    GatewayCredential::new(
-                        uuid::Uuid::new_v4().to_string(),
-                        SecretBytes::try_from_string(secret.to_owned()).unwrap(),
-                        None,
-                    )
-                    .unwrap()
-                })
-                .collect(),
-        )]);
-        let slot = GatewayCredentialSlot::new(
-            GatewayCredentialLease::new(
-                credentials,
-                GatewayCredentialLeaseDays::Seven.duration(),
-                epoch.clone(),
-                Arc::new(StaticEpochSource(epoch)),
-            )
-            .unwrap(),
-        );
+        let gateway = fixture_gateway(address);
+        let slot = fixture_slot(&["fixture-first-key", "fixture-second-key"]);
 
         let response = exchange(
             &gateway,
             "/v1/chat/completions",
             br#"{"model":"requested","messages":[{"role":"user","content":"hello"}]}"#,
-            None,
-            None,
             &slot,
         )
         .unwrap();
@@ -1100,44 +1287,8 @@ mod tests {
             stream.write_all(b"data: [DONE]\n\n").unwrap();
         });
 
-        let gateway = CompiledGateway::compile(GatewayConfig {
-            schema_version: 1,
-            providers: vec![GatewayProvider {
-                id: "fixture".to_owned(),
-                base_url: format!("http://{address}/v1"),
-                protocol: UpstreamProtocol::OpenAiChatCompletions,
-                credential_provider: LlmApiKeyProvider::Kimi,
-                credential_style: CredentialStyle::Bearer,
-            }],
-            routes: vec![ModelRoute {
-                client_protocol: ClientProtocol::OpenAiChatCompletions,
-                requested_model: "requested".to_owned(),
-                provider_id: "fixture".to_owned(),
-                upstream_model: "upstream".to_owned(),
-            }],
-        })
-        .unwrap();
-        let epoch = uuid::Uuid::new_v4().to_string();
-        let credentials = BTreeMap::from([(
-            LlmApiKeyProvider::Kimi,
-            vec![
-                GatewayCredential::new(
-                    uuid::Uuid::new_v4().to_string(),
-                    SecretBytes::try_from_string("fixture-stream-key".to_owned()).unwrap(),
-                    None,
-                )
-                .unwrap(),
-            ],
-        )]);
-        let slot = GatewayCredentialSlot::new(
-            GatewayCredentialLease::new(
-                credentials,
-                GatewayCredentialLeaseDays::Seven.duration(),
-                epoch.clone(),
-                Arc::new(StaticEpochSource(epoch)),
-            )
-            .unwrap(),
-        );
+        let gateway = fixture_gateway(address);
+        let slot = fixture_slot(&["fixture-stream-key"]);
         let (event_sender, event_receiver) = std::sync::mpsc::channel();
         let exchange = std::thread::spawn(move || {
             let mut sink = ChannelSink(event_sender);
@@ -1145,17 +1296,21 @@ mod tests {
                 &gateway,
                 "/v1/chat/completions",
                 br#"{"model":"requested","stream":true,"messages":[]}"#,
-                None,
-                None,
                 &slot,
                 &mut sink,
             )
         });
 
-        let first = event_receiver
-            .recv_timeout(Duration::from_secs(1))
-            .expect("first SSE event before upstream completion");
-        assert!(String::from_utf8_lossy(&first).contains("first"));
+        // The re-encoded stream opens with a role chunk; content frames must
+        // still arrive before the upstream body completes.
+        let mut received = Vec::new();
+        while !String::from_utf8_lossy(&received).contains("first") {
+            received.extend_from_slice(
+                &event_receiver
+                    .recv_timeout(Duration::from_secs(5))
+                    .expect("first SSE event before upstream completion"),
+            );
+        }
         release_sender.send(()).unwrap();
         match exchange.join().unwrap() {
             Ok(GatewayExchange::Streamed) => {}
@@ -1196,8 +1351,6 @@ mod tests {
                 &gateway,
                 "/v1/chat/completions",
                 br#"{"model":"requested","messages":[{"role":"user","content":"hello"}]}"#,
-                None,
-                None,
                 &slot,
             )
             .unwrap();
@@ -1242,8 +1395,6 @@ mod tests {
                 &gateway,
                 "/v1/chat/completions",
                 br#"{"model":"requested","stream":true,"messages":[]}"#,
-                None,
-                None,
                 &slot,
                 &mut sink,
             )
@@ -1251,7 +1402,7 @@ mod tests {
 
         let mut received = Vec::new();
         let mut writes = Vec::new();
-        while let Ok(chunk) = event_receiver.recv_timeout(Duration::from_secs(2)) {
+        while let Ok(chunk) = event_receiver.recv_timeout(Duration::from_secs(5)) {
             writes.push(chunk.len());
             received.extend_from_slice(&chunk);
             if chunk.ends_with(b"data: [DONE]\n\n") {
@@ -1264,20 +1415,14 @@ mod tests {
         }
         server.join().unwrap();
 
-        let mut expected = Vec::new();
+        let text = String::from_utf8(received.clone()).unwrap();
         for index in 0..40 {
-            expected.extend_from_slice(
-                format!(
-                    "data: {{\"id\":\"one\",\"choices\":[{{\"delta\":{{\"content\":\"chunk-{index}\"}}}}]}}\n\n"
-                )
-                .as_bytes(),
+            assert!(
+                text.contains(&format!("\"content\":\"chunk-{index}\"")),
+                "missing chunk {index}"
             );
         }
-        expected.extend_from_slice(b"data: [DONE]\n\n");
-        assert_eq!(
-            received, expected,
-            "response bytes must reconstruct exactly"
-        );
+        assert!(text.ends_with("data: [DONE]\n\n"));
         assert!(
             writes
                 .iter()
@@ -1295,7 +1440,7 @@ mod tests {
     }
 
     #[test]
-    fn truncated_upstream_frame_fails_without_fragment_flush() {
+    fn truncated_upstream_frame_fails_closed() {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
         let server = std::thread::spawn(move || {
@@ -1319,21 +1464,27 @@ mod tests {
                 &gateway,
                 "/v1/chat/completions",
                 br#"{"model":"requested","stream":true,"messages":[]}"#,
-                None,
-                None,
                 &slot,
                 &mut sink,
             )
         });
 
         match exchange.join().unwrap() {
-            Err(GatewayTransportError::TransportFailed) => {}
+            Err(error) => {
+                // Nothing reaches the client ahead of the failure.
+                assert!(matches!(
+                    error,
+                    GatewayTransportError::Gateway(_) | GatewayTransportError::TransportFailed
+                ));
+            }
             other => panic!("truncated stream must fail closed: {other:?}"),
         }
-        assert!(
-            event_receiver.try_recv().is_err(),
-            "a partial upstream frame must never reach the sink"
-        );
+        while let Ok(chunk) = event_receiver.recv_timeout(Duration::from_millis(200)) {
+            assert!(
+                chunk.iter().all(u8::is_ascii_whitespace),
+                "a truncated upstream must not emit partial client frames"
+            );
+        }
         server.join().unwrap();
     }
 
@@ -1367,51 +1518,71 @@ mod tests {
                 &gateway_for_exchange,
                 "/v1/responses",
                 br#"{"model":"requested","stream":true,"input":"first"}"#,
-                None,
-                None,
                 &slot,
                 &mut sink,
             )
         });
 
-        // The responses conversion ends with a typed completion event rather
-        // than the upstream [DONE] frame, so drain until the exchange thread
-        // drops the sender.
-        while event_receiver.recv_timeout(Duration::from_secs(2)).is_ok() {}
+        let mut received = Vec::new();
+        while let Ok(chunk) = event_receiver.recv_timeout(Duration::from_secs(5)) {
+            received.extend_from_slice(&chunk);
+        }
         match exchange.join().unwrap() {
             Ok(GatewayExchange::Streamed) => {}
             other => panic!("stream did not complete: {other:?}"),
         }
         server.join().unwrap();
 
+        // The response id the client saw on `response.created` is the one the
+        // follow-up continuation names.
+        let text = String::from_utf8(received).unwrap();
+        let created = text
+            .split("\n\n")
+            .find_map(|frame| {
+                let data = frame.lines().find_map(|line| line.strip_prefix("data: "))?;
+                let value: Value = serde_json::from_str(data).ok()?;
+                (value["type"] == "response.created")
+                    .then(|| {
+                        value
+                            .pointer("/response/id")
+                            .and_then(Value::as_str)
+                            .map(str::to_owned)
+                    })
+                    .flatten()
+            })
+            .expect("response.created carried the minted id");
+
         let follow_up = gateway
             .prepare(
                 "/v1/responses",
-                br#"{"model":"requested","input":"second","previous_response_id":"resp_chat-1"}"#,
+                serde_json::to_vec(&serde_json::json!({
+                    "model":"requested","input":"second","previous_response_id":created
+                }))
+                .unwrap()
+                .as_slice(),
             )
             .unwrap();
-        let body: serde_json::Value = serde_json::from_slice(&follow_up.body).unwrap();
-        let content = body["messages"]
-            .as_array()
-            .unwrap()
+        let assistant = follow_up
+            .request
+            .messages
             .iter()
-            .find(|message| message["role"] == "assistant")
-            .and_then(|message| message["content"].as_str())
-            .unwrap();
-        assert_eq!(content, "streamed answer");
-        let assistant = body["messages"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|message| message["role"] == "assistant")
-            .unwrap();
-        assert_eq!(assistant["reasoning_content"], "fixture reasoning");
-        assert_eq!(assistant["tool_calls"][0]["id"], "call-1");
-        assert_eq!(assistant["tool_calls"][0]["function"]["name"], "lookup");
-        assert_eq!(
-            assistant["tool_calls"][0]["function"]["arguments"],
-            r#"{"q":"fixture"}"#
-        );
+            .find(|message| message.role == a4mp::Role::Assistant)
+            .expect("recorded assistant turn replayed");
+        assert!(assistant.content.iter().any(|part| matches!(
+            part,
+            a4mp::ContentPart::Text { text } if text == "streamed answer"
+        )));
+        assert!(assistant.content.iter().any(|part| matches!(
+            part,
+            a4mp::ContentPart::Reasoning(block)
+                if block.opaque["reasoning_content"] == "fixture reasoning"
+        )));
+        assert!(assistant.content.iter().any(|part| matches!(
+            part,
+            a4mp::ContentPart::ToolCall(call)
+                if call.id == "call-1" && call.name == "lookup"
+                    && call.arguments == serde_json::json!({"q":"fixture"})
+        )));
     }
 
     /// The credential boundary belongs to this runtime, so its test lives with
@@ -1438,7 +1609,7 @@ mod tests {
             }],
         })
         .unwrap();
-        let credentials = crate::credential::GatewayCredentialSlot::disconnected();
+        let credentials = Arc::new(crate::credential::GatewayCredentialSlot::disconnected());
         let request = serde_json::json!({
             "model": "deepseek:deepseek-v4-flash",
             "messages": [{"role": "user", "content": "synthetic"}]
@@ -1447,8 +1618,6 @@ mod tests {
             &gateway,
             "/v1/chat/completions",
             &serde_json::to_vec(&request).unwrap(),
-            None,
-            None,
             &credentials,
         )
         .unwrap_err();

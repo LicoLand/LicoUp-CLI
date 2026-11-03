@@ -48,6 +48,16 @@ fn run(raw: Vec<String>) -> Result<(), &'static str> {
     let args = parse_args(&raw)?;
     let transport = GatewayChatTransport::from_base_url(&args.gateway_base_url)
         .map_err(|_| "gateway_base_url_must_be_loopback")?;
+    // The loopback gateway authenticates local clients with its `client-token`
+    // state file; the helper convention (`gateway client-token --agent …`)
+    // resolves the same token for other agents. Attach it when present — an
+    // unreadable file leaves the request unauthenticated, as before.
+    let transport = match licoup_private_gateway::control::client_auth::default_token_path()
+        .and_then(|path| licoup_private_gateway::control::client_auth::read_token(&path))
+    {
+        Ok(token) => transport.with_client_token(token),
+        Err(_) => transport,
+    };
     let transport: Arc<dyn LlmTransport> = Arc::new(transport);
     let transcript_path = transcript_path(&args.session_id)?;
     let history = if args.resume {

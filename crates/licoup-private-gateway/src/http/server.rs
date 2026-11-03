@@ -122,7 +122,7 @@ fn worker(
 fn handle_connection(
     stream: &mut TcpStream,
     gateway: &CompiledGateway,
-    credentials: &GatewayCredentialSlot,
+    credentials: &Arc<GatewayCredentialSlot>,
     client_token: &SecretBytes,
     usage: &GatewayUsageRecorder,
 ) {
@@ -204,7 +204,6 @@ fn handle_connection(
             continue;
         }
         let user_agent = request.headers.get("user-agent").map(String::as_str);
-        let anthropic_beta = request.headers.get("anthropic-beta").map(String::as_str);
         let mut sink = HttpGatewayStreamSink {
             stream,
             started: false,
@@ -213,8 +212,6 @@ fn handle_connection(
             gateway,
             &request.path,
             &request.body,
-            user_agent,
-            anthropic_beta,
             credentials,
             &mut sink,
         );
@@ -277,16 +274,21 @@ fn valid_loopback_host(host: Option<&String>, local: Option<SocketAddr>) -> bool
 }
 
 fn request_is_authorized(headers: &BTreeMap<String, String>, client_token: &SecretBytes) -> bool {
-    let authorization = headers
-        .get("authorization")
-        .and_then(|value| value.strip_prefix("Bearer "));
-    let api_key = headers.get("x-api-key").map(String::as_str);
-    match (authorization, api_key) {
-        (Some(_), Some(_)) | (None, None) => false,
-        (Some(token), None) | (None, Some(token)) => {
-            crate::control::client_auth::token_matches(client_token, token)
-        }
-    }
+    // Clients may present either credential header — or both: Anthropic-shaped
+    // clients under an apiKeyHelper emit `Authorization` and `x-api-key`
+    // together. At least one must be present and every presented credential
+    // must match, which also forces a both-present pair to agree.
+    let presented = [
+        headers
+            .get("authorization")
+            .and_then(|value| value.strip_prefix("Bearer ")),
+        headers.get("x-api-key").map(String::as_str),
+    ];
+    presented.iter().flatten().count() > 0
+        && presented
+            .iter()
+            .flatten()
+            .all(|token| crate::control::client_auth::token_matches(client_token, token))
 }
 
 fn read_request(stream: &mut TcpStream, carry: &mut Vec<u8>) -> Result<Option<HttpRequest>, u16> {
@@ -348,14 +350,18 @@ fn parse_head(head: &str) -> Result<(String, String, BTreeMap<String, String>), 
     let mut lines = head.split("\r\n");
     let mut request_line = lines.next().ok_or(400u16)?.split_whitespace();
     let method = request_line.next().ok_or(400u16)?.to_owned();
-    let path = request_line.next().ok_or(400u16)?.to_owned();
+    let target = request_line.next().ok_or(400u16)?.to_owned();
     let version = request_line.next().ok_or(400u16)?;
-    if request_line.next().is_some()
-        || version != "HTTP/1.1"
-        || !path.starts_with('/')
-        || path.contains('?')
-        || path.contains('#')
-    {
+    // Real clients legitimately put queries on the request-target
+    // (`/v1/messages?beta=true`, `/models?client_version=…`). Routing and
+    // usage attribution match the path only, so the query — and any
+    // technically-invalid fragment — is stripped at the boundary.
+    let path = target
+        .split(['?', '#'])
+        .next()
+        .unwrap_or(&target)
+        .to_owned();
+    if request_line.next().is_some() || version != "HTTP/1.1" || !path.starts_with('/') {
         return Err(400);
     }
     let mut headers = BTreeMap::new();
@@ -509,7 +515,7 @@ mod tests {
             vec![
                 GatewayCredential::new(
                     uuid::Uuid::new_v4().to_string(),
-                    SecretBytes::try_from_string(secret.to_string()).unwrap(),
+                    credential_lease::SecretBytes::try_from_string(secret.to_string()).unwrap(),
                     None,
                 )
                 .unwrap(),
@@ -629,9 +635,19 @@ mod tests {
                 .unwrap();
         assert_eq!(path, "/v1/responses");
         assert_eq!(headers["content-length"], "2");
-        assert!(parse_head("POST /v1/responses?x=1 HTTP/1.1\r\nhost: x").is_err());
         assert!(parse_head("POST /v1/responses HTTP/1.1\r\nx: 1\r\nx: 2").is_err());
         assert!(parse_head("POST /v1/responses HTTP/1.1\r\n folded: x").is_err());
+    }
+
+    #[test]
+    fn parser_strips_query_and_fragment_from_the_request_target() {
+        let (_, path, _) =
+            parse_head("POST /v1/messages?beta=true HTTP/1.1\r\nhost: 127.0.0.1").unwrap();
+        assert_eq!(path, "/v1/messages");
+        let (_, path, _) =
+            parse_head("GET /models?client_version=0.166.0 HTTP/1.1\r\nhost: 127.0.0.1").unwrap();
+        assert_eq!(path, "/models");
+        assert!(parse_head("POST ?x=1 HTTP/1.1\r\nhost: x").is_err());
     }
 
     #[test]
@@ -640,17 +656,29 @@ mod tests {
     }
 
     #[test]
-    fn post_authentication_requires_one_exact_token() {
+    fn post_authentication_accepts_any_matching_credential_header() {
         let token = SecretBytes::try_from_string("a".repeat(43)).unwrap();
         let mut headers = BTreeMap::new();
         assert!(!request_is_authorized(&headers, &token));
         headers.insert("authorization".into(), format!("Bearer {}", "a".repeat(43)));
         assert!(request_is_authorized(&headers, &token));
         headers.insert("x-api-key".into(), "a".repeat(43));
-        assert!(!request_is_authorized(&headers, &token));
+        assert!(request_is_authorized(&headers, &token));
         headers.remove("authorization");
         assert!(request_is_authorized(&headers, &token));
         headers.insert("x-api-key".into(), "wrong".into());
+        assert!(!request_is_authorized(&headers, &token));
+    }
+
+    #[test]
+    fn post_authentication_rejects_disagreeing_credential_headers() {
+        let token = SecretBytes::try_from_string("a".repeat(43)).unwrap();
+        let mut headers = BTreeMap::new();
+        headers.insert("authorization".into(), format!("Bearer {}", "a".repeat(43)));
+        headers.insert("x-api-key".into(), "b".repeat(43));
+        assert!(!request_is_authorized(&headers, &token));
+        headers.insert("authorization".into(), format!("Bearer {}", "b".repeat(43)));
+        headers.insert("x-api-key".into(), "a".repeat(43));
         assert!(!request_is_authorized(&headers, &token));
     }
 
@@ -791,7 +819,8 @@ mod tests {
         });
         let mut client = TcpStream::connect(server_address).unwrap();
         let _ = client.set_read_timeout(Some(Duration::from_secs(15)));
-        let body = br#"{"model":"requested","stream":false}"#;
+        let body =
+            br#"{"model":"requested","messages":[{"role":"user","content":"hi"}],"stream":false}"#;
         let body_text = String::from_utf8_lossy(body);
         let token_text = "a".repeat(43);
         let post = |path: &str, close: bool| {
@@ -857,7 +886,8 @@ mod tests {
         });
         let mut client = TcpStream::connect(server_address).unwrap();
         let _ = client.set_read_timeout(Some(Duration::from_secs(15)));
-        let body = br#"{"model":"requested","stream":false}"#;
+        let body =
+            br#"{"model":"requested","messages":[{"role":"user","content":"hi"}],"stream":false}"#;
         let body_text = String::from_utf8_lossy(body);
         let token_text = "a".repeat(43);
         let request = |host: &str| {

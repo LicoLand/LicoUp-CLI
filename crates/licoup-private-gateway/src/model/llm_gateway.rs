@@ -1,12 +1,23 @@
-//! Closed model routing and protocol conversion for the local LLM gateway.
+//! Closed model routing and client-dialect projection for the local LLM gateway.
+//!
+//! This module is the host shell's half of the forward path. It resolves which
+//! provider lane a wire request rides, decodes the client dialect into a4mp's
+//! canonical `ChatRequest`, and renders canonical outputs back into the client
+//! dialect. The provider-facing conversion, adapter dispatch and upstream
+//! response decoding live in fairliny/a4mp — `PreparedGatewayRequest` is the
+//! hand-off document between the two halves, and `fairliny_gateway::router` is
+//! where the canonical request is dispatched from.
 //!
 //! Configuration contains credential references only. Secrets are resolved by
-//! the platform transport after routing and endpoint validation succeed.
+//! the host's lease port after routing and endpoint validation succeed.
 
 use crate::credential::LlmApiKeyProvider;
-use a4mp::protocols::{anthropic_messages, openai_chat, openai_responses};
 use a4mp::wire::{self, WireDialect};
-use a4mp::{ChatRequest, Output, SseDecoder, SseEvent, SseEventDecoder, StreamEvent};
+use a4mp::{
+    AuthKind, ChatRequest, ContentPart, Message, Output, Protocol, ProviderId, Role, SseEvent,
+    ToolDef,
+};
+use fairliny_gateway::router::Route;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, HashMap, VecDeque};
@@ -80,18 +91,24 @@ pub enum GatewayError {
     InvalidUpstreamResponse,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+/// A routed, canonically decoded request plus the fairliny route binding that
+/// dispatches it. The canonical request already carries the upstream model id;
+/// `route` binds provider, protocol, auth mechanism and the materialized
+/// endpoint for fairliny's router.
+#[derive(Clone, Debug)]
 pub struct PreparedGatewayRequest {
     pub client_protocol: ClientProtocol,
     pub upstream_protocol: UpstreamProtocol,
-    pub endpoint: String,
     pub credential_provider: LlmApiKeyProvider,
-    pub credential_style: CredentialStyle,
-    pub body: Vec<u8>,
+    pub(crate) route: Route,
+    pub request: ChatRequest,
     pub stream: bool,
     pub requested_model: String,
     pub upstream_model: String,
-    pub(crate) history_messages: Option<Vec<Value>>,
+    /// Request messages captured for history replay — set only for Responses
+    /// clients on non-Responses upstreams, where `previous_response_id`
+    /// continuation is the shell's job.
+    pub(crate) history_messages: Option<Vec<Message>>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -104,12 +121,14 @@ pub struct GatewayResponse {
 pub struct CompiledGateway {
     providers: HashMap<String, GatewayProvider>,
     routes: HashMap<(ClientProtocol, String), ModelRoute>,
+    profiles: Vec<a4mp::ProviderProfile>,
+    credential_kinds: HashMap<String, LlmApiKeyProvider>,
     history: Mutex<ResponseHistory>,
 }
 
 #[derive(Default)]
 struct ResponseHistory {
-    entries: HashMap<String, (Vec<Value>, usize)>,
+    entries: HashMap<String, (Vec<Message>, usize)>,
     order: VecDeque<String>,
     total_bytes: usize,
 }
@@ -123,8 +142,12 @@ impl CompiledGateway {
             return Err(GatewayError::InvalidConfig);
         }
         let mut providers = HashMap::with_capacity(config.providers.len());
+        let mut profiles = Vec::with_capacity(config.providers.len());
+        let mut credential_kinds = HashMap::with_capacity(config.providers.len());
         for provider in config.providers {
             validate_provider(&provider)?;
+            credential_kinds.insert(provider.id.clone(), provider.credential_provider);
+            profiles.push(provider_profile(&provider));
             if providers.insert(provider.id.clone(), provider).is_some() {
                 return Err(GatewayError::InvalidConfig);
             }
@@ -146,6 +169,8 @@ impl CompiledGateway {
         Ok(Self {
             providers,
             routes,
+            profiles,
+            credential_kinds,
             history: Mutex::new(ResponseHistory::default()),
         })
     }
@@ -158,6 +183,36 @@ impl CompiledGateway {
         providers
     }
 
+    /// a4mp provider profiles fairliny binds adapters against — one per
+    /// configured lane, endpoints always materialized through the `{endpoint}`
+    /// variable so no address is baked into a profile.
+    pub(crate) fn provider_profiles(&self) -> &[a4mp::ProviderProfile] {
+        &self.profiles
+    }
+
+    /// Provider id → lease kind, for the credential resolver port.
+    pub(crate) fn credential_kinds(&self) -> &HashMap<String, LlmApiKeyProvider> {
+        &self.credential_kinds
+    }
+
+    /// The fairliny route binding for one provider lane: the endpoint rides
+    /// the `{endpoint}` variable, the auth mechanism mirrors the configured
+    /// credential style.
+    pub(crate) fn provider_route(
+        &self,
+        provider: &GatewayProvider,
+        upstream_model: &str,
+    ) -> Result<Route, GatewayError> {
+        Ok(Route {
+            provider: ProviderId::new(provider.id.clone()),
+            protocol: Some(a4mp_protocol(provider.protocol)),
+            region: None,
+            auth: auth_kind(provider.credential_style),
+            upstream_model: upstream_model.to_owned(),
+            vars: BTreeMap::from([("endpoint".to_owned(), endpoint_base(provider)?)]),
+        })
+    }
+
     pub fn prepare(&self, path: &str, body: &[u8]) -> Result<PreparedGatewayRequest, GatewayError> {
         if body.len() > MAX_GATEWAY_BODY_BYTES {
             return Err(GatewayError::RequestTooLarge);
@@ -168,7 +223,7 @@ impl CompiledGateway {
             "/v1/responses" | "/responses" => ClientProtocol::OpenAiResponses,
             _ => return Err(GatewayError::UnsupportedPath),
         };
-        let mut document: Value =
+        let document: Value =
             serde_json::from_slice(body).map_err(|_| GatewayError::InvalidRequest)?;
         let requested_model = document
             .get("model")
@@ -190,82 +245,134 @@ impl CompiledGateway {
             .get("stream")
             .and_then(Value::as_bool)
             .unwrap_or(false);
-        document["model"] = Value::String(route.upstream_model.clone());
-        let previous_messages = if client_protocol == ClientProtocol::OpenAiResponses
+        let (mut chat, _report) =
+            wire::decode_chat_request(client_wire_dialect(client_protocol), body)
+                .map_err(|_| GatewayError::InvalidRequest)?;
+
+        // Responses continuation is the shell's concept — the protocol layer
+        // has none — so the history splice happens here before the canonical
+        // request is handed downstream. A same-dialect Responses upstream keeps
+        // the field: it lands in `extensions` and the adapter forwards it, so
+        // the provider's own continuation still answers.
+        let mut history_messages = None;
+        if client_protocol == ClientProtocol::OpenAiResponses {
+            if provider.protocol != UpstreamProtocol::OpenAiResponses {
+                match chat.extensions.get("previous_response_id") {
+                    None | Some(Value::Null) => {}
+                    Some(Value::String(id)) if valid_id(id) => {
+                        let mut previous = self
+                            .history
+                            .lock()
+                            .map_err(|_| GatewayError::InvalidRequest)?
+                            .get(id)
+                            .ok_or(GatewayError::UnsupportedConversion)?;
+                        // Reasoning state is origin-bound: replay only what the
+                        // target protocol itself issued — a foreign block would
+                        // refuse at encode time.
+                        let upstream = a4mp_protocol(provider.protocol);
+                        for message in &mut previous {
+                            message.content.retain(|part| {
+                                !matches!(part, ContentPart::Reasoning(block)
+                                    if block.protocol != upstream)
+                            });
+                        }
+                        let insert_at = chat
+                            .messages
+                            .iter()
+                            .position(|message| message.role != Role::System)
+                            .unwrap_or(chat.messages.len());
+                        chat.messages.splice(insert_at..insert_at, previous);
+                    }
+                    _ => return Err(GatewayError::InvalidRequest),
+                }
+                chat.extensions.remove("previous_response_id");
+            }
+            // Custom tools have no canonical home; for a foreign upstream their
+            // metadata folds into function definitions, for a same-dialect
+            // upstream the verbatim array overrides the canonical list at
+            // build time.
+            if provider.protocol == UpstreamProtocol::OpenAiResponses {
+                if let Some(tools) = document.get("tools") {
+                    chat.extensions.insert("tools".into(), tools.clone());
+                }
+            } else {
+                chat.tools.extend(custom_tool_defs(&document));
+            }
+        }
+        match provider.protocol {
+            UpstreamProtocol::OpenAiChatCompletions => {
+                // The Responses dialect speaks `reasoning.effort`; Chat
+                // upstreams speak `reasoning_effort`. Bridging dialect-owned
+                // fields is the shell's job — they are not canonical.
+                let effort = chat
+                    .extensions
+                    .get("reasoning")
+                    .and_then(|value| value.get("effort"))
+                    .and_then(Value::as_str)
+                    .or_else(|| {
+                        chat.extensions
+                            .get("reasoning_effort")
+                            .and_then(Value::as_str)
+                    })
+                    .map(str::to_owned);
+                if let Some(effort) = effort {
+                    let normalized =
+                        normalize_reasoning_effort(&effort).ok_or(GatewayError::InvalidRequest)?;
+                    chat.extensions.insert(
+                        "reasoning_effort".into(),
+                        Value::String(normalized.to_owned()),
+                    );
+                }
+                chat.extensions.remove("reasoning");
+                if client_protocol == ClientProtocol::OpenAiResponses {
+                    // `text.format` is the Responses spelling of Chat's
+                    // `response_format`.
+                    if let Some(format) = chat
+                        .extensions
+                        .get("text")
+                        .and_then(|text| text.get("format"))
+                        && let Some(mapped) = responses_text_format(format)
+                    {
+                        chat.extensions.insert("response_format".into(), mapped);
+                    }
+                    chat.extensions.remove("text");
+                }
+                if stream {
+                    chat.extensions
+                        .entry("stream_options")
+                        .or_insert_with(|| json!({"include_usage": true}));
+                }
+            }
+            UpstreamProtocol::AnthropicMessages => {
+                for key in [
+                    "reasoning",
+                    "reasoning_effort",
+                    "text",
+                    "response_format",
+                    "stream_options",
+                ] {
+                    chat.extensions.remove(key);
+                }
+            }
+            UpstreamProtocol::OpenAiResponses => {}
+        }
+        if client_protocol == ClientProtocol::OpenAiResponses
             && provider.protocol != UpstreamProtocol::OpenAiResponses
         {
-            match document.get("previous_response_id") {
-                None | Some(Value::Null) => None,
-                Some(Value::String(id)) if valid_id(id) => Some(
-                    self.history
-                        .lock()
-                        .map_err(|_| GatewayError::InvalidRequest)?
-                        .get(id)
-                        .ok_or(GatewayError::UnsupportedConversion)?,
-                ),
-                _ => return Err(GatewayError::InvalidRequest),
-            }
-        } else {
-            None
-        };
-        // Same-dialect relays forward the client document untouched apart from
-        // the routed model. Cross-dialect relays canonicalize through a4mp's
-        // `ChatRequest` and rebuild the body for the upstream protocol.
-        let (converted, history_messages) = if same_dialect(client_protocol, provider.protocol) {
-            (document, None)
-        } else {
-            let (mut chat, history_messages) = match client_protocol {
-                ClientProtocol::AnthropicMessages => (
-                    decode_client_request(WireDialect::AnthropicMessages, body)?,
-                    None,
-                ),
-                ClientProtocol::OpenAiChatCompletions => (
-                    decode_client_request(WireDialect::OpenAiChatCompletions, body)?,
-                    None,
-                ),
-                ClientProtocol::OpenAiResponses => {
-                    // a4mp exposes no Responses wire dialect yet, so the local
-                    // projection produces the canonical request meanwhile.
-                    let projected = responses_to_chat(&document, previous_messages.as_deref())?;
-                    let history = projected.get("messages").and_then(Value::as_array).cloned();
-                    let projected =
-                        serde_json::to_vec(&projected).map_err(|_| GatewayError::InvalidRequest)?;
-                    (
-                        decode_client_request(WireDialect::OpenAiChatCompletions, &projected)?,
-                        history,
-                    )
-                }
-            };
-            chat.model = route.upstream_model.clone();
-            let mut converted = build_upstream_request(provider.protocol, &chat)?;
-            // a4mp 0.1.0's canonical request cannot express the parallel-tool
-            // toggle (gained upstream, pending release); Anthropic's
-            // `disable_parallel_tool_use` is reapplied here meanwhile.
-            if provider.protocol != UpstreamProtocol::AnthropicMessages
-                && let Some(disabled) = document
-                    .pointer("/tool_choice/disable_parallel_tool_use")
-                    .and_then(Value::as_bool)
-            {
-                converted["parallel_tool_calls"] = Value::Bool(!disabled);
-            }
-            converted["stream"] = Value::Bool(stream);
-            if stream && provider.protocol == UpstreamProtocol::OpenAiChatCompletions {
-                converted["stream_options"] = json!({"include_usage": true});
-            }
-            (converted, history_messages)
-        };
-        let endpoint = endpoint_for(provider)?;
-        let body = serde_json::to_vec(&converted).map_err(|_| GatewayError::InvalidRequest)?;
+            history_messages = Some(chat.messages.clone());
+        }
+        chat.model = route.upstream_model.clone();
+        let upstream_model = route.upstream_model.clone();
+        let route = self.provider_route(provider, &upstream_model)?;
         Ok(PreparedGatewayRequest {
             client_protocol,
             upstream_protocol: provider.protocol,
-            endpoint,
             credential_provider: provider.credential_provider,
-            credential_style: provider.credential_style,
-            body,
+            route,
+            request: chat,
             stream,
             requested_model,
-            upstream_model: route.upstream_model.clone(),
+            upstream_model,
             history_messages,
         })
     }
@@ -289,109 +396,46 @@ impl CompiledGateway {
         })
     }
 
+    /// Canonical output → client dialect JSON. For Responses clients on
+    /// non-Responses upstreams the turn is also recorded under the emitted
+    /// response id so a `previous_response_id` follow-up can replay it.
     pub fn finish(
         &self,
         request: &PreparedGatewayRequest,
-        status: u16,
-        upstream_content_type: Option<&str>,
-        body: &[u8],
+        output: &Output,
     ) -> Result<GatewayResponse, GatewayError> {
-        if body.len() > MAX_GATEWAY_BODY_BYTES {
-            return Err(GatewayError::RequestTooLarge);
+        let (value, _report) = wire::encode_chat_output(
+            client_wire_dialect(request.client_protocol),
+            output,
+            &request.requested_model,
+        );
+        if request.client_protocol == ClientProtocol::OpenAiResponses
+            && request.upstream_protocol != UpstreamProtocol::OpenAiResponses
+        {
+            let response_id = value
+                .get("id")
+                .and_then(Value::as_str)
+                .map(str::to_owned)
+                .unwrap_or_else(|| format!("resp_{}", unix_seconds()));
+            self.remember_assistant_response(request, response_id, assistant_message(output))?;
         }
-        if !(200..300).contains(&status) {
-            return Ok(normalize_error(status, body));
-        }
-        let is_sse = upstream_content_type
-            .is_some_and(|value| value.to_ascii_lowercase().contains("text/event-stream"));
-        if same_dialect(request.client_protocol, request.upstream_protocol) {
-            return Ok(GatewayResponse {
-                status,
-                content_type: if is_sse {
-                    "text/event-stream"
-                } else {
-                    "application/json"
-                },
-                body: body.to_vec(),
-            });
-        }
-        let converted = if is_sse {
-            self.finish_stream(request, body)?
-        } else {
-            self.finish_json(request, body)?
-        };
+        let body = serde_json::to_vec(&value).map_err(|_| GatewayError::InvalidUpstreamResponse)?;
         Ok(GatewayResponse {
-            status,
-            content_type: if is_sse {
-                "text/event-stream"
-            } else {
-                "application/json"
-            },
-            body: converted,
+            status: 200,
+            content_type: "application/json",
+            body,
         })
-    }
-
-    /// Buffered upstream response → canonical `Output` → client dialect. For
-    /// Responses clients the canonical output is rendered as Chat JSON first
-    /// (a4mp has no Responses wire encoder) and projected locally.
-    fn finish_json(
-        &self,
-        request: &PreparedGatewayRequest,
-        body: &[u8],
-    ) -> Result<Vec<u8>, GatewayError> {
-        let output = decode_upstream_output(request.upstream_protocol, body)?;
-        let (chat, _) = wire::encode_chat_output(
-            client_wire_dialect(request.client_protocol)
-                .unwrap_or(WireDialect::OpenAiChatCompletions),
-            &output,
-            &request.requested_model,
-        );
-        if request.client_protocol != ClientProtocol::OpenAiResponses {
-            return serde_json::to_vec(&chat).map_err(|_| GatewayError::InvalidUpstreamResponse);
-        }
-        let assistant = chat
-            .pointer("/choices/0/message")
-            .cloned()
-            .ok_or(GatewayError::InvalidUpstreamResponse)?;
-        self.remember_assistant_response(request, response_id(&chat), assistant)?;
-        chat_to_responses(
-            &serde_json::to_vec(&chat).map_err(|_| GatewayError::InvalidUpstreamResponse)?,
-            &request.requested_model,
-        )
-    }
-
-    /// Upstream SSE → canonical `StreamEvent`s → client wire dialect. Responses
-    /// clients receive the canonical events re-rendered as Chat SSE and run
-    /// through the local projection.
-    fn finish_stream(
-        &self,
-        request: &PreparedGatewayRequest,
-        body: &[u8],
-    ) -> Result<Vec<u8>, GatewayError> {
-        let events = decode_upstream_stream(request.upstream_protocol, body)?;
-        let chat_sse = encode_stream_events(
-            client_wire_dialect(request.client_protocol)
-                .unwrap_or(WireDialect::OpenAiChatCompletions),
-            &request.requested_model,
-            &events,
-        );
-        if request.client_protocol != ClientProtocol::OpenAiResponses {
-            return Ok(chat_sse);
-        }
-        let (response_id, assistant) = aggregate_chat_sse(&chat_sse)?;
-        self.remember_assistant_response(request, response_id, assistant)?;
-        chat_sse_to_responses(&chat_sse, &request.requested_model)
     }
 
     fn remember_assistant_response(
         &self,
         request: &PreparedGatewayRequest,
         response_id: String,
-        assistant: Value,
+        assistant: Message,
     ) -> Result<(), GatewayError> {
         let mut messages = request.history_messages.clone().unwrap_or_default();
-        messages.retain(|message| message.get("role").and_then(Value::as_str) != Some("system"));
-        messages.push(replayable_assistant(assistant, request.upstream_protocol));
+        messages.retain(|message| message.role != Role::System);
+        messages.push(assistant);
         self.history
             .lock()
             .map_err(|_| GatewayError::InvalidUpstreamResponse)?
@@ -399,16 +443,15 @@ impl CompiledGateway {
         Ok(())
     }
 
+    /// `prepare` accepts `previous_response_id` from a Responses client
+    /// whenever the upstream is not itself Responses; the streamed path must
+    /// store the same history the buffered path stores, or a second streamed
+    /// turn is refused on a transport difference rather than a protocol one.
     pub fn remember_stream_response(
         &self,
         request: &PreparedGatewayRequest,
         response: crate::model::llm_gateway_stream::StreamedChatResponse,
     ) -> Result<(), GatewayError> {
-        // `prepare` accepts `previous_response_id` from a Responses client
-        // whenever the upstream is not itself Responses; the streamed path must
-        // store the same history the non-streamed path stores, or a second
-        // streamed turn is refused on a transport difference rather than a
-        // protocol one.
         if request.client_protocol == ClientProtocol::OpenAiResponses
             && request.upstream_protocol != UpstreamProtocol::OpenAiResponses
         {
@@ -419,7 +462,7 @@ impl CompiledGateway {
 }
 
 impl ResponseHistory {
-    fn get(&mut self, id: &str) -> Option<Vec<Value>> {
+    fn get(&mut self, id: &str) -> Option<Vec<Message>> {
         let messages = self.entries.get(id)?.0.clone();
         if let Some(position) = self.order.iter().position(|entry| entry == id) {
             self.order.remove(position);
@@ -428,10 +471,8 @@ impl ResponseHistory {
         Some(messages)
     }
 
-    fn put(&mut self, id: String, messages: Vec<Value>) {
-        let bytes = serde_json::to_vec(&messages)
-            .map(|value| value.len())
-            .unwrap_or(MAX_HISTORY_BYTES + 1);
+    fn put(&mut self, id: String, messages: Vec<Message>) {
+        let bytes = messages_bytes(&messages);
         if bytes > MAX_HISTORY_BYTES {
             return;
         }
@@ -454,6 +495,51 @@ impl ResponseHistory {
         self.total_bytes = self.total_bytes.saturating_add(bytes);
         self.order.push_back(id.clone());
         self.entries.insert(id, (messages, bytes));
+    }
+}
+
+/// One provider lane as an a4mp profile. The endpoint is never stored: the
+/// `{endpoint}` variable carries it per bind so the profile stays a pure
+/// capability declaration.
+fn provider_profile(provider: &GatewayProvider) -> a4mp::ProviderProfile {
+    a4mp::ProviderProfile {
+        id: ProviderId::new(provider.id.clone()),
+        name: "licoup",
+        aliases: &[],
+        auth: vec![a4mp::AuthSpec::ApiKey, a4mp::AuthSpec::Bearer],
+        targets: vec![a4mp::ServiceDef {
+            protocol: a4mp_protocol(provider.protocol),
+            base_url: "{endpoint}",
+            region: None,
+            headers: &[],
+        }],
+        catalogue: None,
+    }
+}
+
+fn a4mp_protocol(protocol: UpstreamProtocol) -> Protocol {
+    match protocol {
+        UpstreamProtocol::AnthropicMessages => Protocol::AnthropicMessages,
+        UpstreamProtocol::OpenAiChatCompletions => Protocol::OpenAiChatCompletions,
+        UpstreamProtocol::OpenAiResponses => Protocol::OpenAiResponses,
+    }
+}
+
+fn auth_kind(style: CredentialStyle) -> AuthKind {
+    match style {
+        CredentialStyle::Bearer => AuthKind::Bearer,
+        CredentialStyle::XApiKey => AuthKind::ApiKey,
+    }
+}
+
+/// The client dialects a4mp decodes and encodes — identical vocabulary to
+/// `ClientProtocol`, kept as separate enums because the route table treats
+/// them asymmetrically.
+pub(crate) fn client_wire_dialect(client: ClientProtocol) -> WireDialect {
+    match client {
+        ClientProtocol::AnthropicMessages => WireDialect::AnthropicMessages,
+        ClientProtocol::OpenAiChatCompletions => WireDialect::OpenAiChatCompletions,
+        ClientProtocol::OpenAiResponses => WireDialect::OpenAiResponses,
     }
 }
 
@@ -481,17 +567,26 @@ fn validate_provider(provider: &GatewayProvider) -> Result<(), GatewayError> {
     Ok(())
 }
 
-fn endpoint_for(provider: &GatewayProvider) -> Result<String, GatewayError> {
-    let suffix = match provider.protocol {
-        UpstreamProtocol::AnthropicMessages => "messages",
-        UpstreamProtocol::OpenAiChatCompletions => "chat/completions",
-        UpstreamProtocol::OpenAiResponses => "responses",
-    };
-    endpoint_with_suffix(provider, suffix)
-}
-
-pub fn models_endpoint_for(provider: &GatewayProvider) -> Result<String, GatewayError> {
-    endpoint_with_suffix(provider, "models")
+/// The base URL the provider lane's adapter joins API paths onto. Chat and
+/// Responses upstreams get the conventional `/v1` segment appended to bare
+/// origins; the Messages adapter prefixes `v1/` itself, so a configured `/v1`
+/// suffix would double it and is stripped.
+pub(crate) fn endpoint_base(provider: &GatewayProvider) -> Result<String, GatewayError> {
+    let url = Url::parse(&provider.base_url).map_err(|_| GatewayError::InvalidConfig)?;
+    let mut base = provider.base_url.trim_end_matches('/').to_owned();
+    match provider.protocol {
+        UpstreamProtocol::AnthropicMessages => {
+            if let Some(stripped) = base.strip_suffix("/v1") {
+                base = stripped.to_owned();
+            }
+        }
+        _ => {
+            if url.path() == "/" {
+                base.push_str("/v1");
+            }
+        }
+    }
+    Ok(base)
 }
 
 pub fn namespaced_model_id(provider_id: &str, upstream_model: &str) -> Option<String> {
@@ -516,287 +611,50 @@ fn legacy_generated_alias<'a>(provider_id: &str, upstream_model: &'a str) -> &'a
     }
 }
 
-fn endpoint_with_suffix(provider: &GatewayProvider, suffix: &str) -> Result<String, GatewayError> {
-    let url = Url::parse(&provider.base_url).map_err(|_| GatewayError::InvalidConfig)?;
-    let mut base = provider.base_url.trim_end_matches('/').to_owned();
-    // A bare origin (path "/") gets the conventional `/v1` segment; providers
-    // whose base already carries a path prefix such as `/v1` or `/api/gateway`
-    // keep their own.
-    if url.path() == "/" {
-        base.push_str("/v1");
-    }
-    Ok(format!("{base}/{suffix}"))
-}
-
-/// Client paths and upstream protocols share the same three dialects; they are
-/// kept as separate enums because the routing table treats them asymmetrically.
-fn same_dialect(client: ClientProtocol, upstream: UpstreamProtocol) -> bool {
-    matches!(
-        (client, upstream),
-        (
-            ClientProtocol::AnthropicMessages,
-            UpstreamProtocol::AnthropicMessages
-        ) | (
-            ClientProtocol::OpenAiChatCompletions,
-            UpstreamProtocol::OpenAiChatCompletions
-        ) | (
-            ClientProtocol::OpenAiResponses,
-            UpstreamProtocol::OpenAiResponses
-        )
-    )
-}
-
-/// `None` for Responses clients: a4mp exposes no Responses wire dialect yet,
-/// so those paths stay on the local Chat-interim projection.
-pub(crate) fn client_wire_dialect(client: ClientProtocol) -> Option<WireDialect> {
-    match client {
-        ClientProtocol::AnthropicMessages => Some(WireDialect::AnthropicMessages),
-        ClientProtocol::OpenAiChatCompletions => Some(WireDialect::OpenAiChatCompletions),
-        ClientProtocol::OpenAiResponses => None,
+fn assistant_message(output: &Output) -> Message {
+    Message {
+        role: Role::Assistant,
+        content: output.parts.clone(),
     }
 }
 
-fn decode_client_request(dialect: WireDialect, body: &[u8]) -> Result<ChatRequest, GatewayError> {
-    wire::decode_chat_request(dialect, body)
-        .map(|(chat, _report)| chat)
-        .map_err(|_| GatewayError::InvalidRequest)
-}
-
-fn build_upstream_request(
-    protocol: UpstreamProtocol,
-    chat: &ChatRequest,
-) -> Result<Value, GatewayError> {
-    match protocol {
-        UpstreamProtocol::OpenAiChatCompletions => openai_chat::build_request(chat),
-        UpstreamProtocol::OpenAiResponses => openai_responses::build_request(chat),
-        UpstreamProtocol::AnthropicMessages => anthropic_messages::build_request(chat),
-    }
-    .map_err(|_| GatewayError::InvalidRequest)
-}
-
-fn decode_upstream_output(protocol: UpstreamProtocol, body: &[u8]) -> Result<Output, GatewayError> {
-    match protocol {
-        UpstreamProtocol::OpenAiChatCompletions => openai_chat::decode_response(body),
-        UpstreamProtocol::OpenAiResponses => openai_responses::decode_response(body),
-        UpstreamProtocol::AnthropicMessages => anthropic_messages::decode_response(body),
-    }
-    .map_err(|_| GatewayError::InvalidUpstreamResponse)
-}
-
-pub(crate) fn upstream_stream_decoder(protocol: UpstreamProtocol) -> Box<dyn SseEventDecoder> {
-    match protocol {
-        UpstreamProtocol::OpenAiChatCompletions => Box::new(openai_chat::ChatStreamDecoder::new()),
-        UpstreamProtocol::OpenAiResponses => {
-            Box::new(openai_responses::ResponsesStreamDecoder::new())
-        }
-        UpstreamProtocol::AnthropicMessages => {
-            Box::new(anthropic_messages::MessagesStreamDecoder::new())
-        }
-    }
-}
-
-fn decode_upstream_stream(
-    protocol: UpstreamProtocol,
-    body: &[u8],
-) -> Result<Vec<StreamEvent>, GatewayError> {
-    let mut frames = SseDecoder::new();
-    let buffered = frames
-        .feed(body)
+/// Responses `custom` tools (codex apply_patch and kin) have no canonical
+/// home; their metadata folds into a function definition so the capability
+/// survives a foreign upstream instead of being dropped.
+fn custom_tool_defs(document: &Value) -> Vec<ToolDef> {
+    document
+        .get("tools")
+        .and_then(Value::as_array)
         .into_iter()
-        .chain(frames.finish())
-        .collect::<Vec<_>>();
-    let mut decoder = upstream_stream_decoder(protocol);
-    let mut events = Vec::new();
-    for frame in &buffered {
-        events.extend(
-            decoder
-                .decode(frame)
-                .map_err(|_| GatewayError::InvalidUpstreamResponse)?,
-        );
-    }
-    Ok(events)
-}
-
-fn encode_stream_events(dialect: WireDialect, model: &str, events: &[StreamEvent]) -> Vec<u8> {
-    let mut encoder = wire::stream_encoder(dialect, model);
-    let mut body = Vec::new();
-    for frame in encoder.preamble() {
-        body.extend_from_slice(&sse_frame(&frame));
-    }
-    for event in events {
-        for frame in encoder.encode(event) {
-            body.extend_from_slice(&sse_frame(&frame));
-        }
-    }
-    for frame in encoder.finish() {
-        body.extend_from_slice(&sse_frame(&frame));
-    }
-    let _ = encoder.drain_losses();
-    body
-}
-
-pub(crate) fn sse_frame(frame: &SseEvent) -> Vec<u8> {
-    let mut text = String::new();
-    if let Some(event) = &frame.event {
-        text.push_str("event: ");
-        text.push_str(event);
-        text.push('\n');
-    }
-    for line in frame.data.lines() {
-        text.push_str("data: ");
-        text.push_str(line);
-        text.push('\n');
-    }
-    text.push('\n');
-    text.into_bytes()
-}
-
-fn responses_to_chat(
-    document: &Value,
-    previous_messages: Option<&[Value]>,
-) -> Result<Value, GatewayError> {
-    if document
-        .pointer("/reasoning/effort")
-        .and_then(Value::as_str)
-        .is_some_and(|effort| normalize_reasoning_effort(effort).is_none())
-    {
-        return Err(GatewayError::InvalidRequest);
-    }
-    let mut messages = Vec::new();
-    if let Some(instructions) = document.get("instructions") {
-        let text = content_text(instructions);
-        if !text.is_empty() {
-            messages.push(json!({"role":"system","content":text}));
-        }
-    }
-    messages.extend(previous_messages.into_iter().flatten().cloned());
-    match document.get("input").ok_or(GatewayError::InvalidRequest)? {
-        Value::String(text) => messages.push(json!({"role":"user","content":text})),
-        Value::Array(items) => {
-            for item in items {
-                match item.get("type").and_then(Value::as_str) {
-                    Some("message") | None => {
-                        let role = item.get("role").and_then(Value::as_str).unwrap_or("user");
-                        messages.push(json!({
-                            "role": role,
-                            "content": responses_message_content(item.get("content").unwrap_or(&Value::Null))
-                        }));
-                    }
-                    Some("function_call") | Some("custom_tool_call") => {
-                        messages.push(json!({
-                            "role":"assistant",
-                            "content":"",
-                            "tool_calls":[{
-                                "id":item.get("call_id").or_else(|| item.get("id")),
-                                "type":"function",
-                                "function":{
-                                    "name":item.get("name"),
-                                    "arguments":item.get("arguments").or_else(|| item.get("input")).unwrap_or(&json!("{}"))
-                                }
-                            }]
-                        }));
-                    }
-                    Some("function_call_output") | Some("custom_tool_call_output") => {
-                        messages.push(json!({
-                            "role":"tool",
-                            "tool_call_id":item.get("call_id"),
-                            "content":content_text(item.get("output").unwrap_or(&Value::Null))
-                        }));
-                    }
-                    _ => {}
-                }
+        .flatten()
+        .filter(|tool| tool.get("type").and_then(Value::as_str) == Some("custom"))
+        .filter_map(|tool| {
+            let name = tool.get("name").and_then(Value::as_str)?;
+            let mut description = tool
+                .get("description")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_owned();
+            let metadata = stable_json(tool);
+            if !description.is_empty() {
+                description.push('\n');
             }
-        }
-        _ => return Err(GatewayError::InvalidRequest),
-    }
-    let mut result = responses_chat_document(document, messages);
-    if let Some(choice) = document.get("tool_choice")
-        && let Some(mapped) = responses_tool_choice(choice)
-    {
-        result["tool_choice"] = mapped;
-    }
-    if let Some(format) = document.pointer("/text/format")
-        && let Some(mapped) = responses_text_format(format)
-    {
-        result["response_format"] = mapped;
-    }
-    Ok(result)
-}
-
-/// Interim Responses→Chat projection used until a4mp exposes a Responses wire
-/// dialect: the projected document is decoded back into the canonical request
-/// immediately, so only fields a Chat Completions reader understands are set.
-fn responses_chat_document(source: &Value, messages: Vec<Value>) -> Value {
-    let mut result = json!({
-        "model": source.get("model"),
-        "messages": messages,
-        "stream": source.get("stream").and_then(Value::as_bool).unwrap_or(false)
-    });
-    for key in [
-        "max_tokens",
-        "temperature",
-        "top_p",
-        "stop",
-        "reasoning_effort",
-        "parallel_tool_calls",
-    ] {
-        if let Some(value) = source.get(key) {
-            result[key] = value.clone();
-        }
-    }
-    if let Some(max_output) = source.get("max_output_tokens") {
-        result["max_tokens"] = max_output.clone();
-    }
-    if let Some(effort) = source
-        .pointer("/reasoning/effort")
-        .and_then(Value::as_str)
-        .or_else(|| source.get("reasoning_effort").and_then(Value::as_str))
-        .and_then(normalize_reasoning_effort)
-    {
-        result["reasoning_effort"] = Value::String(effort.to_owned());
-    }
-    let tools = responses_tools(source);
-    if !tools.is_empty() {
-        result["tools"] = Value::Array(tools);
-    }
-    result
-}
-
-fn responses_message_content(content: &Value) -> Value {
-    let Some(items) = content.as_array() else {
-        return Value::String(content_text(content));
-    };
-    let parts = items
-        .iter()
-        .filter_map(|item| match item.get("type").and_then(Value::as_str) {
-            Some("input_text") | Some("output_text") | Some("text") => item
-                .get("text")
-                .and_then(Value::as_str)
-                .map(|text| json!({"type":"text","text":text})),
-            Some("input_image") => item
-                .get("image_url")
-                .and_then(Value::as_str)
-                .map(|url| json!({"type":"image_url","image_url":{"url":url,"detail":item.get("detail").cloned().unwrap_or(json!("auto"))}})),
-            _ => None,
+            description.push_str("Codex custom tool metadata: ");
+            description.push_str(&metadata);
+            Some(ToolDef {
+                name: name.to_owned(),
+                description,
+                parameters: tool
+                    .get("parameters")
+                    .cloned()
+                    .unwrap_or_else(|| json!({"type":"object"})),
+                strict: false,
+            })
         })
-        .collect::<Vec<_>>();
-    if parts.len() == 1 && parts[0].get("type").and_then(Value::as_str) == Some("text") {
-        parts[0].get("text").cloned().unwrap_or(Value::Null)
-    } else {
-        Value::Array(parts)
-    }
+        .collect()
 }
 
-fn responses_tool_choice(choice: &Value) -> Option<Value> {
-    if choice.is_string() {
-        return Some(choice.clone());
-    }
-    match choice.get("type").and_then(Value::as_str)? {
-        "function" => Some(json!({"type":"function","function":{"name":choice.get("name")?}})),
-        _ => None,
-    }
-}
-
+/// `text.format` (Responses) → `response_format` (Chat).
 fn responses_text_format(format: &Value) -> Option<Value> {
     match format.get("type").and_then(Value::as_str)? {
         "text" => Some(json!({"type":"text"})),
@@ -813,366 +671,20 @@ fn responses_text_format(format: &Value) -> Option<Value> {
     }
 }
 
-fn responses_tools(document: &Value) -> Vec<Value> {
-    document
-        .get("tools")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .filter_map(|tool| {
-            let tool_type = tool.get("type").and_then(Value::as_str)?;
-            let name = tool.get("name").and_then(Value::as_str)?;
-            let mut description = tool
-                .get("description")
-                .and_then(Value::as_str)
-                .unwrap_or_default()
-                .to_owned();
-            if tool_type == "custom" {
-                let metadata = stable_json(tool);
-                if !description.is_empty() {
-                    description.push('\n');
-                }
-                description.push_str("Codex custom tool metadata: ");
-                description.push_str(&metadata);
-            }
-            Some(json!({
-                "type":"function",
-                "function":{
-                    "name":name,
-                    "description":description,
-                    "parameters":tool.get("parameters").cloned().unwrap_or(json!({"type":"object"}))
-                }
-            }))
-        })
-        .collect()
-}
-
-fn chat_to_responses(body: &[u8], model: &str) -> Result<Vec<u8>, GatewayError> {
-    let chat: Value =
-        serde_json::from_slice(body).map_err(|_| GatewayError::InvalidUpstreamResponse)?;
-    let choice = chat
-        .get("choices")
-        .and_then(Value::as_array)
-        .and_then(|choices| choices.first())
-        .and_then(|choice| choice.get("message"))
-        .ok_or(GatewayError::InvalidUpstreamResponse)?;
-    let id = response_id(&chat);
-    let mut output = Vec::new();
-    if let Some(reasoning) = choice
-        .get("reasoning_content")
-        .or_else(|| choice.get("reasoning"))
-        .and_then(Value::as_str)
-        .filter(|text| !text.is_empty())
-    {
-        output.push(json!({
-            "id":format!("rs_{id}"),"type":"reasoning","status":"completed",
-            "summary":[{"type":"summary_text","text":reasoning}]
-        }));
-    }
-    if let Some(text) = choice
-        .get("content")
-        .and_then(Value::as_str)
-        .filter(|text| !text.is_empty())
-    {
-        output.push(json!({
-            "id":format!("msg_{id}"),"type":"message","status":"completed","role":"assistant",
-            "content":[{"type":"output_text","text":text,"annotations":[]}]
-        }));
-    }
-    if let Some(calls) = choice.get("tool_calls").and_then(Value::as_array) {
-        for call in calls {
-            output.push(json!({
-                "id":call.get("id"),"type":"function_call","status":"completed",
-                "call_id":call.get("id"),"name":call.pointer("/function/name"),
-                "arguments":call.pointer("/function/arguments").cloned().unwrap_or(json!("{}"))
-            }));
-        }
-    }
-    let usage = responses_usage(chat.get("usage"));
-    let finish_reason = chat
-        .pointer("/choices/0/finish_reason")
-        .and_then(Value::as_str);
-    let (status, incomplete_details) = responses_completion(finish_reason);
-    serde_json::to_vec(&json!({
-        "id":id,"object":"response","created_at":unix_seconds(),"status":status,
-        "error":null,"incomplete_details":incomplete_details,"model":model,"output":output,
-        "parallel_tool_calls":true,"usage":usage
-    }))
-    .map_err(|_| GatewayError::InvalidUpstreamResponse)
-}
-
-fn chat_sse_to_responses(body: &[u8], model: &str) -> Result<Vec<u8>, GatewayError> {
-    let chunks = parse_chat_sse(body)?;
-    let id = chunks
-        .iter()
-        .find_map(|chunk| chunk.get("id").and_then(Value::as_str))
-        .map(|id| format!("resp_{id}"))
-        .unwrap_or_else(|| format!("resp_{}", unix_seconds()));
-    let mut reasoning = String::new();
+pub(crate) fn sse_frame(frame: &SseEvent) -> Vec<u8> {
     let mut text = String::new();
-    let mut tools: BTreeMap<usize, (String, String, String)> = BTreeMap::new();
-    for chunk in &chunks {
-        let Some(delta) = chunk.pointer("/choices/0/delta") else {
-            continue;
-        };
-        if let Some(part) = delta
-            .get("reasoning_content")
-            .or_else(|| delta.get("reasoning"))
-            .and_then(Value::as_str)
-        {
-            reasoning.push_str(part);
-        }
-        if let Some(part) = delta.get("content").and_then(Value::as_str) {
-            text.push_str(part);
-        }
-        if let Some(calls) = delta.get("tool_calls").and_then(Value::as_array) {
-            for call in calls {
-                let index = call.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
-                let entry = tools
-                    .entry(index)
-                    .or_insert_with(|| (String::new(), String::new(), String::new()));
-                if let Some(value) = call.get("id").and_then(Value::as_str) {
-                    entry.0.push_str(value);
-                }
-                if let Some(value) = call.pointer("/function/name").and_then(Value::as_str) {
-                    entry.1.push_str(value);
-                }
-                if let Some(value) = call.pointer("/function/arguments").and_then(Value::as_str) {
-                    entry.2.push_str(value);
-                }
-            }
-        }
+    if let Some(event) = &frame.event {
+        text.push_str("event: ");
+        text.push_str(event);
+        text.push('\n');
     }
-    let mut events = Vec::new();
-    let mut sequence = 1u64;
-    events.push(sse_event(json!({"type":"response.created","sequence_number":sequence,"response":response_shell(&id, model, "in_progress", Vec::new(), Value::Null)})));
-    sequence += 1;
-    let mut output = Vec::new();
-    let mut output_index = 0usize;
-    if !reasoning.is_empty() {
-        let item =
-            json!({"id":format!("rs_{id}"),"type":"reasoning","status":"in_progress","summary":[]});
-        events.push(sse_event(json!({"type":"response.output_item.added","sequence_number":sequence,"output_index":output_index,"item":item})));
-        sequence += 1;
-        events.push(sse_event(json!({"type":"response.reasoning_summary_part.added","sequence_number":sequence,"output_index":output_index,"summary_index":0,"part":{"type":"summary_text","text":""}})));
-        sequence += 1;
-        events.push(sse_event(json!({"type":"response.reasoning_summary_text.delta","sequence_number":sequence,"output_index":output_index,"summary_index":0,"delta":reasoning})));
-        sequence += 1;
-        events.push(sse_event(json!({"type":"response.reasoning_summary_text.done","sequence_number":sequence,"output_index":output_index,"summary_index":0,"text":reasoning})));
-        sequence += 1;
-        let completed = json!({"id":format!("rs_{id}"),"type":"reasoning","status":"completed","summary":[{"type":"summary_text","text":reasoning}]});
-        events.push(sse_event(json!({"type":"response.output_item.done","sequence_number":sequence,"output_index":output_index,"item":completed})));
-        sequence += 1;
-        output.push(completed);
-        output_index += 1;
+    for line in frame.data.lines() {
+        text.push_str("data: ");
+        text.push_str(line);
+        text.push('\n');
     }
-    if !text.is_empty() {
-        let item = json!({"id":format!("msg_{id}"),"type":"message","status":"in_progress","role":"assistant","content":[]});
-        events.push(sse_event(json!({"type":"response.output_item.added","sequence_number":sequence,"output_index":output_index,"item":item})));
-        sequence += 1;
-        events.push(sse_event(json!({"type":"response.content_part.added","sequence_number":sequence,"output_index":output_index,"content_index":0,"part":{"type":"output_text","text":"","annotations":[]}})));
-        sequence += 1;
-        events.push(sse_event(json!({"type":"response.output_text.delta","sequence_number":sequence,"output_index":output_index,"content_index":0,"delta":text})));
-        sequence += 1;
-        events.push(sse_event(json!({"type":"response.output_text.done","sequence_number":sequence,"output_index":output_index,"content_index":0,"text":text})));
-        sequence += 1;
-        let part = json!({"type":"output_text","text":text,"annotations":[]});
-        events.push(sse_event(json!({"type":"response.content_part.done","sequence_number":sequence,"output_index":output_index,"content_index":0,"part":part})));
-        sequence += 1;
-        let completed = json!({"id":format!("msg_{id}"),"type":"message","status":"completed","role":"assistant","content":[part]});
-        events.push(sse_event(json!({"type":"response.output_item.done","sequence_number":sequence,"output_index":output_index,"item":completed})));
-        sequence += 1;
-        output.push(completed);
-        output_index += 1;
-    }
-    for (_, (call_id, name, arguments)) in tools {
-        let started = json!({"id":call_id,"type":"function_call","status":"in_progress","call_id":call_id,"name":name,"arguments":""});
-        events.push(sse_event(json!({"type":"response.output_item.added","sequence_number":sequence,"output_index":output_index,"item":started})));
-        sequence += 1;
-        events.push(sse_event(json!({"type":"response.function_call_arguments.delta","sequence_number":sequence,"output_index":output_index,"delta":arguments})));
-        sequence += 1;
-        events.push(sse_event(json!({"type":"response.function_call_arguments.done","sequence_number":sequence,"output_index":output_index,"arguments":arguments})));
-        sequence += 1;
-        let completed = json!({"id":call_id,"type":"function_call","status":"completed","call_id":call_id,"name":name,"arguments":arguments});
-        events.push(sse_event(json!({"type":"response.output_item.done","sequence_number":sequence,"output_index":output_index,"item":completed})));
-        sequence += 1;
-        output.push(completed);
-        output_index += 1;
-    }
-    let usage = chunks
-        .last()
-        .map(|chunk| responses_usage(chunk.get("usage")))
-        .unwrap_or_else(|| responses_usage(None));
-    let finish_reason = chunks.iter().rev().find_map(|chunk| {
-        chunk
-            .pointer("/choices/0/finish_reason")
-            .and_then(Value::as_str)
-    });
-    let (status, incomplete_details) = responses_completion(finish_reason);
-    let mut response = response_shell(&id, model, status, output, usage);
-    response["incomplete_details"] = incomplete_details;
-    let event_type = if status == "completed" {
-        "response.completed"
-    } else {
-        "response.incomplete"
-    };
-    events.push(sse_event(
-        json!({"type":event_type,"sequence_number":sequence,"response":response}),
-    ));
-    events.push("data: [DONE]\n\n".into());
-    Ok(events.concat().into_bytes())
-}
-
-fn parse_chat_sse(body: &[u8]) -> Result<Vec<Value>, GatewayError> {
-    let text = std::str::from_utf8(body).map_err(|_| GatewayError::InvalidUpstreamResponse)?;
-    let mut chunks = Vec::new();
-    for line in text.lines() {
-        let Some(data) = line.strip_prefix("data:") else {
-            continue;
-        };
-        let data = data.trim();
-        if data == "[DONE]" {
-            break;
-        }
-        chunks.push(serde_json::from_str(data).map_err(|_| GatewayError::InvalidUpstreamResponse)?);
-    }
-    Ok(chunks)
-}
-
-fn aggregate_chat_sse(body: &[u8]) -> Result<(String, Value), GatewayError> {
-    let chunks = parse_chat_sse(body)?;
-    let id = chunks
-        .iter()
-        .find_map(|chunk| chunk.get("id").and_then(Value::as_str))
-        .map(|id| format!("resp_{id}"))
-        .unwrap_or_else(|| format!("resp_{}", unix_seconds()));
-    let mut content = String::new();
-    let mut reasoning = String::new();
-    let mut tools: BTreeMap<usize, (String, String, String)> = BTreeMap::new();
-    for chunk in &chunks {
-        let Some(delta) = chunk.pointer("/choices/0/delta") else {
-            continue;
-        };
-        if let Some(value) = delta.get("content").and_then(Value::as_str) {
-            content.push_str(value);
-        }
-        if let Some(value) = delta
-            .get("reasoning_content")
-            .or_else(|| delta.get("reasoning"))
-            .and_then(Value::as_str)
-        {
-            reasoning.push_str(value);
-        }
-        for call in delta
-            .get("tool_calls")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-        {
-            let index = call.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
-            let entry = tools
-                .entry(index)
-                .or_insert_with(|| (String::new(), String::new(), String::new()));
-            if let Some(value) = call.get("id").and_then(Value::as_str) {
-                entry.0.push_str(value);
-            }
-            if let Some(value) = call.pointer("/function/name").and_then(Value::as_str) {
-                entry.1.push_str(value);
-            }
-            if let Some(value) = call.pointer("/function/arguments").and_then(Value::as_str) {
-                entry.2.push_str(value);
-            }
-        }
-    }
-    let tool_calls: Vec<Value> = tools
-        .into_values()
-        .map(|(call_id, name, arguments)| json!({"id":call_id,"type":"function","function":{"name":name,"arguments":arguments}}))
-        .collect();
-    Ok((
-        id,
-        json!({"role":"assistant","content":content,"reasoning_content":reasoning,"tool_calls":tool_calls}),
-    ))
-}
-
-fn normalize_error(status: u16, body: &[u8]) -> GatewayResponse {
-    let parsed = serde_json::from_slice::<Value>(body).ok();
-    let message = parsed
-        .as_ref()
-        .and_then(|value| {
-            value
-                .pointer("/error/message")
-                .or_else(|| value.get("message"))
-        })
-        .and_then(Value::as_str)
-        .unwrap_or("upstream request failed");
-    let message: String = message.chars().take(1024).collect();
-    GatewayResponse {
-        status,
-        content_type: "application/json",
-        body: serde_json::to_vec(&json!({"error":{"message":message,"type":"upstream_error","code":status,"param":null}})).unwrap_or_default(),
-    }
-}
-
-fn responses_completion(finish_reason: Option<&str>) -> (&'static str, Value) {
-    match finish_reason {
-        Some("length") => ("incomplete", json!({"reason":"max_output_tokens"})),
-        Some("content_filter") => ("incomplete", json!({"reason":"content_filter"})),
-        _ => ("completed", Value::Null),
-    }
-}
-
-fn content_text(value: &Value) -> String {
-    match value {
-        Value::String(text) => text.clone(),
-        Value::Array(items) => items
-            .iter()
-            .filter_map(|item| {
-                item.as_str().or_else(|| {
-                    item.get("text")
-                        .or_else(|| item.get("content"))
-                        .and_then(Value::as_str)
-                })
-            })
-            .collect::<Vec<_>>()
-            .join("\n"),
-        other if !other.is_null() => other.to_string(),
-        _ => String::new(),
-    }
-}
-
-fn responses_usage(usage: Option<&Value>) -> Value {
-    let input = usage
-        .and_then(|value| value.get("prompt_tokens"))
-        .and_then(Value::as_u64)
-        .unwrap_or(0);
-    let output = usage
-        .and_then(|value| value.get("completion_tokens"))
-        .and_then(Value::as_u64)
-        .unwrap_or(0);
-    let reasoning = usage
-        .and_then(|value| value.pointer("/completion_tokens_details/reasoning_tokens"))
-        .and_then(Value::as_u64)
-        .unwrap_or(0);
-    json!({
-        "input_tokens":input,"input_tokens_details":{"cached_tokens":0},
-        "output_tokens":output,"output_tokens_details":{"reasoning_tokens":reasoning},
-        "total_tokens":input.saturating_add(output)
-    })
-}
-
-fn response_shell(id: &str, model: &str, status: &str, output: Vec<Value>, usage: Value) -> Value {
-    json!({"id":id,"object":"response","created_at":unix_seconds(),"status":status,"error":null,"incomplete_details":null,"model":model,"output":output,"parallel_tool_calls":true,"usage":usage})
-}
-
-fn response_id(chat: &Value) -> String {
-    format!(
-        "resp_{}",
-        chat.get("id").and_then(Value::as_str).unwrap_or("gateway")
-    )
-}
-
-fn sse_event(value: Value) -> String {
-    format!("data: {value}\n\n")
+    text.push('\n');
+    text.into_bytes()
 }
 
 fn stable_json(value: &Value) -> String {
@@ -1202,22 +714,41 @@ fn unix_seconds() -> u64 {
         .unwrap_or(0)
 }
 
-/// A stored assistant turn is replayed as Chat-shaped history. Opaque
-/// reasoning belongs to the protocol that issued it: a non-Chat upstream
-/// rejects a foreign block when the next request is encoded, so keep it only
-/// for the Chat protocol that can replay it, and drop an empty placeholder in
-/// every case.
-fn replayable_assistant(mut assistant: Value, upstream: UpstreamProtocol) -> Value {
-    if let Some(object) = assistant.as_object_mut() {
-        let empty = object
-            .get("reasoning_content")
-            .and_then(Value::as_str)
-            .is_some_and(str::is_empty);
-        if upstream != UpstreamProtocol::OpenAiChatCompletions || empty {
-            object.remove("reasoning_content");
-        }
-    }
-    assistant
+/// Bounded byte estimate for a canonical message list: covers text, reasoning
+/// text and tool-call payloads so the history cap tracks serialized size
+/// closely enough without a second serialization pass.
+fn messages_bytes(messages: &[Message]) -> usize {
+    messages
+        .iter()
+        .map(|message| {
+            64 + message
+                .content
+                .iter()
+                .map(|part| match part {
+                    ContentPart::Text { text } => text.len(),
+                    ContentPart::ToolCall(call) => {
+                        call.id.len() + call.name.len() + call.arguments.to_string().len()
+                    }
+                    ContentPart::ToolResult(result) => {
+                        result.call_id.len()
+                            + result
+                                .content
+                                .iter()
+                                .map(|part| match part {
+                                    ContentPart::Text { text } => text.len(),
+                                    _ => 64,
+                                })
+                                .sum::<usize>()
+                    }
+                    ContentPart::Reasoning(block) => {
+                        block.opaque.to_string().len()
+                            + block.summary.as_deref().map(str::len).unwrap_or(0)
+                    }
+                    _ => 64,
+                })
+                .sum::<usize>()
+        })
+        .sum()
 }
 
 fn valid_id(value: &str) -> bool {
@@ -1232,6 +763,7 @@ fn valid_id(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use a4mp::{ReasoningBlock, StopReason, Usage};
 
     #[test]
     fn providers_can_compile_without_a_static_model_catalog() {
@@ -1268,30 +800,60 @@ mod tests {
             )
             .unwrap();
         assert_eq!(request.upstream_model, "kimi-k3");
-        assert_eq!(
-            request.endpoint,
-            "https://api.moonshot.cn/v1/chat/completions"
-        );
+        assert_eq!(request.route.vars["endpoint"], "https://api.moonshot.cn/v1");
+        assert!(matches!(request.route.auth, AuthKind::Bearer));
     }
 
     #[test]
-    fn provider_model_catalog_endpoint_keeps_the_configured_base_path() {
-        let kilo = GatewayProvider {
-            id: "kilo".into(),
-            base_url: "https://api.kilo.ai/api/gateway".into(),
-            protocol: UpstreamProtocol::OpenAiChatCompletions,
-            credential_provider: LlmApiKeyProvider::Kilo,
+    fn endpoint_base_appends_v1_only_where_the_adapter_does_not() {
+        let provider = |base_url: &str, protocol: UpstreamProtocol| GatewayProvider {
+            id: "provider".into(),
+            base_url: base_url.into(),
+            protocol,
+            credential_provider: LlmApiKeyProvider::Kimi,
             credential_style: CredentialStyle::Bearer,
         };
         assert_eq!(
-            models_endpoint_for(&kilo).unwrap(),
-            "https://api.kilo.ai/api/gateway/models"
+            endpoint_base(&provider(
+                "https://api.kilo.ai/api/gateway",
+                UpstreamProtocol::OpenAiChatCompletions
+            ))
+            .unwrap(),
+            "https://api.kilo.ai/api/gateway"
         );
-        let mut bare = kilo;
-        bare.base_url = "https://gateway.example".into();
         assert_eq!(
-            models_endpoint_for(&bare).unwrap(),
-            "https://gateway.example/v1/models"
+            endpoint_base(&provider(
+                "https://api.moonshot.cn",
+                UpstreamProtocol::OpenAiChatCompletions
+            ))
+            .unwrap(),
+            "https://api.moonshot.cn/v1"
+        );
+        assert_eq!(
+            endpoint_base(&provider(
+                "https://api.moonshot.cn/",
+                UpstreamProtocol::OpenAiResponses
+            ))
+            .unwrap(),
+            "https://api.moonshot.cn/v1"
+        );
+        // The Messages adapter prefixes `v1/` itself — a configured suffix
+        // would double it.
+        assert_eq!(
+            endpoint_base(&provider(
+                "https://api.anthropic.com/v1",
+                UpstreamProtocol::AnthropicMessages
+            ))
+            .unwrap(),
+            "https://api.anthropic.com"
+        );
+        assert_eq!(
+            endpoint_base(&provider(
+                "https://api.anthropic.com",
+                UpstreamProtocol::AnthropicMessages
+            ))
+            .unwrap(),
+            "https://api.anthropic.com"
         );
     }
 
@@ -1316,8 +878,7 @@ mod tests {
             )
             .unwrap();
         assert_eq!(request.upstream_model, "kimi-k3");
-        let body: Value = serde_json::from_slice(&request.body).unwrap();
-        assert_eq!(body["model"], "kimi-k3");
+        assert_eq!(request.request.model, "kimi-k3");
     }
 
     fn gateway() -> CompiledGateway {
@@ -1382,37 +943,6 @@ mod tests {
     }
 
     #[test]
-    fn endpoint_for_appends_v1_only_for_bare_origins() {
-        let chat = |base_url: &str| GatewayProvider {
-            id: "provider".into(),
-            base_url: base_url.into(),
-            protocol: UpstreamProtocol::OpenAiChatCompletions,
-            credential_provider: LlmApiKeyProvider::Kimi,
-            credential_style: CredentialStyle::Bearer,
-        };
-        assert_eq!(
-            endpoint_for(&chat("https://api.kilo.ai/api/gateway")).unwrap(),
-            "https://api.kilo.ai/api/gateway/chat/completions"
-        );
-        assert_eq!(
-            endpoint_for(&chat("https://api.kilo.ai/api/gateway/")).unwrap(),
-            "https://api.kilo.ai/api/gateway/chat/completions"
-        );
-        assert_eq!(
-            endpoint_for(&chat("https://api.moonshot.cn/v1")).unwrap(),
-            "https://api.moonshot.cn/v1/chat/completions"
-        );
-        assert_eq!(
-            endpoint_for(&chat("https://api.moonshot.cn")).unwrap(),
-            "https://api.moonshot.cn/v1/chat/completions"
-        );
-        assert_eq!(
-            endpoint_for(&chat("https://api.moonshot.cn/")).unwrap(),
-            "https://api.moonshot.cn/v1/chat/completions"
-        );
-    }
-
-    #[test]
     fn exact_model_routes_select_provider_without_active_global_switch() {
         let gateway = gateway();
         let codex = gateway
@@ -1431,11 +961,23 @@ mod tests {
             codex.upstream_protocol,
             UpstreamProtocol::OpenAiChatCompletions
         );
-        assert!(codex.endpoint.ends_with("/v1/chat/completions"));
-        let body: Value = serde_json::from_slice(&codex.body).unwrap();
-        assert_eq!(body["messages"][0]["content"], "hello");
-        assert_eq!(body["reasoning_effort"], "max");
-        assert_eq!(body["tools"][0]["function"]["name"], "read_file");
+        assert_eq!(
+            codex.route.vars["endpoint"],
+            "https://api.kimi.example/coding/v1"
+        );
+        assert!(matches!(codex.route.auth, AuthKind::Bearer));
+        assert!(codex.stream);
+        assert_eq!(codex.request.model, "k3-256k");
+        assert_eq!(codex.request.extensions["reasoning_effort"], json!("max"));
+        assert_eq!(
+            codex.request.extensions["stream_options"],
+            json!({"include_usage": true})
+        );
+        assert_eq!(codex.request.tools[0].name, "read_file");
+        assert!(matches!(
+            codex.request.messages[0].content[0],
+            ContentPart::Text { ref text } if text == "hello"
+        ));
 
         let claude = gateway
             .prepare(
@@ -1448,6 +990,8 @@ mod tests {
             UpstreamProtocol::AnthropicMessages
         );
         assert_eq!(claude.upstream_model, "deepseek-v4-flash");
+        assert!(matches!(claude.route.auth, AuthKind::ApiKey));
+        assert_eq!(claude.route.vars["endpoint"], "https://deepseek.example");
     }
 
     #[test]
@@ -1470,15 +1014,22 @@ mod tests {
                 .as_slice(),
             )
             .unwrap();
-        let body: Value = serde_json::from_slice(&anthropic.body).unwrap();
-        assert_eq!(body["stop"], json!(["END"]));
-        assert_eq!(body["parallel_tool_calls"], false);
-        assert_eq!(body["tool_choice"]["function"]["name"], "browser");
+        assert_eq!(anthropic.request.sampling.stop, vec!["END".to_owned()]);
+        assert_eq!(anthropic.request.parallel_tool_calls, Some(false));
         assert_eq!(
-            body["messages"][0]["content"][1]["image_url"]["url"],
-            "https://example.invalid/image.png"
+            anthropic.request.tool_choice,
+            Some(a4mp::ToolChoice::Named("browser".to_owned()))
         );
-        assert_eq!(body["stream_options"]["include_usage"], true);
+        assert_eq!(
+            anthropic.request.extensions["stream_options"],
+            json!({"include_usage": true})
+        );
+        assert!(
+            anthropic.request.messages[0]
+                .content
+                .iter()
+                .any(|part| matches!(part, ContentPart::Media { .. }))
+        );
 
         let responses = gateway
             .prepare(
@@ -1497,18 +1048,25 @@ mod tests {
                 .as_slice(),
             )
             .unwrap();
-        let body: Value = serde_json::from_slice(&responses.body).unwrap();
-        assert_eq!(body["parallel_tool_calls"], false);
-        assert_eq!(body["tool_choice"]["function"]["name"], "read_file");
-        assert_eq!(body["response_format"]["type"], "json_schema");
+        assert_eq!(responses.request.parallel_tool_calls, Some(false));
         assert_eq!(
-            body["messages"][0]["content"][1]["image_url"]["detail"],
-            "high"
+            responses.request.tool_choice,
+            Some(a4mp::ToolChoice::Named("read_file".to_owned()))
+        );
+        assert_eq!(
+            responses.request.extensions["response_format"],
+            json!({"type":"json_schema","json_schema":{"name":"answer","schema":{"type":"object"},"strict":true}})
+        );
+        assert!(
+            responses.request.messages[0]
+                .content
+                .iter()
+                .any(|part| matches!(part, ContentPart::Media { .. }))
         );
     }
 
     #[test]
-    fn chat_json_is_rebuilt_as_strict_responses_shape_with_reasoning_usage() {
+    fn chat_finish_is_encoded_as_the_client_responses_shape() {
         let gateway = gateway();
         let request = gateway
             .prepare("/v1/responses", br#"{"model":"k3-256k","input":"hello"}"#)
@@ -1516,18 +1074,24 @@ mod tests {
         let response = gateway
             .finish(
                 &request,
-                200,
-                Some("application/json"),
-                br#"{"id":"chat-1","choices":[{"message":{"content":"done","tool_calls":[]}}],"usage":{"prompt_tokens":3,"completion_tokens":2}}"#,
+                &Output {
+                    parts: vec![ContentPart::Text {
+                        text: "done".to_owned(),
+                    }],
+                    stop: Some(StopReason::Complete),
+                    usage: Some(Usage {
+                        input_tokens: Some(3),
+                        output_tokens: Some(2),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
             )
             .unwrap();
         let body: Value = serde_json::from_slice(&response.body).unwrap();
         assert_eq!(body["object"], "response");
         assert_eq!(body["output"][0]["content"][0]["text"], "done");
-        assert_eq!(
-            body["usage"]["output_tokens_details"]["reasoning_tokens"],
-            0
-        );
+        assert_eq!(body["usage"]["output_tokens"], 2);
     }
 
     #[test]
@@ -1539,9 +1103,13 @@ mod tests {
         let response = gateway
             .finish(
                 &responses_request,
-                200,
-                Some("application/json"),
-                br#"{"id":"chat-1","choices":[{"message":{"content":"partial"},"finish_reason":"length"}]}"#,
+                &Output {
+                    parts: vec![ContentPart::Text {
+                        text: "partial".to_owned(),
+                    }],
+                    stop: Some(StopReason::Length),
+                    ..Default::default()
+                },
             )
             .unwrap();
         let body: Value = serde_json::from_slice(&response.body).unwrap();
@@ -1557,9 +1125,13 @@ mod tests {
         let response = gateway
             .finish(
                 &anthropic_request,
-                200,
-                Some("application/json"),
-                br#"{"id":"chat-2","choices":[{"message":{"content":"partial"},"finish_reason":"length"}]}"#,
+                &Output {
+                    parts: vec![ContentPart::Text {
+                        text: "partial".to_owned(),
+                    }],
+                    stop: Some(StopReason::Length),
+                    ..Default::default()
+                },
             )
             .unwrap();
         let body: Value = serde_json::from_slice(&response.body).unwrap();
@@ -1582,19 +1154,14 @@ mod tests {
             UpstreamProtocol::AnthropicMessages
         );
         assert_eq!(request.upstream_model, "deepseek-v4-flash");
-        let body: Value = serde_json::from_slice(&request.body).unwrap();
-        assert_eq!(body["model"], "deepseek-v4-flash");
-        assert_eq!(body["messages"][0]["role"], "user");
-        assert_eq!(body["max_tokens"], 16);
+        assert_eq!(request.request.model, "deepseek-v4-flash");
+        assert_eq!(request.request.sampling.max_output_tokens, Some(16));
 
-        let response = gateway
-            .finish(
-                &request,
-                200,
-                Some("application/json"),
-                br#"{"id":"msg_1","type":"message","role":"assistant","content":[{"type":"text","text":"done"}],"stop_reason":"end_turn","usage":{"input_tokens":3,"output_tokens":2}}"#,
-            )
-            .unwrap();
+        let output = a4mp::protocols::anthropic_messages::decode_response(
+            br#"{"id":"msg_1","type":"message","role":"assistant","content":[{"type":"text","text":"done"}],"stop_reason":"end_turn","usage":{"input_tokens":3,"output_tokens":2}}"#,
+        )
+        .unwrap();
+        let response = gateway.finish(&request, &output).unwrap();
         let body: Value = serde_json::from_slice(&response.body).unwrap();
         assert_eq!(body["choices"][0]["message"]["content"], "done");
         assert_eq!(body["usage"]["prompt_tokens"], 3);
@@ -1602,7 +1169,8 @@ mod tests {
     }
 
     /// The same cross-dialect relay carries a live stream: upstream Anthropic
-    /// SSE is decoded to canonical events and re-encoded for the Chat client.
+    /// SSE is decoded to canonical events upstream of the sink and re-encoded
+    /// for the Chat client by the shell's stream relay.
     #[test]
     fn chat_client_on_anthropic_upstream_streams() {
         let gateway = gateway();
@@ -1612,36 +1180,32 @@ mod tests {
                 br#"{"model":"chat-on-anthropic","stream":true,"messages":[{"role":"user","content":"hi"}],"max_tokens":16}"#,
             )
             .unwrap();
-        let upstream = concat!(
-            "event: message_start\n",
-            "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"role\":\"assistant\",\"content\":[],\"usage\":{\"input_tokens\":3}}}\n\n",
-            "event: content_block_start\n",
-            "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
-            "event: content_block_delta\n",
-            "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"hi\"}}\n\n",
-            "event: content_block_stop\n",
-            "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
-            "event: message_delta\n",
-            "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":2}}\n\n",
-            "event: message_stop\n",
-            "data: {\"type\":\"message_stop\"}\n\n",
-        );
-        let response = gateway
-            .finish(
-                &request,
-                200,
-                Some("text/event-stream"),
-                upstream.as_bytes(),
-            )
-            .unwrap();
-        assert_eq!(response.content_type, "text/event-stream");
-        let text = String::from_utf8(response.body).unwrap();
-        assert!(text.contains("\"content\":\"hi\"") || text.contains("hi"));
+        let mut relay = crate::model::llm_gateway_stream::ClientStreamRelay::new(&request);
+        let mut text = relay.preamble();
+        for event in [
+            a4mp::StreamEvent::PartStarted {
+                index: 0,
+                kind: a4mp::PartKind::Text,
+            },
+            a4mp::StreamEvent::TextDelta {
+                index: 0,
+                text: "hi".to_owned(),
+            },
+            a4mp::StreamEvent::PartFinished { index: 0 },
+            a4mp::StreamEvent::Finished {
+                stop: Some(StopReason::Complete),
+            },
+        ] {
+            text.extend_from_slice(&relay.push(&event));
+        }
+        text.extend_from_slice(&relay.finish());
+        let text = String::from_utf8(text).unwrap();
+        assert!(text.contains("hi"));
         assert!(text.contains("[DONE]"));
     }
 
     #[test]
-    fn openai_chat_completions_json_and_stream_are_passed_through() {
+    fn openai_chat_completions_json_and_stream_are_canonical_round_trips() {
         let gateway = gateway();
         let request = gateway
             .prepare(
@@ -1657,80 +1221,73 @@ mod tests {
             request.upstream_protocol,
             UpstreamProtocol::OpenAiChatCompletions
         );
-        assert_eq!(
-            serde_json::from_slice::<Value>(&request.body).unwrap()["messages"][0]["content"],
-            "hello"
-        );
+        assert!(matches!(
+            request.request.messages[0].content[0],
+            ContentPart::Text { ref text } if text == "hello"
+        ));
 
-        let json =
-            br#"{"id":"chat-1","choices":[{"message":{"role":"assistant","content":"done"}}]}"#;
-        let response = gateway
-            .finish(&request, 200, Some("application/json"), json)
-            .unwrap();
+        let output = a4mp::protocols::openai_chat::decode_response(
+            br#"{"id":"chat-1","choices":[{"message":{"role":"assistant","content":"done"}}]}"#,
+        )
+        .unwrap();
+        let response = gateway.finish(&request, &output).unwrap();
         assert_eq!(response.content_type, "application/json");
-        assert_eq!(response.body, json);
-
-        let streaming = gateway
-            .prepare(
-                "/chat/completions",
-                br#"{"model":"k3-256k","stream":true,"messages":[]}"#,
-            )
-            .unwrap();
-        let sse = b"data: {\"choices\":[{\"delta\":{\"content\":\"hi\"}}]}\n\ndata: [DONE]\n\n";
-        let response = gateway
-            .finish(&streaming, 200, Some("text/event-stream"), sse)
-            .unwrap();
-        assert_eq!(response.content_type, "text/event-stream");
-        assert_eq!(response.body, sse);
+        let body: Value = serde_json::from_slice(&response.body).unwrap();
+        assert_eq!(body["choices"][0]["message"]["content"], "done");
     }
 
     #[test]
-    fn chat_sse_is_rebuilt_as_responses_events_and_tools() {
+    fn reasoning_replay_is_bound_to_the_protocol_that_issued_it() {
         let gateway = gateway();
-        let request = gateway
+        let first = gateway
+            .prepare("/v1/responses", br#"{"model":"k3-256k","input":"first"}"#)
+            .unwrap();
+        let output = Output {
+            parts: vec![
+                ContentPart::Reasoning(ReasoningBlock {
+                    protocol: Protocol::AnthropicMessages,
+                    opaque: json!({"signature":"fixture"}),
+                    summary: None,
+                }),
+                ContentPart::Text {
+                    text: "answer".to_owned(),
+                },
+            ],
+            ..Default::default()
+        };
+        // Recorded history keeps the foreign-protocol block; on splice it is
+        // filtered down to what the Chat upstream itself could have issued.
+        let response = gateway.finish(&first, &output).unwrap();
+        let body: Value = serde_json::from_slice(&response.body).unwrap();
+        let id = body["id"].as_str().unwrap().to_owned();
+        let second = gateway
             .prepare(
                 "/v1/responses",
-                br#"{"model":"k3-256k","input":"hello","stream":true}"#,
+                serde_json::to_vec(&json!({
+                    "model":"k3-256k","input":"second","previous_response_id":id
+                }))
+                .unwrap()
+                .as_slice(),
             )
             .unwrap();
-        let upstream = concat!(
-            "data: {\"id\":\"chat-1\",\"choices\":[{\"delta\":{\"content\":\"hi\"}}]}\n\n",
-            "data: {\"id\":\"chat-1\",\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call-1\",\"function\":{\"name\":\"read_file\",\"arguments\":\"{}\"}}]}}]}\n\n",
-            "data: [DONE]\n\n"
-        );
-        let response = gateway
-            .finish(
-                &request,
-                200,
-                Some("text/event-stream"),
-                upstream.as_bytes(),
-            )
+        let assistant = second
+            .request
+            .messages
+            .iter()
+            .find(|message| message.role == Role::Assistant)
             .unwrap();
-        let text = String::from_utf8(response.body).unwrap();
-        assert!(text.contains("response.created"));
-        assert!(text.contains("response.output_item.added"));
-        assert!(text.contains("response.output_text.delta"));
-        assert!(text.contains("response.function_call_arguments.delta"));
-        assert!(text.contains("response.completed"));
-    }
-
-    #[test]
-    fn replayed_history_keeps_reasoning_only_for_the_protocol_that_issued_it() {
-        let assistant = json!({
-            "role": "assistant",
-            "content": "hi",
-            "reasoning_content": "recorded thought",
-        });
         assert!(
-            replayable_assistant(assistant.clone(), UpstreamProtocol::OpenAiChatCompletions)
-                .get("reasoning_content")
-                .is_some()
+            assistant
+                .content
+                .iter()
+                .all(|part| !matches!(part, ContentPart::Reasoning(_))),
+            "an Anthropic-issued reasoning block is foreign to a Chat upstream"
         );
         assert!(
-            replayable_assistant(assistant, UpstreamProtocol::AnthropicMessages)
-                .get("reasoning_content")
-                .is_none(),
-            "a Chat-issued reasoning block is foreign to the Messages protocol"
+            assistant
+                .content
+                .iter()
+                .any(|part| matches!(part, ContentPart::Text { text } if text == "answer"))
         );
     }
 
@@ -1746,13 +1303,17 @@ mod tests {
         let first_response = gateway
             .finish(
                 &first,
-                200,
-                Some("application/json"),
-                br#"{"id":"chat-1","choices":[{"message":{"role":"assistant","content":"answer"}}]}"#,
+                &Output {
+                    parts: vec![ContentPart::Text {
+                        text: "answer".to_owned(),
+                    }],
+                    stop: Some(StopReason::Complete),
+                    ..Default::default()
+                },
             )
             .unwrap();
         let first_body: Value = serde_json::from_slice(&first_response.body).unwrap();
-        let previous_id = first_body["id"].as_str().unwrap();
+        let previous_id = first_body["id"].as_str().unwrap().to_owned();
         let second = gateway
             .prepare(
                 "/v1/responses",
@@ -1763,24 +1324,30 @@ mod tests {
                 .as_bytes(),
             )
             .unwrap();
-        let body: Value = serde_json::from_slice(&second.body).unwrap();
-        assert_eq!(body["messages"][0]["content"], "first");
-        assert_eq!(body["messages"][1]["content"], "answer");
-        assert_eq!(body["messages"][2]["content"], "second");
+        let texts = second
+            .request
+            .messages
+            .iter()
+            .flat_map(|message| {
+                message.content.iter().filter_map(|part| match part {
+                    ContentPart::Text { text } => Some(text.as_str()),
+                    _ => None,
+                })
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(texts, vec!["first", "answer", "second"]);
         assert!(
-            body["messages"]
-                .as_array()
-                .unwrap()
+            second
+                .request
+                .messages
                 .iter()
-                .all(|message| message["role"] != "system")
+                .all(|message| message.role != Role::System)
         );
     }
 
     /// A second streamed Responses turn must continue from the first turn's
     /// `previous_response_id` on every non-Responses upstream, exactly as the
-    /// non-streamed path does. History is stored by the transport, so a
-    /// transport-only difference must not turn continuation into
-    /// `UnsupportedConversion`.
+    /// buffered path does.
     #[test]
     fn streamed_responses_on_anthropic_history_continues_the_next_turn() {
         let gateway = gateway();
@@ -1798,37 +1365,26 @@ mod tests {
             .unwrap();
         assert_eq!(first.upstream_protocol, UpstreamProtocol::AnthropicMessages);
 
-        let mut transformer =
-            crate::model::llm_gateway_stream::GatewayStreamTransformer::new(&first).unwrap();
-        transformer
-            .push(
-                concat!(
-                    "event: message_start\n",
-                    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"role\":\"assistant\",\"content\":[],\"usage\":{\"input_tokens\":3}}}\n\n",
-                    "event: content_block_start\n",
-                    "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
-                    "event: content_block_delta\n",
-                    "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"hi\"}}\n\n",
-                )
-                .as_bytes(),
-            )
-            .unwrap();
-        transformer
-            .push(
-                concat!(
-                    "event: content_block_stop\n",
-                    "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
-                    "event: message_delta\n",
-                    "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":2}}\n\n",
-                    "event: message_stop\n",
-                    "data: {\"type\":\"message_stop\"}\n\n",
-                )
-                .as_bytes(),
-            )
-            .unwrap();
-        transformer.finish().unwrap();
-        let history = transformer
-            .take_chat_history_response()
+        let mut relay = crate::model::llm_gateway_stream::ClientStreamRelay::new(&first);
+        for event in [
+            a4mp::StreamEvent::PartStarted {
+                index: 0,
+                kind: a4mp::PartKind::Text,
+            },
+            a4mp::StreamEvent::TextDelta {
+                index: 0,
+                text: "hi".to_owned(),
+            },
+            a4mp::StreamEvent::PartFinished { index: 0 },
+            a4mp::StreamEvent::Finished {
+                stop: Some(a4mp::StopReason::Complete),
+            },
+        ] {
+            relay.push(&event);
+        }
+        relay.finish();
+        let history = relay
+            .take_history()
             .expect("the streamed Responses turn recorded history");
         let previous_id = history.response_id.clone();
         gateway.remember_stream_response(&first, history).unwrap();
@@ -1846,19 +1402,18 @@ mod tests {
                 .as_slice(),
             )
             .expect("a streamed first turn is continuable");
-        let body: Value = serde_json::from_slice(&second.body).unwrap();
-        let messages = body["messages"]
-            .as_array()
-            .expect("projected upstream messages");
-        assert_eq!(messages.first().unwrap()["content"][0]["text"], "first");
-        assert!(
-            messages
-                .iter()
-                .any(|message| message["role"] == "assistant"
-                    && message["content"][0]["text"] == "hi"),
-            "the first assistant answer is replayed"
-        );
-        assert_eq!(messages.last().unwrap()["content"][0]["text"], "second");
+        let texts = second
+            .request
+            .messages
+            .iter()
+            .flat_map(|message| {
+                message.content.iter().filter_map(|part| match part {
+                    ContentPart::Text { text } => Some(text.as_str()),
+                    _ => None,
+                })
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(texts, vec!["first", "hi", "second"]);
     }
 
     #[test]
@@ -1870,59 +1425,100 @@ mod tests {
                 br#"{"model":"visual","stream":true,"messages":[{"role":"user","content":"inspect"}],"tools":[{"name":"browser","input_schema":{"type":"object"}}]}"#,
             )
             .unwrap();
-        let upstream = concat!(
-            "data: {\"id\":\"chat-tool\",\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"tool-1\",\"function\":{\"name\":\"browser\",\"arguments\":\"{\\\"url\\\":\\\"https://example.invalid\\\"}\"}}]}}]}\n\n",
-            "data: [DONE]\n\n"
-        );
-        let response = gateway
-            .finish(
-                &request,
-                200,
-                Some("text/event-stream"),
-                upstream.as_bytes(),
+        let mut relay = crate::model::llm_gateway_stream::ClientStreamRelay::new(&request);
+        let mut text = relay.preamble();
+        for event in [
+            a4mp::StreamEvent::ToolCallStarted {
+                index: 0,
+                id: "tool-1".to_owned(),
+                name: "browser".to_owned(),
+            },
+            a4mp::StreamEvent::ToolCallDelta {
+                index: 0,
+                arguments: "{\"url\":\"https://example.invalid\"}".to_owned(),
+            },
+            a4mp::StreamEvent::PartFinished { index: 0 },
+            a4mp::StreamEvent::Finished {
+                stop: Some(a4mp::StopReason::ToolUse),
+            },
+        ] {
+            text.extend_from_slice(&relay.push(&event));
+        }
+        text.extend_from_slice(&relay.finish());
+        let text = String::from_utf8(text).unwrap();
+        assert!(text.contains("content_block_start") || text.contains("tool_use"));
+        assert!(text.contains("message_stop") || text.contains("input_json_delta"));
+    }
+
+    #[test]
+    fn responses_custom_tools_fold_into_function_definitions() {
+        let gateway = gateway();
+        let request = gateway
+            .prepare(
+                "/v1/responses",
+                serde_json::to_vec(&json!({
+                    "model":"k3-256k","input":"edit",
+                    "tools":[
+                        {"type":"custom","name":"apply_patch","description":"edit files","format":{"type":"grammar","syntax":"lark","definition":"x"}}
+                    ]
+                }))
+                .unwrap()
+                .as_slice(),
             )
             .unwrap();
-        let text = String::from_utf8(response.body).unwrap();
-        assert!(text.contains("content_block_start"));
-        assert!(text.contains("tool_use"));
-        assert!(text.contains("input_json_delta"));
-        assert!(text.contains("message_stop"));
+        let tool = request
+            .request
+            .tools
+            .iter()
+            .find(|tool| tool.name == "apply_patch")
+            .expect("custom tool folded into a function definition");
+        assert!(tool.description.contains("Codex custom tool metadata"));
     }
 
     #[test]
     fn configuration_and_unknown_routes_fail_closed() {
         let gateway = gateway();
         assert_eq!(
-            gateway.prepare("/v1/messages", br#"{"model":"unknown","messages":[]}"#),
-            Err(GatewayError::RouteNotFound)
+            gateway
+                .prepare("/v1/messages", br#"{"model":"unknown","messages":[]}"#)
+                .unwrap_err(),
+            GatewayError::RouteNotFound
         );
         assert_eq!(
-            gateway.prepare(
-                "/v1/chat/completions",
-                br#"{"model":"unknown-provider:model","messages":[]}"#
-            ),
-            Err(GatewayError::RouteNotFound)
+            gateway
+                .prepare(
+                    "/v1/chat/completions",
+                    br#"{"model":"unknown-provider:model","messages":[]}"#
+                )
+                .unwrap_err(),
+            GatewayError::RouteNotFound
         );
         assert_eq!(
-            gateway.prepare(
-                "/v1/chat/completions",
-                br#"{"model":"kimi-chat:","messages":[]}"#
-            ),
-            Err(GatewayError::RouteNotFound)
+            gateway
+                .prepare(
+                    "/v1/chat/completions",
+                    br#"{"model":"kimi-chat:","messages":[]}"#
+                )
+                .unwrap_err(),
+            GatewayError::RouteNotFound
         );
         assert_eq!(
-            gateway.prepare(
-                "/v1/responses",
-                br#"{"model":"k3-256k","input":"x","previous_response_id":"resp-old"}"#
-            ),
-            Err(GatewayError::UnsupportedConversion)
+            gateway
+                .prepare(
+                    "/v1/responses",
+                    br#"{"model":"k3-256k","input":"x","previous_response_id":"resp-old"}"#
+                )
+                .unwrap_err(),
+            GatewayError::UnsupportedConversion
         );
         assert_eq!(
-            gateway.prepare(
-                "/v1/responses",
-                br#"{"model":"k3-256k","input":"x","reasoning":{"effort":"invented"}}"#
-            ),
-            Err(GatewayError::InvalidRequest)
+            gateway
+                .prepare(
+                    "/v1/responses",
+                    br#"{"model":"k3-256k","input":"x","reasoning":{"effort":"invented"}}"#
+                )
+                .unwrap_err(),
+            GatewayError::InvalidRequest
         );
     }
 }

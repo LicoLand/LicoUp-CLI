@@ -1,536 +1,274 @@
-//! Incremental SSE protocol conversion for the local LLM gateway.
+//! Client-facing stream relay for the local LLM gateway.
+//!
+//! The forwarding core decodes upstream SSE into canonical `StreamEvent`s;
+//! this shell owns the dialect the client sees and the Responses-history
+//! projection that keeps `previous_response_id` continuable on non-Responses
+//! upstreams. Each canonical event is re-encoded by a4mp's `StreamEncoder`,
+//! so the sink receives protocol-complete frames in the client's own dialect.
 
 use crate::model::llm_gateway::{
-    ClientProtocol, GatewayError, MAX_GATEWAY_BODY_BYTES, PreparedGatewayRequest, UpstreamProtocol,
-    client_wire_dialect, sse_frame, upstream_stream_decoder,
+    ClientProtocol, PreparedGatewayRequest, UpstreamProtocol, client_wire_dialect, sse_frame,
 };
-use a4mp::wire::{self, StreamEncoder, WireDialect};
-use a4mp::{SseEvent, SseEventDecoder, StreamEvent};
+use a4mp::wire::{StreamEncoder, stream_encoder};
+use a4mp::{
+    ContentPart, Message, PartKind, Protocol, ReasoningBlock, Role, SseEvent, StreamEvent, ToolCall,
+};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
-pub struct GatewayStreamTransformer {
-    mode: StreamMode,
-    pending: Vec<u8>,
-    received: usize,
-    finished: bool,
-}
-
+/// A completed streamed assistant turn, kept for `previous_response_id` replay.
 pub struct StreamedChatResponse {
-    pub(crate) response_id: String,
-    pub(crate) assistant: Value,
+    pub response_id: String,
+    pub assistant: Message,
 }
 
-enum StreamMode {
-    Passthrough,
-    /// Responses client over a Chat upstream: the local interim projection
-    /// until a4mp exposes a Responses wire dialect.
-    Responses(ChatStreamState),
-    /// Cross-dialect relay: upstream protocol decoder → canonical
-    /// `StreamEvent`s → client wire encoder, all supplied by a4mp.
-    Canonical(CanonicalRelay),
-    /// Responses client over a non-Chat upstream: canonical events rendered
-    /// as Chat SSE, then projected through the local interim.
-    CanonicalResponses(CanonicalRelay, ChatStreamState),
-}
-
-struct CanonicalRelay {
-    decoder: Box<dyn SseEventDecoder>,
+/// Canonical `StreamEvent`s → client-dialect SSE bytes, with an optional
+/// history accumulator for Responses clients on foreign upstreams.
+pub(crate) struct ClientStreamRelay {
     encoder: Box<dyn StreamEncoder>,
-    started: bool,
+    history: Option<StreamHistory>,
+    /// Whether usage must reach the encoder before its terminal event.
+    /// Responses and Messages fold usage into `response.completed` /
+    /// `message_delta`; a Chat client's own wire order reports the trailing
+    /// usage chunk after `finish_reason`, so it is left untouched.
+    usage_before_terminal: bool,
+    /// A terminal `Finished` held one event slot: upstreams that emit usage
+    /// in a separate trailing chunk (OpenAI `stream_options.include_usage`)
+    /// deliver it after `Finished`, where the dialect encoder would record a
+    /// loss instead of folding it into the terminal frame.
+    pending_terminal: Option<StreamEvent>,
 }
 
-impl CanonicalRelay {
-    fn new(upstream: UpstreamProtocol, dialect: WireDialect, model: &str) -> Self {
+struct StreamHistory {
+    response_id: Option<String>,
+    open: BTreeMap<u32, OpenPart>,
+    done: BTreeMap<u32, ContentPart>,
+    /// Reasoning replay is origin-bound: only a Chat upstream's reasoning can
+    /// be rebuilt as replayable opaque state (`reasoning_content`).
+    chat_replay: bool,
+}
+
+enum OpenPart {
+    Text(String),
+    Reasoning(String),
+    ToolCall {
+        id: String,
+        name: String,
+        arguments: String,
+    },
+    Other,
+}
+
+impl ClientStreamRelay {
+    pub(crate) fn new(request: &PreparedGatewayRequest) -> Self {
+        let history = (request.client_protocol == ClientProtocol::OpenAiResponses
+            && request.upstream_protocol != UpstreamProtocol::OpenAiResponses)
+            .then(|| StreamHistory {
+                response_id: None,
+                open: BTreeMap::new(),
+                done: BTreeMap::new(),
+                chat_replay: request.upstream_protocol == UpstreamProtocol::OpenAiChatCompletions,
+            });
         Self {
-            decoder: upstream_stream_decoder(upstream),
-            encoder: wire::stream_encoder(dialect, model),
-            started: false,
+            encoder: stream_encoder(
+                client_wire_dialect(request.client_protocol),
+                &request.requested_model,
+            ),
+            history,
+            usage_before_terminal: request.client_protocol != ClientProtocol::OpenAiChatCompletions,
+            pending_terminal: None,
         }
     }
 
-    fn decode(&mut self, frame: &SseEvent) -> Result<Vec<StreamEvent>, GatewayError> {
-        self.decoder
-            .decode(frame)
-            .map_err(|_| GatewayError::InvalidUpstreamResponse)
+    pub(crate) fn preamble(&mut self) -> Vec<u8> {
+        let mut out = Vec::new();
+        for frame in self.encoder.preamble() {
+            self.observe_frame(&frame);
+            out.extend_from_slice(&sse_frame(&frame));
+        }
+        out
     }
 
-    fn encode(&mut self, events: &[StreamEvent]) -> Vec<SseEvent> {
-        let mut frames = Vec::new();
-        if !self.started {
-            self.started = true;
-            frames.extend(self.encoder.preamble());
+    pub(crate) fn push(&mut self, event: &StreamEvent) -> Vec<u8> {
+        if let Some(history) = self.history.as_mut() {
+            history.observe(event);
         }
-        for event in events {
-            frames.extend(self.encoder.encode(event));
+        let mut out = Vec::new();
+        if self.usage_before_terminal {
+            match event {
+                StreamEvent::Finished { .. } => {
+                    if let Some(terminal) = self.pending_terminal.take() {
+                        self.encode_into(&mut out, &terminal);
+                    }
+                    self.pending_terminal = Some(event.clone());
+                    return out;
+                }
+                StreamEvent::Usage(_) => {
+                    // Usage trailing the terminal event: fold it in first so
+                    // the terminal frame carries it.
+                    self.encode_into(&mut out, event);
+                    if let Some(terminal) = self.pending_terminal.take() {
+                        self.encode_into(&mut out, &terminal);
+                    }
+                    return out;
+                }
+                _ => {}
+            }
+            // Any other event after a deferred terminal keeps wire order.
+            if let Some(terminal) = self.pending_terminal.take() {
+                self.encode_into(&mut out, &terminal);
+            }
+        }
+        self.encode_into(&mut out, event);
+        out
+    }
+
+    fn encode_into(&mut self, out: &mut Vec<u8>, event: &StreamEvent) {
+        for frame in self.encoder.encode(event) {
+            self.observe_frame(&frame);
+            out.extend_from_slice(&sse_frame(&frame));
+        }
+    }
+
+    pub(crate) fn finish(&mut self) -> Vec<u8> {
+        let mut out = Vec::new();
+        if let Some(terminal) = self.pending_terminal.take() {
+            self.encode_into(&mut out, &terminal);
+        }
+        for frame in self.encoder.finish() {
+            self.observe_frame(&frame);
+            out.extend_from_slice(&sse_frame(&frame));
         }
         let _ = self.encoder.drain_losses();
-        frames
+        out
     }
 
-    fn finish(&mut self) -> Vec<SseEvent> {
-        let mut frames = self.encode(&[]);
-        frames.extend(self.encoder.finish());
-        frames
+    /// The Responses encoder names its own response id; it is announced on the
+    /// `response.created`/`response.in_progress` envelopes — capture it so
+    /// stored history answers to the same id the client saw.
+    fn observe_frame(&mut self, frame: &SseEvent) {
+        let Some(history) = self.history.as_mut() else {
+            return;
+        };
+        if history.response_id.is_some() || frame.event.as_deref() != Some("response.created") {
+            return;
+        }
+        if let Ok(data) = serde_json::from_str::<Value>(&frame.data) {
+            history.response_id = data
+                .pointer("/response/id")
+                .and_then(Value::as_str)
+                .map(str::to_owned);
+        }
     }
-}
 
-struct ChatStreamState {
-    model: String,
-    id: Option<String>,
-    sequence: u64,
-    next_output_index: usize,
-    reasoning: Option<OutputState>,
-    text: Option<OutputState>,
-    tools: BTreeMap<usize, ToolState>,
-    finish_reason: Option<String>,
-    usage: Option<Value>,
-    started: bool,
-    history_response: Option<StreamedChatResponse>,
-}
-
-struct OutputState {
-    output_index: usize,
-    value: String,
-}
-
-#[derive(Default)]
-struct ToolState {
-    output_index: Option<usize>,
-    id: String,
-    name: String,
-    arguments: String,
-    emitted_arguments: usize,
-}
-
-impl GatewayStreamTransformer {
-    pub fn new(request: &PreparedGatewayRequest) -> Result<Self, GatewayError> {
-        let state = || ChatStreamState {
-            model: request.requested_model.clone(),
-            id: None,
-            sequence: 1,
-            next_output_index: 0,
-            reasoning: None,
-            text: None,
-            tools: BTreeMap::new(),
-            finish_reason: None,
-            usage: None,
-            started: false,
-            history_response: None,
-        };
-        let relay = |upstream: UpstreamProtocol, dialect: WireDialect| {
-            CanonicalRelay::new(upstream, dialect, &request.requested_model)
-        };
-        let mode = match (request.client_protocol, request.upstream_protocol) {
-            (ClientProtocol::AnthropicMessages, UpstreamProtocol::AnthropicMessages)
-            | (ClientProtocol::OpenAiChatCompletions, UpstreamProtocol::OpenAiChatCompletions)
-            | (ClientProtocol::OpenAiResponses, UpstreamProtocol::OpenAiResponses) => {
-                StreamMode::Passthrough
+    pub(crate) fn take_history(&mut self) -> Option<StreamedChatResponse> {
+        let mut history = self.history.take()?;
+        for (index, part) in std::mem::take(&mut history.open) {
+            if let Some(part) = part.finish(history.chat_replay) {
+                history.done.insert(index, part);
             }
-            (ClientProtocol::OpenAiResponses, UpstreamProtocol::OpenAiChatCompletions) => {
-                StreamMode::Responses(state())
-            }
-            (ClientProtocol::OpenAiResponses, upstream) => StreamMode::CanonicalResponses(
-                relay(upstream, WireDialect::OpenAiChatCompletions),
-                state(),
-            ),
-            (client, upstream) => StreamMode::Canonical(relay(
-                upstream,
-                client_wire_dialect(client).ok_or(GatewayError::UnsupportedConversion)?,
-            )),
-        };
-        Ok(Self {
-            mode,
-            pending: Vec::new(),
-            received: 0,
-            finished: false,
+        }
+        let response_id = history
+            .response_id
+            .unwrap_or_else(|| format!("resp_{}", unix_seconds()));
+        Some(StreamedChatResponse {
+            response_id,
+            assistant: Message {
+                role: Role::Assistant,
+                content: history.done.into_values().collect(),
+            },
         })
     }
-
-    pub fn push(&mut self, bytes: &[u8]) -> Result<Vec<u8>, GatewayError> {
-        self.received = self
-            .received
-            .checked_add(bytes.len())
-            .filter(|total| *total <= MAX_GATEWAY_BODY_BYTES)
-            .ok_or(GatewayError::RequestTooLarge)?;
-        if matches!(self.mode, StreamMode::Passthrough) {
-            return Ok(bytes.to_vec());
-        }
-        self.pending.extend_from_slice(bytes);
-        let mut output = Vec::new();
-        while let Some((event_end, delimiter_len)) = next_event_boundary(&self.pending) {
-            let event = self.pending.drain(..event_end).collect::<Vec<_>>();
-            self.pending.drain(..delimiter_len);
-            let frame = parse_frame(&event)?;
-            if frame.data.is_empty() && frame.event.is_none() {
-                continue;
-            }
-            if frame.data.trim() == "[DONE]" {
-                output.extend(self.finalize()?);
-                self.finished = true;
-                continue;
-            }
-            match &mut self.mode {
-                StreamMode::Passthrough => unreachable!(),
-                StreamMode::Responses(state) => {
-                    let chunk: Value = serde_json::from_str(&frame.data)
-                        .map_err(|_| GatewayError::InvalidUpstreamResponse)?;
-                    output.extend(state.responses_chunk(&chunk)?);
-                }
-                StreamMode::Canonical(relay) => {
-                    let events = relay.decode(&frame)?;
-                    for out in relay.encode(&events) {
-                        output.extend_from_slice(&sse_frame(&out));
-                    }
-                }
-                StreamMode::CanonicalResponses(relay, state) => {
-                    let events = relay.decode(&frame)?;
-                    for out in relay.encode(&events) {
-                        output.extend(state.responses_frame(&out)?);
-                    }
-                }
-            }
-        }
-        Ok(output)
-    }
-
-    pub fn finish(&mut self) -> Result<Vec<u8>, GatewayError> {
-        if matches!(self.mode, StreamMode::Passthrough) || self.finished {
-            return Ok(Vec::new());
-        }
-        if !self.pending.iter().all(u8::is_ascii_whitespace) {
-            return Err(GatewayError::InvalidUpstreamResponse);
-        }
-        self.finalize()
-    }
-
-    pub fn take_chat_history_response(&mut self) -> Option<StreamedChatResponse> {
-        match &mut self.mode {
-            StreamMode::Responses(state) | StreamMode::CanonicalResponses(_, state) => {
-                state.history_response.take()
-            }
-            StreamMode::Canonical(_) | StreamMode::Passthrough => None,
-        }
-    }
-
-    fn finalize(&mut self) -> Result<Vec<u8>, GatewayError> {
-        match &mut self.mode {
-            StreamMode::Responses(state) => state.finish_responses(),
-            StreamMode::Canonical(relay) => Ok(relay.finish().iter().flat_map(sse_frame).collect()),
-            StreamMode::CanonicalResponses(relay, state) => {
-                let mut output = Vec::new();
-                for frame in relay.finish() {
-                    output.extend(state.responses_frame(&frame)?);
-                }
-                output.extend(state.finish_responses()?);
-                Ok(output)
-            }
-            StreamMode::Passthrough => Ok(Vec::new()),
-        }
-    }
 }
 
-impl ChatStreamState {
-    /// One Chat SSE frame produced by the canonical relay's OpenAI encoder is
-    /// folded back into the interim projection.
-    fn responses_frame(&mut self, frame: &SseEvent) -> Result<Vec<u8>, GatewayError> {
-        let data = frame.data.trim();
-        if data.is_empty() || data == "[DONE]" {
-            return Ok(Vec::new());
-        }
-        let chunk: Value =
-            serde_json::from_str(data).map_err(|_| GatewayError::InvalidUpstreamResponse)?;
-        self.responses_chunk(&chunk)
-    }
-
-    fn observe(&mut self, chunk: &Value) {
-        if self.id.is_none() {
-            self.id = chunk.get("id").and_then(Value::as_str).map(str::to_owned);
-        }
-        if let Some(reason) = chunk
-            .pointer("/choices/0/finish_reason")
-            .and_then(Value::as_str)
-        {
-            self.finish_reason = Some(reason.to_owned());
-        }
-        if let Some(usage) = chunk.get("usage") {
-            self.usage = Some(usage.clone());
-        }
-    }
-
-    fn response_id(&self) -> String {
-        self.id
-            .as_deref()
-            .map(|id| format!("resp_{id}"))
-            .unwrap_or_else(|| "resp_gateway".to_owned())
-    }
-
-    fn responses_chunk(&mut self, chunk: &Value) -> Result<Vec<u8>, GatewayError> {
-        self.observe(chunk);
-        let mut output = Vec::new();
-        if !self.started {
-            self.started = true;
-            let id = self.response_id();
-            self.emit_response(
-                &mut output,
-                json!({"type":"response.created","response":response_shell(&id, &self.model, "in_progress", Vec::<Value>::new(), Value::Null)}),
-            );
-        }
-        let Some(delta) = chunk.pointer("/choices/0/delta") else {
-            return Ok(output);
-        };
-        if let Some(part) = delta
-            .get("reasoning_content")
-            .or_else(|| delta.get("reasoning"))
-            .and_then(Value::as_str)
-            .filter(|value| !value.is_empty())
-        {
-            if self.reasoning.is_none() {
-                let output_index = self.allocate_output();
-                let id = self.response_id();
-                self.emit_response(&mut output, json!({"type":"response.output_item.added","output_index":output_index,"item":{"id":format!("rs_{id}"),"type":"reasoning","status":"in_progress","summary":[]}}));
-                self.emit_response(&mut output, json!({"type":"response.reasoning_summary_part.added","output_index":output_index,"summary_index":0,"part":{"type":"summary_text","text":""}}));
-                self.reasoning = Some(OutputState {
-                    output_index,
-                    value: String::new(),
+impl StreamHistory {
+    fn observe(&mut self, event: &StreamEvent) {
+        match event {
+            StreamEvent::PartStarted { index, kind } => {
+                self.open.entry(*index).or_insert_with(|| match kind {
+                    PartKind::Text => OpenPart::Text(String::new()),
+                    PartKind::Reasoning => OpenPart::Reasoning(String::new()),
+                    PartKind::ToolCall => OpenPart::ToolCall {
+                        id: String::new(),
+                        name: String::new(),
+                        arguments: String::new(),
+                    },
+                    _ => OpenPart::Other,
                 });
             }
-            let output_index = self.reasoning.as_ref().unwrap().output_index;
-            self.reasoning.as_mut().unwrap().value.push_str(part);
-            self.emit_response(&mut output, json!({"type":"response.reasoning_summary_text.delta","output_index":output_index,"summary_index":0,"delta":part}));
-        }
-        if let Some(part) = delta
-            .get("content")
-            .and_then(Value::as_str)
-            .filter(|value| !value.is_empty())
-        {
-            if self.text.is_none() {
-                let output_index = self.allocate_output();
-                let id = self.response_id();
-                self.emit_response(&mut output, json!({"type":"response.output_item.added","output_index":output_index,"item":{"id":format!("msg_{id}"),"type":"message","status":"in_progress","role":"assistant","content":[]}}));
-                self.emit_response(&mut output, json!({"type":"response.content_part.added","output_index":output_index,"content_index":0,"part":{"type":"output_text","text":"","annotations":[]}}));
-                self.text = Some(OutputState {
-                    output_index,
-                    value: String::new(),
-                });
-            }
-            let output_index = self.text.as_ref().unwrap().output_index;
-            self.text.as_mut().unwrap().value.push_str(part);
-            self.emit_response(&mut output, json!({"type":"response.output_text.delta","output_index":output_index,"content_index":0,"delta":part}));
-        }
-        self.update_response_tools(delta, &mut output)?;
-        Ok(output)
-    }
-
-    fn update_response_tools(
-        &mut self,
-        delta: &Value,
-        output: &mut Vec<u8>,
-    ) -> Result<(), GatewayError> {
-        for call in delta
-            .get("tool_calls")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-        {
-            let index = call.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
-            let mut tool = self.tools.remove(&index).unwrap_or_default();
-            append_tool_fields(&mut tool, call);
-            if tool.output_index.is_none() && !tool.id.is_empty() && !tool.name.is_empty() {
-                let output_index = self.allocate_output();
-                tool.output_index = Some(output_index);
-                self.emit_response(output, json!({"type":"response.output_item.added","output_index":output_index,"item":{"id":tool.id,"type":"function_call","status":"in_progress","call_id":tool.id,"name":tool.name,"arguments":""}}));
-            }
-            if let Some(output_index) = tool.output_index {
-                let delta = tool
-                    .arguments
-                    .get(tool.emitted_arguments..)
-                    .ok_or(GatewayError::InvalidUpstreamResponse)?
-                    .to_owned();
-                if !delta.is_empty() {
-                    self.emit_response(output, json!({"type":"response.function_call_arguments.delta","output_index":output_index,"delta":delta}));
-                    tool.emitted_arguments = tool.arguments.len();
+            StreamEvent::TextDelta { index, text } => {
+                if let Some(OpenPart::Text(buffer)) = self.open.get_mut(index) {
+                    buffer.push_str(text);
                 }
             }
-            self.tools.insert(index, tool);
-        }
-        Ok(())
-    }
-
-    fn finish_responses(&mut self) -> Result<Vec<u8>, GatewayError> {
-        self.history_response = Some(self.project_history_response());
-        let mut output = Vec::new();
-        let mut completed = Vec::new();
-        let id = self.response_id();
-        if let Some(reasoning) = self.reasoning.take() {
-            self.emit_response(&mut output, json!({"type":"response.reasoning_summary_text.done","output_index":reasoning.output_index,"summary_index":0,"text":reasoning.value}));
-            let item = json!({"id":format!("rs_{id}"),"type":"reasoning","status":"completed","summary":[{"type":"summary_text","text":reasoning.value}]});
-            self.emit_response(&mut output, json!({"type":"response.output_item.done","output_index":reasoning.output_index,"item":item}));
-            completed.push((reasoning.output_index, item));
-        }
-        if let Some(text) = self.text.take() {
-            self.emit_response(&mut output, json!({"type":"response.output_text.done","output_index":text.output_index,"content_index":0,"text":text.value}));
-            let part = json!({"type":"output_text","text":text.value,"annotations":[]});
-            self.emit_response(&mut output, json!({"type":"response.content_part.done","output_index":text.output_index,"content_index":0,"part":part}));
-            let item = json!({"id":format!("msg_{id}"),"type":"message","status":"completed","role":"assistant","content":[part]});
-            self.emit_response(&mut output, json!({"type":"response.output_item.done","output_index":text.output_index,"item":item}));
-            completed.push((text.output_index, item));
-        }
-        let tools = std::mem::take(&mut self.tools);
-        for (_, tool) in tools {
-            let output_index = tool
-                .output_index
-                .ok_or(GatewayError::InvalidUpstreamResponse)?;
-            self.emit_response(&mut output, json!({"type":"response.function_call_arguments.done","output_index":output_index,"arguments":tool.arguments}));
-            let item = json!({"id":tool.id,"type":"function_call","status":"completed","call_id":tool.id,"name":tool.name,"arguments":tool.arguments});
-            self.emit_response(
-                &mut output,
-                json!({"type":"response.output_item.done","output_index":output_index,"item":item}),
-            );
-            completed.push((output_index, item));
-        }
-        completed.sort_by_key(|(index, _)| *index);
-        let completed = completed.into_iter().map(|(_, item)| item).collect();
-        let usage = responses_usage(self.usage.as_ref());
-        let (status, incomplete_details) = responses_completion(self.finish_reason.as_deref());
-        let mut response = response_shell(&id, &self.model, status, completed, usage);
-        response["incomplete_details"] = incomplete_details;
-        let event_type = if status == "completed" {
-            "response.completed"
-        } else {
-            "response.incomplete"
-        };
-        self.emit_response(&mut output, json!({"type":event_type,"response":response}));
-        output.extend_from_slice(b"data: [DONE]\n\n");
-        Ok(output)
-    }
-
-    fn project_history_response(&self) -> StreamedChatResponse {
-        let content = self
-            .text
-            .as_ref()
-            .map(|text| text.value.clone())
-            .unwrap_or_default();
-        let reasoning = self
-            .reasoning
-            .as_ref()
-            .map(|reasoning| reasoning.value.clone())
-            .unwrap_or_default();
-        let tool_calls = self
-            .tools
-            .values()
-            .map(|tool| {
-                json!({
-                    "id": tool.id,
-                    "type": "function",
-                    "function": {
-                        "name": tool.name,
-                        "arguments": tool.arguments
-                    }
-                })
-            })
-            .collect::<Vec<_>>();
-        StreamedChatResponse {
-            response_id: self.response_id(),
-            assistant: json!({
-                "role": "assistant",
-                "content": content,
-                "reasoning_content": reasoning,
-                "tool_calls": tool_calls
-            }),
-        }
-    }
-
-    fn allocate_output(&mut self) -> usize {
-        let value = self.next_output_index;
-        self.next_output_index += 1;
-        value
-    }
-
-    fn emit_response(&mut self, output: &mut Vec<u8>, mut value: Value) {
-        value["sequence_number"] = json!(self.sequence);
-        self.sequence += 1;
-        if let Ok(mut event) = data_event(value) {
-            output.append(&mut event);
+            StreamEvent::ReasoningDelta { index, text } => {
+                if let Some(OpenPart::Reasoning(buffer)) = self.open.get_mut(index) {
+                    buffer.push_str(text);
+                }
+            }
+            StreamEvent::ToolCallStarted { index, id, name } => {
+                self.open.insert(
+                    *index,
+                    OpenPart::ToolCall {
+                        id: id.clone(),
+                        name: name.clone(),
+                        arguments: String::new(),
+                    },
+                );
+            }
+            StreamEvent::ToolCallDelta { index, arguments } => match self.open.get_mut(index) {
+                Some(OpenPart::ToolCall {
+                    arguments: buffer, ..
+                }) => buffer.push_str(arguments),
+                Some(_) => {}
+                None => {
+                    self.open.insert(
+                        *index,
+                        OpenPart::ToolCall {
+                            id: String::new(),
+                            name: String::new(),
+                            arguments: arguments.clone(),
+                        },
+                    );
+                }
+            },
+            StreamEvent::PartFinished { index } => {
+                if let Some(part) = self.open.remove(index)
+                    && let Some(part) = part.finish(self.chat_replay)
+                {
+                    self.done.insert(*index, part);
+                }
+            }
+            _ => {}
         }
     }
 }
 
-fn append_tool_fields(tool: &mut ToolState, call: &Value) {
-    if let Some(value) = call.get("id").and_then(Value::as_str) {
-        tool.id.push_str(value);
-    }
-    if let Some(value) = call.pointer("/function/name").and_then(Value::as_str) {
-        tool.name.push_str(value);
-    }
-    if let Some(value) = call.pointer("/function/arguments").and_then(Value::as_str) {
-        tool.arguments.push_str(value);
-    }
-}
-
-fn next_event_boundary(bytes: &[u8]) -> Option<(usize, usize)> {
-    let lf = bytes.windows(2).position(|window| window == b"\n\n");
-    let crlf = bytes.windows(4).position(|window| window == b"\r\n\r\n");
-    match (lf, crlf) {
-        (Some(left), Some(right)) if left <= right => Some((left, 2)),
-        (Some(_), Some(right)) => Some((right, 4)),
-        (Some(left), None) => Some((left, 2)),
-        (None, Some(right)) => Some((right, 4)),
-        (None, None) => None,
-    }
-}
-
-fn parse_frame(raw: &[u8]) -> Result<SseEvent, GatewayError> {
-    let text = std::str::from_utf8(raw).map_err(|_| GatewayError::InvalidUpstreamResponse)?;
-    let mut frame = SseEvent::default();
-    let mut data = Vec::new();
-    for line in text.lines() {
-        if line.starts_with(':') {
-            continue;
+impl OpenPart {
+    /// The canonical part this accumulated stream yields for history replay,
+    /// or `None` when the part cannot be faithfully reconstructed (opaque
+    /// reasoning signatures, provider-native blocks, media).
+    fn finish(self, chat_replay: bool) -> Option<ContentPart> {
+        match self {
+            OpenPart::Text(text) if !text.is_empty() => Some(ContentPart::Text { text }),
+            OpenPart::Reasoning(text) if chat_replay && !text.is_empty() => {
+                Some(ContentPart::Reasoning(ReasoningBlock {
+                    protocol: Protocol::OpenAiChatCompletions,
+                    opaque: json!({"reasoning_content": text}),
+                    summary: Some(text),
+                }))
+            }
+            OpenPart::ToolCall {
+                id,
+                name,
+                arguments,
+            } if !name.is_empty() => Some(ContentPart::ToolCall(ToolCall {
+                id,
+                name,
+                arguments: serde_json::from_str(&arguments).unwrap_or(Value::String(arguments)),
+            })),
+            _ => None,
         }
-        if let Some(value) = line.strip_prefix("data:") {
-            data.push(value.trim_start().to_owned());
-        } else if let Some(value) = line.strip_prefix("event:") {
-            frame.event = Some(value.trim().to_owned());
-        } else if let Some(value) = line.strip_prefix("id:") {
-            frame.id = Some(value.trim().to_owned());
-        }
-    }
-    frame.data = data.join("\n");
-    Ok(frame)
-}
-
-fn data_event(value: Value) -> Result<Vec<u8>, GatewayError> {
-    serde_json::to_vec(&value)
-        .map(|json| [b"data: ".as_slice(), json.as_slice(), b"\n\n"].concat())
-        .map_err(|_| GatewayError::InvalidUpstreamResponse)
-}
-
-fn response_shell(id: &str, model: &str, status: &str, output: Vec<Value>, usage: Value) -> Value {
-    json!({
-        "id":id,"object":"response","created_at":unix_seconds(),"status":status,
-        "error":null,"incomplete_details":null,"model":model,"output":output,
-        "parallel_tool_calls":true,"usage":usage
-    })
-}
-
-fn responses_usage(usage: Option<&Value>) -> Value {
-    let input = usage
-        .and_then(|value| value.get("prompt_tokens"))
-        .and_then(Value::as_u64)
-        .unwrap_or(0);
-    let output = usage
-        .and_then(|value| value.get("completion_tokens"))
-        .and_then(Value::as_u64)
-        .unwrap_or(0);
-    json!({"input_tokens":input,"input_tokens_details":{"cached_tokens":0},"output_tokens":output,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":input + output})
-}
-
-fn responses_completion(finish_reason: Option<&str>) -> (&'static str, Value) {
-    match finish_reason {
-        Some("length") => ("incomplete", json!({"reason":"max_output_tokens"})),
-        Some("content_filter") => ("incomplete", json!({"reason":"content_filter"})),
-        _ => ("completed", Value::Null),
     }
 }
 
@@ -544,104 +282,318 @@ fn unix_seconds() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::credential::LlmApiKeyProvider;
+    use crate::model::llm_gateway::{
+        ClientProtocol, CompiledGateway, CredentialStyle, GatewayConfig, GatewayProvider,
+        ModelRoute,
+    };
 
-    fn request(client_protocol: ClientProtocol) -> PreparedGatewayRequest {
-        PreparedGatewayRequest {
-            client_protocol,
-            upstream_protocol: UpstreamProtocol::OpenAiChatCompletions,
-            endpoint: "http://127.0.0.1/v1/chat/completions".to_owned(),
-            credential_provider: crate::credential::LlmApiKeyProvider::Kimi,
-            credential_style: crate::model::llm_gateway::CredentialStyle::Bearer,
-            body: Vec::new(),
-            stream: true,
-            requested_model: "requested".to_owned(),
-            upstream_model: "upstream".to_owned(),
-            history_messages: None,
+    fn request(client: ClientProtocol, upstream: UpstreamProtocol) -> PreparedGatewayRequest {
+        let provider_id = match upstream {
+            UpstreamProtocol::OpenAiChatCompletions => "chat-lane",
+            UpstreamProtocol::AnthropicMessages => "anthropic-lane",
+            UpstreamProtocol::OpenAiResponses => "responses-lane",
+        };
+        let gateway = CompiledGateway::compile(GatewayConfig {
+            schema_version: 1,
+            providers: vec![
+                GatewayProvider {
+                    id: "chat-lane".into(),
+                    base_url: "https://chat.example/v1".into(),
+                    protocol: UpstreamProtocol::OpenAiChatCompletions,
+                    credential_provider: LlmApiKeyProvider::Kimi,
+                    credential_style: CredentialStyle::Bearer,
+                },
+                GatewayProvider {
+                    id: "anthropic-lane".into(),
+                    base_url: "https://anthropic.example".into(),
+                    protocol: UpstreamProtocol::AnthropicMessages,
+                    credential_provider: LlmApiKeyProvider::DeepSeek,
+                    credential_style: CredentialStyle::XApiKey,
+                },
+                GatewayProvider {
+                    id: "responses-lane".into(),
+                    base_url: "https://responses.example/v1".into(),
+                    protocol: UpstreamProtocol::OpenAiResponses,
+                    credential_provider: LlmApiKeyProvider::Kilo,
+                    credential_style: CredentialStyle::Bearer,
+                },
+            ],
+            routes: vec![ModelRoute {
+                client_protocol: client,
+                requested_model: "requested".into(),
+                provider_id: provider_id.into(),
+                upstream_model: "upstream".into(),
+            }],
+        })
+        .unwrap();
+        let path = match client {
+            ClientProtocol::AnthropicMessages => "/v1/messages",
+            ClientProtocol::OpenAiChatCompletions => "/v1/chat/completions",
+            ClientProtocol::OpenAiResponses => "/v1/responses",
+        };
+        let body = match client {
+            ClientProtocol::OpenAiResponses => {
+                br#"{"model":"requested","input":"go","stream":true}"#.as_slice()
+            }
+            _ => br#"{"model":"requested","messages":[],"stream":true}"#.as_slice(),
+        };
+        gateway.prepare(path, body).unwrap()
+    }
+
+    fn drive(relay: &mut ClientStreamRelay, events: &[StreamEvent]) -> Vec<u8> {
+        let mut out = relay.preamble();
+        for event in events {
+            out.extend_from_slice(&relay.push(event));
         }
+        out.extend_from_slice(&relay.finish());
+        out
     }
 
     #[test]
-    fn responses_conversion_emits_delta_before_upstream_completion() {
-        let mut transformer =
-            GatewayStreamTransformer::new(&request(ClientProtocol::OpenAiResponses)).unwrap();
-        let first = transformer
-            .push(b"data: {\"id\":\"one\",\"choices\":[{\"delta\":{\"content\":\"hel\"}}]}\n\n")
-            .unwrap();
-        assert!(String::from_utf8_lossy(&first).contains("response.output_text.delta"));
-        let last = transformer
-            .push(b"data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n")
-            .unwrap();
-        assert!(String::from_utf8_lossy(&last).contains("response.completed"));
+    fn responses_client_receives_responses_events_and_history() {
+        let mut relay = ClientStreamRelay::new(&request(
+            ClientProtocol::OpenAiResponses,
+            UpstreamProtocol::OpenAiChatCompletions,
+        ));
+        let bytes = drive(
+            &mut relay,
+            &[
+                StreamEvent::PartStarted {
+                    index: 0,
+                    kind: PartKind::Reasoning,
+                },
+                StreamEvent::ReasoningDelta {
+                    index: 0,
+                    text: "thought".to_owned(),
+                },
+                StreamEvent::PartFinished { index: 0 },
+                StreamEvent::PartStarted {
+                    index: 1,
+                    kind: PartKind::Text,
+                },
+                StreamEvent::TextDelta {
+                    index: 1,
+                    text: "hi".to_owned(),
+                },
+                StreamEvent::PartFinished { index: 1 },
+                StreamEvent::ToolCallStarted {
+                    index: 2,
+                    id: "call-1".to_owned(),
+                    name: "lookup".to_owned(),
+                },
+                StreamEvent::ToolCallDelta {
+                    index: 2,
+                    arguments: "{\"q\":\"fixture\"}".to_owned(),
+                },
+                StreamEvent::PartFinished { index: 2 },
+                StreamEvent::Finished { stop: None },
+            ],
+        );
+        let text = String::from_utf8(bytes).unwrap();
+        assert!(text.contains("response.created"));
+        assert!(text.contains("response.output_item.added"));
+        assert!(text.contains("response.output_text.delta"));
+        assert!(text.contains("response.function_call_arguments.delta"));
+        assert!(text.contains("response.completed"));
+
+        let history = relay.take_history().expect("responses history recorded");
+        assert!(history.response_id.starts_with("resp_"));
+        assert!(history.assistant.content.iter().any(|part| matches!(
+            part,
+            ContentPart::Text { text } if text == "hi"
+        )));
+        assert!(history.assistant.content.iter().any(|part| matches!(
+            part,
+            ContentPart::Reasoning(block)
+                if block.summary.as_deref() == Some("thought")
+                    && block.opaque["reasoning_content"] == "thought"
+        )));
+        assert!(history.assistant.content.iter().any(|part| matches!(
+            part,
+            ContentPart::ToolCall(call)
+                if call.id == "call-1" && call.name == "lookup"
+                    && call.arguments == json!({"q":"fixture"})
+        )));
     }
 
     #[test]
-    fn anthropic_conversion_preserves_length_stop_reason() {
-        let mut transformer =
-            GatewayStreamTransformer::new(&request(ClientProtocol::AnthropicMessages)).unwrap();
-        transformer
-            .push(b"data: {\"id\":\"one\",\"choices\":[{\"delta\":{\"content\":\"hi\"}}]}\n\n")
-            .unwrap();
-        let last = transformer
-            .push(b"data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"length\"}]}\n\ndata: [DONE]\n\n")
-            .unwrap();
-        assert!(String::from_utf8_lossy(&last).contains("max_tokens"));
-    }
-
-    /// A Responses client on an Anthropic upstream rides the canonical relay:
-    /// Anthropic SSE is decoded to canonical events, re-encoded as Chat SSE,
-    /// and projected into Responses events by the interim.
-    #[test]
-    fn responses_client_on_anthropic_upstream_bridges_through_canonical() {
-        let mut request = request(ClientProtocol::OpenAiResponses);
-        request.upstream_protocol = UpstreamProtocol::AnthropicMessages;
-        let mut transformer = GatewayStreamTransformer::new(&request).unwrap();
-        let first = transformer
-            .push(
-                concat!(
-                    "event: message_start\n",
-                    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"role\":\"assistant\",\"content\":[],\"usage\":{\"input_tokens\":3}}}\n\n",
-                    "event: content_block_start\n",
-                    "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
-                    "event: content_block_delta\n",
-                    "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"hi\"}}\n\n",
-                )
-                .as_bytes(),
-            )
-            .unwrap();
-        let last = transformer
-            .push(
-                concat!(
-                    "event: content_block_stop\n",
-                    "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
-                    "event: message_delta\n",
-                    "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":2}}\n\n",
-                    "event: message_stop\n",
-                    "data: {\"type\":\"message_stop\"}\n\n",
-                )
-                .as_bytes(),
-            )
-            .unwrap();
-        let combined = [first, last].concat();
-        let text = String::from_utf8_lossy(&combined);
-        assert!(text.contains("response.output_text.delta") || text.contains("response.completed"));
-
-        let tail = transformer.finish().unwrap();
-        let text = String::from_utf8_lossy(&tail);
-        assert!(text.contains("response.completed") || text.contains("response.output_text.done"));
+    fn responses_client_usage_trailing_finished_folds_into_completed() {
+        // Chat upstreams emit the terminal finish_reason chunk first and a
+        // separate usage chunk last; the usage must still land inside
+        // `response.completed` rather than be lost behind the terminal event.
+        let mut relay = ClientStreamRelay::new(&request(
+            ClientProtocol::OpenAiResponses,
+            UpstreamProtocol::OpenAiChatCompletions,
+        ));
+        let bytes = drive(
+            &mut relay,
+            &[
+                StreamEvent::PartStarted {
+                    index: 0,
+                    kind: PartKind::Text,
+                },
+                StreamEvent::TextDelta {
+                    index: 0,
+                    text: "hi".to_owned(),
+                },
+                StreamEvent::PartFinished { index: 0 },
+                StreamEvent::Finished {
+                    stop: Some(a4mp::StopReason::Complete),
+                },
+                StreamEvent::Usage(a4mp::Usage {
+                    input_tokens: Some(12),
+                    output_tokens: Some(3),
+                    extensions: Default::default(),
+                }),
+            ],
+        );
+        let text = String::from_utf8(bytes).unwrap();
+        let completed = text
+            .split("\n\n")
+            .find(|frame| frame.contains("response.completed"))
+            .expect("stream completes");
+        assert!(completed.contains("\"usage\""), "{completed}");
+        assert!(completed.contains("\"input_tokens\":12"), "{completed}");
+        assert!(completed.contains("\"output_tokens\":3"), "{completed}");
     }
 
     #[test]
-    fn responses_conversion_emits_incomplete_for_token_limit() {
-        let mut transformer =
-            GatewayStreamTransformer::new(&request(ClientProtocol::OpenAiResponses)).unwrap();
-        transformer
-            .push(b"data: {\"id\":\"one\",\"choices\":[{\"delta\":{\"content\":\"partial\"}}]}\n\n")
-            .unwrap();
-        let last = transformer
-            .push(b"data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"length\"}]}\n\ndata: [DONE]\n\n")
-            .unwrap();
-        let text = String::from_utf8_lossy(&last);
-        assert!(text.contains("response.incomplete"));
-        assert!(text.contains("max_output_tokens"));
+    fn chat_client_keeps_finish_chunk_before_trailing_usage_chunk() {
+        let mut relay = ClientStreamRelay::new(&request(
+            ClientProtocol::OpenAiChatCompletions,
+            UpstreamProtocol::OpenAiChatCompletions,
+        ));
+        let bytes = drive(
+            &mut relay,
+            &[
+                StreamEvent::PartStarted {
+                    index: 0,
+                    kind: PartKind::Text,
+                },
+                StreamEvent::TextDelta {
+                    index: 0,
+                    text: "hi".to_owned(),
+                },
+                StreamEvent::PartFinished { index: 0 },
+                StreamEvent::Finished {
+                    stop: Some(a4mp::StopReason::Complete),
+                },
+                StreamEvent::Usage(a4mp::Usage {
+                    input_tokens: Some(12),
+                    output_tokens: Some(3),
+                    extensions: Default::default(),
+                }),
+            ],
+        );
+        let text = String::from_utf8(bytes).unwrap();
+        let finish = text.find("\"finish_reason\"").expect("finish chunk");
+        let usage = text.find("\"usage\"").expect("usage chunk");
+        assert!(
+            finish < usage,
+            "chat wire order stays finish-chunk then usage-chunk"
+        );
+    }
+
+    #[test]
+    fn anthropic_upstream_reasoning_is_not_replayable_from_a_stream() {
+        let mut relay = ClientStreamRelay::new(&request(
+            ClientProtocol::OpenAiResponses,
+            UpstreamProtocol::AnthropicMessages,
+        ));
+        drive(
+            &mut relay,
+            &[
+                StreamEvent::PartStarted {
+                    index: 0,
+                    kind: PartKind::Reasoning,
+                },
+                StreamEvent::ReasoningDelta {
+                    index: 0,
+                    text: "thought".to_owned(),
+                },
+                StreamEvent::PartFinished { index: 0 },
+                StreamEvent::PartStarted {
+                    index: 1,
+                    kind: PartKind::Text,
+                },
+                StreamEvent::TextDelta {
+                    index: 1,
+                    text: "hi".to_owned(),
+                },
+                StreamEvent::PartFinished { index: 1 },
+                StreamEvent::Finished { stop: None },
+            ],
+        );
+        let history = relay.take_history().expect("responses history recorded");
+        assert!(
+            history
+                .assistant
+                .content
+                .iter()
+                .all(|part| !matches!(part, ContentPart::Reasoning(_))),
+            "streamed Anthropic reasoning cannot be rebuilt as opaque state"
+        );
+        assert!(history.assistant.content.iter().any(|part| matches!(
+            part,
+            ContentPart::Text { text } if text == "hi"
+        )));
+    }
+
+    #[test]
+    fn anthropic_client_receives_messages_dialect_events() {
+        let mut relay = ClientStreamRelay::new(&request(
+            ClientProtocol::AnthropicMessages,
+            UpstreamProtocol::OpenAiChatCompletions,
+        ));
+        let bytes = drive(
+            &mut relay,
+            &[
+                StreamEvent::PartStarted {
+                    index: 0,
+                    kind: PartKind::Text,
+                },
+                StreamEvent::TextDelta {
+                    index: 0,
+                    text: "hi".to_owned(),
+                },
+                StreamEvent::PartFinished { index: 0 },
+                StreamEvent::Finished {
+                    stop: Some(a4mp::StopReason::Length),
+                },
+            ],
+        );
+        let text = String::from_utf8(bytes).unwrap();
+        assert!(text.contains("content_block_start"));
+        assert!(text.contains("text_delta"));
+        assert!(text.contains("message_stop") || text.contains("max_tokens"));
+        assert!(relay.take_history().is_none());
+    }
+
+    #[test]
+    fn chat_client_receives_chat_dialect_events() {
+        let mut relay = ClientStreamRelay::new(&request(
+            ClientProtocol::OpenAiChatCompletions,
+            UpstreamProtocol::AnthropicMessages,
+        ));
+        let bytes = drive(
+            &mut relay,
+            &[
+                StreamEvent::PartStarted {
+                    index: 0,
+                    kind: PartKind::Text,
+                },
+                StreamEvent::TextDelta {
+                    index: 0,
+                    text: "hi".to_owned(),
+                },
+                StreamEvent::PartFinished { index: 0 },
+                StreamEvent::Finished { stop: None },
+            ],
+        );
+        let text = String::from_utf8(bytes).unwrap();
+        assert!(text.contains("chat.completion.chunk"));
+        assert!(text.contains("\"content\":\"hi\"") || text.contains("\"content\": \"hi\""));
+        assert!(text.contains("[DONE]"));
     }
 }

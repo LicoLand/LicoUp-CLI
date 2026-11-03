@@ -10,8 +10,16 @@ description = "LicoUp Private Gateway: the authenticated loopback LLM model gate
 [dependencies]
 a4mp.workspace = true
 anyhow.workspace = true
+async-trait = "0.1"
 base64.workspace = true
+bytes = "1"
+# The outward forwarding core: fairliny's Router binds a4mp adapters over this
+# host's transport and lease ports. The crate keeps the host shell — loopback
+# listeners, wire dialects, client-token auth, custody and the usage journal.
+fairliny-gateway = { path = "../../../../Silverboom/Fairliny-Gateway" }
 fs2.workspace = true
+futures = "0.3"
+http = "1"
 licoup-foundation = { path = "../licoup-foundation", version = "0.3.0" }
 credential-lease = { version = "0.3.0", path = "../../../../Silverboom/Credential-Lease/crates/credential-lease" }
 agent-statistics.workspace = true
