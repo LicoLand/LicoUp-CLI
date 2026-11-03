@@ -329,6 +329,9 @@ impl PlatformLlmApiKeyVault {
             let secret = self
                 .read_or_migrate_secret(session, &key)?
                 .ok_or_else(|| anyhow!("llm_api_key_inventory_inconsistent"))?;
+            let leased_secret =
+                credential_lease::SecretBytes::try_from_bytes(secret.expose_bytes().to_vec())?;
+            drop(secret);
             // Authorization reads the selected items. Existing protection is
             // not rewritten: SecAccessControl cannot convert a classic macOS
             // application ACL, and another write may demand per-item consent.
@@ -337,7 +340,7 @@ impl PlatformLlmApiKeyVault {
                 .or_default()
                 .push(GatewayCredential::new(
                     entry.credential_id.clone(),
-                    secret,
+                    leased_secret,
                     entry.expires_at_epoch_seconds,
                 )?);
         }
@@ -842,8 +845,7 @@ mod disposition_tests {
         }
         let probe = "unrecognized";
         assert!(
-            PlatformLlmApiKeyVault::legacy_credential_migration_disposition_for(probe)
-                .is_err()
+            PlatformLlmApiKeyVault::legacy_credential_migration_disposition_for(probe).is_err()
         );
     }
 }
