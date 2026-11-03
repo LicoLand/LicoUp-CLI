@@ -251,27 +251,13 @@ pub fn conversation_list(params: &Value) -> Result<Value> {
                 continue;
             }
         };
-        let parsed = (adapter == HistoryAdapter::Codex && requested.is_some())
-            .then(|| {
-                super::codex::parse_codex_rollout_bounded_sessions(
-                    &candidate.path,
-                    &candidate.source_kind,
-                    &metadata,
-                    scan_config.clone(),
-                    DEFAULT_HISTORY_MESSAGE_LIMIT,
-                    requested,
-                )
-            })
-            .flatten()
-            .unwrap_or_else(|| {
-                parse_history_file(
-                    adapter,
-                    &candidate.path,
-                    &candidate.source_kind,
-                    &metadata,
-                    scan_config.clone(),
-                )
-            });
+        let parsed = parse_history_file(
+            adapter,
+            &candidate.path,
+            &candidate.source_kind,
+            &metadata,
+            scan_config.clone(),
+        );
         if let Some(requested) = requested
             && exact_hydration_locator_matches(&candidate.path, requested)
             && parsed.iter().any(|session| {

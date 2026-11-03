@@ -181,8 +181,10 @@ pub(super) fn structured_metadata_detail(value: &Value) -> Option<String> {
     let Some(object) = value.as_object() else {
         return structured_event_detail_candidate(value);
     };
+    let mut entries = object.iter().collect::<Vec<_>>();
+    entries.sort_by(|(a, _), (b, _)| a.cmp(b));
     let mut lines = Vec::new();
-    for (key, item) in object {
+    for (key, item) in entries {
         if SKIP.contains(&key.as_str()) {
             continue;
         }
@@ -253,7 +255,12 @@ fn structured_entries_text(value: &Value, skip: &[&str]) -> Option<String> {
     let mut lines = Vec::new();
     match value {
         Value::Object(object) => {
-            for (key, item) in object {
+            // Sorted keys keep the detail stable across `serde_json` map
+            // backends: `preserve_order` flips object iteration from sorted
+            // to insertion order wherever it lands in the feature graph.
+            let mut entries = object.iter().collect::<Vec<_>>();
+            entries.sort_by(|(a, _), (b, _)| a.cmp(b));
+            for (key, item) in entries {
                 if skip.contains(&key.as_str()) {
                     continue;
                 }

@@ -20,9 +20,7 @@ use serde_json::{Value, json};
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 
-use super::codex::{
-    CodexRuntimeObservation, parse_codex_rollout_bounded_sessions, rollout_session_id_from_filename,
-};
+use super::codex::{CodexRuntimeObservation, rollout_session_id_from_filename};
 use super::cursor_openagent::codec::{open_read_only_connection, sqlite_table_exists};
 use super::cursor_openagent::{
     CopilotChatSessionsReadError, copilot_chat_sessions_document, cursor_composer_catalog,
@@ -741,17 +739,6 @@ fn parse_catalog_history_file(
     metadata: &fs::Metadata,
     scan_config: &HistoryScanConfig,
 ) -> Vec<Value> {
-    if adapter == HistoryAdapter::Codex {
-        return parse_codex_rollout_bounded_sessions(
-            path,
-            source_kind,
-            metadata,
-            scan_config.clone(),
-            CATALOG_HYDRATED_MESSAGE_CAP,
-            None,
-        )
-        .unwrap_or_default();
-    }
     parse_history_file(adapter, path, source_kind, metadata, scan_config.clone())
 }
 
@@ -2624,7 +2611,7 @@ fn pi_catalog(roots: &[HistoryRoot], cutoff: SystemTime, catalog: &mut SessionCa
 }
 
 fn pi_header(path: &Path) -> (String, Option<SystemTime>, Option<String>) {
-    let header = super::pi_copilot::pi_session_header(path);
+    let header = super::pi::pi_session_header(path);
     (
         header.native_session_id,
         header

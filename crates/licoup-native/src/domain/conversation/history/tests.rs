@@ -1,11 +1,7 @@
 mod catalog;
-mod codex;
 mod cursor_openagent;
-mod deepseek;
 mod generic;
-mod kimi;
 mod message_projection;
-mod pi_copilot;
 mod query;
 mod session_merge;
 mod session_metadata;

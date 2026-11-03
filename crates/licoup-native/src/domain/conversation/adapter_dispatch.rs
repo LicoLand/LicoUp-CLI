@@ -1,7 +1,7 @@
 //! Single routing authority from an agent history source to its parser.
 
 use super::parser_port::{HistoryParserKind, HistoryScanConfig, parse_history};
-use super::source_catalog::{HistoryAdapter, deepseek_generation};
+use super::source_catalog::HistoryAdapter;
 use serde_json::Value;
 use std::fs;
 use std::path::Path;
@@ -13,6 +13,28 @@ pub(crate) fn parse_history_file(
     metadata: &fs::Metadata,
     scan_config: HistoryScanConfig,
 ) -> Vec<Value> {
+    // Adapters with an a4aa store card decode through the ACO codec that
+    // owns the persisted format; cardless adapters keep native parsers.
+    if let Some(codec) = super::history::acop_codec_for(adapter) {
+        if !adapter.accepts_file(
+            path,
+            &path
+                .extension()
+                .and_then(|value| value.to_str())
+                .unwrap_or_default()
+                .to_ascii_lowercase(),
+        ) {
+            return Vec::new();
+        }
+        return super::history::acop_sessions_from_store(
+            codec,
+            adapter,
+            path,
+            source_kind,
+            metadata,
+            &scan_config,
+        );
+    }
     let Some(parser) = parser_kind(adapter, path) else {
         return Vec::new();
     };
@@ -20,14 +42,8 @@ pub(crate) fn parse_history_file(
 }
 
 fn parser_kind(adapter: HistoryAdapter, path: &Path) -> Option<HistoryParserKind> {
-    // The Harness session log is a versioned, possibly compressed event
-    // container — only the dedicated reader decodes it, never a generic
-    // transcript parser.
-    if adapter == HistoryAdapter::DeepSeekHarness {
-        return deepseek_generation(path)
-            .is_some()
-            .then_some(HistoryParserKind::DeepSeekSession);
-    }
+    // Only cardless adapters reach this point: every adapter backed by an
+    // a4aa store card was decoded by its ACO codec in `parse_history_file`.
     let extension = path
         .extension()
         .and_then(|value| value.to_str())
@@ -36,14 +52,8 @@ fn parser_kind(adapter: HistoryAdapter, path: &Path) -> Option<HistoryParserKind
     if !adapter.accepts_file(path, &extension) {
         return None;
     }
-    if adapter == HistoryAdapter::KimiCode {
-        return Some(HistoryParserKind::KimiCodeWire);
-    }
     match extension.as_str() {
         "jsonl" | "ndjson" => Some(match adapter {
-            HistoryAdapter::Codex => HistoryParserKind::CodexRollout,
-            HistoryAdapter::Copilot => HistoryParserKind::CopilotTranscript,
-            HistoryAdapter::Pi => HistoryParserKind::PiJsonLines,
             HistoryAdapter::LicoAgent => HistoryParserKind::LicoAgentJsonLines,
             _ => HistoryParserKind::GenericJsonLines,
         }),
@@ -57,34 +67,67 @@ fn parser_kind(adapter: HistoryAdapter, path: &Path) -> Option<HistoryParserKind
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
 
     #[test]
-    fn dispatches_agent_specific_and_generic_formats() {
-        let kimi_wire = PathBuf::from("workspace")
-            .join("agents")
-            .join("worker")
-            .join("wire.jsonl");
-        assert_eq!(
-            parser_kind(HistoryAdapter::KimiCode, &kimi_wire),
-            Some(HistoryParserKind::KimiCodeWire)
-        );
-        assert_eq!(
-            parser_kind(HistoryAdapter::Codex, Path::new("rollout.jsonl")),
-            Some(HistoryParserKind::CodexRollout)
-        );
-        assert_eq!(
-            parser_kind(HistoryAdapter::OpenCode, Path::new("session.md")),
-            Some(HistoryParserKind::TextTranscript)
-        );
-        assert_eq!(
-            parser_kind(HistoryAdapter::Cursor, Path::new("state.vscdb")),
-            Some(HistoryParserKind::SqliteDatabase)
-        );
+    fn cardless_adapters_dispatch_to_native_parsers() {
         assert_eq!(
             parser_kind(HistoryAdapter::LicoAgent, Path::new("session.jsonl")),
             Some(HistoryParserKind::LicoAgentJsonLines)
         );
+        assert_eq!(
+            parser_kind(HistoryAdapter::CodeBuddy, Path::new("session.md")),
+            Some(HistoryParserKind::TextTranscript)
+        );
+        assert_eq!(
+            parser_kind(HistoryAdapter::WorkBuddy, Path::new("workbuddy.db")),
+            Some(HistoryParserKind::SqliteDatabase)
+        );
+        assert_eq!(
+            parser_kind(HistoryAdapter::TraeWork, Path::new("session.json")),
+            Some(HistoryParserKind::JsonDocument)
+        );
+        assert_eq!(
+            parser_kind(HistoryAdapter::Code, Path::new("transcript.jsonl")),
+            Some(HistoryParserKind::GenericJsonLines)
+        );
+    }
+
+    #[test]
+    fn carded_adapters_route_through_the_acop_codec() {
+        for adapter in [
+            HistoryAdapter::Antigravity,
+            HistoryAdapter::ClaudeCode,
+            HistoryAdapter::Codex,
+            HistoryAdapter::Copilot,
+            HistoryAdapter::Cursor,
+            HistoryAdapter::DeepSeekHarness,
+            HistoryAdapter::Hermes,
+            HistoryAdapter::KiloCode,
+            HistoryAdapter::KimiCode,
+            HistoryAdapter::OpenClaw,
+            HistoryAdapter::OpenCode,
+            HistoryAdapter::Pi,
+        ] {
+            assert!(
+                super::super::history::acop_codec_for(adapter).is_some(),
+                "{} keeps an ACOP codec",
+                adapter.id()
+            );
+        }
+        for adapter in [
+            HistoryAdapter::Code,
+            HistoryAdapter::LicoAgent,
+            HistoryAdapter::WorkBuddy,
+            HistoryAdapter::CodeBuddy,
+            HistoryAdapter::TraeWork,
+            HistoryAdapter::TraeAgent,
+        ] {
+            assert!(
+                super::super::history::acop_codec_for(adapter).is_none(),
+                "{} stays on native parsers",
+                adapter.id()
+            );
+        }
     }
 
     #[test]
@@ -99,30 +142,11 @@ mod tests {
             Some(HistoryAdapter::DeepSeekHarness)
         );
         assert_eq!(
-            parser_kind(HistoryAdapter::DeepSeekHarness, Path::new("session.jsonl")),
-            Some(HistoryParserKind::DeepSeekSession)
-        );
-        assert_eq!(
-            parser_kind(
-                HistoryAdapter::DeepSeekHarness,
-                Path::new("session.v4.jsonl.zstd")
-            ),
-            Some(HistoryParserKind::DeepSeekSession)
-        );
-        assert_eq!(
-            parser_kind(HistoryAdapter::DeepSeekHarness, Path::new("notes.jsonl")),
-            None
-        );
-        assert_eq!(
             parser_kind(HistoryAdapter::Cursor, Path::new("notes.md")),
             None
         );
         assert_eq!(
             parser_kind(HistoryAdapter::Codex, Path::new("rollout.jsonl.backup")),
-            None
-        );
-        assert_eq!(
-            parser_kind(HistoryAdapter::KimiCode, Path::new("wire.jsonl")),
             None
         );
         assert_eq!(

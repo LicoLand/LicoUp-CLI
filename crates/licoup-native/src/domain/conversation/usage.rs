@@ -2,6 +2,4 @@
 //! history. The implementation lives in `agent-statistics`; this shim keeps
 //! the conversation-internal path callers already name.
 
-pub(crate) use agent_statistics::normalize::{
-    UsageFields, collect_token_usage, extract_token_usage, token_count_value,
-};
+pub(crate) use agent_statistics::normalize::extract_token_usage;

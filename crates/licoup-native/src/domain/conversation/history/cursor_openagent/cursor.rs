@@ -1,170 +1,13 @@
 use std::collections::HashSet;
-use std::fs;
-use std::path::Path;
 
-use rusqlite::{Connection, TransactionBehavior};
-use serde_json::{Value, json};
+use rusqlite::Connection;
+use serde_json::Value;
 
-use super::super::HistoryAdapter;
 use super::super::project_workspace::bounded_project_workspace;
 use super::super::query_filter::epoch_value_to_rfc3339;
-use super::super::session_metadata::session_from_messages_with_title;
-use super::codec::{sqlite_table_exists, sqlite_value_text};
-use super::cursor_projection::{cursor_composer_model_from_config, cursor_message_from_bubble};
+use super::codec::sqlite_value_text;
+use super::cursor_projection::cursor_composer_model_from_config;
 
-pub(super) fn parse_cursor_sqlite_sessions(
-    path: &Path,
-    source_kind: &str,
-    metadata: &fs::Metadata,
-    connection: &mut Connection,
-    requested_sessions: Option<&std::collections::BTreeSet<String>>,
-) -> Vec<Value> {
-    let transaction = match connection.transaction_with_behavior(TransactionBehavior::Deferred) {
-        Ok(transaction) => transaction,
-        Err(_) => return Vec::new(),
-    };
-    if !sqlite_table_exists(&transaction, "cursorDiskKV") {
-        return Vec::new();
-    }
-
-    let composers = cursor_composer_rows(&transaction);
-    if composers.is_empty() {
-        return Vec::new();
-    }
-    let composers = retain_requested_composer_lineage(composers, requested_sessions);
-    if composers.is_empty() {
-        return Vec::new();
-    }
-    let mut sessions = Vec::new();
-    for composer in composers {
-        let bubble_ids = if composer.bubble_ids.is_empty() {
-            cursor_bubble_ids_for_composer(&transaction, &composer.id)
-        } else {
-            composer.bubble_ids.clone()
-        };
-        if bubble_ids.is_empty() {
-            continue;
-        }
-
-        let mut messages = Vec::new();
-        for bubble_id in bubble_ids {
-            let Some(raw) = cursor_disk_kv_json(
-                &transaction,
-                &format!("bubbleId:{}:{}", composer.id, bubble_id),
-            ) else {
-                continue;
-            };
-            if let Some(message) =
-                cursor_message_from_bubble(&raw, &composer.model, path, messages.len())
-            {
-                messages.push(message);
-            }
-        }
-        if messages.is_empty() {
-            continue;
-        }
-
-        let mut session = session_from_messages_with_title(
-            HistoryAdapter::Cursor,
-            path,
-            metadata,
-            source_kind,
-            composer.id.clone(),
-            messages,
-            composer.title.clone(),
-        );
-        if let Some(object) = session.as_object_mut() {
-            object.insert("model".to_string(), json!(composer.model.clone()));
-            if let Some(created_at) = composer.created_at.as_ref() {
-                object.insert("createdAt".to_string(), json!(created_at));
-            }
-            if let Some(updated_at) = composer.updated_at.as_ref() {
-                object.insert("updatedAt".to_string(), json!(updated_at));
-            }
-            if let Some(workspace) = composer.workspace_path.as_ref() {
-                object.insert("workingDirectory".to_string(), json!(workspace));
-            }
-        }
-        sessions.push((composer, session));
-    }
-    tag_delegated_subagent_sessions(&mut sessions);
-    sessions.into_iter().map(|(_, session)| session).collect()
-}
-
-/// Keep only the requested conversations and the delegated tasks below them.
-///
-/// The IDE store holds every Cursor conversation in one database. Reading one
-/// conversation or one catalog page must not walk the message bubbles of all
-/// the others, so the composer list is narrowed before any bubble is touched.
-/// Delegated descendants stay because they fold into the conversation as task
-/// cards.
-fn retain_requested_composer_lineage(
-    composers: Vec<CursorComposerMeta>,
-    requested_sessions: Option<&std::collections::BTreeSet<String>>,
-) -> Vec<CursorComposerMeta> {
-    let Some(seed) = requested_sessions.filter(|ids| !ids.is_empty()) else {
-        return composers;
-    };
-    let mut wanted = HashSet::<String>::from_iter(seed.iter().cloned());
-    // Delegated composers appear after their parent in insertion order but the
-    // store gives no ordering guarantee, so repeat until the closure is stable.
-    loop {
-        let before = wanted.len();
-        for composer in &composers {
-            if let Some(parent) = composer.parent_composer_id.as_deref()
-                && wanted.contains(parent)
-            {
-                wanted.insert(composer.id.clone());
-            }
-        }
-        if wanted.len() == before {
-            break;
-        }
-    }
-    composers
-        .into_iter()
-        .filter(|composer| wanted.contains(&composer.id))
-        .collect()
-}
-
-/// Marks subagent composer sessions with the explicit delegated-lineage
-/// markers the session merge consumes, so each subagent thread folds into its
-/// parent composer as a collapsed subagent card instead of surfacing as an
-/// indistinguishable top-level session. Subagents whose parent composer did
-/// not yield a session keep their flat top-level entry.
-fn tag_delegated_subagent_sessions(sessions: &mut [(CursorComposerMeta, Value)]) {
-    let emitted_ids = sessions
-        .iter()
-        .filter_map(|(_, session)| {
-            session
-                .get("nativeSessionId")
-                .and_then(Value::as_str)
-                .map(str::to_string)
-        })
-        .collect::<HashSet<_>>();
-    for (composer, session) in sessions.iter_mut() {
-        let Some(parent_id) = composer.parent_composer_id.as_deref() else {
-            continue;
-        };
-        if !emitted_ids.contains(parent_id) {
-            continue;
-        }
-        let Some(object) = session.as_object_mut() else {
-            continue;
-        };
-        object.insert("delegatedSubagent".to_string(), json!(true));
-        object.insert("parentSessionId".to_string(), json!(parent_id));
-        if let Some(title) = composer
-            .title
-            .clone()
-            .or_else(|| composer.subagent_type_name.clone())
-        {
-            object.insert("subagentTitle".to_string(), json!(title));
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
 pub(super) struct CursorComposerMeta {
     id: String,
     title: Option<String>,
@@ -173,7 +16,6 @@ pub(super) struct CursorComposerMeta {
     updated_at: Option<String>,
     bubble_ids: Vec<String>,
     parent_composer_id: Option<String>,
-    subagent_type_name: Option<String>,
     /// Project directory the composer was opened against, taken from Cursor's
     /// own `workspaceIdentifier` record. Cursor is the only local agent whose
     /// conversation store knows the project path without a separate CLI file,
@@ -362,12 +204,6 @@ pub(super) fn cursor_composer_rows(connection: &Connection) -> Vec<CursorCompose
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(str::to_string);
-        let subagent_type_name = subagent_info
-            .and_then(|info| info.get("subagentTypeName"))
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(str::to_string);
         let workspace_path = cursor_composer_workspace_path(&json);
         composers.push(CursorComposerMeta {
             id,
@@ -381,48 +217,8 @@ pub(super) fn cursor_composer_rows(connection: &Connection) -> Vec<CursorCompose
             ),
             bubble_ids,
             parent_composer_id,
-            subagent_type_name,
             workspace_path,
         });
     }
     composers
-}
-
-pub(super) fn cursor_bubble_ids_for_composer(
-    connection: &Connection,
-    composer_id: &str,
-) -> Vec<String> {
-    let prefix = format!("bubbleId:{}:", composer_id);
-    let upper = format!("bubbleId:{};", composer_id);
-    let Ok(mut statement) =
-        connection.prepare("SELECT key FROM cursorDiskKV WHERE key >= ?1 AND key < ?2")
-    else {
-        return Vec::new();
-    };
-    let Ok(rows) = statement.query_map([&prefix, &upper], |row| {
-        Ok(sqlite_value_text(row.get_ref(0)?))
-    }) else {
-        return Vec::new();
-    };
-    rows.flatten()
-        .flatten()
-        .filter_map(|key| {
-            key.strip_prefix(&prefix)
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .map(str::to_string)
-        })
-        .collect()
-}
-
-pub(super) fn cursor_disk_kv_json(connection: &Connection, key: &str) -> Option<Value> {
-    let value = connection
-        .query_row(
-            "SELECT value FROM cursorDiskKV WHERE key = ?1 LIMIT 1",
-            [key],
-            |row| Ok(sqlite_value_text(row.get_ref(0)?)),
-        )
-        .ok()
-        .flatten()?;
-    serde_json::from_str(&value).ok()
 }

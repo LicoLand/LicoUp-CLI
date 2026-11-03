@@ -22,9 +22,7 @@ pub use agent_statistics::journal::{
 pub use agent_statistics::source_host::{
     ReadingSettlement, UsageSourceHost, held_metering, install, source_host,
 };
-pub(crate) use agent_statistics::variant::{
-    model_label as recorded_usage_model, prefer_recorded_model,
-};
+pub(crate) use agent_statistics::variant::model_label as recorded_usage_model;
 pub use agent_statistics::{report, scan};
 
 #[cfg(test)]

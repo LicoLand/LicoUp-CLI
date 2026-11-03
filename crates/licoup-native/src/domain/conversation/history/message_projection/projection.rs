@@ -1,7 +1,6 @@
 use std::path::Path;
 
 use serde_json::{Value, json};
-use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 
 use super::antigravity;
 use super::generated_context::{
@@ -219,12 +218,6 @@ pub(in crate::domain::conversation::history) fn native_history_message_id(
     } else {
         format!("{id}:{block_index}")
     }
-}
-
-pub(in crate::domain::conversation::history) fn native_message_timestamp() -> String {
-    OffsetDateTime::now_utc()
-        .format(&Rfc3339)
-        .unwrap_or_else(|_| "1970-01-01T00:00:00Z".to_string())
 }
 
 pub(in crate::domain::conversation::history) fn clean_native_message_text(

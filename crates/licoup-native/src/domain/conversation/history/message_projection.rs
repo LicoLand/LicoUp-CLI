@@ -20,8 +20,8 @@ pub(in crate::domain::conversation::history) use json_extract::{
     find_string,
 };
 pub(in crate::domain::conversation::history) use projection::{
-    clean_native_message_text, native_history_message_id, native_message_timestamp,
-    plain_history_message, structured_history_message,
+    clean_native_message_text, native_history_message_id, plain_history_message,
+    structured_history_message,
 };
 pub(in crate::domain::conversation::history) use semantic::{
     HistoryMessageKind, history_message_kind_from_semantic, normalize_history_message_semantic,
