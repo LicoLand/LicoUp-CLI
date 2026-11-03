@@ -3,7 +3,6 @@ use super::parameters::{discovered_agent_execution_requested, param_string};
 use super::scan_paths::{self, HostRoots, probe_is_file};
 use crate::port::AgentTargetPort;
 use serde_json::Value;
-use std::collections::BTreeSet;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -238,76 +237,23 @@ pub(super) fn cursor_binary_supports_acp(
         == Some(true)
 }
 
+/// Executable resolution inside caller-supplied dirs runs the shared
+/// allowlisted engine: denied locations are skipped and a symlink chain
+/// escaping into one is never stated.
 pub(super) fn find_binary_in_dirs(names: &[&str], dirs: &[PathBuf]) -> Option<PathBuf> {
-    let home = licoup_foundation::platform::paths::user_home_from_env();
-    for dir in dirs {
-        for name in names {
-            for candidate in binary_candidate_paths(dir, name) {
-                if scan_paths::denied(&candidate, home.as_deref()) {
-                    continue;
-                }
-                if automatic_path_is_file(&candidate) {
-                    return Some(candidate);
-                }
-            }
-        }
-    }
-    None
+    scan_paths::scan_manifest().find_binary_in_dirs(names, dirs)
 }
 
 fn automatic_path_is_file(path: &Path) -> bool {
-    !scan_paths::symlink_escapes_denied_location(path) && path.is_file()
+    scan_paths::scan_manifest().automatic_path_is_file(path)
 }
 
 fn automatic_path_is_dir(path: &Path) -> bool {
-    !scan_paths::symlink_escapes_denied_location(path) && path.is_dir()
+    scan_paths::scan_manifest().automatic_path_is_dir(path)
 }
 
 fn binary_search_dirs() -> Vec<PathBuf> {
     scan_paths::binary_dirs(std::env::consts::OS, &HostRoots::from_environment())
-}
-
-fn binary_candidate_paths(dir: &Path, name: &str) -> Vec<PathBuf> {
-    #[cfg(not(target_os = "windows"))]
-    let candidates = vec![dir.join(name)];
-
-    #[cfg(target_os = "windows")]
-    let mut candidates = vec![dir.join(name)];
-    #[cfg(target_os = "windows")]
-    {
-        if Path::new(name).extension().is_none() {
-            for extension in windows_binary_extensions() {
-                candidates.push(dir.join(format!("{}{}", name, extension)));
-            }
-        }
-    }
-    dedupe_paths(candidates)
-}
-
-#[cfg(target_os = "windows")]
-fn windows_binary_extensions() -> Vec<String> {
-    let mut extensions = env::var("PATHEXT")
-        .unwrap_or_else(|_| ".COM;.EXE;.BAT;.CMD".to_string())
-        .split(';')
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(|value| {
-            if value.starts_with('.') {
-                value.to_string()
-            } else {
-                format!(".{}", value)
-            }
-        })
-        .collect::<Vec<_>>();
-    for extension in [".exe", ".cmd", ".bat", ".com"] {
-        if !extensions
-            .iter()
-            .any(|value| value.eq_ignore_ascii_case(extension))
-        {
-            extensions.push(extension.to_string());
-        }
-    }
-    extensions
 }
 
 fn classify_binary_source(path: &Path) -> &'static str {
@@ -351,18 +297,6 @@ fn classify_binary_source(path: &Path) -> &'static str {
     BINARY_SOURCE_EXECUTABLE_PATH
 }
 
-fn dedupe_paths(paths: Vec<PathBuf>) -> Vec<PathBuf> {
-    let mut seen = BTreeSet::<String>::new();
-    let mut out = Vec::<PathBuf>::new();
-    for path in paths {
-        let key = path.to_string_lossy().to_ascii_lowercase();
-        if seen.insert(key) {
-            out.push(path);
-        }
-    }
-    out
-}
-
 #[cfg(test)]
 pub(super) fn find_macos_app_executable(
     app_bundle: &str,
@@ -390,15 +324,6 @@ mod tests {
             PathBuf::from(char::from(47).to_string()),
             |path, component| path.join(component),
         )
-    }
-
-    #[test]
-    fn binary_candidates_preserve_priority_and_dedupe_case_insensitively() {
-        let dir = posix_path(&["tools"]);
-        let candidates = binary_candidate_paths(&dir, "codex");
-        assert_eq!(candidates.first(), Some(&dir.join("codex")));
-        let deduped = dedupe_paths(vec![dir.join("Codex"), dir.join("codex")]);
-        assert_eq!(deduped.len(), 1);
     }
 
     #[test]

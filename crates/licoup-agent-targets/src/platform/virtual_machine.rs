@@ -1,14 +1,17 @@
+//! Remote-target runtime connections. The serialized connection document,
+//! the target scoping (`openclaw` and `hermes` only) and the Hermes TUI
+//! gateway launch form are LicoUp product policy; the validated SSH
+//! destination, field bounds and the locked-down remote command itself are
+//! `a4aa::transport::ssh`'s.
+
+use a4aa::transport::ssh::{
+    SshRemote, is_absolute_remote_working_directory, valid_remote_working_directory,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt;
 use std::path::Path;
 use std::process::Command;
-
-const MAX_HOST_BYTES: usize = 255;
-const MAX_USER_BYTES: usize = 255;
-const MAX_EXECUTABLE_BYTES: usize = 1024;
-const MAX_WORKING_DIRECTORY_BYTES: usize = 4096;
-const SSH_CONNECT_TIMEOUT_SECONDS: u8 = 10;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -125,47 +128,37 @@ impl SshRuntimeConnection {
     }
 
     fn launch_ssh_command(&self, remote_args: &[&str]) -> Result<Command, RuntimeConnectionError> {
-        let destination = match self.user.as_deref() {
-            Some(user) => format!("{user}@{}", self.host),
-            None => self.host.clone(),
-        };
-        let remote_args = remote_args
-            .iter()
-            .map(|value| posix_shell_quote(value))
-            .collect::<Vec<_>>()
-            .join(" ");
-        let remote_command = format!(
-            "cd {} && exec {} {}",
-            posix_shell_quote(&self.working_directory),
-            posix_shell_quote(&self.remote_executable),
-            remote_args,
-        );
-        let mut command = Command::new("ssh");
-        // The local ssh client observes the user shell environment (proxy,
-        // agent socket, PATH); `SendEnv=-*` keeps it from crossing the wire.
-        crate::platform::user_shell_environment::apply_to_command(&mut command);
-        command
-            .arg("-T")
-            .args(["-o", "BatchMode=yes"])
-            .args(["-o", "StrictHostKeyChecking=yes"])
-            .args(["-o", "ClearAllForwardings=yes"])
-            .args(["-o", "ForwardAgent=no"])
-            .args(["-o", "ForwardX11=no"])
-            .args(["-o", "ForwardX11Trusted=no"])
-            .args(["-o", "PermitLocalCommand=no"])
-            .args(["-o", "ControlMaster=no"])
-            .args(["-o", "ControlPath=none"])
-            .args(["-o", "ControlPersist=no"])
-            .args(["-o", "SendEnv=-*"])
-            .args(["-o", "RequestTTY=no"])
-            .args(["-o", "NumberOfPasswordPrompts=0"])
-            .arg("-o")
-            .arg(format!("ConnectTimeout={SSH_CONNECT_TIMEOUT_SECONDS}"));
-        if let Some(port) = self.port {
-            command.arg("-p").arg(port.to_string());
-        }
-        command.arg(destination).arg(remote_command);
-        Ok(command)
+        // `validate` already admitted every field, so the remote cannot
+        // reject this declaration; the error arm stays defensive.
+        let remote = self.ssh_remote()?;
+        Ok(remote.command(remote_args))
+    }
+
+    fn ssh_remote(&self) -> Result<SshRemote, RuntimeConnectionError> {
+        SshRemote::new(
+            &self.host,
+            self.port,
+            self.user.as_deref(),
+            &self.remote_executable,
+            &self.working_directory,
+        )
+        .map_err(|error| match error {
+            a4aa::transport::ssh::SshRemoteError::InvalidHost => {
+                RuntimeConnectionError::InvalidHost
+            }
+            a4aa::transport::ssh::SshRemoteError::InvalidPort => {
+                RuntimeConnectionError::InvalidPort
+            }
+            a4aa::transport::ssh::SshRemoteError::InvalidUser => {
+                RuntimeConnectionError::InvalidUser
+            }
+            a4aa::transport::ssh::SshRemoteError::InvalidExecutable => {
+                RuntimeConnectionError::InvalidExecutable
+            }
+            a4aa::transport::ssh::SshRemoteError::InvalidWorkingDirectory => {
+                RuntimeConnectionError::InvalidWorkingDirectory
+            }
+        })
     }
 
     fn validate(&self, target: &str) -> Result<(), RuntimeConnectionError> {
@@ -175,21 +168,7 @@ impl SshRuntimeConnection {
         if self.kind != "ssh" {
             return Err(RuntimeConnectionError::InvalidKind);
         }
-        if !valid_host(&self.host) {
-            return Err(RuntimeConnectionError::InvalidHost);
-        }
-        if self.port == Some(0) {
-            return Err(RuntimeConnectionError::InvalidPort);
-        }
-        if self.user.as_deref().is_some_and(|user| !valid_user(user)) {
-            return Err(RuntimeConnectionError::InvalidUser);
-        }
-        if !valid_remote_executable(&self.remote_executable) {
-            return Err(RuntimeConnectionError::InvalidExecutable);
-        }
-        if !valid_remote_working_directory(&self.working_directory) {
-            return Err(RuntimeConnectionError::InvalidWorkingDirectory);
-        }
+        self.ssh_remote()?;
         if self.runtime_protocol.is_some() && target != "hermes" {
             return Err(RuntimeConnectionError::InvalidProtocol);
         }
@@ -202,56 +181,17 @@ pub fn supports_virtual_machine_target(target: &str) -> bool {
 }
 
 pub fn is_absolute_acp_working_directory(path: &Path) -> bool {
-    path.is_absolute() || path.to_str().is_some_and(valid_remote_working_directory)
+    is_absolute_remote_working_directory(path)
 }
 
 pub fn is_valid_guest_working_directory(path: &Path) -> bool {
     path.to_str().is_some_and(valid_remote_working_directory)
 }
 
-fn valid_host(value: &str) -> bool {
-    bounded_trimmed(value, MAX_HOST_BYTES)
-        && !value.starts_with('-')
-        && value.bytes().all(|byte| {
-            byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_' | b':' | b'[' | b']')
-        })
-}
-
-fn valid_user(value: &str) -> bool {
-    bounded_trimmed(value, MAX_USER_BYTES)
-        && !value.starts_with('-')
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_'))
-}
-
-fn valid_remote_executable(value: &str) -> bool {
-    bounded_trimmed(value, MAX_EXECUTABLE_BYTES)
-        && !value.starts_with('-')
-        && !value
-            .bytes()
-            .any(|byte| matches!(byte, b'\0' | b'\n' | b'\r'))
-}
-
-fn valid_remote_working_directory(value: &str) -> bool {
-    bounded_trimmed(value, MAX_WORKING_DIRECTORY_BYTES)
-        && value.starts_with('/')
-        && !value
-            .bytes()
-            .any(|byte| matches!(byte, b'\0' | b'\n' | b'\r'))
-}
-
-fn bounded_trimmed(value: &str, max_bytes: usize) -> bool {
-    !value.is_empty() && value.len() <= max_bytes && value.trim() == value
-}
-
-fn posix_shell_quote(value: &str) -> String {
-    format!("'{}'", value.replace('\'', "'\\''"))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use a4aa::transport::ssh::posix_shell_quote;
     use serde_json::json;
 
     fn guest_path(segments: &[&str]) -> String {

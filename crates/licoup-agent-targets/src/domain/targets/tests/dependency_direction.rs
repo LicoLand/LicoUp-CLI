@@ -10,8 +10,12 @@
 const MANIFEST: &str = include_str!("../../../../Cargo.toml");
 const HOST_MANIFEST: &str = include_str!("../../../../../licoup-native/Cargo.toml");
 
-/// Every LicoUp crate this inventory is allowed to reach downward.
+/// Every crate this inventory is allowed to reach downward: LicoUp's own
+/// foundation/state/adapter packages and `a4aa`, the shared adapter core the
+/// discovery engine, host environment and SSH remote live in. None is a host
+/// crate — `licoup-native` composes this inventory, not the reverse.
 const DOWNWARD_DEPENDENCIES: &[&str] = &[
+    "a4aa",
     "licoup-foundation",
     "licoup-client-state",
     "licoup-agent-deepseek",

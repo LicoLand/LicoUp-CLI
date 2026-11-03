@@ -8,6 +8,9 @@ license.workspace = true
 publish = false
 
 [dependencies]
+# The host-neutral runtime contracts — provider identity, the evidence and
+# readiness reducers, the dispatch vocabulary, the runtime ports and the
+# protocol selector — live in the shared adapter core; this crate re-exports
+# them so every former `licoup_agent_runtime` path stays reachable.
+a4aa = { path = "../../../../Silverboom/Adapter-For-All-Agents" }
 serde.workspace = true
-serde_json.workspace = true
-sha2.workspace = true

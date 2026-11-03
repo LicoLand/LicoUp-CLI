@@ -12,10 +12,15 @@ default = []
 # behind an explicit feature, because `cfg(test)` is false for a dependency and
 # a `--lib` build compiles no test code. Native's test build enables it so its
 # own scan fixtures keep their isolation seam.
-test-support = []
+test-support = ["a4aa/test-support"]
 
 [dependencies]
 anyhow.workspace = true
+# Allowlisted agent discovery (`a4aa::discovery`), the user login-shell
+# environment (`a4aa::hostenv`) and the validated SSH remote
+# (`a4aa::transport::ssh`) live in the shared adapter core; this crate's own
+# scan manifest and inventory project them onto LicoUp's surface.
+a4aa = { path = "../../../../Silverboom/Adapter-For-All-Agents" }
 # The path, IO, process, environment and user-shell primitives every scan on
 # this machine stands on.
 licoup-foundation = { path = "../licoup-foundation" }
@@ -35,6 +40,11 @@ libc.workspace = true
 toml.workspace = true
 
 [dev-dependencies]
+# This crate's own test build re-exports a4aa's launch-snapshot pin seam, so
+# it enables the same feature the `test-support` forward declares.
+a4aa = { path = "../../../../Silverboom/Adapter-For-All-Agents", features = [
+    "test-support",
+] }
 # The scan and cache fixtures use explicit unique identifiers so a test never
 # collides with another test's persisted records.
 uuid.workspace = true
