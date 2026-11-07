@@ -97,8 +97,7 @@ pub fn fixture_root() -> PathBuf {
     if corpus.is_dir() {
         corpus
     } else {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../apps/desktop/test/fixtures/adapter-replay")
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/adapter-replay")
     }
 }
 

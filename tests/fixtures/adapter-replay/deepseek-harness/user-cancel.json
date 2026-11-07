@@ -1,0 +1,75 @@
+{
+  "adapterId": "deepseek-harness",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "lf-jsonl-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":\"initialize\",\"result\":{\"serverInfo\":{\"name\":\"deepseek-harness-sdk-runtime\"}}}",
+      "projection": [
+        {
+          "effect": "frame",
+          "wireBytes": 100
+        },
+        {
+          "accepted": true,
+          "effect": "handshake"
+        }
+      ]
+    },
+    {
+      "channel": "lf-jsonl-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"jsonrpc\":\"2.0\",\"method\":\"session.event\",\"params\":{\"sessionId\":\"session-1\",\"event\":{\"type\":\"agent/inbox/spliced\",\"data\":{\"inserted\":[{\"id\":\"message-1\"}]}}}}",
+      "projection": [
+        {
+          "effect": "frame",
+          "wireBytes": 158
+        }
+      ]
+    },
+    {
+      "channel": "lf-jsonl-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":\"prompt-1\",\"result\":{}}",
+      "projection": [
+        {
+          "error": "incomplete"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "user-cancel",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:e00ae510843d866090f5e18202f80b0680b123d85000fea3cd3e508ac4beadb1"
+  }
+}

@@ -18,7 +18,7 @@ import {
 import { recordProjections } from "./record-projections.mjs";
 
 const repositoryRoot = resolve(import.meta.dirname, "../../..");
-const fixturesRoot = resolve(process.argv[2] || join(repositoryRoot, "apps/desktop/test/fixtures/adapter-replay"));
+const fixturesRoot = resolve(process.argv[2] || join(repositoryRoot, "tests/fixtures/adapter-replay"));
 const buildRoot = join(repositoryRoot, "build", "adapter-replay");
 if (fixturesRoot === repositoryRoot || !fixturesRoot.startsWith(`${repositoryRoot}/`)) {
   throw new Error(`fixture_root_must_be_inside_repository:${fixturesRoot}`);

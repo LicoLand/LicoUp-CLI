@@ -86,11 +86,60 @@ pub(super) fn open_cache_database(path: &Path) -> Result<Connection> {
     }
     connection.pragma_update(None, "journal_mode", "WAL")?;
     connection.pragma_update(None, "synchronous", "NORMAL")?;
+    install_numeric_guards(&connection)?;
     #[cfg(unix)]
     if path.exists() {
         fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
     }
     Ok(connection)
+}
+
+fn install_numeric_guards(connection: &Connection) -> Result<()> {
+    let day_columns = [
+        "prompt_tokens",
+        "cached_input_tokens",
+        "completion_tokens",
+        "estimated_prompt_tokens",
+        "estimated_completion_tokens",
+        "explicit_records",
+        "estimated_records",
+        "message_count",
+        "request_count",
+        "token_unavailable_requests",
+    ];
+    let model_columns = [
+        "prompt_tokens",
+        "cached_input_tokens",
+        "completion_tokens",
+        "total_tokens",
+        "estimated_prompt_tokens",
+        "estimated_completion_tokens",
+        "request_count",
+        "token_unavailable_requests",
+    ];
+    let mut total_columns = day_columns.to_vec();
+    total_columns.push("session_count");
+    for (table, columns) in [
+        ("native_usage_source_days", day_columns.as_slice()),
+        ("native_usage_daily_totals", total_columns.as_slice()),
+        ("native_usage_source_models", model_columns.as_slice()),
+        ("native_usage_daily_models", model_columns.as_slice()),
+    ] {
+        let mut invalid = columns
+            .iter()
+            .map(|column| format!("typeof(NEW.{column}) != 'integer' OR NEW.{column} < 0"))
+            .collect::<Vec<_>>()
+            .join(" OR ");
+        invalid.push_str(" OR NEW.prompt_tokens > 9223372036854775807 - NEW.completion_tokens");
+        for event in ["INSERT", "UPDATE"] {
+            connection.execute_batch(&format!(
+                "CREATE TEMP TRIGGER IF NOT EXISTS guard_{table}_{event}
+                 BEFORE {event} ON main.{table} WHEN {invalid}
+                 BEGIN SELECT RAISE(ABORT, 'native_usage_counter_out_of_range'); END;"
+            ))?;
+        }
+    }
+    Ok(())
 }
 
 fn create_schema(transaction: &Transaction<'_>) -> Result<()> {
@@ -276,13 +325,23 @@ pub(super) fn cache_has_baseline(connection: &Connection, scope_key: &str) -> Re
         .map_err(Into::into)
 }
 
-pub(super) fn migration_counts(connection: &Connection, scope_key: &str) -> Result<(u64, u64)> {
+pub(super) fn migration_counts(
+    connection: &Connection,
+    scope_key: &str,
+) -> Result<(u64, u64, u64)> {
     connection
         .query_row(
-            "SELECT COALESCE(SUM(migration_state=1),0), COALESCE(SUM(migration_state IN (3,5)),0)
+            "SELECT COALESCE(SUM(migration_state=1),0), COALESCE(SUM(migration_state IN (3,5)),0),
+                    COALESCE(SUM(json_extract(snapshot_cursor, '$.stored.time_inferred')=1),0)
          FROM native_usage_sources WHERE scope_key=?1",
             [scope_key],
-            |row| Ok((from_i64(row.get(0)?), from_i64(row.get(1)?))),
+            |row| {
+                Ok((
+                    from_i64(row.get(0)?),
+                    from_i64(row.get(1)?),
+                    from_i64(row.get(2)?),
+                ))
+            },
         )
         .map_err(Into::into)
 }
@@ -785,16 +844,16 @@ impl<'a> RefreshStatements<'a> {
                 scope_key,
                 source_key,
                 day,
-                to_i64(usage.prompt_tokens),
-                to_i64(usage.cached_input_tokens.min(usage.prompt_tokens)),
-                to_i64(usage.completion_tokens),
-                to_i64(usage.estimated_prompt_tokens),
-                to_i64(usage.estimated_completion_tokens),
-                to_i64(usage.explicit_records),
-                to_i64(usage.estimated_records),
-                to_i64(usage.message_count),
-                to_i64(usage.request_count),
-                to_i64(usage.token_unavailable_requests),
+                usage.prompt_tokens,
+                usage.cached_input_tokens.min(usage.prompt_tokens),
+                usage.completion_tokens,
+                usage.estimated_prompt_tokens,
+                usage.estimated_completion_tokens,
+                usage.explicit_records,
+                usage.estimated_records,
+                usage.message_count,
+                usage.request_count,
+                usage.token_unavailable_requests,
             ]);
             self.count();
             day_saved?;
@@ -831,20 +890,18 @@ impl<'a> RefreshStatements<'a> {
                 source_key,
                 day,
                 model,
-                to_i64(model_usage.prompt_tokens),
-                to_i64(
-                    model_usage
-                        .cached_input_tokens
-                        .min(model_usage.prompt_tokens)
-                ),
-                to_i64(model_usage.completion_tokens),
-                to_i64(model_usage.total_tokens),
-                to_i64(model_usage.estimated_prompt_tokens),
-                to_i64(model_usage.estimated_completion_tokens),
+                model_usage.prompt_tokens,
+                model_usage
+                    .cached_input_tokens
+                    .min(model_usage.prompt_tokens),
+                model_usage.completion_tokens,
+                model_usage.total_tokens,
+                model_usage.estimated_prompt_tokens,
+                model_usage.estimated_completion_tokens,
                 variant.effort.as_deref().unwrap_or_default(),
                 variant.fast.map(i64::from).unwrap_or(-1),
-                to_i64(model_usage.request_count),
-                to_i64(model_usage.token_unavailable_requests),
+                model_usage.request_count,
+                model_usage.token_unavailable_requests,
             ]);
             self.count();
             model_saved?;

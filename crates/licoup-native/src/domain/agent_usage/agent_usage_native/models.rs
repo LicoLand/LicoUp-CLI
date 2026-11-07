@@ -101,6 +101,9 @@ pub(super) enum PlannedSourceAction {
         append_guard: String,
     },
     Reuse,
+    Stored {
+        projection: Box<super::stored::Projection>,
+    },
     RefreshIdentity {
         parsed: Option<Box<ParseResult>>,
     },

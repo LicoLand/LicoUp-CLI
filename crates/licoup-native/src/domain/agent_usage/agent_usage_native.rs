@@ -18,6 +18,7 @@ mod openclaw;
 mod parser;
 pub(super) mod runtime;
 mod snapshot_cursor;
+mod stored;
 mod watermark;
 
 use crate::domain::conversation::history_discovery::{
@@ -79,17 +80,17 @@ pub(super) fn summarize(
     window: &UsageWindow,
     warnings: &mut Vec<Value>,
     runtime: &CacheRuntime,
-) -> Option<HistoryUsageSummary> {
+) -> Result<HistoryUsageSummary> {
     if agent.id == "openclaw" {
-        return Some(openclaw::summarize(window, warnings));
+        return Ok(openclaw::summarize(window, warnings));
     }
     // Cursor's billing ledger is hosted: the local stores it writes are not a
     // request ledger, so the file pipeline is never consulted for it.
     if agent.id == "cursor" {
-        return Some(cursor::summarize(scan_params, window, warnings));
+        return Ok(cursor::summarize(scan_params, window, warnings));
     }
     match summarize_inner(agent, scan_params, window, warnings, runtime) {
-        Ok(summary) => Some(summary),
+        Ok(summary) => Ok(summary),
         Err(error) => {
             warnings.push(if let Some(failure) = error.downcast_ref::<deepseek::ReadFailure>() {
                 json!({"code":"native_usage_source_read_failed", "agentId":agent.id, "stage":failure.0})
@@ -98,7 +99,7 @@ pub(super) fn summarize(
             } else { json!({
                 "code": "native_usage_cache_failed", "agentId": agent.id
             }) });
-            None
+            Err(anyhow::anyhow!("native_usage_cache_failed"))
         }
     }
 }
@@ -175,6 +176,7 @@ fn summarize_inner(
     };
 
     let discovery = discover_history_files(adapter, &roots, HistoryDiscoveryOptions::default());
+    let stored_spec = stored::declaration(adapter);
     for skipped in discovery
         .skipped
         .iter()
@@ -187,6 +189,23 @@ fn summarize_inner(
                 .unwrap_or("native_usage_source_skipped"),
             "agentId": agent.id
         }));
+    }
+    if stored_spec.is_some()
+        && discovery.skipped.iter().any(|item| {
+            matches!(
+                item.get("reason").and_then(Value::as_str),
+                Some(
+                    "read_dir_entry_failed"
+                        | "metadata_failed"
+                        | "read_dir_failed"
+                        | "denied_personal_location"
+                        | "denied_symlink_escape"
+                        | "symlink_not_followed"
+                )
+            )
+        })
+    {
+        anyhow::bail!("stored_usage_discovery_failed");
     }
     let unique_candidates = discovery
         .candidates
@@ -206,17 +225,18 @@ fn summarize_inner(
     } else {
         unique_candidates
     };
-    let entries = unique_candidates
-        .into_iter()
-        .filter_map(|(path, source_kind)| {
-            let metadata = source_metadata(&path)?;
-            Some(SourceEntry {
+    let mut entries = Vec::new();
+    for (path, source_kind) in unique_candidates {
+        match source_metadata(&path) {
+            Some(metadata) => entries.push(SourceEntry {
                 metadata,
                 path,
                 source_kind,
-            })
-        })
-        .collect::<Vec<_>>();
+            }),
+            None if stored_spec.is_some() => anyhow::bail!("stored_usage_metadata_failed"),
+            None => continue,
+        }
+    }
     stats.discovered_sources = entries.len() as u64;
 
     // Day rollover is independent of source discovery. The plan replicates
@@ -234,6 +254,7 @@ fn summarize_inner(
         .collect::<Vec<_>>();
 
     let mut sources = Vec::new();
+    let mut stored_reader = None;
     let mut deepseek_reader = deepseek::Reader::default();
     for entry in entries {
         let identity_path = if adapter == HistoryAdapter::DeepSeekHarness {
@@ -243,7 +264,37 @@ fn summarize_inner(
         };
         let key = source_key(&scope_key, identity_path);
         let previous_source = planned_sources.get(&key).cloned();
-        let (action, metadata) = if let Some(previous) = &previous_source
+        let (action, metadata) = if let Some(spec) = stored_spec {
+            if !force_refresh
+                && previous_source
+                    .as_ref()
+                    .is_some_and(|old| stored::ready(old) && source_unchanged(old, &entry.metadata))
+            {
+                stats.reused_sources += 1;
+                (PlannedSourceAction::Reuse, entry.metadata.clone())
+            } else {
+                if stored_reader.is_none() {
+                    stored_reader = Some(acop_usage_source::stored::StoredSource::new(spec)?);
+                }
+                let metadata =
+                    source_metadata(&entry.path).context("stored_usage_metadata_failed")?;
+                let projection = stored::read(
+                    stored_reader.as_mut().expect("stored reader initialized"),
+                    &entry.path,
+                    previous_source.as_ref(),
+                    &metadata,
+                    window,
+                )?;
+                stats.replaced_sources += 1;
+                stats.parsed_bytes = stats.parsed_bytes.saturating_add(metadata.size);
+                (
+                    PlannedSourceAction::Stored {
+                        projection: Box::new(projection),
+                    },
+                    metadata,
+                )
+            }
+        } else if let Some(previous) = &previous_source
             && (previous.migration_state == 1
                 || (matches!(previous.migration_state, 2 | 3)
                     && (!source_unchanged(previous, &entry.metadata)
@@ -462,7 +513,14 @@ fn apply_refresh_plan(
                     source.path.display()
                 )
             })?;
-            if observed != source.metadata {
+            let unchanged = if matches!(&source.action, PlannedSourceAction::Stored { .. })
+                && source.metadata.file_id.is_some()
+            {
+                observed.file_id == source.metadata.file_id
+            } else {
+                observed == source.metadata
+            };
+            if !unchanged {
                 anyhow::bail!("native usage source changed during scan");
             }
         }
@@ -497,6 +555,24 @@ fn apply_refresh_plan(
                         &append_guard,
                         parse_window,
                     )?;
+                }
+                PlannedSourceAction::Stored { projection } => {
+                    let mut previous = plan.previous.get(&source.key).cloned();
+                    if plan.compaction_targets.contains(&source.key)
+                        && let Some(previous) = &mut previous
+                    {
+                        previous.session_count = 0;
+                    }
+                    let compacted = stored::apply(
+                        &mut statements,
+                        scope_key,
+                        &source.key,
+                        &source.metadata,
+                        previous.as_ref(),
+                        window,
+                        *projection,
+                    )?;
+                    stats.compacted_days = stats.compacted_days.saturating_add(compacted);
                 }
                 PlannedSourceAction::Reuse => {}
                 PlannedSourceAction::RefreshIdentity { parsed } => {
@@ -934,11 +1010,16 @@ fn report_migration_status(
     agent_id: &str,
     warnings: &mut Vec<Value>,
 ) -> Result<()> {
-    let (pending, gaps) = migration_counts(connection, scope_key)?;
+    let (pending, gaps, inferred) = migration_counts(connection, scope_key)?;
     if pending > 0 || gaps > 0 {
         warnings.push(
             json!({"code":"native_usage_source_migration_incomplete", "agentId":agent_id,
             "pendingSources":pending, "gapSources":gaps}),
+        );
+    }
+    if inferred > 0 {
+        warnings.push(
+            json!({"code":"native_usage_time_inferred", "agentId":agent_id, "sources":inferred}),
         );
     }
     Ok(())
@@ -949,7 +1030,7 @@ fn apply_source(adapter: HistoryAdapter, summary: &mut HistoryUsageSummary) {
         summary.source = Some("deepseek-harness-session-usage");
     }
     if adapter == HistoryAdapter::Hermes {
-        summary.source = Some("hermes-gateway-usage-database");
+        summary.source = Some("hermes-stored-usage-database");
     }
 }
 

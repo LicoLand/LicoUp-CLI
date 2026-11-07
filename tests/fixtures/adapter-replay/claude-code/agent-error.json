@@ -1,0 +1,65 @@
+{
+  "adapterId": "claude-code",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"synthetic-session\",\"model\":\"synthetic-model\",\"permissionMode\":\"plan\"}",
+      "projection": [
+        {
+          "effect": "progress",
+          "sessionId": "synthetic-session"
+        }
+      ]
+    },
+    {
+      "channel": "lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"type\":\"result\",\"subtype\":\"authentication_required\",\"is_error\":true,\"result\":\"synthetic authentication failure\",\"session_id\":\"synthetic-session\",\"permission_denials\":[]}",
+      "projection": [
+        {
+          "error": "claude_code_authentication_required",
+          "message": "Claude Code authentication is required before this turn can continue.",
+          "sessionId": "synthetic-session",
+          "stage": "authentication/runtime",
+          "threadId": "synthetic-session",
+          "turnId": "synthetic-turn",
+          "userInteractionRequired": false
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "agent-error",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:cbb8c0cbc985eb23cd3e49e1cb0c48c3a8079a0dd9a956f8aa57123c90fca9ac"
+  }
+}

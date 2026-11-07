@@ -26,7 +26,7 @@ fn update_usage(database: &PathBuf, input: i64, output: i64, last_seen: &str) {
     connection
         .execute(
             "UPDATE session_model_usage
-             SET input_tokens=?1,output_tokens=?2,last_seen=?3
+             SET input_tokens=?1,output_tokens=?2,first_seen=?3,last_seen=?3
              WHERE session_id='resumed-session'",
             rusqlite::params![input, output, epoch(last_seen)],
         )
@@ -49,9 +49,10 @@ fn cumulative_metadata_counts_new_usage_when_an_old_session_resumes() {
     connection
         .execute_batch(
             "CREATE TABLE sessions(
-               id TEXT PRIMARY KEY,model TEXT,started_at REAL NOT NULL,ended_at REAL,
+               id TEXT PRIMARY KEY,source TEXT NOT NULL,model TEXT,started_at REAL NOT NULL,ended_at REAL,
                input_tokens INTEGER,output_tokens INTEGER,
-               cache_read_tokens INTEGER,cache_write_tokens INTEGER
+               cache_read_tokens INTEGER,cache_write_tokens INTEGER,
+               api_call_count INTEGER
              );
              CREATE TABLE messages(session_id TEXT NOT NULL,timestamp REAL NOT NULL);
              CREATE INDEX messages_session_timestamp ON messages(session_id,timestamp);
@@ -63,6 +64,7 @@ fn cumulative_metadata_counts_new_usage_when_an_old_session_resumes() {
                input_tokens INTEGER,output_tokens INTEGER,
                cache_read_tokens INTEGER,cache_write_tokens INTEGER,
                reasoning_tokens INTEGER,first_seen REAL,last_seen REAL,
+               api_call_count INTEGER,
                PRIMARY KEY(
                  session_id,model,billing_provider,billing_base_url,billing_mode,task
                )
@@ -72,7 +74,7 @@ fn cumulative_metadata_counts_new_usage_when_an_old_session_resumes() {
     connection
         .execute(
             "INSERT INTO sessions VALUES(
-               'resumed-session','model-a',?1,NULL,100,10,0,0
+               'resumed-session','hermes-test','model-a',?1,NULL,100,10,0,0,1
              )",
             [epoch("2026-07-01T10:00:00Z")],
         )
@@ -80,9 +82,15 @@ fn cumulative_metadata_counts_new_usage_when_an_old_session_resumes() {
     connection
         .execute(
             "INSERT INTO session_model_usage VALUES(
-               'resumed-session','model-a','','','','',100,10,0,0,0,?1,?2
+               'resumed-session','model-a','','','','',100,10,0,0,0,?1,?1,1
              )",
-            rusqlite::params![epoch("2026-07-01T10:00:00Z"), epoch("2026-07-10T09:00:00Z")],
+            rusqlite::params![epoch("2026-07-01T10:00:00Z")],
+        )
+        .unwrap();
+    connection
+        .execute(
+            "INSERT INTO messages VALUES('resumed-session',?1)",
+            [epoch("2026-07-10T09:00:00Z")],
         )
         .unwrap();
     drop(connection);
@@ -119,15 +127,24 @@ fn cumulative_metadata_counts_new_usage_when_an_old_session_resumes() {
         1
     );
     let cache = SqliteConnection::open(state_root.join("agent-usage-rollups-v2.sqlite3")).unwrap();
-    let (session_key, usage_key): (String, String) = cache
+    // Stored-usage sources keep their durable resume cursor in the shared
+    // source row's `snapshot_cursor` (the `stored.sessions` map), not in the
+    // transcript-source watermark table.
+    let snapshot_cursor: String = cache
         .query_row(
-            "SELECT session_key,usage_key FROM native_usage_watermarks LIMIT 1",
+            "SELECT snapshot_cursor FROM native_usage_sources LIMIT 1",
             [],
-            |row| Ok((row.get(0)?, row.get(1)?)),
+            |row| row.get(0),
         )
         .unwrap();
-    assert_eq!((session_key.len(), usage_key.len()), (64, 64));
-    assert!(!format!("{session_key}{usage_key}").contains("resumed-session"));
+    let cursor: Value = serde_json::from_str(&snapshot_cursor).unwrap();
+    let session = cursor["stored"]["sessions"]
+        .as_object()
+        .unwrap()
+        .get("resumed-session")
+        .unwrap();
+    assert_eq!(session["present"], true);
+    assert_eq!(session["counted"], true);
     drop(cache);
 
     fs::remove_dir_all(history_root).unwrap();

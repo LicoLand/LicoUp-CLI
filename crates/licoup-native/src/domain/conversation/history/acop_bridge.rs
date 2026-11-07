@@ -653,6 +653,31 @@ fn stamp_session_lineage(
 /// store columns (`promptTokens`…) pass through verbatim, raw envelopes
 /// (`{"tokens": …}`, `{"usage": …}`) go through the usage normalizer.
 fn extract_usage_value(data: &Value) -> Option<Value> {
-    crate::domain::conversation::usage::extract_token_usage(data)
-        .or_else(|| data.get("promptTokens").map(|_| data.clone()))
+    let mut usage = crate::domain::conversation::usage::extract_token_usage(data)
+        .or_else(|| data.get("promptTokens").map(|_| data.clone()))?;
+    if let Some(model) = agent_statistics::variant::model_label(data) {
+        usage["model"] = json!(model);
+    }
+    Some(usage)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn usage_projection_keeps_the_canonical_model_without_inventing_one() {
+        let counters =
+            json!({"promptTokens":10,"cachedInputTokens":0,"completionTokens":2,"totalTokens":12});
+        let projected =
+            extract_usage_value(&json!({"model":"recorded-model","usage":counters})).unwrap();
+        assert_eq!(projected["model"], "recorded-model");
+        assert_eq!(projected["totalTokens"], 12);
+        assert!(
+            extract_usage_value(&json!({"usage":counters}))
+                .unwrap()
+                .get("model")
+                .is_none()
+        );
+    }
 }

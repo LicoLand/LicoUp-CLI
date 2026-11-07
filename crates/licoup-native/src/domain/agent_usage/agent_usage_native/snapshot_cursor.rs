@@ -12,6 +12,8 @@ use std::collections::BTreeMap;
 pub(super) struct SnapshotCursor {
     pub(super) day: String,
     pub(super) session_count: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) stored: Option<super::stored::Cursor>,
     days: BTreeMap<String, SnapshotDay>,
 }
 
@@ -25,10 +27,24 @@ struct SnapshotDay {
 }
 
 impl SnapshotCursor {
+    pub(super) fn for_stored(
+        cursor: super::stored::Cursor,
+        calendar: &UsageWindow,
+        session_count: u64,
+    ) -> Self {
+        Self {
+            day: calendar.end.clone(),
+            session_count,
+            stored: Some(cursor),
+            ..Default::default()
+        }
+    }
+
     pub(super) fn capture(summary: &HistoryUsageSummary, calendar: &UsageWindow) -> Self {
         Self {
             day: calendar.end.clone(),
             session_count: summary.session_count,
+            stored: None,
             days: summary
                 .daily_usage
                 .iter()

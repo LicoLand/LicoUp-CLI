@@ -1,0 +1,78 @@
+{
+  "adapterId": "kilo-code",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"id\":\"kilo-1\",\"title\":\"synthetic-session\"}",
+      "projection": [
+        {
+          "effect": "session",
+          "sessionId": "kilo-1"
+        }
+      ]
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"type\":\"message.updated\",\"properties\":{\"info\":{\"id\":\"msg-kilo-5\",\"role\":\"assistant\",\"sessionID\":\"kilo-1\"}}}",
+      "projection": []
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"type\":\"message.part.updated\",\"properties\":{\"sessionID\":\"kilo-1\",\"part\":{\"id\":\"prt-kilo-7\",\"messageID\":\"msg-kilo-5\",\"type\":\"text\",\"text\":\"synthetic partial\"}}}",
+      "projection": [
+        {
+          "effect": "text",
+          "text": "synthetic partial"
+        }
+      ]
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{",
+      "projection": [
+        {
+          "error": "invalid_json"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "streaming-interruption",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:608ce8b5fb098267fc2bf801c2678d04fa1fafeb86cf995dc459145650cd96eb"
+  }
+}

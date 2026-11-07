@@ -191,7 +191,7 @@ fn command_kimi_code_keeps_exact_turn_and_session_usage_with_model_dimension() {
 }
 
 #[test]
-fn command_hermes_uses_reconciled_gateway_counters_without_text_estimates() {
+fn command_hermes_uses_declared_stored_counters_without_text_estimates() {
     install_host();
     let history_root = temp_root("hermes-gateway-history");
     let state_root = temp_root("hermes-gateway-state");
@@ -209,7 +209,8 @@ fn command_hermes_uses_reconciled_gateway_counters_without_text_estimates() {
                 input_tokens INTEGER NOT NULL DEFAULT 0,
                 output_tokens INTEGER NOT NULL DEFAULT 0,
                 cache_read_tokens INTEGER NOT NULL DEFAULT 0,
-                cache_write_tokens INTEGER NOT NULL DEFAULT 0
+                cache_write_tokens INTEGER NOT NULL DEFAULT 0,
+                api_call_count INTEGER NOT NULL DEFAULT 0
             );
             CREATE TABLE messages (
                 session_id TEXT NOT NULL,
@@ -231,6 +232,7 @@ fn command_hermes_uses_reconciled_gateway_counters_without_text_estimates() {
                 reasoning_tokens INTEGER NOT NULL DEFAULT 0,
                 first_seen REAL,
                 last_seen REAL,
+                api_call_count INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY (
                     session_id, model, billing_provider,
                     billing_base_url, billing_mode, task
@@ -240,7 +242,7 @@ fn command_hermes_uses_reconciled_gateway_counters_without_text_estimates() {
         .unwrap();
     connection
         .execute(
-            "INSERT INTO sessions VALUES (?1, 'gateway', ?2, ?3, NULL, 25, 12, 4, 1)",
+            "INSERT INTO sessions VALUES (?1, 'gateway', ?2, ?3, NULL, 25, 12, 4, 1, 2)",
             rusqlite::params![
                 "synthetic-session",
                 "hermes-test",
@@ -257,8 +259,8 @@ fn command_hermes_uses_reconciled_gateway_counters_without_text_estimates() {
     connection
         .execute(
             "INSERT INTO session_model_usage VALUES
-                (?1, ?2, '', '', '', '', 10, 5, 2, 0, 1, ?3, ?4),
-                (?1, ?2, '', '', '', 'compression', 7, 3, 1, 0, 2, ?5, ?6)",
+                (?1, ?2, '', '', '', '', 10, 5, 2, 0, 1, ?3, ?4, 1),
+                (?1, ?2, '', '', '', 'compression', 7, 3, 1, 0, 2, ?5, ?6, 1)",
             rusqlite::params![
                 "synthetic-session",
                 "hermes-test",
@@ -279,15 +281,16 @@ fn command_hermes_uses_reconciled_gateway_counters_without_text_estimates() {
     }))
     .unwrap();
     let history = &result["agents"][0]["history"];
-    assert_eq!(history["promptTokens"], 30);
-    assert_eq!(history["cachedInputTokens"], 4);
-    assert_eq!(history["completionTokens"], 12);
-    assert_eq!(history["totalTokens"], 42);
+    assert_eq!(history["promptTokens"], 38);
+    assert_eq!(history["cachedInputTokens"], 5);
+    assert_eq!(history["completionTokens"], 15);
+    assert_eq!(history["totalTokens"], 53);
     assert_eq!(history["sessionCount"], 1);
-    assert_eq!(history["tokenSourceBreakdown"]["explicitRecords"], 2);
+    assert_eq!(history["tokenSourceBreakdown"]["explicitRecords"], 3);
     assert_eq!(history["tokenSourceBreakdown"]["estimatedRecords"], 0);
-    assert_eq!(history["source"], "hermes-gateway-usage-database");
-    assert_eq!(history["dailyUsage"][0]["modelUsage"]["hermes-test"], 42);
+    assert_eq!(history["source"], "hermes-stored-usage-database");
+    assert_eq!(history["dailyUsage"][0]["modelUsage"]["hermes-test"], 28);
+    assert_eq!(history["dailyUsage"][0]["requestCount"], 3);
     assert_eq!(result["agents"][0]["confidence"], "high");
 
     fs::remove_dir_all(history_root).unwrap();

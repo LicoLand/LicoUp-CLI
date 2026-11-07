@@ -23,13 +23,10 @@ fn main() {
 }
 
 fn looks_like_semver(value: &str) -> bool {
-    let core = value
-        .split(|character| matches!(character, '-' | '+'))
-        .next()
-        .unwrap_or(value);
-    let mut parts = core.split('.');
+    let core = value.split(['-', '+']).next().unwrap_or(value);
+    let parts = core.split('.');
     let mut count = 0_usize;
-    while let Some(part) = parts.next() {
+    for part in parts {
         count += 1;
         if count > 3 || part.is_empty() || !part.bytes().all(|byte| byte.is_ascii_digit()) {
             return false;

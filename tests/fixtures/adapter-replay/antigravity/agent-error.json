@@ -1,0 +1,74 @@
+{
+  "adapterId": "antigravity",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "pty-hook-json",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "synthetic drifted reply\n",
+      "projection": [
+        {
+          "effect": "pty_text",
+          "text": "synthetic drifted reply\n"
+        }
+      ]
+    },
+    {
+      "channel": "pty-hook-json",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"conversationId\":\"11111111-2222-3333-4444-555555555555\"}",
+      "projection": [
+        {
+          "effect": "session_identity",
+          "sessionId": "11111111-2222-3333-4444-555555555555"
+        }
+      ]
+    },
+    {
+      "channel": "pty-hook-json",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"requestedSession\":\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\",\"exitSuccess\":true,\"timedOut\":false}",
+      "projection": [
+        {
+          "error": "antigravity_cli_session_drift",
+          "message": "Antigravity CLI resumed a different native conversation than requested.",
+          "sessionId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+          "stage": "session/resume"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "agent-error",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:9ca6dfae4c5bf4c922d0757da3ebaddca29146c246dadb057b459b9c74dcb1b9"
+  }
+}

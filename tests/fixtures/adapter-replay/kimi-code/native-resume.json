@@ -1,0 +1,153 @@
+{
+  "adapterId": "kimi-code",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "lf-ndjson-acp",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":1,\"agentCapabilities\":{\"loadSession\":true,\"sessionCapabilities\":{\"resume\":{}}},\"agentInfo\":{\"name\":\"kimi-code\",\"version\":\"synthetic\"}}}",
+      "projection": [
+        {
+          "effect": "send",
+          "message": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "session/load",
+            "params": {
+              "cwd": "/workspace/synthetic-project",
+              "mcpServers": [],
+              "sessionId": "native-session"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "lf-ndjson-acp",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"sessionId\":\"native-session\",\"configOptions\":[],\"modes\":{\"currentModeId\":\"agent\",\"availableModes\":[]}}}",
+      "projection": [
+        {
+          "effect": "send",
+          "message": {
+            "id": 3,
+            "jsonrpc": "2.0",
+            "method": "session/prompt",
+            "params": {
+              "prompt": [
+                {
+                  "text": "<REDACTED_CONTENT>",
+                  "type": "text"
+                }
+              ],
+              "sessionId": "native-session"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "lf-ndjson-acp",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"native-session\",\"update\":{\"sessionUpdate\":\"agent_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"synthetic resumed kimi-code reply\"}}}}",
+      "projection": []
+    },
+    {
+      "channel": "lf-ndjson-acp",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"stopReason\":\"end_turn\"}}",
+      "projection": [
+        {
+          "capabilities": {
+            "additionalDirectories": false,
+            "audioPrompts": false,
+            "closeSession": false,
+            "deleteSession": false,
+            "embeddedContext": false,
+            "imagePrompts": false,
+            "listSessions": false,
+            "loadSession": true,
+            "protocolVersion": 1,
+            "resumeSession": true
+          },
+          "effect": "complete",
+          "effective": {
+            "allowAll": null,
+            "approvalPolicy": null,
+            "cwd": "/workspace/synthetic-project",
+            "mode": "agent",
+            "model": null,
+            "reasoningEffort": null,
+            "runtimeAgent": null,
+            "sandbox": null
+          },
+          "output": "synthetic resumed kimi-code reply",
+          "sessionId": "native-session",
+          "threadId": "native-session",
+          "transitions": [
+            {
+              "kind": "lifecycle",
+              "stage": "submitted"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "accepted"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "processing"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "responding"
+            },
+            {
+              "kind": "text",
+              "text": "synthetic resumed kimi-code reply",
+              "unitId": "kimi-code:reply"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "completed"
+            }
+          ],
+          "turnStatus": "end_turn"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "native-resume",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:0476b2a3e7ae937f5e964ed216ac6d8d53007fdcd8b3ab2964facd9beb8a420c"
+  }
+}

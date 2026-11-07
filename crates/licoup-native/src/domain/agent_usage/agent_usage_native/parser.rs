@@ -1,4 +1,3 @@
-mod hermes;
 mod openagent;
 
 use super::models::{CumulativeSnapshot, CumulativeTotals, ParseResult};
@@ -16,7 +15,6 @@ use agent_statistics::variant::{
 };
 use agent_statistics::window::UsageWindow;
 use anyhow::{Context, Result};
-use hermes::parse_hermes_usage_database;
 use openagent::parse_openagent_usage_database;
 use rusqlite::{Connection, OpenFlags};
 use serde_json::{Value, json};
@@ -185,14 +183,6 @@ pub(super) fn parse_snapshot_source(
         && matches!(extension(path).as_str(), "sqlite" | "sqlite3" | "db")
         && let Some(mut parsed) = parse_openagent_usage_database(path, calendar)
     {
-        parsed.parsed_bytes = metadata.len();
-        parsed.session_increment = parsed.summary.session_count;
-        return Ok(parsed);
-    }
-    if adapter == HistoryAdapter::Hermes
-        && matches!(extension(path).as_str(), "sqlite" | "sqlite3" | "db")
-    {
-        let mut parsed = parse_hermes_usage_database(path, calendar).unwrap_or_default();
         parsed.parsed_bytes = metadata.len();
         parsed.session_increment = parsed.summary.session_count;
         return Ok(parsed);
@@ -1084,10 +1074,17 @@ mod tests {
             .unwrap();
             assert_eq!(parsed.summary.total_tokens(), 12, "{}", adapter.id());
             assert_eq!(
-                parsed.summary.daily_usage["2026-07-15"].model_usage["actual-model"].total_tokens,
-                12,
-                "{}",
-                adapter.id()
+                parsed.summary.daily_usage["2026-07-15"]
+                    .model_usage
+                    .get("actual-model")
+                    .map(|usage| usage.total_tokens),
+                Some(12),
+                "{}: {:?}",
+                adapter.id(),
+                parsed.summary.daily_usage["2026-07-15"]
+                    .model_usage
+                    .keys()
+                    .collect::<Vec<_>>()
             );
             fs::remove_dir_all(directory).unwrap();
         }

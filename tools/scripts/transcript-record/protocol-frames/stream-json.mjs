@@ -147,19 +147,19 @@ export const streamJsonFrames = {
       ],
       // The same turn resumed on the identity the launch already knew.
       "native-resume": [
-        cursorInit(minted_marker()),
-        cursorEcho(minted_marker()),
-        cursorDelta(minted_marker(), 1, "synthetic "),
-        cursorDelta(minted_marker(), 2, "reply"),
-        cursorTerminal(minted_marker(), "success", "req-2", false),
+        cursorInit("synthetic-session"),
+        cursorEcho("synthetic-session"),
+        cursorDelta("synthetic-session", 1, "synthetic "),
+        cursorDelta("synthetic-session", 2, "reply"),
+        cursorTerminal("synthetic-session", "success", "req-2", false),
       ],
       // The terminal Cursor emits for an interrupted turn.
       "user-cancel": [
-        cursorInit(minted_marker()),
-        cursorEcho(minted_marker()),
-        cursorDelta(minted_marker(), 1, "synthetic "),
+        cursorInit("synthetic-session"),
+        cursorEcho("synthetic-session"),
+        cursorDelta("synthetic-session", 1, "synthetic "),
         cursorTerminal(
-          minted_marker(),
+          "synthetic-session",
           "error_during_execution",
           "req-3",
           true,
@@ -167,10 +167,10 @@ export const streamJsonFrames = {
       ],
       // The terminal Cursor emits when the provider rejects the turn.
       "agent-error": [
-        cursorInit(minted_marker()),
-        cursorEcho(minted_marker()),
+        cursorInit("synthetic-session"),
+        cursorEcho("synthetic-session"),
         cursorTerminal(
-          minted_marker(),
+          "synthetic-session",
           "authentication_required",
           "req-4",
           true,
@@ -178,9 +178,9 @@ export const streamJsonFrames = {
       ],
       // Assistant content, then a result frame cut off mid-write.
       "streaming-interruption": [
-        cursorInit(minted_marker()),
-        cursorEcho(minted_marker()),
-        cursorDelta(minted_marker(), 1, "synthetic "),
+        cursorInit("synthetic-session"),
+        cursorEcho("synthetic-session"),
+        cursorDelta("synthetic-session", 1, "synthetic "),
         '{"type":"result"',
       ],
     },
@@ -194,32 +194,32 @@ export const streamJsonFrames = {
         claudeTerminal("fresh-synthetic-session", "success", content, false),
       ],
       "native-resume": [
-        claudeInit(minted_marker()),
-        claudeAssistant(minted_marker()),
-        claudeTerminal(minted_marker(), "success", content, false),
+        claudeInit("synthetic-session"),
+        claudeAssistant("synthetic-session"),
+        claudeTerminal("synthetic-session", "success", content, false),
       ],
       "user-cancel": [
-        claudeInit(minted_marker()),
-        claudeAssistant(minted_marker()),
+        claudeInit("synthetic-session"),
+        claudeAssistant("synthetic-session"),
         claudeTerminal(
-          minted_marker(),
+          "synthetic-session",
           "error_during_execution",
           "interrupted",
           true,
         ),
       ],
       "agent-error": [
-        claudeInit(minted_marker()),
+        claudeInit("synthetic-session"),
         claudeTerminal(
-          minted_marker(),
+          "synthetic-session",
           "authentication_required",
           "synthetic authentication failure",
           true,
         ),
       ],
       "streaming-interruption": [
-        claudeInit(minted_marker()),
-        claudeAssistant(minted_marker()),
+        claudeInit("synthetic-session"),
+        claudeAssistant("synthetic-session"),
         '{"type":"result"',
       ],
     },
@@ -233,26 +233,26 @@ export const streamJsonFrames = {
         codexCompleted("fresh-synthetic-thread", [codexAgentMessage]),
       ],
       "native-resume": [
-        ...codexHandshake(minted_marker()),
-        codexDelta(minted_marker()),
-        codexCompleted(minted_marker(), [codexAgentMessage]),
+        ...codexHandshake("synthetic-session"),
+        codexDelta("synthetic-session"),
+        codexCompleted("synthetic-session", [codexAgentMessage]),
       ],
       "user-cancel": [
-        ...codexHandshake(minted_marker()),
+        ...codexHandshake("synthetic-session"),
         {
           method: "turn/completed",
           params: {
-            threadId: minted_marker(),
+            threadId: "synthetic-session",
             turn: { id: "synthetic-turn", status: "interrupted", items: [] },
           },
         },
       ],
       "agent-error": [
-        ...codexHandshake(minted_marker()),
+        ...codexHandshake("synthetic-session"),
         {
           method: "turn/completed",
           params: {
-            threadId: minted_marker(),
+            threadId: "synthetic-session",
             turn: {
               id: "synthetic-turn",
               status: "failed",
@@ -267,9 +267,9 @@ export const streamJsonFrames = {
         },
       ],
       "streaming-interruption": [
-        ...codexHandshake(minted_marker()),
-        codexDelta(minted_marker()),
-        '{"method":"turn/completed","params":{"threadId":minted_marker()',
+        ...codexHandshake("synthetic-session"),
+        codexDelta("synthetic-session"),
+        '{"method":"turn/completed","params":{"threadId":"synthetic-session"',
       ],
     },
   },

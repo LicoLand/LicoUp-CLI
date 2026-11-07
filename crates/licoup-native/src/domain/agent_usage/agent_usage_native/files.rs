@@ -40,6 +40,9 @@ pub(super) fn is_usage_source(adapter: HistoryAdapter, path: &Path, source_kind:
         .and_then(|value| value.to_str())
         .unwrap_or_default()
         .to_ascii_lowercase();
+    if let Some(spec) = super::stored::declaration(adapter) {
+        return super::stored::accepts(spec, path);
+    }
     match adapter {
         HistoryAdapter::DeepSeekHarness => {
             crate::domain::conversation::source_catalog::deepseek_generation(path).is_some()
@@ -67,7 +70,6 @@ pub(super) fn is_usage_source(adapter: HistoryAdapter, path: &Path, source_kind:
         HistoryAdapter::Copilot if source_kind.starts_with("vscode-copilot-") => {
             matches!(file_name.as_str(), "state.vscdb" | "store.db")
         }
-        HistoryAdapter::Hermes => file_name == "state.db",
         HistoryAdapter::Pi if source_kind == "pi-session-store" => is_append_format(path),
         HistoryAdapter::LicoAgent if source_kind == "lico-agent-session-store" => {
             is_append_format(path)

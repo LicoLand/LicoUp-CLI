@@ -94,8 +94,7 @@ fn unsafe_stale_and_client_owned_workspaces_fail_before_process_launch() {
 /// send within the handshake bound instead of blocking forever.
 #[test]
 fn readiness_handshake_hang_fails_bounded() {
-    let stamp = stamp_nanos();
-    let (dir, executable) = compile_fake_lico_agent(stamp);
+    let (dir, executable) = compile_fake_lico_agent();
     let portable_dir = dir.join("portable");
     fs::create_dir_all(&portable_dir).unwrap();
     let _guard = ENV_LOCK.lock().unwrap();
@@ -137,8 +136,7 @@ fn readiness_handshake_hang_fails_bounded() {
 /// written.
 #[test]
 fn rejected_readiness_handshake_fails_before_prompt() {
-    let stamp = stamp_nanos();
-    let (dir, executable) = compile_fake_lico_agent(stamp);
+    let (dir, executable) = compile_fake_lico_agent();
     let portable_dir = dir.join("portable");
     fs::create_dir_all(&portable_dir).unwrap();
     let _guard = ENV_LOCK.lock().unwrap();
@@ -170,8 +168,7 @@ fn rejected_readiness_handshake_fails_before_prompt() {
 /// prompt and a completed turn.
 #[test]
 fn successful_readiness_handshake_keeps_the_turn_flow() {
-    let stamp = stamp_nanos();
-    let (dir, executable) = compile_fake_lico_agent(stamp);
+    let (dir, executable) = compile_fake_lico_agent();
     // Keep the parent transcript inside the temp dir.
     let portable_dir = dir.join("portable");
     fs::create_dir_all(&portable_dir).unwrap();
@@ -203,8 +200,7 @@ fn successful_readiness_handshake_keeps_the_turn_flow() {
 
 #[test]
 fn resume_requires_persisted_header_and_observed_native_identity() {
-    let stamp = stamp_nanos();
-    let (dir, executable) = compile_fake_lico_agent(stamp);
+    let (dir, executable) = compile_fake_lico_agent();
     let portable_dir = dir.join("portable");
     let sessions = portable_dir.join("client-state/lico-agent/sessions");
     fs::create_dir_all(&sessions).unwrap();
@@ -264,8 +260,7 @@ fn resume_requires_persisted_header_and_observed_native_identity() {
 
 #[test]
 fn explicit_output_bound_and_persistence_failure_are_visible() {
-    let stamp = stamp_nanos();
-    let (dir, executable) = compile_fake_lico_agent(stamp);
+    let (dir, executable) = compile_fake_lico_agent();
     let portable_dir = dir.join("portable");
     fs::create_dir_all(&portable_dir).unwrap();
     let _guard = ENV_LOCK.lock().unwrap();
@@ -322,8 +317,7 @@ fn explicit_output_bound_and_persistence_failure_are_visible() {
 
 #[test]
 fn omitted_output_bound_is_complete_and_sustained_stderr_cannot_deadlock() {
-    let stamp = stamp_nanos();
-    let (dir, executable) = compile_fake_lico_agent(stamp);
+    let (dir, executable) = compile_fake_lico_agent();
     let portable_dir = dir.join("portable");
     fs::create_dir_all(&portable_dir).unwrap();
     let expected = "synthetic-output".repeat(512);
@@ -386,9 +380,9 @@ fn execute_with_production_bound(executable: &str, dir: &PathBuf) -> RunResult {
 }
 
 /// Builds a fake lico-agent executable in a fresh temp dir (shared helper).
-fn compile_fake_lico_agent(stamp: u128) -> (PathBuf, PathBuf) {
-    let dir = std::env::temp_dir().join(format!("lico-lico-agent-fake-{stamp}"));
-    fs::create_dir_all(&dir).unwrap();
+fn compile_fake_lico_agent() -> (PathBuf, PathBuf) {
+    let dir = std::env::temp_dir().join(format!("lico-lico-agent-fake-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&dir).unwrap();
     let source = dir.join("fake_lico_agent.rs");
     let executable = dir.join(format!("fake-lico-agent{}", std::env::consts::EXE_SUFFIX));
     fs::write(&source, FAKE_LICO_AGENT_SOURCE).unwrap();
@@ -465,13 +459,6 @@ fn main() {
     }
 }
 "###;
-
-fn stamp_nanos() -> u128 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos()
-}
 
 /// Plan mode without a host that can sandbox is not a Lico Agent turn: the
 /// package refuses rather than spawning the program unsandboxed.

@@ -149,10 +149,7 @@ fn summarize_agent_history(
             ..HistoryUsageSummary::default()
         });
     }
-    Ok(
-        agent_usage_native::summarize(def, params, window, warnings, cache_runtime())
-            .unwrap_or_default(),
-    )
+    agent_usage_native::summarize(def, params, window, warnings, cache_runtime())
 }
 
 fn target_status_map(params: &Value, warnings: &mut Vec<Value>) -> BTreeMap<String, String> {

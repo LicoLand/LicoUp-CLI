@@ -2,7 +2,7 @@
   "schemaVersion": "lico.agent-adapter-tier-projection.v1",
   "derivation": "first-class requires complete human-reviewed replay scenario coverage and passing native e2e evidence; otherwise best-effort",
   "sources": [
-    "apps/desktop/test/fixtures/adapter-replay",
+    "tests/fixtures/adapter-replay",
     "agent-conversation-evidence.json"
   ],
   "adapters": [

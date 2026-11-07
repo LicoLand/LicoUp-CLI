@@ -217,7 +217,7 @@ fn schema_seven_migrates_existing_ledgers_sources_and_cursors_without_recounting
             .unwrap(),
         100
     );
-    assert_eq!(migration_counts(&connection, "scope").unwrap(), (2, 0));
+    assert_eq!(migration_counts(&connection, "scope").unwrap(), (2, 0, 0));
     drop(connection);
     let mut reopened = open_cache_database(&path).unwrap();
     assert_eq!(

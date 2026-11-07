@@ -264,7 +264,7 @@ test("the five recorded Claude Code transcripts are the package's own corpus", a
   ];
   for (const scenario of scenarios) {
     const document = JSON.parse(
-      await read(`apps/desktop/test/fixtures/adapter-replay/claude-code/${scenario}.json`),
+      await read(`tests/fixtures/adapter-replay/claude-code/${scenario}.json`),
     );
     assert.equal(document.adapterId, "claude-code");
     assert.equal(document.scenario, scenario);

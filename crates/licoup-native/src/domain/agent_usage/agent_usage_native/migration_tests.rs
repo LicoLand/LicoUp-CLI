@@ -278,7 +278,7 @@ fn first_snapshot_keeps_old_ledger_and_only_future_requests_are_added() {
     );
     assert_eq!(
         cache::migration_counts(&connection, "scope").unwrap(),
-        (0, 1)
+        (0, 1, 0)
     );
     let previous = load_sources(&connection, "scope")
         .unwrap()

@@ -1,0 +1,109 @@
+{
+  "adapterId": "pi",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "lf-jsonl-rpc",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"id\":\"lico-pi-initial-state\",\"type\":\"response\",\"command\":\"get_state\",\"success\":true,\"data\":{\"sessionId\":\"pi-error-1\"}}",
+      "projection": [
+        {
+          "effect": "send",
+          "id": "lico-pi-prompt",
+          "message": "synthetic-pi-prompt",
+          "type": "prompt"
+        }
+      ]
+    },
+    {
+      "channel": "lf-jsonl-rpc",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"id\":\"lico-pi-prompt\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true}",
+      "projection": []
+    },
+    {
+      "channel": "lf-jsonl-rpc",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"type\":\"message_end\",\"message\":{\"role\":\"assistant\",\"content\":[],\"stopReason\":\"error\",\"errorMessage\":\"503: {\\\"code\\\":\\\"gateway_credential_unavailable\\\"}\"}}",
+      "projection": []
+    },
+    {
+      "channel": "lf-jsonl-rpc",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{\"type\":\"agent_settled\"}",
+      "projection": [
+        {
+          "effect": "send",
+          "id": "lico-pi-assistant",
+          "type": "get_last_assistant_text"
+        }
+      ]
+    },
+    {
+      "channel": "lf-jsonl-rpc",
+      "direction": "agent-to-client",
+      "index": 4,
+      "payload": "{\"id\":\"lico-pi-assistant\",\"type\":\"response\",\"command\":\"get_last_assistant_text\",\"success\":true,\"data\":{\"text\":null}}",
+      "projection": [
+        {
+          "effect": "send",
+          "id": "lico-pi-state",
+          "type": "get_state"
+        }
+      ]
+    },
+    {
+      "channel": "lf-jsonl-rpc",
+      "direction": "agent-to-client",
+      "index": 5,
+      "payload": "{\"id\":\"lico-pi-state\",\"type\":\"response\",\"command\":\"get_state\",\"success\":true,\"data\":{\"sessionId\":\"pi-error-1\"}}",
+      "projection": [
+        {
+          "code": "pi_gateway_credentials_unavailable",
+          "effect": "fail",
+          "message": "Pi Agent could not call the model because the LLM Gateway has no authorized API keys. Open LicoUp → Keys and authorize credentials so they are hot-applied to the running Gateway.",
+          "requestMethod": null,
+          "sessionId": "pi-error-1",
+          "stage": "prompt/complete",
+          "turnId": "synthetic-turn",
+          "turnStatus": null,
+          "userInteractionRequired": false
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "agent-error",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:f8ee7c00fccaa189cfceda358dd6c33b76e78d8dec570424d1b4c4b819d899ef"
+  }
+}

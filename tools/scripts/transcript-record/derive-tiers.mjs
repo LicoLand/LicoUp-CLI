@@ -12,10 +12,10 @@ import {
 const repositoryRoot = resolve(import.meta.dirname, "../../..");
 const directoryExists = (path) => existsSync(path) && statSync(path).isDirectory();
 const developerCorpusRoot = join(repositoryRoot, "tests/replay-corpus");
-const syntheticFixtureRoot = join(repositoryRoot, "apps/desktop/test/fixtures/adapter-replay");
+const syntheticFixtureRoot = join(repositoryRoot, "tests/fixtures/adapter-replay");
 const usingDeveloperCorpus = directoryExists(developerCorpusRoot);
 const corpusRoot = usingDeveloperCorpus ? developerCorpusRoot : syntheticFixtureRoot;
-const replaySource = usingDeveloperCorpus ? "tests/replay-corpus" : "apps/desktop/test/fixtures/adapter-replay";
+const replaySource = usingDeveloperCorpus ? "tests/replay-corpus" : "tests/fixtures/adapter-replay";
 const e2ePath = join(repositoryRoot, "crates/licoup-native/resources/agent-conversation-evidence.json");
 const outputPath = join(repositoryRoot, "crates/licoup-native/resources/agent-adapter-tiers.json");
 const e2e = new Map((parseJson(e2ePath).adapters || []).map((entry) => [entry.agentId, entry]));

@@ -1,0 +1,113 @@
+{
+  "adapterId": "kilo-code",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"id\":\"kilo-1\",\"title\":\"synthetic-session\"}",
+      "projection": [
+        {
+          "effect": "session",
+          "sessionId": "kilo-1"
+        }
+      ]
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"type\":\"message.updated\",\"properties\":{\"info\":{\"id\":\"msg-kilo-3\",\"role\":\"assistant\",\"sessionID\":\"kilo-1\"}}}",
+      "projection": []
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"type\":\"message.part.updated\",\"properties\":{\"sessionID\":\"kilo-1\",\"part\":{\"id\":\"prt-kilo-5\",\"messageID\":\"msg-kilo-3\",\"type\":\"text\",\"text\":\"synthetic \"}}}",
+      "projection": [
+        {
+          "effect": "text",
+          "text": "synthetic "
+        }
+      ]
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{\"aborted\":true}",
+      "projection": []
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 4,
+      "payload": "{\"parts\":[{\"type\":\"text\",\"text\":\"synthetic \"}]}",
+      "projection": [
+        {
+          "effect": "message",
+          "output": "synthetic ",
+          "transitions": [
+            {
+              "kind": "lifecycle",
+              "stage": "submitted"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "accepted"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "processing"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "responding"
+            },
+            {
+              "kind": "text",
+              "text": "synthetic ",
+              "unitId": "kilo-code:reply"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "completed"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "user-cancel",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:945db198e5225cb374345a582f8b7135dd72fda35edaaef8049a50e567a782cd"
+  }
+}

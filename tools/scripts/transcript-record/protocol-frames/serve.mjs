@@ -14,9 +14,9 @@
 //
 // pi frames are JSONL lines of `pi --mode rpc`.
 
-const kiloSession = { id: "kilo-1", title: minted_marker() };
+const kiloSession = { id: "kilo-1", title: "synthetic-session" };
 const kiloResumed = { id: "existing-kilo-native", title: "t" };
-const openSession = { id: "open-1", title: minted_marker() };
+const openSession = { id: "open-1", title: "synthetic-session" };
 const openResumed = { id: "expected-open-native", title: "t" };
 
 function kiloAssistantSeen(sessionId, messageId) {

@@ -16,7 +16,7 @@ const corpusArgument = process.argv.slice(2).find((argument) => !argument.starts
 const directoryExists = (path) => existsSync(path) && statSync(path).isDirectory();
 const defaultRoot = directoryExists(resolve("tests/replay-corpus"))
   ? "tests/replay-corpus"
-  : "apps/desktop/test/fixtures/adapter-replay";
+  : "tests/fixtures/adapter-replay";
 const corpusRoot = resolve(corpusArgument || defaultRoot);
 if (!existsSync(corpusRoot)) {
   process.stderr.write(`replay fixtures directory absent: ${corpusRoot}\n`);

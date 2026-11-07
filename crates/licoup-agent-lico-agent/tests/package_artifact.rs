@@ -356,7 +356,7 @@ fn the_declared_format_is_the_one_a_recorded_lico_agent_turn_crosses() {
 /// checkout without it fails rather than passing on a synthetic substitute.
 fn recorded_turn() -> Vec<Value> {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../apps/desktop/test/fixtures/adapter-replay/lico-agent/normal-turn.json");
+        .join("../../tests/fixtures/adapter-replay/lico-agent/normal-turn.json");
     let document: Value = serde_json::from_str(
         &std::fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("the recorded transcript must be readable: {error}")),

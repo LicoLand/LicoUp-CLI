@@ -173,7 +173,14 @@ fn live_process_continuation_cancel_cleanup_and_redaction_close_end_to_end() {
         1024,
     );
     assert!(!missing.ok);
-    assert_eq!(missing.error.unwrap().code, "claude_code_exited");
+    let failure = missing.error.unwrap();
+    assert_eq!(failure.code, "claude_code_turn_failed");
+    assert_eq!(failure.stage, "turn/completed");
+    assert_eq!(
+        failure.turn_status.as_deref(),
+        Some("error_during_execution")
+    );
+    assert_eq!(failure.session_id.as_deref(), Some("missing-conversation"));
 
     let working_dir = directory.clone();
     let executable_for_cancel = executable_text.clone();

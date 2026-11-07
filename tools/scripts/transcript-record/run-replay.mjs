@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 
 const repositoryRoot = resolve(import.meta.dirname, "../../..");
 const corpusRoot = resolve(repositoryRoot, "tests/replay-corpus");
-const syntheticRoot = resolve(repositoryRoot, "apps/desktop/test/fixtures/adapter-replay");
+const syntheticRoot = resolve(repositoryRoot, "tests/fixtures/adapter-replay");
 const directoryExists = (path) => existsSync(path) && statSync(path).isDirectory();
 
 let activeFixtureRoot = null;

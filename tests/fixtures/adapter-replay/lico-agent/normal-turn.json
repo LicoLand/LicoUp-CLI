@@ -1,0 +1,84 @@
+{
+  "adapterId": "lico-agent",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "lf-jsonl-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"id\":\"lico-1\",\"type\":\"response\",\"success\":true,\"data\":{\"isRunning\":false,\"profile\":\"base\",\"sessionId\":\"11111111-2222-3333-4444-555555555555\"}}",
+      "projection": [
+        {
+          "accepted": true,
+          "effect": "handshake",
+          "sessionId": "11111111-2222-3333-4444-555555555555"
+        }
+      ]
+    },
+    {
+      "channel": "lf-jsonl-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"id\":\"lico-2\",\"type\":\"response\",\"success\":true}",
+      "projection": [
+        {
+          "accepted": true,
+          "effect": "handshake"
+        }
+      ]
+    },
+    {
+      "channel": "lf-jsonl-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"type\":\"message_update\",\"assistantMessageEvent\":{\"type\":\"text_delta\",\"delta\":\"synthetic reply\"}}",
+      "projection": [
+        {
+          "delta": "synthetic reply",
+          "effect": "text"
+        }
+      ]
+    },
+    {
+      "channel": "lf-jsonl-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{\"type\":\"agent_end\"}",
+      "projection": [
+        {
+          "effect": "completed"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "normal-turn",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:8c92084b7b9c111c099d1dde8a136cfdc00349de13c107ec4b66e7f719e7551e"
+  }
+}

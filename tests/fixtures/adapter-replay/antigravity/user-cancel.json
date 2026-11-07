@@ -1,0 +1,74 @@
+{
+  "adapterId": "antigravity",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "pty-hook-json",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "pre-cancel synthetic output\n",
+      "projection": [
+        {
+          "effect": "pty_text",
+          "text": "pre-cancel synthetic output\n"
+        }
+      ]
+    },
+    {
+      "channel": "pty-hook-json",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"conversationId\":\"11111111-2222-3333-4444-555555555555\"}",
+      "projection": [
+        {
+          "effect": "session_identity",
+          "sessionId": "11111111-2222-3333-4444-555555555555"
+        }
+      ]
+    },
+    {
+      "channel": "pty-hook-json",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"exitSuccess\":false,\"timedOut\":false}",
+      "projection": [
+        {
+          "error": "antigravity_cli_turn_failed",
+          "message": "Antigravity CLI exited without a successful turn.",
+          "sessionId": "11111111-2222-3333-4444-555555555555",
+          "stage": "turn/execute"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "user-cancel",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:c999878ae58ee8110fcbed1cca68c4ef6473dedbf81f2bb8bf76e48a99d602c3"
+  }
+}

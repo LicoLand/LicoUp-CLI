@@ -101,7 +101,7 @@ fn declared_files(directory: &Path, prefix: &str, found: &mut Vec<String>) {
 /// One recorded frame of the committed Hermes transcript this test replays.
 fn recorded_frames() -> Vec<Value> {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../apps/desktop/test/fixtures/adapter-replay/hermes/normal-turn.json");
+        .join("../../tests/fixtures/adapter-replay/hermes/normal-turn.json");
     let document: Value = serde_json::from_str(
         &std::fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("the recorded transcript must be readable: {error}")),
