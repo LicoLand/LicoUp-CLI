@@ -13,7 +13,7 @@ description = "Optional analytics and usage-source package (org.licoland.feature
 # The C11 input mapping both sides of the wire share. This boundary moved out
 # of this repository with the detector extraction; the package consumes the
 # published owner rather than a second local copy.
-token-usage-detector = "=0.2.0"
+token-usage-detector.workspace = true
 # The C11/C13 contract shapes this component consumes and re-publishes.
 licoup-extension-contracts = { path = "../../crates/licoup-extension-contracts" }
 serde = { version = "1", features = ["derive"] }

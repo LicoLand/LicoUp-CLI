@@ -61,21 +61,39 @@ license = "AGPL-3.0-or-later"
 # repositories. The owner record and the Cargo.lock checksum are the published
 # artifact's provenance; an exact version keeps a registry substitution a
 # reviewable manifest edit.
-a4aa = "=0.4.1"
-a4aa-copilot = "=0.4.1"
+a4aa = "=0.5.0"
+a4aa-copilot = "=0.5.0"
 # The forwarding core lives in Fairliny: the private gateway composes the same
 # sibling checkout fairliny-gateway binds, so adapter, wire and canonical types
 # are one package instance — never two copies drifting apart across the seam.
-a4mp = { version = "0.3.2", default-features = false, path = "../../Silverboom/Adapters-For-Model-Providers" }
+a4mp = { version = "=0.4.0", default-features = false }
 # The messenger-channel contract and the Telegram dialect live in A4MC: the
 # public gateway composes the same sibling checkout, so contract, dialect and
 # product binding stay one package instance across the seam.
-a4mc = { version = "0.1.0", path = "../../Silverboom/A4MC/crates/a4mc" }
-a4mc-telegram = { version = "0.1.0", path = "../../Silverboom/A4MC/crates/a4mc-telegram" }
-agent-statistics = "=0.2.0"
+a4mc = "=0.1.0"
+a4mc-telegram = "=0.1.0"
+acop = "=0.2.0"
+acop-antigravity = "=0.2.0"
+acop-claude = "=0.2.0"
+acop-codex = "=0.2.0"
+acop-copilot = "=0.2.0"
+acop-cursor = "=0.2.0"
+acop-dsh = "=0.2.0"
+acop-hermes = "=0.2.0"
+acop-kilo-code = "=0.2.0"
+acop-kimi-code = "=0.2.0"
+acop-openclaw = "=0.2.0"
+acop-opencode = "=0.2.0"
+acop-pi = "=0.2.0"
+acop-usage-source = "=0.1.0"
+credential-lease = "=0.3.0"
+credential-lease-keychain = "=0.1.0"
+fairliny-gateway = "=0.1.0"
+metera-sdk = "=0.1.0"
+agent-statistics = "=0.3.0"
 balance-detector = "=0.2.0"
-collection-store = "=0.1.0"
-token-usage-detector = "=0.2.0"
+collection-store = "=0.1.1"
+token-usage-detector = "=0.2.2"
 anyhow = "1.0"
 base64 = "0.22"
 chacha20poly1305 = { version = "0.10", features = ["std"] }

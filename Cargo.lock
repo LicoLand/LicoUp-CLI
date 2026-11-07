@@ -4,25 +4,9 @@ version = 4
 
 [[package]]
 name = "a4aa"
-version = "0.4.1"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f762d511b2021e55912e2917f0c81e49c53653060ea340ad08e89ec6cd574a10"
-dependencies = [
- "agent-client-protocol",
- "async-trait",
- "command-group",
- "libc",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
-name = "a4aa"
-version = "0.4.2"
+checksum = "87211154070e7b2160adb94b95d9bcd0e9c018366f11a9758efd1ca8312303a4"
 dependencies = [
  "acop",
  "agent-client-protocol",
@@ -35,101 +19,126 @@ dependencies = [
  "sha2 0.10.9",
  "tempfile",
  "thiserror",
- "token-usage-detector 0.2.1",
+ "token-usage-detector",
  "tokio",
  "tokio-util",
+ "ureq",
 ]
 
 [[package]]
 name = "a4aa-antigravity"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79ba67dbce860b7ed918dad124af92f51e82de3da7dcff61aa1b66e829375322"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4aa-claude"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d56c30d3d25b9b58835fb1268c1415ba4d9d07a5188b36b8057ebdcff4d1bb2"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4aa-codex"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b46bb0cfd3a0888851278b2922e743a182ef72fdf2a95a272af78a7b2cd89c7c"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4aa-copilot"
-version = "0.4.1"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2c2c515b414972e2826ff6d0d0c0aed001b60524baa70a31187acb50588f8c3"
+checksum = "5ec930de448be9dc5e0337d9a091804a6d66e3fa2f2079f505474bf91b030906"
 dependencies = [
- "a4aa 0.4.1",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4aa-cursor"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8fbc68c71e29c8025da5df9ea4f266bae04e72c5c184a7f26c3e5a44abf1ab56"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4aa-dsh"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e97c63bfb9cc26dcbdba4cb0e4a9ed68e3744b3c2a29003c76a61ecd3657e7a"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
  "serde_json",
 ]
 
 [[package]]
 name = "a4aa-hermes"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e960953cac935ca22c3f1eb7af14be27aa06cdb304e1df91c458564c5880acda"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4aa-kilo-code"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de8e9d8d5497a71a726e205fa052f4cb40125bba2269ed111f05fefeab038f73"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4aa-kimi-code"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f976c7d27fdf5d02300663713f5470e68a56be86299c6006f455314128430fe2"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4aa-open-claw"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52749edc29124e77ca119efe7d6ecfc67caeb24c05af24069ea2f676b4ef4f38"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4aa-opencode"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7536796901f928198a1a43f2a651bcdc455d14e9e79002162cefc3da7969ec82"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4aa-pi"
-version = "0.4.1"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3676e173aaff3c7e9119a534147617963e7ef490f741f5af311aad146bd3393a"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
 ]
 
 [[package]]
 name = "a4mc"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9bf7f780e5bc5c7bcb0fe4245ec12c327213e223fb11e284592898201ca3029"
 dependencies = [
  "serde",
  "serde_json",
@@ -139,6 +148,8 @@ dependencies = [
 [[package]]
 name = "a4mc-telegram"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a5b7b1d7b81598f785e8f754f475b5fcf636008bda3ff9793acce1db7b3bdf4"
 dependencies = [
  "a4mc",
  "anyhow",
@@ -152,7 +163,9 @@ dependencies = [
 
 [[package]]
 name = "a4mp"
-version = "0.3.2"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1549dc158c4e607969003ffbb7d360899f36334142c551ae0cf4bb7fdddbb05b"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -191,19 +204,25 @@ dependencies = [
 
 [[package]]
 name = "acop"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3849fd57c7091a8698a3b88792b68c977f125ad90a4b14fbded03044424127b2"
 dependencies = [
+ "acop-usage-core",
  "regex",
  "rusqlite",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "thiserror",
  "uuid",
 ]
 
 [[package]]
 name = "acop-antigravity"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "deb3e838761ab734f55042f82bfbfbf857ed529c2fa00f4c4226afc5077ac86b"
 dependencies = [
  "a4aa-antigravity",
  "acop",
@@ -213,7 +232,9 @@ dependencies = [
 
 [[package]]
 name = "acop-claude"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5d84ff54b8252f46507a3adaabbaf39c39be743d4be618545e189a4747413bf"
 dependencies = [
  "a4aa-claude",
  "acop",
@@ -224,7 +245,9 @@ dependencies = [
 
 [[package]]
 name = "acop-codex"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce32f29e0109eade54972f3acb3dc2ba004ea7ebd6dfa80552ea6efedb532539"
 dependencies = [
  "a4aa-codex",
  "acop",
@@ -235,18 +258,21 @@ dependencies = [
 
 [[package]]
 name = "acop-copilot"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a27251c1dc35dd529c436818b141fc83d8636c05889fcf48fc039a1d517f0c5b"
 dependencies = [
  "a4aa-copilot",
  "acop",
  "rusqlite",
- "serde",
  "serde_json",
 ]
 
 [[package]]
 name = "acop-cursor"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbfd2a3c2b23f66a84bd68d153b8fd0f0f22442894e98ac95b3124299c19913a"
 dependencies = [
  "a4aa-cursor",
  "acop",
@@ -257,7 +283,9 @@ dependencies = [
 
 [[package]]
 name = "acop-dsh"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cc25af3b87071ff506a2f312e7578afcd800dd238b643378523e6b54c5cbce0"
 dependencies = [
  "a4aa-dsh",
  "acop",
@@ -268,7 +296,9 @@ dependencies = [
 
 [[package]]
 name = "acop-hermes"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f791bd5ecc1954dd405f3e382656a00592f1413ef95e6cde6040ae2c2898ab1"
 dependencies = [
  "a4aa-hermes",
  "acop",
@@ -278,7 +308,9 @@ dependencies = [
 
 [[package]]
 name = "acop-kilo-code"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "865f89cba6c7a27793f084916b89a6859138af242606f00e576e3d2fd334d6fc"
 dependencies = [
  "a4aa-kilo-code",
  "acop",
@@ -289,7 +321,9 @@ dependencies = [
 
 [[package]]
 name = "acop-kimi-code"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18db64d3c5a127a83678a535ec0d8ce7f3fad05adba68f35f0a763b655991c0e"
 dependencies = [
  "a4aa-kimi-code",
  "acop",
@@ -299,7 +333,9 @@ dependencies = [
 
 [[package]]
 name = "acop-openclaw"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b6def04d81e2caf45158d8155b15cc98f6107fcc0f8e80e2adbc127da5d30e8"
 dependencies = [
  "a4aa-open-claw",
  "acop",
@@ -309,7 +345,9 @@ dependencies = [
 
 [[package]]
 name = "acop-opencode"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d99bb7f51b36de12781443f6ab7a9fdce4d27dd983bcbef9fe11824d5d9a82f7"
 dependencies = [
  "a4aa-opencode",
  "acop",
@@ -320,7 +358,9 @@ dependencies = [
 
 [[package]]
 name = "acop-pi"
-version = "0.1.2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c0740ce908ddf5059e80ca2cb984f9c937b7f050aad548c45aff54c5f0dc164"
 dependencies = [
  "a4aa-pi",
  "acop",
@@ -329,12 +369,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "acop-usage-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae999cac1f9bde9678fb5d66c15a6281333af9ce090048258c66462d53a861fa"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+]
+
+[[package]]
 name = "acop-usage-source"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88dc00c4049b773c52cf4ed4a8644f30a87a8e9d81b964867c404e114b9cde6a"
 dependencies = [
  "acop",
+ "metera-sdk",
  "serde_json",
- "token-usage-detector 0.2.1",
+ "token-usage-detector",
 ]
 
 [[package]]
@@ -442,41 +496,28 @@ dependencies = [
 
 [[package]]
 name = "agent-statistics"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b4cde171c8f907e059864ff5cf0595df9424eb09d7c526024316f262ad216bd"
-dependencies = [
- "acativa",
- "anyhow",
- "collection-store 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "time",
- "token-usage-detector 0.2.0",
-]
-
-[[package]]
-name = "agent-statistics"
 version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fd629c7f6f409357b7385c3059aede6310d5663125c0ab80451bfd03960b597"
 dependencies = [
  "acativa",
  "acop",
  "acop-usage-source",
  "anyhow",
- "collection-store 0.1.0",
+ "collection-store",
  "rusqlite",
  "serde",
  "serde_json",
  "sha2 0.10.9",
  "time",
- "token-usage-detector 0.2.1",
+ "token-usage-detector",
 ]
 
 [[package]]
 name = "ahe"
-version = "0.1.2"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e856130159c3379e0655eb428b153a27cd486e480cf340eb13f3f605c4bba9b"
 dependencies = [
  "regex",
  "serde",
@@ -593,7 +634,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26f0b53234c2d256aa212a8fe2cc00482470a7bdcb82899145086961a4253a2d"
 dependencies = [
  "serde_json",
- "token-usage-detector 0.2.0",
+ "token-usage-detector",
 ]
 
 [[package]]
@@ -927,21 +968,12 @@ checksum = "0c9ea0ac24bc397ab3c98583a3c9ba74fa56b09a4449bbe172b9b1ddb016027a"
 
 [[package]]
 name = "collection-store"
-version = "0.1.0"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5649738db0d2b36830fb96e5f9b68ddcb718be2205f0cd93d6a47b4375a2e8eb"
 dependencies = [
  "anyhow",
  "libc",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "collection-store"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d68f1dbd835d0756431d83cca1f0c833880d10754d97b4bf6779ad1204fcf0e"
-dependencies = [
- "anyhow",
  "serde",
  "serde_json",
 ]
@@ -1079,6 +1111,8 @@ dependencies = [
 [[package]]
 name = "credential-lease"
 version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4b096520ec5fcf9adc7321bef5f613b409812c75f32dbcaaaf4f13ead448b6e"
 dependencies = [
  "anyhow",
  "serde",
@@ -1090,6 +1124,8 @@ dependencies = [
 [[package]]
 name = "credential-lease-keychain"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab485cbba5f8ba96ac7c24c685d07cc99afeff59172ec2b66060ad0bb96d6f6e"
 dependencies = [
  "core-foundation",
  "core-foundation-sys",
@@ -1097,6 +1133,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "uuid",
+ "zeroize",
 ]
 
 [[package]]
@@ -1604,18 +1641,21 @@ dependencies = [
 [[package]]
 name = "fairliny-gateway"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c80b7c0ad50bba493bbf524d745c0f43582b3cc64e1c45d5b0f300d20470643"
 dependencies = [
  "a4mp",
- "agent-statistics 0.3.0",
+ "agent-statistics",
  "anyhow",
  "async-trait",
- "collection-store 0.1.0",
+ "collection-store",
  "credential-lease",
+ "futures-core",
  "serde",
  "serde_json",
  "thiserror",
  "time",
- "token-usage-detector 0.2.1",
+ "token-usage-detector",
  "tokio",
  "zeroize",
 ]
@@ -1698,6 +1738,12 @@ name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
+
+[[package]]
+name = "foldhash"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
 name = "foldhash"
@@ -1932,11 +1978,20 @@ checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 
 [[package]]
 name = "hashbrown"
+version = "0.15.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
+dependencies = [
+ "foldhash 0.1.5",
+]
+
+[[package]]
+name = "hashbrown"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100"
 dependencies = [
- "foldhash",
+ "foldhash 0.2.0",
 ]
 
 [[package]]
@@ -1945,7 +2000,7 @@ version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
 dependencies = [
- "foldhash",
+ "foldhash 0.2.0",
 ]
 
 [[package]]
@@ -3046,7 +3101,7 @@ dependencies = [
 name = "licoup-agent-copilot"
 version = "0.14.0"
 dependencies = [
- "a4aa 0.4.1",
+ "a4aa",
  "a4aa-copilot",
  "licoup-agent-adapter-sdk",
  "licoup-agent-drivers",
@@ -3202,7 +3257,7 @@ dependencies = [
 name = "licoup-agent-runtime"
 version = "0.3.0"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
  "serde",
 ]
 
@@ -3210,7 +3265,7 @@ dependencies = [
 name = "licoup-agent-targets"
 version = "0.3.0"
 dependencies = [
- "a4aa 0.4.2",
+ "a4aa",
  "anyhow",
  "libc",
  "licoup-agent-deepseek",
@@ -3236,7 +3291,7 @@ name = "licoup-client-state"
 version = "0.3.0"
 dependencies = [
  "anyhow",
- "collection-store 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "collection-store",
  "fs2",
  "licoup-foundation",
  "nix 0.27.1",
@@ -3284,7 +3339,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "token-usage-detector 0.2.0",
+ "token-usage-detector",
  "url",
 ]
 
@@ -3380,7 +3435,8 @@ dependencies = [
  "acop-openclaw",
  "acop-opencode",
  "acop-pi",
- "agent-statistics 0.2.0",
+ "acop-usage-source",
+ "agent-statistics",
  "anyhow",
  "balance-detector",
  "base64 0.22.1",
@@ -3443,6 +3499,7 @@ dependencies = [
  "licoup-workflow-runtime",
  "licoup-workflow-store",
  "log",
+ "metera-sdk",
  "mime_guess",
  "nix 0.27.1",
  "objc2",
@@ -3494,7 +3551,7 @@ name = "licoup-private-gateway"
 version = "0.1.0"
 dependencies = [
  "a4mp",
- "agent-statistics 0.2.0",
+ "agent-statistics",
  "anyhow",
  "async-trait",
  "base64 0.22.1",
@@ -3678,6 +3735,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "metera-sdk"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a00d23fd1baa040055c2aeb4578e8aa11d646f8a978cbd29ea4dccc2ac3ce342"
+dependencies = [
+ "acop-usage-core",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "wasmi",
 ]
 
 [[package]]
@@ -4386,7 +4456,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4890,7 +4960,7 @@ version = "1.0.154"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7e9cc8b1b85264074fbcc02a88680c4096b1e47df8f739dceb03bf482f04bd6"
 dependencies = [
- "foldhash",
+ "foldhash 0.2.0",
  "indexmap 2.14.0",
  "itoa",
  "memchr",
@@ -5092,6 +5162,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "spin"
+version = "0.9.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3763264f6b73151db08c50ff20d7d8a0b8796e021cdea7ceedad07b80155fa0e"
+
+[[package]]
 name = "spki"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5134,6 +5210,16 @@ name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
+
+[[package]]
+name = "string-interner"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23de088478b31c349c9ba67816fa55d9355232d63c3afea8bf513e31f0f1d2c0"
+dependencies = [
+ "hashbrown 0.15.5",
+ "serde",
+]
 
 [[package]]
 name = "strsim"
@@ -5336,17 +5422,9 @@ dependencies = [
 
 [[package]]
 name = "token-usage-detector"
-version = "0.2.0"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "723eb4e7d72efb57b019dc8b993936a17dcb153e34004b3dd927f247bea53929"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "token-usage-detector"
-version = "0.2.1"
+checksum = "8639549e4584348c6570e2cb71c610f4537f39cc41c39227cd4c9963c89ea39d"
 dependencies = [
  "serde",
  "serde_json",
@@ -5801,6 +5879,56 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+]
+
+[[package]]
+name = "wasmi"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78693fcdd618e0fc34af59c6b8efa9ac5d58c68df940beff4bedddb6acfe7c27"
+dependencies = [
+ "spin",
+ "wasmi_collections",
+ "wasmi_core",
+ "wasmi_ir",
+ "wasmparser",
+]
+
+[[package]]
+name = "wasmi_collections"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a8be2aa467cf2d29e96ff759472c36eeb44a3c81c67fc9cb76c9a24c519c557"
+dependencies = [
+ "string-interner",
+]
+
+[[package]]
+name = "wasmi_core"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69372d5fda3ea3d1e0aa6603c7888110e0187e88ea17cd8fc2e2df0a0e1f37fa"
+dependencies = [
+ "libm",
+]
+
+[[package]]
+name = "wasmi_ir"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f17b774caa13c618c7244f1ee51fe23c5e7b8538a471fa46d9949779758aed6"
+dependencies = [
+ "wasmi_core",
+]
+
+[[package]]
+name = "wasmparser"
+version = "0.228.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4abf1132c1fdf747d56bbc1bb52152400c70f336870f968b85e89ea422198ae3"
+dependencies = [
+ "bitflags 2.13.0",
+ "indexmap 2.14.0",
 ]
 
 [[package]]

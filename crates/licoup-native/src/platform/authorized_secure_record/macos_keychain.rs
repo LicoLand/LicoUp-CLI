@@ -1,27 +1,15 @@
 use anyhow::{Result, anyhow, ensure};
 use core_foundation::base::TCFType;
-use core_foundation::boolean::CFBoolean;
-use core_foundation::dictionary::CFDictionary;
 use core_foundation::string::CFString;
 use core_foundation_sys::array::{CFArrayGetCount, CFArrayGetTypeID, CFArrayGetValueAtIndex};
-use core_foundation_sys::base::{
-    CFEqual, CFGetTypeID, CFRelease, CFTypeID, CFTypeRef, kCFAllocatorDefault,
-};
-use core_foundation_sys::dictionary::CFDictionaryGetValueIfPresent;
+use core_foundation_sys::base::{CFGetTypeID, CFRelease, CFTypeID, CFTypeRef, kCFAllocatorDefault};
 use core_foundation_sys::error::CFErrorRef;
 use core_foundation_sys::string::CFStringRef;
 use credential_lease_keychain::{
     AddItemOutcome, Keychain, KeychainAuthContext, KeychainError, KeychainErrorKind,
-    KeychainItemQuery,
+    KeychainItemProvenance, KeychainItemQuery,
 };
-use security_framework::access_control::{ProtectionMode, SecAccessControl};
-use security_framework_sys::access_control::{
-    kSecAccessControlUserPresence, kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-};
-use security_framework_sys::item::{
-    kSecAttrAccessControl, kSecAttrAccessGroup, kSecAttrAccount, kSecAttrService,
-    kSecAttrSynchronizable,
-};
+use security_framework_sys::access_control::kSecAttrAccessibleWhenUnlockedThisDeviceOnly;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::ptr;
@@ -34,17 +22,8 @@ const SERVICE_PREFIX: &str = "land.lico.licoup.authorized-ledger.v1";
 const EXPECTED_BUNDLE_IDENTIFIER: &str = "land.lico.licoup";
 const PROOF_SCHEMA: &str = "licoup.authorized-secure-ledger-proof.v1";
 
-macro_rules! sec_static {
-    ($value:ident) => {{
-        // SAFETY: reading an SDK-exported immutable static is valid for the
-        // process lifetime.
-        unsafe { $value }
-    }};
-}
-
 #[link(name = "Security", kind = "framework")]
 unsafe extern "C" {
-    static kSecAttrAccessible: CFStringRef;
     fn SecTaskCreateFromSelf(allocator: *const core::ffi::c_void) -> CFTypeRef;
     fn SecTaskCopyValueForEntitlement(
         task: CFTypeRef,
@@ -253,7 +232,7 @@ impl MacosKeychainLedger {
         else {
             return Ok(None);
         };
-        self.validate_attributes(item.attributes(), service, account)?;
+        self.validate_attributes(item.provenance(), service, account)?;
         let persistent_reference = item
             .persistent_reference()
             .map(<[u8]>::to_vec)
@@ -281,32 +260,27 @@ impl MacosKeychainLedger {
             .with_data_protection(true))
     }
 
+    /// The crate reports the item's raw `kSecAttrAccessible` encoding and a
+    /// flag for the access control its own writes always set (user presence,
+    /// accessible when unlocked, this device only); the ledger demands the
+    /// same values it declared at write time.
     fn validate_attributes(
         &self,
-        dictionary: &CFDictionary,
+        provenance: &KeychainItemProvenance,
         service: &str,
         account: &str,
     ) -> Result<()> {
+        // SAFETY: reading an SDK-exported immutable static is valid for the
+        // process lifetime.
+        let expected_accessible =
+            unsafe { CFString::wrap_under_get_rule(kSecAttrAccessibleWhenUnlockedThisDeviceOnly) };
         ensure!(
-            dictionary_string(dictionary, sec_static!(kSecAttrService))? == service
-                && dictionary_string(dictionary, sec_static!(kSecAttrAccount))? == account
-                && dictionary_string(dictionary, sec_static!(kSecAttrAccessGroup))?
-                    == self.access_group
-                && dictionary_cf_equal(
-                    dictionary,
-                    sec_static!(kSecAttrAccessible),
-                    sec_static!(kSecAttrAccessibleWhenUnlockedThisDeviceOnly).cast(),
-                )?
-                && dictionary_cf_equal(
-                    dictionary,
-                    sec_static!(kSecAttrSynchronizable),
-                    CFBoolean::false_value().as_CFTypeRef(),
-                )?
-                && dictionary_cf_equal(
-                    dictionary,
-                    sec_static!(kSecAttrAccessControl),
-                    expected_access_control()?.as_CFTypeRef(),
-                )?,
+            provenance.service() == Some(service)
+                && provenance.account() == Some(account)
+                && provenance.access_group() == Some(self.access_group.as_str())
+                && provenance.accessible() == Some(expected_accessible.to_string().as_str())
+                && provenance.synchronizable() == Some(false)
+                && provenance.has_backend_access_control(),
             "authorized_secure_record_keychain_provenance_invalid"
         );
         Ok(())
@@ -354,14 +328,6 @@ impl PersistentReferenceProof {
             ),
         }
     }
-}
-
-fn expected_access_control() -> Result<SecAccessControl> {
-    SecAccessControl::create_with_protection(
-        Some(ProtectionMode::AccessibleWhenUnlockedThisDeviceOnly),
-        kSecAccessControlUserPresence,
-    )
-    .map_err(|_| anyhow!("authorized_secure_record_keychain_access_control_unavailable"))
 }
 
 fn expected_access_group() -> Result<String> {
@@ -446,36 +412,6 @@ fn record_account(generation: u64) -> String {
 
 fn proof_account(generation: u64) -> String {
     format!("generation-{generation:020}.proof")
-}
-
-fn dictionary_value(dictionary: &CFDictionary, key: CFStringRef) -> Result<CFTypeRef> {
-    let mut value: *const core::ffi::c_void = ptr::null();
-    let found = unsafe {
-        CFDictionaryGetValueIfPresent(dictionary.as_concrete_TypeRef(), key.cast(), &mut value)
-    };
-    ensure!(
-        found != 0 && !value.is_null(),
-        "authorized_secure_record_keychain_attribute_missing"
-    );
-    Ok(value.cast_mut().cast())
-}
-
-fn dictionary_string(dictionary: &CFDictionary, key: CFStringRef) -> Result<String> {
-    let value = dictionary_value(dictionary, key)?;
-    ensure!(
-        unsafe { CFGetTypeID(value) } == CFString::type_id(),
-        "authorized_secure_record_keychain_attribute_invalid"
-    );
-    Ok(unsafe { CFString::wrap_under_get_rule(value.cast()) }.to_string())
-}
-
-fn dictionary_cf_equal(
-    dictionary: &CFDictionary,
-    key: CFStringRef,
-    expected: CFTypeRef,
-) -> Result<bool> {
-    let value = dictionary_value(dictionary, key)?;
-    Ok(unsafe { CFEqual(value, expected) != 0 })
 }
 
 #[allow(dead_code)]

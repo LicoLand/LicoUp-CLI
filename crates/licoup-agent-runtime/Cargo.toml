@@ -12,5 +12,5 @@ publish = false
 # readiness reducers, the dispatch vocabulary, the runtime ports and the
 # protocol selector — live in the shared adapter core; this crate re-exports
 # them so every former `licoup_agent_runtime` path stays reachable.
-a4aa = { path = "../../../../Silverboom/Adapter-For-All-Agents" }
+a4aa = { workspace = true }
 serde.workspace = true

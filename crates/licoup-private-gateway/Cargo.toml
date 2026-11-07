@@ -16,12 +16,12 @@ bytes = "1"
 # The outward forwarding core: fairliny's Router binds a4mp adapters over this
 # host's transport and lease ports. The crate keeps the host shell — loopback
 # listeners, wire dialects, client-token auth, custody and the usage journal.
-fairliny-gateway = { path = "../../../../Silverboom/Fairliny-Gateway" }
+fairliny-gateway = { workspace = true }
 fs2.workspace = true
 futures = "0.3"
 http = "1"
 licoup-foundation = { path = "../licoup-foundation", version = "0.3.0" }
-credential-lease = { version = "0.3.0", path = "../../../../Silverboom/Credential-Lease/crates/credential-lease" }
+credential-lease = { workspace = true }
 agent-statistics.workspace = true
 rand_core.workspace = true
 serde.workspace = true
