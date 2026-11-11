@@ -1,10 +1,10 @@
 [package]
 name = "licoup-agent-antigravity"
-version = "0.14.0"
-edition = "2024"
-rust-version = "1.95.0"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "Antigravity adapter package: the Antigravity CLI driver, its Agent Hooks receipt and its PTY protocol"
 
 # The crate is one package's program. `driver` is this Agent's execution half:
@@ -26,20 +26,20 @@ description = "Antigravity adapter package: the Antigravity CLI driver, its Agen
 default = []
 
 [dependencies]
-licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+licoup-agent-adapter-sdk.workspace = true
 # The shared Subagent-mesh bindings a launch applies: the caller context the
 # connector later presents, and the portable data root it locates. They are the
 # mesh's own rules, not this Agent's, so the launch reads them rather than
 # retyping the variable names and the identifier rule.
-licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+licoup-agent-drivers.workspace = true
 # The login-shell environment every Agent launch observes. The snapshot is the
 # inventory's, below every Agent, so a launch reads it rather than capturing a
 # second one.
-licoup-agent-targets = { path = "../licoup-agent-targets" }
+licoup-agent-targets.workspace = true
 # The shared ANSI stripper: the PTY lane's escape-sequence removal is the same
 # implementation every Agent's PTY lane uses, so a control sequence is stripped
 # once by one owner rather than re-implemented per Agent.
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-foundation.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 # The vendor brain directory is removed through the platform trash rather than
@@ -66,5 +66,5 @@ path = "src/bin/lico-agent-antigravity.rs"
 # inherited environment, and the production snapshot deliberately replaces that
 # environment, so the driver suite pins the launch snapshot to the fixture's.
 [dev-dependencies]
-licoup-agent-targets = { path = "../licoup-agent-targets", features = ["test-support"] }
-licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-agent-targets = { workspace = true, features = ["test-support"] }
+licoup-extension-contracts.workspace = true

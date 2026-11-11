@@ -5,60 +5,14 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
-const frontendRoot = "apps/desktop/lib/src/frontend";
-
-async function dartSources(relativeDirectory) {
-  const sources = [];
-  async function visit(directory) {
-    const entries = await fs.readdir(path.join(repoRoot, directory), {
-      withFileTypes: true,
-    });
-    for (const entry of entries) {
-      const relativePath = path.posix.join(directory, entry.name);
-      if (entry.isDirectory()) {
-        await visit(relativePath);
-      } else if (entry.isFile() && entry.name.endsWith(".dart")) {
-        sources.push([
-          relativePath,
-          await fs.readFile(path.join(repoRoot, relativePath), "utf8"),
-        ]);
-      }
-    }
-  }
-  await visit(relativeDirectory);
-  return sources;
-}
-
-test("MLS, KT, and MCP transfer execution stay outside the product frontend", async () => {
-  const forbiddenConsumers = [
-    "SecureMeshProtocolController",
-    "SecureMeshMlsRequest",
-    "SecureMeshKtRequest",
-    ".executeMls(",
-    ".executeKt(",
-    "McpTransferController",
-    ".executeHttpTransfer(",
-    "mcp_transfer_controller.dart",
-  ];
-
-  for (const [relativePath, source] of await dartSources(frontendRoot)) {
-    for (const forbidden of forbiddenConsumers) {
-      assert.equal(
-        source.includes(forbidden),
-        false,
-        `${relativePath} exposes internal capability consumer ${forbidden}`,
-      );
-    }
-  }
-});
 
 test("MCP execution retains exact one-shot direct approval ownership", async () => {
   const approval = await fs.readFile(
-    path.join(repoRoot, "crates/licoup-native/src/domain/mcp_adapter/approval.rs"),
+    path.join(repoRoot, "crates/licoup/src/domain/mcp_adapter/approval.rs"),
     "utf8",
   );
   const execution = await fs.readFile(
-    path.join(repoRoot, "crates/licoup-native/src/domain/mcp_adapter/execution.rs"),
+    path.join(repoRoot, "crates/licoup/src/domain/mcp_adapter/execution.rs"),
     "utf8",
   );
 

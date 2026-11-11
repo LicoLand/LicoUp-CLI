@@ -47,7 +47,7 @@ function temporaryRepository(t) {
   return repoRoot;
 }
 
-function configureCargoTarget(repoRoot, targetDirectory = "build/crates/licoup-native/target") {
+function configureCargoTarget(repoRoot, targetDirectory = "build/crates/licoup/target") {
   const cargoDirectory = path.join(repoRoot, ".cargo");
   mkdirSync(cargoDirectory, { recursive: true });
   writeFileSync(
@@ -74,7 +74,7 @@ test("active compiler output is protected and released output is reclaimable", {
   skip: !cargoPruneSupported,
 }, (t) => {
   const repoRoot = temporaryRepository(t);
-  const targetPath = "build/crates/licoup-native/target";
+  const targetPath = "build/crates/licoup/target";
   const compiledFile = materialize(repoRoot, `${targetPath}/debug/client`);
   const dependencyCache = materialize(repoRoot, "build/dependency-downloads/crate.cache");
   const lease = acquireTestArtifactLease({
@@ -120,11 +120,11 @@ test("compiler cleanup preserves packaged and installed clients", {
   const repoRoot = temporaryRepository(t);
   const installedRoot = mkdtempSync(path.join(os.tmpdir(), "licoup-installed-test-"));
   t.after(() => rmSync(installedRoot, { force: true, recursive: true }));
-  const targetPath = "build/crates/licoup-native/target";
+  const targetPath = "build/crates/licoup/target";
   const compiledFile = materialize(repoRoot, `${targetPath}/release/licoup`);
   const runnableFile = materialize(
     repoRoot,
-    "build/apps/desktop/runnable/macos/release/LicoUp.app/Contents/MacOS/licoup",
+    "build/runnable/macos/release/LicoUp.app/Contents/MacOS/licoup",
   );
   const installedFile = materialize(
     installedRoot,
@@ -153,7 +153,7 @@ test("all concurrent leases must finish before output becomes reclaimable", {
   skip: !cargoPruneSupported,
 }, (t) => {
   const repoRoot = temporaryRepository(t);
-  const targetPath = "build/crates/licoup-native/target";
+  const targetPath = "build/crates/licoup/target";
   materialize(repoRoot, `${targetPath}/debug/client`);
   const first = acquireTestArtifactLease({ repoRoot, scope: "first", targetPath });
   const second = acquireTestArtifactLease({ repoRoot, scope: "second", targetPath });
@@ -169,7 +169,7 @@ test("dead leases require the configured grace period before recovery", {
   skip: !cargoPruneSupported,
 }, (t) => {
   const repoRoot = temporaryRepository(t);
-  const targetPath = "build/crates/licoup-native/target";
+  const targetPath = "build/crates/licoup/target";
   const compiledFile = materialize(repoRoot, `${targetPath}/debug/client`);
   const clock = { value: Date.parse("2026-01-01T00:00:00.000Z") };
   acquireTestArtifactLease({
@@ -210,7 +210,7 @@ test("dead leases require the configured grace period before recovery", {
 
 test("concurrent processes reclaim a stale lock once and serialize output ownership", async (t) => {
   const repoRoot = temporaryRepository(t);
-  const targetPath = "build/crates/licoup-native/target";
+  const targetPath = "build/crates/licoup/target";
   const artifactId = testArtifactId(targetPath);
   const record = path.join(repoRoot, "build", ".test-artifacts", artifactId);
   const lock = path.join(record, ".lock");
@@ -264,7 +264,7 @@ test("tampered descriptors and unmanaged targets fail closed", {
   skip: !cargoPruneSupported,
 }, (t) => {
   const repoRoot = temporaryRepository(t);
-  const targetPath = "build/crates/licoup-native/target";
+  const targetPath = "build/crates/licoup/target";
   const protectedFile = materialize(repoRoot, `${targetPath}/debug/client`);
   const unmanagedFile = materialize(repoRoot, "build/agents/old-target/debug/client");
   const lease = acquireTestArtifactLease({ repoRoot, scope: "native", targetPath });
@@ -298,7 +298,7 @@ test("outside, download-cache, registry, and symlink targets are rejected", (t) 
   assert.throws(() => acquireTestArtifactLease({
     repoRoot,
     scope: "download-cache",
-    targetPath: "apps/desktop/build/registry",
+    targetPath: "build/crates/registry/target",
   }), /download caches/u);
   assert.throws(() => acquireTestArtifactLease({
     repoRoot,
@@ -309,72 +309,27 @@ test("outside, download-cache, registry, and symlink targets are rejected", (t) 
   if (process.platform !== "win32") {
     const outside = path.join(repoRoot, "outside");
     mkdirSync(outside);
-    const nativeBuild = path.join(repoRoot, "build", "crates", "licoup-native");
+    const nativeBuild = path.join(repoRoot, "build", "crates", "licoup");
     mkdirSync(nativeBuild, { recursive: true });
     symlinkSync(outside, path.join(nativeBuild, "linked-target"));
     assert.throws(() => acquireTestArtifactLease({
       repoRoot,
       scope: "symlink",
-      targetPath: "build/crates/licoup-native/linked-target",
+      targetPath: "build/crates/licoup/linked-target",
     }), /symbolic links/u);
   }
 });
 
-test("repository build-producing Cargo scripts use the lifecycle wrapper", () => {
-  const packageJson = JSON.parse(readFileSync(path.join(projectRoot, "package.json"), "utf8"));
+test("the repository Cargo configuration owns the managed target directory", () => {
   const cargoConfig = readFileSync(path.join(projectRoot, ".cargo", "config.toml"), "utf8");
-  const androidBuild = readFileSync(
-    path.join(projectRoot, "apps", "desktop", "android", "app", "build.gradle.kts"),
-    "utf8",
-  );
-  const macosProject = readFileSync(
-    path.join(projectRoot, "apps", "desktop", "macos", "Runner.xcodeproj", "project.pbxproj"),
-    "utf8",
-  );
-  const packageNativeBuild = readFileSync(
-    path.join(projectRoot, "apps", "desktop", "scripts", "package-client", "build", "native.mjs"),
-    "utf8",
-  );
-  assert.equal(
-    Object.entries(packageJson.scripts).filter(([, command]) =>
-      /(?:^|&&|\|)\s*cargo\s+(?:build|clippy|run|test)\b/u.test(command)).length,
-    0,
-  );
-  assert.equal(
-    packageJson.scripts["client:artifacts:status"],
-    "node tools/scripts/client-test-artifacts.mjs status",
-  );
-  assert.equal(
-    packageJson.scripts["client:artifacts:prune"],
-    "node tools/scripts/client-test-artifacts.mjs prune",
-  );
-  assert.equal(
-    packageJson.scripts["client:artifacts:inventory"],
-    "node tools/scripts/client-test-artifacts.mjs inventory",
-  );
-  assert.equal(
-    packageJson.scripts["client:artifacts:workspace-complete"],
-    "node tools/scripts/client-test-artifacts.mjs workspace-complete",
-  );
-  assert.match(cargoConfig, /target-dir = "build\/crates\/licoup-native\/target"/u);
-  assert.match(
-    androidBuild,
-    /repoRoot\.resolve\("build\/crates\/licoup-native\/target"\)/u,
-  );
-  assert.match(androidBuild, /tools\/scripts\/cargo-client\.mjs/u);
-  assert.doesNotMatch(androidBuild, /commandLine\(\s*"cargo"/u);
-  assert.doesNotMatch(androidBuild, /android-target/u);
-  assert.match(macosProject, /tools\/scripts\/cargo-client\.mjs/u);
-  assert.doesNotMatch(macosProject, /CARGO_TARGET_DIR=.*cargo build/u);
-  assert.match(packageNativeBuild, /cargo-client\.mjs/u);
-  assert.doesNotMatch(packageNativeBuild, /runPackageProcess\("cargo"/u);
+  assert.match(cargoConfig, /target-dir = "build\/crates\/licoup\/target"/u);
 });
 
 test("Cargo target ownership follows target-dir flag, environment, and config", (t) => {
   const repoRoot = temporaryRepository(t);
   configureCargoTarget(repoRoot);
   const env = { CARGO_HOME: path.join(repoRoot, "cargo-home") };
-  assert.equal(cargoBuildCommand(["build", "--target-dir", "build/crates/licoup-native/flag-target"]), "build");
+  assert.equal(cargoBuildCommand(["build", "--target-dir", "build/crates/licoup/flag-target"]), "build");
   assert.equal(cargoBuildCommand(["fetch", "--locked"]), null);
   assert.deepEqual(
     resolveCargoTargetDirectory({
@@ -383,25 +338,25 @@ test("Cargo target ownership follows target-dir flag, environment, and config", 
       env,
       workspaceRoot: repoRoot,
     }).relativePath,
-    "build/crates/licoup-native/target",
+    "build/crates/licoup/target",
   );
   assert.equal(
     cargoClientTargetPath({
       repoRoot,
-      args: ["build", "--target-dir", "build/crates/licoup-native/flag-target"],
+      args: ["build", "--target-dir", "build/crates/licoup/flag-target"],
       cwd: repoRoot,
       env,
     }),
-    "build/crates/licoup-native/flag-target",
+    "build/crates/licoup/flag-target",
   );
   assert.equal(
     cargoClientTargetPath({
       repoRoot,
       args: ["build"],
       cwd: repoRoot,
-      env: { ...env, CARGO_TARGET_DIR: "build/crates/licoup-native/env-target" },
+      env: { ...env, CARGO_TARGET_DIR: "build/crates/licoup/env-target" },
     }),
-    "build/crates/licoup-native/env-target",
+    "build/crates/licoup/env-target",
   );
   assert.equal(
     cargoClientTargetPath({
@@ -413,8 +368,8 @@ test("Cargo target ownership follows target-dir flag, environment, and config", 
     null,
   );
   assert.equal(isManagedCargoTarget(repoRoot, "build/out/target"), false);
-  const dedicatedTarget = "build/crates/licoup-native/env-target";
-  const configuredTarget = "build/crates/licoup-native/config-target";
+  const dedicatedTarget = "build/crates/licoup/env-target";
+  const configuredTarget = "build/crates/licoup/config-target";
   assert.equal(cargoClientTargetPath({
     repoRoot,
     args: ["build", "--config", `build.target-dir="${configuredTarget}"`],
@@ -432,7 +387,7 @@ test("cargo-client preserves the effective target environment and tracks its chi
   configureCargoTarget(repoRoot);
   const env = {
     CARGO_HOME: path.join(repoRoot, "cargo-home"),
-    CARGO_TARGET_DIR: "build/crates/licoup-native/override-target",
+    CARGO_TARGET_DIR: "build/crates/licoup/override-target",
   };
   const previousExitCode = process.exitCode;
   const calls = [];
@@ -448,7 +403,7 @@ test("cargo-client preserves the effective target environment and tracks its chi
       return child;
     },
     leaseFactory(options) {
-      assert.equal(options.targetPath, "build/crates/licoup-native/override-target");
+      assert.equal(options.targetPath, "build/crates/licoup/override-target");
       return {
         trackProcess(pid) { calls.push({ trackedPid: pid }); },
         release() { release.count += 1; },
@@ -490,7 +445,7 @@ test("inventory finds unregistered compiler output without scanning deliverables
   configureCargoTarget(repoRoot);
   const compiledFile = materialize(
     repoRoot,
-    "build/crates/licoup-native/target/debug/client",
+    "build/crates/licoup/target/debug/client",
     "compiler output",
   );
   materialize(repoRoot, "build/out/package.tar", "deliverable");
@@ -500,7 +455,7 @@ test("inventory finds unregistered compiler output without scanning deliverables
     processSnapshot: { available: true, entries: [] },
   });
   assert.deepEqual(inventory.entries.map((entry) => entry.relativeTarget), [
-    "build/crates/licoup-native/target",
+    "build/crates/licoup/target",
   ]);
   assert.equal(inventory.entries[0].bytes, Buffer.byteLength("compiler output"));
   assert.equal(inventory.entries[0].state, cargoPruneSupported ? "reclaimable" : "protected");
@@ -515,13 +470,13 @@ test("targeted dry-run is read-only and targeted prune only removes the selected
 }, (t) => {
   const repoRoot = temporaryRepository(t);
   configureCargoTarget(repoRoot);
-  const selected = materialize(repoRoot, "build/crates/licoup-native/target/debug/client");
+  const selected = materialize(repoRoot, "build/crates/licoup/target/debug/client");
   const deliverable = materialize(repoRoot, "build/out/package.tar", "package");
   const localNote = path.join(
     repoRoot,
     "build",
     "crates",
-    "licoup-native",
+    "licoup",
     "target",
     "debug",
     "notes.txt",
@@ -531,7 +486,7 @@ test("targeted dry-run is read-only and targeted prune only removes the selected
     env: { CARGO_HOME: path.join(repoRoot, "cargo-home") },
     processSnapshot: { available: true, entries: [] },
     repoRoot,
-    targetPath: "build/crates/licoup-native/target",
+    targetPath: "build/crates/licoup/target",
   };
   const dryRun = pruneTestArtifactTarget({ ...options, dryRun: true });
   const inventory = inventoryTestArtifacts(options).entries[0];
@@ -556,8 +511,8 @@ test("Cargo profile locks remain in place and block cleanup while a build owns t
 }, async (t) => {
   const repoRoot = temporaryRepository(t);
   configureCargoTarget(repoRoot);
-  const compiled = materialize(repoRoot, "build/crates/licoup-native/target/debug/deps/client");
-  const lockPath = path.join(repoRoot, "build", "crates", "licoup-native", "target", "debug", ".cargo-lock");
+  const compiled = materialize(repoRoot, "build/crates/licoup/target/debug/deps/client");
+  const lockPath = path.join(repoRoot, "build", "crates", "licoup", "target", "debug", ".cargo-lock");
   const lockIdentity = statSync(lockPath).ino;
   const locked = spawn("python3", ["-c", [
     "import fcntl,sys",
@@ -583,7 +538,7 @@ test("Cargo profile locks remain in place and block cleanup while a build owns t
     env: { CARGO_HOME: path.join(repoRoot, "cargo-home") },
     processSnapshot: { available: true, entries: [] },
     repoRoot,
-    targetPath: "build/crates/licoup-native/target",
+    targetPath: "build/crates/licoup/target",
   });
   assert.equal(result.removed, false);
   assert.equal(result.active, 1);
@@ -596,7 +551,7 @@ test("Cargo profile locks remain in place and block cleanup while a build owns t
     env: { CARGO_HOME: path.join(repoRoot, "cargo-home") },
     processSnapshot: { available: true, entries: [] },
     repoRoot,
-    targetPath: "build/crates/licoup-native/target",
+    targetPath: "build/crates/licoup/target",
   });
   assert.equal(pruned.removed, true);
   assert.equal(existsSync(compiled), false);
@@ -609,15 +564,15 @@ test("tracked source inside a configured output root is protected", (t) => {
   configureCargoTarget(repoRoot);
   const source = materialize(
     repoRoot,
-    "build/crates/licoup-native/target/debug/kept-source.rs",
+    "build/crates/licoup/target/debug/kept-source.rs",
     "source",
   );
-  execFileSync("git", ["-C", repoRoot, "add", "--", "build/crates/licoup-native/target/debug/kept-source.rs"]);
+  execFileSync("git", ["-C", repoRoot, "add", "--", "build/crates/licoup/target/debug/kept-source.rs"]);
   const result = pruneTestArtifactTarget({
     env: { CARGO_HOME: path.join(repoRoot, "cargo-home") },
     processSnapshot: { available: true, entries: [] },
     repoRoot,
-    targetPath: "build/crates/licoup-native/target",
+    targetPath: "build/crates/licoup/target",
   });
   assert.equal(result.removed, false);
   assert.equal(result.protectedReasons.includes("tracked-source"), true);
@@ -627,7 +582,7 @@ test("tracked source inside a configured output root is protected", (t) => {
 test("unrecognized Cargo profile layouts remain protected", (t) => {
   const repoRoot = temporaryRepository(t);
   configureCargoTarget(repoRoot);
-  const target = path.join(repoRoot, "build", "crates", "licoup-native", "target");
+  const target = path.join(repoRoot, "build", "crates", "licoup", "target");
   const compiled = path.join(target, "debug", "deps", "client");
   mkdirSync(path.dirname(compiled), { recursive: true });
   writeFileSync(compiled, "compiled", { mode: 0o755 });
@@ -635,7 +590,7 @@ test("unrecognized Cargo profile layouts remain protected", (t) => {
     env: { CARGO_HOME: path.join(repoRoot, "cargo-home") },
     processSnapshot: { available: true, entries: [] },
     repoRoot,
-    targetPath: "build/crates/licoup-native/target",
+    targetPath: "build/crates/licoup/target",
   });
   assert.equal(result.removed, false);
   assert.deepEqual(result.protectedReasons, ["cargo-lock-unavailable"]);
@@ -645,7 +600,7 @@ test("unrecognized Cargo profile layouts remain protected", (t) => {
 test("unsupported Cargo lock hosts fail closed", { skip: cargoPruneSupported }, (t) => {
   const repoRoot = temporaryRepository(t);
   configureCargoTarget(repoRoot);
-  const compiled = materialize(repoRoot, "build/crates/licoup-native/target/debug/client");
+  const compiled = materialize(repoRoot, "build/crates/licoup/target/debug/client");
   const inventory = inventoryTestArtifacts({
     env: { CARGO_HOME: path.join(repoRoot, "cargo-home") },
     processSnapshot: { available: true, entries: [] },
@@ -656,25 +611,12 @@ test("unsupported Cargo lock hosts fail closed", { skip: cargoPruneSupported }, 
   assert.equal(existsSync(compiled), true);
 });
 
-test("deliverable-capable Flutter build roots remain protected", (t) => {
-  const repoRoot = temporaryRepository(t);
-  const deliverable = materialize(repoRoot, "apps/desktop/build/release/client.tar", "package");
-  const result = pruneTestArtifactTarget({
-    processSnapshot: { available: true, entries: [] },
-    repoRoot,
-    targetPath: "apps/desktop/build",
-  });
-  assert.equal(result.removed, false);
-  assert.deepEqual(result.protectedReasons, ["non-cargo-output-root"]);
-  assert.equal(existsSync(deliverable), true);
-});
-
 test("workspace completion selects one effective target and protects active builds and binaries", {
   skip: !cargoPruneSupported,
 }, (t) => {
   const repoRoot = temporaryRepository(t);
   configureCargoTarget(repoRoot);
-  const compiled = materialize(repoRoot, "build/crates/licoup-native/target/debug/client");
+  const compiled = materialize(repoRoot, "build/crates/licoup/target/debug/client");
   const deliverable = materialize(repoRoot, "build/out/target/package.bin", "deliverable");
   const activeBuild = completeTestArtifactWorkspace({
     env: { CARGO_HOME: path.join(repoRoot, "cargo-home") },
@@ -702,7 +644,7 @@ test("workspace completion selects one effective target and protects active buil
       entries: [{ pid: 4243, path: compiled, command: "client" }],
     },
     repoRoot,
-    targetPath: "build/crates/licoup-native/target",
+    targetPath: "build/crates/licoup/target",
   });
   assert.equal(activeBinary.removed, false);
   assert.deepEqual(activeBinary.protectedReasons, ["running-binary"]);
@@ -714,11 +656,7 @@ test("workspace completion covers each known Cargo output root in the checkout",
 }, (t) => {
   const repoRoot = temporaryRepository(t);
   configureCargoTarget(repoRoot);
-  const defaultOutput = materialize(repoRoot, "build/crates/licoup-native/target/debug/client");
-  const androidOutput = materialize(
-    repoRoot,
-    "build/crates/licoup-native/android-target/release/android-client",
-  );
+  const defaultOutput = materialize(repoRoot, "build/crates/licoup/target/debug/client");
   const deliverable = materialize(repoRoot, "build/out/release/client.tar", "package");
 
   const result = completeTestArtifactWorkspace({
@@ -728,19 +666,17 @@ test("workspace completion covers each known Cargo output root in the checkout",
   });
 
   assert.equal(result.removed, true);
-  assert.equal(result.removedCount, 2);
+  assert.equal(result.removedCount, 1);
   assert.deepEqual(result.relativeTargets, [
-    "build/crates/licoup-native/android-target",
-    "build/crates/licoup-native/target",
+    "build/crates/licoup/target",
   ]);
   assert.equal(existsSync(defaultOutput), false);
-  assert.equal(existsSync(androidOutput), false);
   assert.equal(existsSync(deliverable), true);
 });
 
 test("process probes protect Cargo output when the compiler runs outside the checkout", (t) => {
   const repoRoot = temporaryRepository(t);
-  const targetPath = path.join(repoRoot, "build", "crates", "licoup-native", "target");
+  const targetPath = path.join(repoRoot, "build", "crates", "licoup", "target");
   const cargo = targetProcessUsage(targetPath, {
     available: true,
     entries: [{
@@ -783,13 +719,13 @@ test("artifact CLI parses checkout-scoped inventory and maintenance commands", (
   assert.deepEqual(parseArtifactCommand([
     "prune",
     "--target",
-    "build/crates/licoup-native/target",
+    "build/crates/licoup/target",
     "--dry-run",
   ]), {
     command: "prune",
     dryRun: true,
     repoRoot: null,
-    targetPath: "build/crates/licoup-native/target",
+    targetPath: "build/crates/licoup/target",
   });
   assert.equal(parseArtifactCommand(["workspace-complete", "--target", "target"]), null);
 });
@@ -799,7 +735,7 @@ test("artifact CLI dispatches one checkout and reports only relative targets", {
 }, (t) => {
   const repoRoot = temporaryRepository(t);
   configureCargoTarget(repoRoot);
-  const compiled = materialize(repoRoot, "build/crates/licoup-native/target/debug/client");
+  const compiled = materialize(repoRoot, "build/crates/licoup/target/debug/client");
   const env = { CARGO_HOME: path.join(repoRoot, "cargo-home") };
   const inventory = runArtifactCommand(parseArtifactCommand([
     "inventory",
@@ -809,7 +745,7 @@ test("artifact CLI dispatches one checkout and reports only relative targets", {
   assert.equal(inventory.ok, true);
   assert.equal(inventory.operation, "inventory");
   assert.deepEqual(inventory.entries.map((entry) => entry.relativeTarget), [
-    "build/crates/licoup-native/target",
+    "build/crates/licoup/target",
   ]);
   assert.equal(JSON.stringify(inventory).includes(repoRoot), false);
 
@@ -835,7 +771,7 @@ test("artifact CLI dispatches one checkout and reports only relative targets", {
   ]), { currentRepoRoot: repoRoot, env });
   assert.equal(completed.ok, true);
   assert.equal(completed.removed, true);
-  assert.deepEqual(completed.relativeTargets, ["build/crates/licoup-native/target"]);
+  assert.deepEqual(completed.relativeTargets, ["build/crates/licoup/target"]);
   assert.equal(existsSync(compiled), false);
   assert.equal(JSON.stringify(completed).includes(repoRoot), false);
 });

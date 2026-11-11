@@ -9,7 +9,7 @@ const repoRoot = path.resolve(
   "../../..",
 );
 const semanticRoot =
-  "crates/licoup-native/src/domain/conversation_semantic";
+  "crates/licoup/src/domain/conversation_semantic";
 const productionLeaves = Object.freeze([
   "artifact_projection.rs",
   "builder.rs",

@@ -10,7 +10,7 @@
 //!
 //! # The boundaries this crate keeps
 //!
-//! - **No client crate.** Nothing here reaches into `licoup-native` or any other
+//! - **No client crate.** Nothing here reaches into `licoup` or any other
 //!   composition crate. What this package needs from the shared ACP engine
 //!   arrives through `licoup-agent-drivers`' declared port, and composition
 //!   installs this Agent's answer.
@@ -28,7 +28,7 @@
 //! # Who executes Copilot
 //!
 //! The package ships Copilot's declaration, its protocol and the two bounded
-//! entry points that run one turn: `licoup-native`'s composition names
+//! entry points that run one turn: `licoup`'s composition names
 //! [`driver`] directly and keeps no Copilot module of its own, so the launch,
 //! the probe and the turn are described in exactly one place.
 //!

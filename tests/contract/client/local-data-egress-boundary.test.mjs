@@ -8,21 +8,15 @@ const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)
 
 const productionRoots = Object.freeze([
   ["crates/licoup-agent-drivers/src", ".rs"],
-  ["crates/licoup-native/src", ".rs"],
+  ["crates/licoup/src", ".rs"],
   ["crates/licoup-public-gateway/src", ".rs"],
   ["crates/licoup-agent-targets/src", ".rs"],
   ["crates/licoup-private-gateway/src", ".rs"],
   ["crates/licoup-model-catalog/src", ".rs"],
-  ["apps/desktop/lib", ".dart"],
-  ["apps/desktop/android/app/src/main", ".kt"],
-  ["apps/desktop/ios/Runner", ".swift"],
 ]);
 
 const networkTokensByExtension = Object.freeze({
   ".rs": ["ureq::", "reqwest::", "TcpStream", "UdpSocket"],
-  ".dart": ["HttpClient", "WebSocket.connect", "package:http", "package:dio"],
-  ".kt": ["HttpURLConnection", "OkHttpClient", "java.net.URL", "java.net.Socket"],
-  ".swift": ["URLSession", "NWConnection", "URLSessionWebSocketTask"],
 });
 
 const reviewedRustEgressFiles = Object.freeze([
@@ -31,21 +25,19 @@ const reviewedRustEgressFiles = Object.freeze([
   "crates/licoup-agent-targets/src/domain/lico_agent/transport.rs",
   "crates/licoup-model-catalog/src/identity/source.rs",
   "crates/licoup-model-catalog/src/pricing.rs",
-  "crates/licoup-native/src/domain/agent_hub/acquisition.rs",
-  "crates/licoup-native/src/domain/agent_usage/agent_usage_native/cursor.rs",
-  "crates/licoup-native/src/domain/client_update/github_source.rs",
-  "crates/licoup-native/src/domain/collaboration_plugin/assembly/runtime/probe.rs",
-  "crates/licoup-native/src/domain/collaboration_plugin/assembly/runtime/shutdown.rs",
-  "crates/licoup-native/src/domain/collaboration_plugin/source.rs",
-  "crates/licoup-native/src/domain/provider_quota/http.rs",
-  "crates/licoup-native/src/platform/badtower_station/http_io.rs",
-  "crates/licoup-native/src/platform/llm_gateway_service.rs",
-  "crates/licoup-native/src/platform/mcp_streamable_http.rs",
   "crates/licoup-private-gateway/src/http/server.rs",
   "crates/licoup-private-gateway/src/http/transport.rs",
   "crates/licoup-public-gateway/src/lifecycle.rs",
-  "crates/licoup-public-gateway/src/telegram/transport.rs",
   "crates/licoup-public-gateway/src/transport.rs",
+  "crates/licoup/src/domain/agent_hub/acquisition.rs",
+  "crates/licoup/src/domain/agent_usage/agent_usage_native/cursor.rs",
+  "crates/licoup/src/domain/client_update/github_source.rs",
+  "crates/licoup/src/domain/collaboration_plugin/assembly/runtime/probe.rs",
+  "crates/licoup/src/domain/collaboration_plugin/assembly/runtime/shutdown.rs",
+  "crates/licoup/src/domain/collaboration_plugin/source.rs",
+  "crates/licoup/src/domain/provider_quota/http.rs",
+  "crates/licoup/src/platform/llm_gateway_service.rs",
+  "crates/licoup/src/platform/mcp_streamable_http.rs",
 ]);
 
 async function sourceFiles(relativeRoot, extension) {
@@ -86,9 +78,9 @@ test("production network capability stays inside the reviewed client egress boun
 
 test("GitHub package fetchers are bounded inbound GET-only sources", async () => {
   const collaborationPath =
-    "crates/licoup-native/src/domain/collaboration_plugin/source.rs";
+    "crates/licoup/src/domain/collaboration_plugin/source.rs";
   const updatePath =
-    "crates/licoup-native/src/domain/client_update/github_source.rs";
+    "crates/licoup/src/domain/client_update/github_source.rs";
   const registryPath =
     "crates/licoup-model-catalog/src/identity/source.rs";
   const [collaboration, update, registry] = await Promise.all(
@@ -130,13 +122,13 @@ test("GitHub package fetchers are bounded inbound GET-only sources", async () =>
 
 test("reviewed runtime owners retain direction, endpoint, and data bounds", async () => {
   const expectations = new Map([
-    ["crates/licoup-native/src/domain/agent_hub/acquisition.rs", [
+    ["crates/licoup/src/domain/agent_hub/acquisition.rs", [
       "MAX_ARTIFACT_BYTES", "MAX_DIGEST_DOCUMENT_BYTES", "MAX_REDIRECTS",
       ".redirects(0)", ".get(&current)",
       "origin.admit(hop, &current)?",
       ".take(max_bytes.saturating_add(1))",
     ]],
-    ["crates/licoup-native/src/domain/agent_usage/agent_usage_native/cursor.rs", [
+    ["crates/licoup/src/domain/agent_usage/agent_usage_native/cursor.rs", [
       'EVENTS_URL: &str = "https://cursor.com/api/dashboard/get-filtered-usage-events"',
       "is_https_or_loopback_http_url(EVENTS_URL)",
       "MAX_PAGES", "MAX_PAGE_BYTES", ".take(MAX_PAGE_BYTES.saturating_add(1))",
@@ -150,30 +142,24 @@ test("reviewed runtime owners retain direction, endpoint, and data bounds", asyn
       'parsed.scheme() != "https"', ".timeout_connect(REFRESH_TIMEOUT)",
       ".get(url)", "MAX_PRICE_PAGE_BYTES", ".take(MAX_PRICE_PAGE_BYTES + 1)",
     ]],
-    ["crates/licoup-native/src/domain/provider_quota/http.rs", [
+    ["crates/licoup/src/domain/provider_quota/http.rs", [
       "HOSTED_FETCH_TIMEOUT", "LOOPBACK_FETCH_TIMEOUT", "MAX_RESPONSE_BYTES",
       "quota_endpoint_url_rejected", "quota_loopback_url_rejected",
       ".take(MAX_RESPONSE_BYTES.saturating_add(1))",
-    ]],
-    ["crates/licoup-native/src/platform/badtower_station/http_io.rs", [
-      "HTTP_TIMEOUT_SECONDS", "MAX_ERROR_RESPONSE_BYTES", "read_bounded",
-      ".take(take_limit)",
-    ]],
-    ["crates/licoup-public-gateway/src/telegram/transport.rs", [
-      'DEFAULT_API_ROOT: &str = "https://api.telegram.org"',
-      "MAX_RESPONSE_BYTES", ".timeout_connect", ".send_json(body)",
     ]],
     ["crates/licoup-private-gateway/src/http/server.rs", [
       "if !address.ip().is_loopback()", "MAX_HEADER_BYTES", "MAX_HEADERS",
       "MAX_REQUESTS_PER_CONNECTION", "MAX_GATEWAY_BODY_BYTES",
     ]],
-    ["crates/licoup-native/src/platform/llm_gateway_service.rs", [
+    ["crates/licoup/src/platform/llm_gateway_service.rs", [
       "MAX_CONFIG_BYTES", "MAX_PID_BYTES", "TcpStream::connect_timeout",
       'GET /health HTTP/1.1',
     ]],
     ["crates/licoup-private-gateway/src/http/transport.rs", [
-      "MAX_IN_FLIGHT", "MAX_COALESCED_WRITE_BYTES", ".post(&prepared.endpoint)",
-      'request.set("authorization"', "MAX_GATEWAY_BODY_BYTES",
+      "MAX_IN_FLIGHT", "MAX_COALESCED_WRITE_BYTES",
+      "agent.request(request.method.as_str(), request.url.as_str())",
+      "call.send_bytes(&request.body)", "call.set(name.as_str(), value)",
+      "MAX_GATEWAY_BODY_BYTES",
     ]],
     ["crates/licoup-agent-drivers/src/local_service/http.rs", [
       "MAX_HTTP_REQUEST_BODY_BYTES", "MAX_HTTP_RESPONSE_BODY_BYTES",
@@ -183,7 +169,7 @@ test("reviewed runtime owners retain direction, endpoint, and data bounds", asyn
       "MAX_SSE_LINE_BYTES", "MAX_SSE_FRAME_BYTES", "MAX_SSE_EVENTS_PER_STREAM",
       "MAX_SSE_STREAMS", "http::validate_url", "http::validate_headers",
     ]],
-    ["crates/licoup-native/src/platform/mcp_streamable_http.rs", [
+    ["crates/licoup/src/platform/mcp_streamable_http.rs", [
       "DEFAULT_MAX_MESSAGE_BYTES", "MAX_HTTP_HEADERS", "MAX_HTTP_HEADER_BYTES",
       "MAX_HTTP_IN_FLIGHT", "validate_endpoint", ".post(endpoint.as_str())",
     ]],
@@ -199,15 +185,15 @@ test("reviewed runtime owners retain direction, endpoint, and data bounds", asyn
 
 test("local assembly runtime networking is synthetic loopback inspection only", async () => {
   const applyPath =
-    "crates/licoup-native/src/domain/collaboration_plugin/assembly/apply.rs";
+    "crates/licoup/src/domain/collaboration_plugin/assembly/apply.rs";
   const probePath =
-    "crates/licoup-native/src/domain/collaboration_plugin/assembly/runtime/probe.rs";
+    "crates/licoup/src/domain/collaboration_plugin/assembly/runtime/probe.rs";
   const shutdownPath =
-    "crates/licoup-native/src/domain/collaboration_plugin/assembly/runtime/shutdown.rs";
+    "crates/licoup/src/domain/collaboration_plugin/assembly/runtime/shutdown.rs";
   const sandboxPath =
-    "crates/licoup-native/src/domain/collaboration_plugin/assembly/runtime/sandbox.rs";
+    "crates/licoup/src/domain/collaboration_plugin/assembly/runtime/sandbox.rs";
   const sandboxOwnerPath =
-    "crates/licoup-native/src/platform/process_sandbox/seatbelt.rs";
+    "crates/licoup/src/platform/process_sandbox/seatbelt.rs";
   const [apply, probe, shutdown, sandbox, sandboxOwner] = await Promise.all(
     [applyPath, probePath, shutdownPath, sandboxPath, sandboxOwnerPath].map((relativePath) =>
       fs.readFile(path.join(repoRoot, relativePath), "utf8"),
@@ -262,19 +248,19 @@ test("local assembly runtime networking is synthetic loopback inspection only", 
 
 test("MCP HTTP egress is reachable only through an exact one-shot direct approval", async () => {
   const approval = await fs.readFile(
-    path.join(repoRoot, "crates/licoup-native/src/domain/mcp_adapter/approval.rs"),
+    path.join(repoRoot, "crates/licoup/src/domain/mcp_adapter/approval.rs"),
     "utf8",
   );
   const execution = await fs.readFile(
-    path.join(repoRoot, "crates/licoup-native/src/domain/mcp_adapter/execution.rs"),
+    path.join(repoRoot, "crates/licoup/src/domain/mcp_adapter/execution.rs"),
     "utf8",
   );
   const command = await fs.readFile(
-    path.join(repoRoot, "crates/licoup-native/src/ffi/commands/mcp.rs"),
+    path.join(repoRoot, "crates/licoup/src/ffi/commands/mcp.rs"),
     "utf8",
   );
   const transport = await fs.readFile(
-    path.join(repoRoot, "crates/licoup-native/src/platform/mcp_streamable_http.rs"),
+    path.join(repoRoot, "crates/licoup/src/platform/mcp_streamable_http.rs"),
     "utf8",
   );
 

@@ -7,7 +7,7 @@
 | **Architecture Root** | [docs/architecture/README.md](README.md) | 4-tier client architecture overview |
 | **Rust Infrastructure** | [RUST-INFRASTRUCTURE-LAYER.md](RUST-INFRASTRUCTURE-LAYER.md) | Database, config, secrets, network, and PTY |
 | **Agent Adapters** | [AGENT-ADAPTERS-ARCHITECTURE.md](AGENT-ADAPTERS-ARCHITECTURE.md) | 13-agent taxonomy & protocol normalization |
-| **Bridge Interaction** | [CLIENT-NATIVE-INTERACTION.md](CLIENT-NATIVE-INTERACTION.md) | Frontend-backend RPC / FFI frame contract |
+| **Bridge Interaction** | [CLIENT-NATIVE-INTERACTION.md](CLIENT-NATIVE-INTERACTION.md) | Frontend-backend RPC frame contract |
 | **Product Charter** | [PRODUCT.md](../../PRODUCT.md) | Durable one-conversation product destination |
 
 In LicoUp, **Conversation is formally established as an End-to-End Vertical Architecture Slice**, rather than an isolated module tucked inside Rust. It cuts vertically across all four horizontal architectural tiers, connecting user presentation, bridging contracts, domain state machines, infrastructure subsystems, and the native operating system.
@@ -49,7 +49,6 @@ flowchart TB
     subgraph TIER2["[Tier 2] Bridging Contract Layer (Contract Layer)"]
         direction LR
         RPC_DESK["Desktop JSON-RPC<br/>(licoup.stdio.v1 Frames)"]:::box
-        RPC_MOBILE["Mobile C-ABI FFI<br/>(Platform Bridges Commands)"]:::box
         RPC_OBSERVER["Bidirectional Observer Stream<br/>(Streaming Parts · State Steps)"]:::box
     end
 
@@ -88,14 +87,12 @@ flowchart TB
         direction LR
         N_PTY["Terminal Subsystem<br/>(POSIX openpty / Win ConPTY)"]:::box
         N_PROC["OS Processes & Signals<br/>(SIGINT / SIGTERM / SIGKILL)"]:::box
-        N_SEC["Native Hardware Keyrings<br/>(macOS Keychain / WinCred / Keystore / Enclave)"]:::box
+        N_SEC["Native Hardware Keyrings<br/>(macOS Keychain / WinCred / D-Bus Secret Service)"]:::box
     end
 
     %% Tier connections
     UI_CTRL ==>|"① Downlink Actions"| RPC_DESK
-    UI_CTRL ==>|"① Mobile Invocation"| RPC_MOBILE
     RPC_DESK ==>|"② Unpack (Principal+Profile+Event)"| D_INGEST
-    RPC_MOBILE ==>|"② Unpack (Principal+Profile+Event)"| D_INGEST
 
     I_PTY ==>|"③ System PTY Attach"| N_PTY
     I_PTY ==>|"③ Process Supervision"| N_PROC
@@ -247,7 +244,6 @@ As a vertical slice, Conversation defines concrete components and duties across 
 ### ② Tier 2: Bridging Contract Layer
 - **Communication Protocol**:
   - Desktop: `licoup.stdio.v1` strongly typed JSON-RPC method frames.
-  - Mobile: C-ABI memory-safe FFI commands.
 - **Data Carrier Guarantee**:
   - Losslessly transfers `(Principal + Profile + Event)` payloads.
   - Exposes bidirectional Observer streams for incremental events and terminal evidence.
@@ -278,7 +274,7 @@ As a vertical slice, Conversation defines concrete components and duties across 
 - **Supervision & Signals**:
   - OS-level signal handling (`SIGINT`, `SIGTERM`, `SIGKILL`) and process exit reaping.
 - **Platform Hardware Custody**:
-  - OS Keychains (macOS Keychain, WinCred, D-Bus Secret, Android Keystore, iOS Secure Enclave).
+  - OS Keychains (macOS Keychain, WinCred, D-Bus Secret Service).
 
 ---
 
@@ -294,7 +290,7 @@ Frontend-backend interaction strictly follows **Bidirectional Binding** and Sing
 | Layer | Primary Duties | Data & Control Boundary Invariants |
 |:---|:---|:---|
 | **Presentation Layer**<br>(Flutter Views & Controllers) | 1. Captures user inputs, gestures, and form interactions;<br>2. Debounces and locks interactive UI state (`_sending = true`, clearing drafts);<br>3. Packs user actions into typed Dart request envelopes;<br>4. Listens to Observer streams to update the process blackboard and chat bubbles;<br>5. Renders sanitized summaries and one-time interactive approval cards. | **State Mirror Invariant**: Serves as a pure rendering mirror of the backend state machine. Updates UI solely from authoritative stream facts; does not maintain local SQLite duplicates, and never fabricates or infers lifecycle facts. |
-| **Contract Layer**<br>(Bridging Protocols) | 1. Encodes and decodes bidirectional structured JSON-RPC method frames;<br>2. Manages cross-process (stdio) and cross-language (FFI) memory safety boundaries;<br>3. Provides typed error protection for timeouts and disconnections. | **Stateless Channel Invariant**: Serves as a pure, stateless transport channel passing typed requests and streams without hosting stateful domain logic. |
+| **Contract Layer**<br>(Bridging Protocols) | 1. Encodes and decodes bidirectional structured JSON-RPC method frames;<br>2. Manages cross-process (stdio) memory safety boundaries;<br>3. Provides typed error protection for timeouts and disconnections. | **Stateless Channel Invariant**: Serves as a pure, stateless transport channel passing typed requests and streams without hosting stateful domain logic. |
 | **Domain & Infrastructure Layer**<br>(Rust Functional Core & Infra) | 1. Exclusive persistence authority for canonical Conversation facts (sole reader/writer of SQLite/WAL);<br>2. Exclusive dispatch admission authority (resolves `@mention`, group strategy, and memberships);<br>3. Exclusive completion arbiter (L1 normalization and terminal verdict);<br>4. Exclusive process lifecycle supervisor (startup, input pipes, Grace Period ladder, SIGTERM/KILL);<br>5. Exclusive interaction routing (one-time scoped token generation and fail-closed settlement). | **Fact Authority Invariant**: Operates as the system's sole authoritative source for canonical Conversation facts. Provider-managed history remains an authorized external source and is never silently merged into that authority; every canonical event exposed to the frontend is backed by an immutable persisted record; Exact Resume session identity invariants remain enforced. |
 
 ---

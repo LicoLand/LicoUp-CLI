@@ -43,7 +43,7 @@ impl RegistrySnapshot {
         wrappers: impl IntoIterator<Item = impl AsRef<str>>,
     ) -> Result<Self> {
         let catalog: CatalogDocument = serde_json::from_value(value)?;
-        Self::from_document_with(&catalog, &normalize_wrappers(wrappers))
+        Self::from_document_with(&catalog, normalize_wrappers(wrappers))
     }
 
     /// An empty snapshot whose wrapper labels are the ones this process

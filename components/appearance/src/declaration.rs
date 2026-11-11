@@ -4,7 +4,7 @@
 //! caller reads it instead of recognising a package by name. The two format identities
 //! are the one part of the claim this package must not invent: the client's embedded
 //! frontier catalogue is the single authority for the source/target pair, and
-//! [`licoup_native::domain::client_state_migration::conversion_endpoints`] is that
+//! [`licoup::domain::client_state_migration::conversion_endpoints`] is that
 //! authority's own projection. The declaration here is therefore *derived* rather than
 //! restated: when the catalogue moves to the next published pair, this package's
 //! committed manifest is stale until it is regenerated, and its own suite says so.
@@ -31,7 +31,7 @@ use crate::{
 /// identified for. It is read, never written here: a format name compiled into this
 /// package would be a second place to disagree with the conversion the client performs.
 pub fn endpoints() -> Result<FrozenEndpoints> {
-    let declared = licoup_native::domain::client_state_migration::conversion_endpoints()
+    let declared = licoup::domain::client_state_migration::conversion_endpoints()
         .context("migration_frontier_incomplete")?;
     Ok(FrozenEndpoints::new(
         declared.source_frontier_id,

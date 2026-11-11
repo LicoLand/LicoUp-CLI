@@ -1,10 +1,10 @@
 [package]
 name = "licoup-agent-copilot"
-version = "0.14.0"
-edition = "2024"
-rust-version = "1.95.0"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "Copilot adapter package: the Copilot ACP declaration and its frame dialect"
 
 # The crate is one package's program. `parser` is this Agent's vendor protocol
@@ -27,13 +27,13 @@ default = []
 test-support = ["licoup-agent-drivers/test-support"]
 
 [dependencies]
-licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+licoup-agent-adapter-sdk.workspace = true
 # The shared ACP engines: the reducer, the process runtime and the port one
 # Agent's frame dialect is read through. This package answers that port; it
 # never reaches into a client crate for it.
-licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+licoup-agent-drivers.workspace = true
 # The ACP envelope vocabulary this Agent's frames are validated against.
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-foundation.workspace = true
 serde_json.workspace = true
 
 # The published Copilot card and mechanism dialect are consumed at build time.
@@ -54,8 +54,8 @@ path = "src/bin/lico-agent-copilot.rs"
 # reading of it. Nothing here enters the package binary, which links no kernel
 # crate and reads its own package documents as data.
 [dev-dependencies]
-licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-extension-contracts.workspace = true
 # The package's own suite replays the recorded Copilot transcripts through the
 # same shared arm a composing test build reaches, so the engine's replay surface
 # is on for this crate's tests exactly as it is for the host's.
-licoup-agent-drivers = { path = "../licoup-agent-drivers", features = ["test-support"] }
+licoup-agent-drivers = { workspace = true, features = ["test-support"] }

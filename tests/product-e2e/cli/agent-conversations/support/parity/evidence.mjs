@@ -3,7 +3,8 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { CONDITIONAL_CHECK_IDS, CONTRACT_VERSION, CORE_CHECK_IDS, EVIDENCE_SCHEMA_VERSION, adapterManifestDigestFor, adapterEvidenceDigestFor, driverInventoryDigestFor, packagedAgentIds, registryDigestFor } from "../reducer-facade.mjs";
 import { productContinuityBindingDigest } from "../../../../../../tools/scripts/lib/agent-conversation-release-binding.mjs";
-import { dispatchLaneHarnessVersion, driversInventoryPath, evidenceManifestPath, packagingRegistryPath, strictRoundCount } from "./constants.mjs";
+import { dispatchLaneHarnessVersion, driversInventoryPath, evidenceManifestPath, strictRoundCount } from "./constants.mjs";
+import { packagingRegistryFromInventory } from "../reducer/inputs.mjs";
 import { digest, requireFact } from "./errors.mjs";
 
 export function assertEvidenceHygiene(evidence) {
@@ -184,7 +185,7 @@ export function writeReleaseUiAdapterEvidence(aggregate, context) {
   if (aggregate.consecutivePasses < strictRoundCount) {
     return { written: false, reason: "consecutive_passes_incomplete" };
   }
-  const packagingRegistry = JSON.parse(readFileSync(packagingRegistryPath, "utf8"));
+  const packagingRegistry = packagingRegistryFromInventory(JSON.parse(readFileSync(driversInventoryPath, "utf8")));
   const inventory = JSON.parse(readFileSync(driversInventoryPath, "utf8"));
   const driver = inventory.drivers.find((row) => row.agentId === aggregate.agent);
   requireFact(Boolean(driver), "driver_inventory_missing_agent");

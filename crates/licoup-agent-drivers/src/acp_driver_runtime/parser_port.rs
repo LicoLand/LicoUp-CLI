@@ -10,7 +10,7 @@
 //! response to a known request, what a session update or a prompt result says,
 //! and how a failure is turned into the shared transition vocabulary — arrives
 //! through [`AcpParserRegistration`], and the composition above this crate
-//! supplies the registrations: `licoup-native` while the Agent crates do not
+//! supplies the registrations: `licoup` while the Agent crates do not
 //! exist, `licoup-agent-<agent>` once they do.
 //!
 //! The transport is keyed by **driver identity**, because that is the identity

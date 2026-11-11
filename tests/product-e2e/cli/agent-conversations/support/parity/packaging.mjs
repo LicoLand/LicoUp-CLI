@@ -4,19 +4,20 @@ import { join, relative } from "node:path";
 import { releaseClosureChallengeDigest, requiredReleaseClosureChallenge } from "../../../../../../tools/scripts/lib/release-closure-challenge.mjs";
 import { productContinuityBindingDigest } from "../../../../../../tools/scripts/lib/agent-conversation-release-binding.mjs";
 import { parityModelForAgent } from "./agent-ids.mjs";
-import { packagedReleaseAppPath, packagingRegistryPath } from "./constants.mjs";
+import { driversInventoryPath } from "./constants.mjs";
 import { AcceptanceError, digest, requireFact } from "./errors.mjs";
 
+// The CLI ships every Agent its driver inventory declares.
 export function readPackagedAgents() {
-  let registry;
+  let inventory;
   try {
-    registry = JSON.parse(readFileSync(packagingRegistryPath, "utf8"));
+    inventory = JSON.parse(readFileSync(driversInventoryPath, "utf8"));
   } catch {
-    throw new AcceptanceError("packaging_registry_invalid");
+    throw new AcceptanceError("driver_inventory_invalid");
   }
-  const packaged = registry?.modules?.["target-adapters"]?.targetAdapters;
-  requireFact(Array.isArray(packaged), "packaging_registry_invalid");
-  return new Set(packaged.filter((value) => typeof value === "string"));
+  const drivers = inventory?.drivers;
+  requireFact(Array.isArray(drivers), "driver_inventory_invalid");
+  return new Set(drivers.map((driver) => driver?.agentId).filter((value) => typeof value === "string"));
 }
 
 export function requireExactFields(value, fields, code) {
@@ -63,7 +64,9 @@ export function releaseBundleDigest(appBundle) {
   return { digest: `sha256:${hash.digest("hex")}`, fileCount };
 }
 
-export function validateProductReceipt(path, expectedAgent) {
+// `releaseApp` is the Desktop release bundle the receipt was produced from; the
+// Desktop repository builds it and passes its path explicitly.
+export function validateProductReceipt(path, expectedAgent, releaseApp) {
   const report = readBoundedJson(path, 256 * 1024, "release_ui_product_receipt_invalid");
   requireExactFields(report, new Set([
     "schemaVersion", "status", "receiptKind", "platform", "buildMode",
@@ -117,7 +120,7 @@ export function validateProductReceipt(path, expectedAgent) {
       && /^sha256:[a-f0-9]{64}$/u.test(row.productContinuityBindingDigest),
     "release_ui_product_agent_receipt_incomplete",
   );
-  const artifact = releaseBundleDigest(packagedReleaseAppPath);
+  const artifact = releaseBundleDigest(releaseApp);
   requireFact(
     report.artifactDigest === artifact.digest && report.artifactFileCount === artifact.fileCount,
     "release_ui_product_artifact_mismatch",

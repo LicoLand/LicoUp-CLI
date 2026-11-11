@@ -28,7 +28,7 @@ ledger and marker discipline, and would drift from the client on the first schem
 
 ## Declared formats
 
-The pair is read from `licoup_native::domain::client_state_migration::conversion_endpoints`,
+The pair is read from `licoup::domain::client_state_migration::conversion_endpoints`,
 the client's own projection of its embedded frontier. The committed
 [`package/manifest.json`](package/manifest.json) is that declaration as the carrier
 publishes it, and the suite fails when it goes stale:
@@ -66,7 +66,7 @@ cargo test --locked --offline --manifest-path components/appearance/Cargo.toml
 that converts and preserves its user content, an interrupted conversion whose resume
 applies the move exactly once, an unsupported store shape refused with a stable code
 before any write, and a root whose declared format is not a published endpoint. The
-standalone tool's suite (`crates/licoup-migrate/tests/resource_converter.rs`) holds the
+standalone tool's suite (`crates/licoup/tests/migrate/resource_converter.rs`) holds the
 other half: the committed manifest is identified for the pair the catalogue freezes, and a
 synthetic source converts through the tool's own conversion entry.
 

@@ -32,15 +32,15 @@ import { selectModulesForChangedPaths } from "../../../tools/regression/client-m
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
 const facadeRef = "tools/scripts/client-state-migration.mjs";
 const moduleRoot = "tools/scripts/client-state-migration";
-const MIGRATION_MODULE = "crates/licoup-native/src/domain/client_state_migration.rs";
-const STORES_MODULE = "crates/licoup-native/src/domain/client_state_migration/stores.rs";
+const MIGRATION_MODULE = "crates/licoup/src/domain/client_state_migration.rs";
+const STORES_MODULE = "crates/licoup/src/domain/client_state_migration/stores.rs";
 const STRATEGY_STORE_MODULE =
-  "crates/licoup-native/src/domain/client_state_migration/strategy_store.rs";
+  "crates/licoup/src/domain/client_state_migration/strategy_store.rs";
 const CLIENT_STATE_POLICY = "crates/licoup-client-state/src/policy.rs";
 const CLIENT_STATE_MIGRATION =
   "crates/licoup-client-state/src/migration.rs";
 const APPEARANCE_OWNER =
-  "crates/licoup-native/src/domain/client_state_migration/appearance.rs";
+  "crates/licoup/src/domain/client_state_migration/appearance.rs";
 const CONVERSATION_STORE = "crates/licoup-conversation/src/store/mod.rs";
 const CONVERSATION_SCHEMA = "crates/licoup-conversation/src/store/schema.rs";
 const WORKFLOW_STORE_MODULE = "crates/licoup-workflow-store/src/store.rs";
@@ -127,7 +127,7 @@ test("custody applicability follows the platform owner's shared disposition", ()
     const frontier = loadEmbeddedFrontier();
     seedAdmittedRoot(root, frontier, { withCustody: false });
     const before = snapshot(root);
-    const policy = JSON.parse(ownerSource("crates/licoup-native/resources/gateway-credential-migration.json"));
+    const policy = JSON.parse(ownerSource("crates/licoup/resources/gateway-credential-migration.json"));
     for (const [platform, ownerPlatform] of [["darwin", "macos"], ["linux", "linux"], ["win32", "windows"]]) {
       const report = evaluateMigrationState({ root, frontier, binaryProductVersion: "0.3.0", platform });
       const custody = report.domains.find((domain) => domain.domainId === GATEWAY_CUSTODY_DOMAIN);
@@ -1108,7 +1108,7 @@ test("no output carries a local path, a stored value or credential material", ()
   }
 });
 
-test("the client never invokes the migration CLI and the tool never guesses a data root", async () => {
+test("the native host never invokes the migration CLI and the tool never guesses a data root", async () => {
   const offenders = [];
   const visit = async (relative) => {
     const absolute = path.join(repoRoot, relative);
@@ -1117,14 +1117,13 @@ test("the client never invokes the migration CLI and the tool never guesses a da
       const child = path.join(relative, entry.name);
       if (entry.isDirectory()) {
         await visit(child);
-      } else if (/\.(rs|dart)$/u.test(entry.name)) {
+      } else if (/\.rs$/u.test(entry.name)) {
         const source = await fs.promises.readFile(path.join(repoRoot, child), "utf8");
         if (source.includes(`client-state-migration${".mjs"}`)) offenders.push(child);
       }
     }
   };
   await visit("crates");
-  await visit("apps/desktop/lib");
   assert.deepEqual(offenders, [], "startup migration stays exclusively the Rust admission");
 
   const admission = await fs.promises.readFile(path.join(repoRoot, MIGRATION_MODULE), "utf8");
@@ -1673,7 +1672,7 @@ test("every mirrored durable shape and constant still matches the Rust admission
     compact.includes(standaloneRoute("probe_agent_tab_order", DURABLE_SHAPES["agent-tab-order"].document)),
   );
   assert.ok(
-    compact.includes(standaloneRoute("probe_mobile_relay", DURABLE_SHAPES["mobile-relay"].document)),
+    compact.includes(standaloneRoute("probe_retired_mobile_relay", DURABLE_SHAPES["mobile-relay"].document)),
   );
   assert.ok(
     compact.includes(

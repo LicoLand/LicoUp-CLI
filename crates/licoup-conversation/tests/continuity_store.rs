@@ -24,7 +24,6 @@ use licoup_conversation::{
     ConversationStore, DispatchState, EventKind, EventPartKind, MembershipAccess, NewEventPart,
     Principal, PrincipalKind,
 };
-use rusqlite;
 
 fn human() -> Principal {
     Principal {
@@ -190,8 +189,8 @@ fn current_schema_repairs_missing_defaults_and_designation_trigger() {
         .with_continuity_unit_of_work(|unit| {
             unit.execute(
                 "DELETE FROM continuity_schema
-                 WHERE key IN (?1, ?1)",
-                [],
+                 WHERE key IN (?1, ?2)",
+                ["adoption_enabled", "adoption_stage"],
             )?;
             unit.execute("DROP TRIGGER continuity_bump_designation_epoch", [])?;
             unit.request_commit();
@@ -999,17 +998,19 @@ fn run_seeded_sequence(store: &ConversationStore, seed: u64) {
         capability_needs: Vec::new(),
         uncertainty_reasons: Vec::new(),
         requested_reads: Vec::new(),
-        task_child_admission: (seed % 7 == 0).then(|| ContinuityTaskChildAdmission {
-            goal_id: goal_id.clone(),
-            parent_conversation_id: conversation.id.clone(),
-            speech_act: ContinuitySpeechAct::Delegation,
-            follow_through_kind: ContinuityFollowThroughKind::Durable,
-            observed_child_conversation_id: None,
-            observed_card_anchor: None,
-            request_id: format!("admit:{seed}"),
-        }),
+        task_child_admission: seed
+            .is_multiple_of(7)
+            .then(|| ContinuityTaskChildAdmission {
+                goal_id: goal_id.clone(),
+                parent_conversation_id: conversation.id.clone(),
+                speech_act: ContinuitySpeechAct::Delegation,
+                follow_through_kind: ContinuityFollowThroughKind::Durable,
+                observed_child_conversation_id: None,
+                observed_card_anchor: None,
+                request_id: format!("admit:{seed}"),
+            }),
     };
-    if seed % 11 == 0 {
+    if seed.is_multiple_of(11) {
         set_continuity_interrupt(Some(ContinuityInterrupt::BeforeCommit));
         let _ = store.commit(&proposal);
         set_continuity_interrupt(None);
@@ -1073,7 +1074,7 @@ fn run_seeded_sequence(store: &ConversationStore, seed: u64) {
             assert_eq!(progress.lifecycle, ContinuityGoalLifecycle::Active);
         }
     }
-    if seed % 7 == 0 {
+    if seed.is_multiple_of(7) {
         let relation = store.relation_for_goal(&goal_id).unwrap();
         assert_ne!(relation.child_conversation_id, conversation.id);
         let _ = store.get(&relation.child_conversation_id).unwrap();
@@ -2136,7 +2137,7 @@ fn pending_completion_notices_filter_before_limit_and_ack_is_idempotent() {
     )
     .unwrap();
     assert_eq!(resolved.parent_conversation_id, harness.conversation_id);
-    assert_eq!(resolved.card_event_id.is_empty(), false);
+    assert!(!resolved.card_event_id.is_empty());
 }
 
 fn designate_agent(harness: &mut Harness) -> String {

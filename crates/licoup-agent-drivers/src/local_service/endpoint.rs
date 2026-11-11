@@ -51,13 +51,14 @@ impl ServeModelCatalog {
         {
             return Some(current_provider_match);
         }
-        if let Some((provider_id, model_id)) = selector.split_once('/') {
-            if !provider_id.is_empty() && !model_id.is_empty() {
-                return Some(ServeModel {
-                    provider_id: provider_id.to_string(),
-                    model_id: model_id.to_string(),
-                });
-            }
+        if let Some((provider_id, model_id)) = selector.split_once('/')
+            && !provider_id.is_empty()
+            && !model_id.is_empty()
+        {
+            return Some(ServeModel {
+                provider_id: provider_id.to_string(),
+                model_id: model_id.to_string(),
+            });
         }
         None
     }

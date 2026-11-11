@@ -9,7 +9,7 @@ const repoRoot = path.resolve(
   "../../..",
 );
 const mergeRoot =
-  "crates/licoup-native/src/domain/conversation/history/session_merge";
+  "crates/licoup/src/domain/conversation/history/session_merge";
 const productionLeaves = Object.freeze([
   "codex_lineage.rs",
   "composition.rs",

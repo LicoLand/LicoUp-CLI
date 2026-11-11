@@ -139,7 +139,7 @@ test("platform policy leaves stay independent and production emits no sensitive 
 test("all consumers use only the stable file security facade", async () => {
   const internalModules = "append_lock|atomic_replace|hardening|marker|policy|sync|unix_hardening|validation|windows_acl";
   const internalPath = new RegExp(`file_security::(?:${internalModules})`, "u");
-  const consumers = await sourceFiles("crates/licoup-native/src");
+  const consumers = await sourceFiles("crates/licoup/src");
   for (const relativePath of consumers) {
     const source = await read(relativePath);
     assert.equal(internalPath.test(source), false, relativePath);

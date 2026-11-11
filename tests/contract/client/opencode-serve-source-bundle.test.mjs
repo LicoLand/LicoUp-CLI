@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 import { openCodeWorkspaceUrl } from "../../product-e2e/cli/agent-conversations/support/gates/opencode-http.mjs";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
-const facadePath = "crates/licoup-native/src/platform/opencode_serve.rs";
-const root = "crates/licoup-native/src/platform/opencode_serve";
+const facadePath = "crates/licoup/src/platform/opencode_serve.rs";
+const root = "crates/licoup/src/platform/opencode_serve";
 // The driver this file used to read from the kernel is the adapter package's
 // now; the client keeps the engine facade, the endpoint specification and the
 // answer for the package's ports.

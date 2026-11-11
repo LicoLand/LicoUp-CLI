@@ -31,9 +31,9 @@ function runClient(args) {
       "run",
       "--quiet",
       "--manifest-path",
-      "crates/licoup-native/Cargo.toml",
+      "crates/licoup/Cargo.toml",
       "--bin",
-      "licoup-cli",
+      "licoup",
       "--",
       ...args
     ], {

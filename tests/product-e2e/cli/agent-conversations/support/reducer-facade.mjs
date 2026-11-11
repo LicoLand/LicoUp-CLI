@@ -30,7 +30,7 @@ export { validateDriverInventory } from "./reducer/inventory.mjs";
 export {
   reduceConversationParity,
 } from "./reducer/reduce.mjs";
-export { loadCanonicalInputs } from "./reducer/inputs.mjs";
+export { loadCanonicalInputs, packagingRegistryFromInventory } from "./reducer/inputs.mjs";
 export {
   assertReadinessMatchesReduction,
   assertReleaseReady,

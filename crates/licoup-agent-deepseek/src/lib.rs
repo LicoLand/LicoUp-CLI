@@ -14,7 +14,7 @@
 //!
 //! # The boundaries this crate keeps
 //!
-//! - **No client crate.** Nothing here reaches into `licoup-native` or any other
+//! - **No client crate.** Nothing here reaches into `licoup` or any other
 //!   composition crate. What the package needs from its host arrives through
 //!   [`port`], and the host installs it.
 //! - **One parse.** A raw Harness line becomes this Agent's facts here and is
@@ -33,7 +33,7 @@
 //! # Who executes DeepSeek Harness
 //!
 //! The package ships the Harness's protocol, its program and the process half
-//! that runs one turn: `licoup-native`'s composition names [`driver`] directly
+//! that runs one turn: `licoup`'s composition names [`driver`] directly
 //! and keeps no DeepSeek Harness module of its own, so one Harness execution is
 //! described in exactly one place. The extension host's binary route is what will
 //! move the process behind an agent-execution port, which this package does not

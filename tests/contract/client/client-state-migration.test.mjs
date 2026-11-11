@@ -5,13 +5,11 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
-const frontierPath = "crates/licoup-native/resources/client-state-migration-frontier.json";
-const migrationPath = "crates/licoup-native/src/domain/client_state_migration.rs";
-const storesPath = "crates/licoup-native/src/domain/client_state_migration/stores.rs";
-const lifecyclePath = "apps/desktop/lib/src/application/controller/client_lifecycle_facade.dart";
-const portableRootPath = "apps/desktop/lib/src/platform/storage/portable_data_root.dart";
+const frontierPath = "crates/licoup/resources/client-state-migration-frontier.json";
+const migrationPath = "crates/licoup/src/domain/client_state_migration.rs";
+const storesPath = "crates/licoup/src/domain/client_state_migration/stores.rs";
 const conversationServicePath =
-  "crates/licoup-native/src/domain/client_conversation/service.rs";
+  "crates/licoup/src/domain/client_conversation/service.rs";
 
 async function read(relativePath) {
   return fs.readFile(path.join(repoRoot, relativePath), "utf8");
@@ -51,7 +49,7 @@ test("Rust admission owns every frontier adapter and the legacy conversation imp
     read(storesPath),
     read(conversationServicePath),
   ]);
-  const appearance = await read("crates/licoup-native/src/domain/client_state_migration/appearance.rs");
+  const appearance = await read("crates/licoup/src/domain/client_state_migration/appearance.rs");
   const appearanceDomain = /const DOMAIN_ID: &str = ("[^"]+")/.exec(appearance);
   assert.ok(appearanceDomain, "appearance admission must declare its domain identity");
   const routedStores = stores.replaceAll("super::appearance::DOMAIN_ID", appearanceDomain[1]);
@@ -70,30 +68,8 @@ test("Rust admission owns every frontier adapter and the legacy conversation imp
   assert.match(admissionSource, /state_newer_than_binary/u);
 });
 
-test("desktop startup admits the raw root before loading product state", async () => {
-  const [lifecycle, portableRoot, bridge] = await Promise.all([
-    read(lifecyclePath),
-    read(portableRootPath),
-    read("schemas/client_bridge/state.json").then(JSON.parse),
-  ]);
-  const rootStep = lifecycle.indexOf("id: 'client_storage_root'");
-  const migrationStep = lifecycle.indexOf("id: 'client_state_migration'");
-  const storageStep = lifecycle.indexOf("id: 'client_storage'");
-  assert.ok(rootStep >= 0 && rootStep < migrationStep && migrationStep < storageStep);
-
-  const rawRootBody = lifecycle.slice(
-    lifecycle.indexOf("Future<void> _resolveClientStorageRoot"),
-    lifecycle.indexOf("Future<void> _admitClientStateMigration"),
-  );
-  assert.match(rawRootBody, /portableData\.dataDirectory\(\)/u);
-  assert.doesNotMatch(rawRootBody, /loadWorkspaceManifest/u);
-  assert.match(lifecycle, /await portableData\.loadWorkspaceManifest\(\)/u);
-
-  const dataDirectoryBody = portableRoot.slice(
-    portableRoot.indexOf("Future<Directory> dataDirectory()"),
-    portableRoot.indexOf("Future<Directory> clientDirectory()"),
-  );
-  assert.doesNotMatch(dataDirectoryBody, /loadOrCreate/u);
+test("state bridge publishes the admission operation and every migration failure", async () => {
+  const bridge = JSON.parse(await read("schemas/client_bridge/state.json"));
   assert.deepEqual(bridge.operations, ["get", "set", "admit"]);
   for (const code of [
     "migration_lock_unavailable",

@@ -4,7 +4,7 @@
 //   "<scenario>": [ <frame object> | "<raw wire string>" ] } } }
 //
 // The channel of every entry must equal the adapter's own `CONTRACT.framing`
-// (`crates/licoup-native/src/platform/native_agent_parser/adapters/<id>.rs`).
+// (`crates/licoup/src/platform/native_agent_parser/adapters/<id>.rs`).
 // Content is synthetic: no real conversation, identity, or path is recorded.
 
 const PROTOCOL_VERSION = 1;

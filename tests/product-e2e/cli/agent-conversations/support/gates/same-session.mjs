@@ -31,6 +31,7 @@ import {
   adapterManifestDigestFor,
   driverInventoryDigestFor,
   packagedAgentIds,
+  packagingRegistryFromInventory,
   registryDigestFor,
 } from "../reducer-facade.mjs";
 import {
@@ -39,7 +40,6 @@ import {
   dispatchLaneHarnessVersion,
   driversInventoryPath,
   evidenceManifestPath,
-  packagingRegistryPath,
   strictRoundCount,
   verificationTurnCount,
   workspaceRoot,
@@ -147,7 +147,7 @@ async function runSidecarCleanup(sidecar, agentId, sessionId, environment, timeo
 }
 
 function writeGateEvidence({ agentId, gate, aggregate, context }) {
-  const packagingRegistry = JSON.parse(readFileSync(packagingRegistryPath, "utf8"));
+  const packagingRegistry = packagingRegistryFromInventory(JSON.parse(readFileSync(driversInventoryPath, "utf8")));
   const inventory = JSON.parse(readFileSync(driversInventoryPath, "utf8"));
   const driver = inventory.drivers.find((row) => row.agentId === agentId);
   requireFact(Boolean(driver), "driver_inventory_missing_agent");
@@ -456,7 +456,7 @@ export async function runSameSessionConversationGate(argv = process.argv.slice(2
       requireFact(reducer.ok === true, "reducer_write_failed");
       const readinessPath = resolve(
         root,
-        "crates/licoup-native/resources/agent-conversation-readiness.json",
+        "crates/licoup/resources/agent-conversation-readiness.json",
       );
       const readiness = JSON.parse(readFileSync(readinessPath, "utf8"));
       readinessRow = (readiness.adapters || []).find((row) => row?.agentId === agentId) || null;

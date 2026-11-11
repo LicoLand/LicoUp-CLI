@@ -10,7 +10,7 @@
 //!
 //! # The boundaries this crate keeps
 //!
-//! - **No client crate.** Nothing here reaches into `licoup-native` or any other
+//! - **No client crate.** Nothing here reaches into `licoup` or any other
 //!   composition crate. What the package needs from its host arrives through
 //!   [`port`], and the host installs it.
 //! - **One parse.** A vendor receipt, a PTY byte chunk and a terminal process
@@ -37,7 +37,7 @@
 //!
 //! The package ships the whole driver: [`driver`] launches the vendor CLI under
 //! a PTY, supervises it, harvests the Stop-hook receipt, classifies the turn and
-//! answers cancellation. `licoup-native`'s composition names [`driver`] directly
+//! answers cancellation. `licoup`'s composition names [`driver`] directly
 //! and keeps no Antigravity module of its own, so the launch, the probe and the
 //! turn are described in exactly one place.
 //!

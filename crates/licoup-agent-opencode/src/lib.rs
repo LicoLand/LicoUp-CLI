@@ -11,7 +11,7 @@
 //!
 //! # The boundaries this crate keeps
 //!
-//! - **No client crate.** Nothing here reaches into `licoup-native` or any other
+//! - **No client crate.** Nothing here reaches into `licoup` or any other
 //!   composition crate. What the package needs from its host arrives through
 //!   [`port`], and the host installs it.
 //! - **One parse.** A raw `serve` document becomes this Agent's facts here and is
@@ -31,7 +31,7 @@
 //! record and admitting an active turn so force stop can reach it — is the
 //! client's shared local-service engine. The package asks for each of those
 //! operations through [`port::serve`], which the client answers from that engine
-//! in `licoup-native`'s `opencode_host`, and it reaches the shared active-turn
+//! in `licoup`'s `opencode_host`, and it reaches the shared active-turn
 //! registry's control answer directly because that answer is already this
 //! package's vocabulary and needs no translation.
 //!

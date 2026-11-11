@@ -34,7 +34,7 @@ export async function runLive(options, selfTestEvidence) {
   let productReceipt = null;
   if (options.releaseUi) {
     try {
-      productReceipt = validateProductReceipt(options.productReceipt, config.id);
+      productReceipt = validateProductReceipt(options.productReceipt, config.id, options.releaseApp);
     } catch (error) {
       return blockedResult(
         config.id,
@@ -50,7 +50,10 @@ export async function runLive(options, selfTestEvidence) {
   }
   const binary = resolveExecutable(options.binary, config);
   if (!binary) return blockedResult(config.id, options.strict, true, "agent_executable_unavailable", selfTestEvidence);
-  const sidecar = resolveSidecar(options.sidecar, { releaseUi: options.releaseUi });
+  const sidecar = resolveSidecar(options.sidecar, {
+    releaseUi: options.releaseUi,
+    releaseApp: options.releaseApp,
+  });
   if (!sidecar) {
     return blockedResult(
       config.id,

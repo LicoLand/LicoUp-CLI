@@ -7,7 +7,7 @@
 //! to the replacement endpoint ([`receipt`]).
 //!
 //! Credential deletion and terminal settlement are the platform custody
-//! owner's own work — `licoup-native`'s mobile-relay secret custody owns the
+//! owner's own work — `licoup`'s platform secret custody owns the
 //! authenticated replacement-endpoint authority, the bounded custody inventory
 //! and the erase loop that walks it. This slice never deletes a credential and
 //! never reads one; it reports those stages as outstanding until that owner

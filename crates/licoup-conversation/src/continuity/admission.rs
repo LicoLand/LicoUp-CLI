@@ -423,16 +423,15 @@ pub fn admit_task_relation(
         ));
     }
     admit_card_anchor(&relation.card_anchor)?;
-    if let Some(transition) = &relation.completion_transition {
-        if transition.goal_id != relation.goal_id
+    if let Some(transition) = &relation.completion_transition
+        && (transition.goal_id != relation.goal_id
             || !is_terminal(transition.to_lifecycle)
-            || is_terminal(transition.from_lifecycle)
-        {
-            return Err(failure(
-                ContinuityFailureCode::InvalidRequest,
-                ContinuityFailureStage::ContinuityAdmission,
-            ));
-        }
+            || is_terminal(transition.from_lifecycle))
+    {
+        return Err(failure(
+            ContinuityFailureCode::InvalidRequest,
+            ContinuityFailureStage::ContinuityAdmission,
+        ));
     }
     if let Some(previous) = previous {
         if previous.goal_id != relation.goal_id

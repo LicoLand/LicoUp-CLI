@@ -4,7 +4,7 @@
 //! strategy database. It sits below the workflow runtime and the kernel host:
 //!
 //! ```text
-//!   licoup-native  ──►  licoup-workflow-runtime  ──►  licoup-workflow-store  ──►  licoup-workflow
+//!   licoup  ──►  licoup-workflow-runtime  ──►  licoup-workflow-store  ──►  licoup-workflow
 //!     (composes)            (executes)                   (persists)                 (pure machine)
 //! ```
 //!

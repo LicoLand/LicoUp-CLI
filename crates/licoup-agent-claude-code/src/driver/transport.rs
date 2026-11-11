@@ -77,7 +77,7 @@ impl PersistentTransport {
             initial_raw_execution,
             closed: false,
             join_probe_path: std::env::var_os("LICO_TEST_CLAUDE_TRANSPORT_JOIN_PROBE_ROOT")
-                .and_then(|_| identity.cwd.as_ref())
+                .and(identity.cwd.as_ref())
                 .map(|cwd| cwd.join("fake-claude-transport-workers.joined")),
         })
     }

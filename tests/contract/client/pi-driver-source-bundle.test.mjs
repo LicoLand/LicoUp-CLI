@@ -12,18 +12,18 @@ const packageRoot = "crates/licoup-agent-pi/src";
 const driverRoot = `${packageRoot}/driver`;
 // The kernel's composition, which names this package's driver directly. The
 // host declares no Pi driver module and keeps no Pi protocol of its own.
-const compositionPath = "crates/licoup-native/src/platform/runtime_adapters/drivers.rs";
-const platformModulePath = "crates/licoup-native/src/platform/mod.rs";
-const retiredModulePath = "crates/licoup-native/src/platform/pi_driver.rs";
-const retiredTreePath = "crates/licoup-native/src/platform/pi_driver";
+const compositionPath = "crates/licoup/src/platform/runtime_adapters/drivers.rs";
+const platformModulePath = "crates/licoup/src/platform/mod.rs";
+const retiredModulePath = "crates/licoup/src/platform/pi_driver.rs";
+const retiredTreePath = "crates/licoup/src/platform/pi_driver";
 // The parser tree that used to re-export this package's parser under the
 // kernel's former `pi` name.
 const parserAdaptersPath =
-  "crates/licoup-native/src/platform/native_agent_parser/adapters/mod.rs";
+  "crates/licoup/src/platform/native_agent_parser/adapters/mod.rs";
 // The one Pi claim the host keeps, because the host owns the turn-event
 // consumer: it drives the package's driver and observes what reached it.
 const hostConsumerSuitePath =
-  "crates/licoup-native/src/platform/runtime_adapters/tests/pi_turn_events.rs";
+  "crates/licoup/src/platform/runtime_adapters/tests/pi_turn_events.rs";
 
 // The driver half the package owns: the launch and supervision, the bounded IO,
 // the active-turn control, the protocol loop, the probe and the vocabulary.
@@ -289,7 +289,7 @@ test("Pi split contains no production unsafe or hidden compatibility include", (
     ...parserLeaves.map((leaf) => source[`parser/${leaf}`]),
     ...driverLeaves.map((leaf) => source[`driver/${leaf}`]),
   ].join("\n");
-  for (const clientPath of ["crate::platform", "licoup_native", "licoup-native"]) {
+  for (const clientPath of ["crate::platform", "licoup::", '"licoup"']) {
     assert.equal(packageSources.includes(clientPath), false, clientPath);
   }
 });

@@ -12,7 +12,7 @@ export const scenarioClasses = Object.freeze([
 ]);
 
 export function getRegisteredAdapterIds(root = resolve(import.meta.dirname, "../../..")) {
-  const driversPath = resolve(root, "crates/licoup-native/resources/agent-conversation-drivers.json");
+  const driversPath = resolve(root, "crates/licoup/resources/agent-conversation-drivers.json");
   let data;
   try {
     data = JSON.parse(readFileSync(driversPath, "utf8"));

@@ -45,7 +45,7 @@ fn permission_request_without_session_fails_closed() {
         "method": "session/request_permission",
         "params": {"options": []}
     }));
-    assert!(effects.len() >= 1);
+    assert!(!effects.is_empty());
     match &effects[0] {
         ProtocolEffect::Send(message) => {
             assert_eq!(message["result"]["outcome"]["outcome"], "cancelled");

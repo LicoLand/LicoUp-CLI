@@ -989,6 +989,25 @@ fn valid_context_header(value: &str) -> bool {
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b':' | b'.' | b'_' | b'-'))
 }
 
+/// Readiness observes transport only; no tool invocation or native probe runs.
+pub fn connector_health(discovery: &ConnectorDiscovery) -> bool {
+    let Some(endpoint) = discovery.endpoint.strip_suffix("/mcp") else {
+        return false;
+    };
+    ureq::AgentBuilder::new()
+        .redirects(0)
+        .timeout_connect(Duration::from_secs(2))
+        .timeout_read(Duration::from_secs(2))
+        .build()
+        .get(&format!("{endpoint}/health"))
+        .set(
+            "authorization",
+            &format!("Bearer {}", discovery.bearer_token),
+        )
+        .call()
+        .is_ok_and(|response| response.status() == 204)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1091,23 +1110,4 @@ mod tests {
         document.tokens.clear();
         assert!(!valid_discovery_document(&document));
     }
-}
-
-/// Readiness observes transport only; no tool invocation or native probe runs.
-pub fn connector_health(discovery: &ConnectorDiscovery) -> bool {
-    let Some(endpoint) = discovery.endpoint.strip_suffix("/mcp") else {
-        return false;
-    };
-    ureq::AgentBuilder::new()
-        .redirects(0)
-        .timeout_connect(Duration::from_secs(2))
-        .timeout_read(Duration::from_secs(2))
-        .build()
-        .get(&format!("{endpoint}/health"))
-        .set(
-            "authorization",
-            &format!("Bearer {}", discovery.bearer_token),
-        )
-        .call()
-        .is_ok_and(|response| response.status() == 204)
 }

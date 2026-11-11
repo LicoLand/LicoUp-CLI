@@ -5,8 +5,8 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
-const facadePath = "crates/licoup-native/src/platform/openclaw_gateway.rs";
-const root = "crates/licoup-native/src/platform/openclaw_gateway";
+const facadePath = "crates/licoup/src/platform/openclaw_gateway.rs";
+const root = "crates/licoup/src/platform/openclaw_gateway";
 const packageRoot = "crates/licoup-agent-openclaw/src";
 const leaves = Object.freeze([
   "command.rs", "config.rs", "health.rs", "lifecycle.rs", "model.rs", "policy.rs",

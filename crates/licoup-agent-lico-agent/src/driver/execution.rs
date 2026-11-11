@@ -431,7 +431,11 @@ fn spawn_agent(
     resume: bool,
 ) -> Result<SupervisedChild, ProtocolFailure> {
     let exe = PathBuf::from(executable);
+    // The same `licoup` binary provides the Agent runtime through its
+    // `agent run` process entry, so the subcommand precedes the Agent argv.
     let mut args = vec![
+        "agent".into(),
+        "run".into(),
         "--mode".into(),
         "rpc".into(),
         "--profile".into(),

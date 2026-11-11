@@ -122,7 +122,7 @@ mod tests {
         assert!(!no_channel.cancel_enabled);
         assert!(with_channel.cancel_enabled);
         assert!(!idle_channel.cancel_enabled);
-        assert!(with_channel.input_enabled == false);
+        assert!(!with_channel.input_enabled);
         assert!(idle_channel.input_enabled);
     }
 

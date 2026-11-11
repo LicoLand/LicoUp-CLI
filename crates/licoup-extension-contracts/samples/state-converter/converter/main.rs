@@ -17,7 +17,7 @@
 //!         --result <file> [--resume]
 //! ```
 //!
-//! `licoup-migrate` is the caller. It has already stopped the writers, holds the
+//! `licoup migrate` is the caller. It has already stopped the writers, holds the
 //! data root's admission, and hands this program a staged copy of the root plus
 //! the format pair it selected the package for.
 //!

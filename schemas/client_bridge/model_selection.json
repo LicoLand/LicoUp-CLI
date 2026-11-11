@@ -6,8 +6,8 @@
     "crate": "licoup-model-catalog",
     "module": "selection_matrix",
     "renderer": "selection_matrix_document",
-    "composedBy": "crates/licoup-native/src/domain/targets.rs",
-    "validatedBy": "crates/licoup-native/tests/cli_command_contract_cases.rs"
+    "composedBy": "crates/licoup/src/domain/targets.rs",
+    "validatedBy": "crates/licoup/tests/cli_command_contract_cases.rs"
   },
   "consumer": {
     "contract": "apps/desktop/lib/src/contracts/model_selection.dart",

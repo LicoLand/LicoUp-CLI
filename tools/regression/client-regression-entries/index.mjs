@@ -2,10 +2,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { regressionRoot } from "./factory.mjs";
 import macos from "./platforms/macos.mjs";
-import android from "./platforms/android.mjs";
 import windows from "./platforms/windows.mjs";
 import linux from "./platforms/linux.mjs";
-import ios from "./platforms/ios.mjs";
 import openclaw from "./agents/openclaw.mjs";
 import claudeCode from "./agents/claude-code.mjs";
 import codex from "./agents/codex.mjs";
@@ -21,7 +19,7 @@ import deepseekHarness from "./agents/deepseek-harness.mjs";
 import licoAgent from "./agents/lico-agent.mjs";
 
 export const PLATFORM_REGRESSION_ENTRIES = Object.freeze([
-  macos, android, windows, linux, ios,
+  macos, windows, linux,
 ]);
 
 export const AGENT_REGRESSION_ENTRIES = Object.freeze([
@@ -46,14 +44,14 @@ export const CLIENT_COMPATIBILITY_ENTRIES = Object.freeze([
 ]);
 
 export function validateClientRegressionEntries() {
-  const expectedPlatforms = ["macos", "android", "windows", "linux", "ios"];
+  const expectedPlatforms = ["macos", "windows", "linux"];
   const actualPlatforms = PLATFORM_REGRESSION_ENTRIES.map((entry) => entry.id);
   if (JSON.stringify(actualPlatforms) !== JSON.stringify(expectedPlatforms)) {
     throw new Error("platform regression entry inventory drift");
   }
   const inventory = JSON.parse(readFileSync(path.resolve(
     regressionRoot,
-    "crates/licoup-native/resources/agent-conversation-drivers.json",
+    "crates/licoup/resources/agent-conversation-drivers.json",
   ), "utf8"));
   const expectedAgents = inventory.drivers.map((driver) => driver.agentId);
   const actualAgents = AGENT_REGRESSION_ENTRIES.map((entry) => entry.id);

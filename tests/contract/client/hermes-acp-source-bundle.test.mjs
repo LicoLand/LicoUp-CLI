@@ -21,35 +21,35 @@ const packageFiles = Object.freeze([
 // The composition above the adapter port, and the two places the Hermes dialect
 // is installed and replayed from.
 const compositionPath =
-  "crates/licoup-native/src/platform/native_agent_parser/adapters/mod.rs";
+  "crates/licoup/src/platform/native_agent_parser/adapters/mod.rs";
 const replayCompositionPath =
-  "crates/licoup-native/src/platform/native_agent_parser/replay/adapters/mod.rs";
-const dialectsPath = "crates/licoup-native/src/platform/runtime_adapters/dialects.rs";
-const driversPath = "crates/licoup-native/src/platform/runtime_adapters/drivers.rs";
+  "crates/licoup/src/platform/native_agent_parser/replay/adapters/mod.rs";
+const dialectsPath = "crates/licoup/src/platform/runtime_adapters/dialects.rs";
+const driversPath = "crates/licoup/src/platform/runtime_adapters/drivers.rs";
 // The parser subtrees this package replaced. The host keeps no copy of any of
 // them: the parser is the package's, and the two superseded files that once
 // accompanied it were the shared ACP session engine's own copies.
 const movedParserPaths = Object.freeze([
-  "crates/licoup-native/src/platform/native_agent_parser/adapters/hermes.rs",
-  "crates/licoup-native/src/platform/native_agent_parser/adapters/hermes/framing.rs",
-  "crates/licoup-native/src/platform/native_agent_parser/adapters/hermes/protocol.rs",
-  "crates/licoup-native/src/platform/native_agent_parser/replay/adapters/hermes.rs",
+  "crates/licoup/src/platform/native_agent_parser/adapters/hermes.rs",
+  "crates/licoup/src/platform/native_agent_parser/adapters/hermes/framing.rs",
+  "crates/licoup/src/platform/native_agent_parser/adapters/hermes/protocol.rs",
+  "crates/licoup/src/platform/native_agent_parser/replay/adapters/hermes.rs",
 ]);
 // The Hermes driver module and tree the host composed before the process half
 // moved into this package. The host keeps neither.
 const retiredDriverPaths = Object.freeze([
-  "crates/licoup-native/src/platform/hermes_driver.rs",
-  "crates/licoup-native/src/platform/hermes_driver",
+  "crates/licoup/src/platform/hermes_driver.rs",
+  "crates/licoup/src/platform/hermes_driver",
 ]);
 // The Gateway lane the host composed until VENDOR-CODE-REMOVAL completed the
 // retirement: Hermes' TUI Gateway transport, the turn it drives and the history
 // page over it all belong to this package now. The host keeps no copy of any of
 // them, and declares no module for them.
 const retiredGatewayPaths = Object.freeze([
-  "crates/licoup-native/src/platform/hermes_tui_gateway.rs",
-  "crates/licoup-native/src/platform/hermes_tui_gateway",
-  "crates/licoup-native/src/platform/hermes_tui_gateway_driver.rs",
-  "crates/licoup-native/src/platform/remote_hermes_gateway_history.rs",
+  "crates/licoup/src/platform/hermes_tui_gateway.rs",
+  "crates/licoup/src/platform/hermes_tui_gateway",
+  "crates/licoup/src/platform/hermes_tui_gateway_driver.rs",
+  "crates/licoup/src/platform/remote_hermes_gateway_history.rs",
 ]);
 
 function read(relativePath) {
@@ -156,7 +156,7 @@ test("one package carries the Hermes dialect, its parser and its program", () =>
     "remote_gateway_history.rs", "tui_gateway.rs", "tui_gateway_driver.rs",
     "bin/lico-agent-hermes.rs"]) {
     const source = read(`${sourceRoot}/${file}`);
-    assert.equal(source.includes("licoup_native"), false,
+    assert.equal(source.includes("licoup::"), false,
       `${file} reaches back into the client`);
   }
 });
@@ -212,7 +212,7 @@ test("the moved Hermes parser leaves no copy in the host and the inventory keeps
     assert.equal(existsSync(path.join(repoRoot, relativePath)), false,
       `the host still carries the retired Hermes Gateway lane: ${relativePath}`);
   }
-  const platform = read("crates/licoup-native/src/platform/mod.rs");
+  const platform = read("crates/licoup/src/platform/mod.rs");
   assert.doesNotMatch(platform, /mod hermes_driver;/u,
     "the host module tree still declares a Hermes driver module");
   for (const retiredModule of ["hermes_tui_gateway", "hermes_tui_gateway_driver",
@@ -267,7 +267,7 @@ test("the moved Hermes parser leaves no copy in the host and the inventory keeps
   // contributes the package's own registration, and every other adapter one
   // declared entry.
   const adapterIds = JSON.parse(
-    read("crates/licoup-native/resources/agent-conversation-drivers.json"))
+    read("crates/licoup/resources/agent-conversation-drivers.json"))
     .drivers.map((driver) => driver.agentId);
   const packageEntries =
     (composition.match(/licoup_agent_\w+::registration::REGISTRATION/gu) ?? []).length;

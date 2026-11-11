@@ -124,10 +124,10 @@ fn table_sql(connection: &Connection, name: &str) -> Result<Option<String>> {
         .optional()?)
 }
 
-fn columns(
-    connection: &Connection,
-    name: &str,
-) -> Result<BTreeMap<String, (String, bool, Option<String>, i64, i64)>> {
+/// One column's declared type, nullability, default, key position and hidden flag.
+type ColumnFacts = (String, bool, Option<String>, i64, i64);
+
+fn columns(connection: &Connection, name: &str) -> Result<BTreeMap<String, ColumnFacts>> {
     Ok(connection
         .prepare("SELECT name,type,\"notnull\",dflt_value,pk,hidden FROM pragma_table_xinfo(?1)")?
         .query_map([name], |row| {
@@ -194,38 +194,37 @@ pub fn validate_table(
     let actual = declaration(&actual_sql)?;
     let actual_columns = columns(source, name)?;
     let mut expected_columns = columns(reference, name)?;
-    if let Some(ColumnVariant::Nullable(column)) = variant {
-        if actual_columns.get(column).is_some_and(|value| !value.1) {
-            if let Some(value) = expected_columns.get_mut(column) {
-                value.1 = false;
-            }
-            for entry in &mut expected {
-                if entry.first().is_some_and(|name| name == column) {
-                    if let Some(index) = entry.windows(2).position(|t| t == ["not", "null"]) {
-                        entry.drain(index..index + 2);
-                    }
-                }
+    if let Some(ColumnVariant::Nullable(column)) = variant
+        && actual_columns.get(column).is_some_and(|value| !value.1)
+    {
+        if let Some(value) = expected_columns.get_mut(column) {
+            value.1 = false;
+        }
+        for entry in &mut expected {
+            if entry.first().is_some_and(|name| name == column)
+                && let Some(index) = entry.windows(2).position(|t| t == ["not", "null"])
+            {
+                entry.drain(index..index + 2);
             }
         }
     }
-    if let Some(ColumnVariant::MissingZeroDefault(column)) = variant {
-        if actual_columns
+    if let Some(ColumnVariant::MissingZeroDefault(column)) = variant
+        && actual_columns
             .get(column)
             .is_some_and(|value| value.2.is_none())
-        {
-            if let Some(value) = expected_columns.get_mut(column) {
-                ensure!(
-                    value.2.as_deref().map(tokens).transpose()? == Some(vec!["0".into()]),
-                    "unsupported_state_shape"
-                );
-                value.2 = None;
-            }
-            for entry in &mut expected {
-                if entry.first().is_some_and(|name| name == column) {
-                    if let Some(index) = entry.windows(2).position(|t| t == ["default", "0"]) {
-                        entry.drain(index..index + 2);
-                    }
-                }
+    {
+        if let Some(value) = expected_columns.get_mut(column) {
+            ensure!(
+                value.2.as_deref().map(tokens).transpose()? == Some(vec!["0".into()]),
+                "unsupported_state_shape"
+            );
+            value.2 = None;
+        }
+        for entry in &mut expected {
+            if entry.first().is_some_and(|name| name == column)
+                && let Some(index) = entry.windows(2).position(|t| t == ["default", "0"])
+            {
+                entry.drain(index..index + 2);
             }
         }
     }

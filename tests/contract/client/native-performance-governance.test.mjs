@@ -15,11 +15,10 @@ function readJson(relativePath) {
 }
 
 const rootCargo = readText("Cargo.toml");
-const nativeCargo = readText("crates/licoup-native/Cargo.toml");
-const packageJson = readJson("package.json");
+const nativeCargo = readText("crates/licoup/Cargo.toml");
 const runnerSource = readText("tools/scripts/client-native-performance.mjs");
-const benchSource = readText("crates/licoup-native/benches/native_backend.rs");
-const gatePolicy = readText("tools/scripts/client-gate-policy.mjs");
+const benchSource = readText("crates/licoup/benches/native_backend.rs");
+const verifyWorkflow = readText(".github/workflows/verify.yml");
 
 const privacyTokens = [
   "/Users/",
@@ -69,20 +68,15 @@ test("the sole release profile favors backend throughput", () => {
 });
 
 test("native clippy observes performance lints", () => {
-  const clippy = packageJson.scripts["client:native:clippy"];
+  const clippy = verifyWorkflow
+    .split("\n")
+    .find((line) => line.includes("cargo clippy"));
+  assert.ok(clippy, "the verify workflow must run clippy");
   assert.ok(clippy.includes("-D warnings"), "clippy must deny warnings");
+  assert.ok(clippy.includes("--workspace"), "clippy must cover the whole workspace");
   assert.ok(clippy.includes("-A clippy::style"), "unrelated style policy must remain");
   assert.ok(clippy.includes("-A clippy::complexity"), "unrelated complexity policy must remain");
-  assert.ok(!clippy.includes("clippy::perf"), "performance lints must not be suppressed");
-  assert.ok(clippy.includes("cargo-client.mjs"), "clippy must run through the managed lease");
-  assert.ok(
-    !readText("package.json").includes("clippy::perf"),
-    "no other npm script may restore the suppression",
-  );
-  assert.ok(
-    gatePolicy.includes('"client:native:clippy"'),
-    "the integrated Rust gate lane must observe the performance-lint command",
-  );
+  assert.ok(!verifyWorkflow.includes("clippy::perf"), "performance lints must not be suppressed");
 });
 
 test("the benchmark is registered through the managed lease", () => {
@@ -109,11 +103,6 @@ test("the benchmark is registered through the managed lease", () => {
 });
 
 test("the managed runner is wired and delegated", () => {
-  assert.equal(
-    packageJson.scripts["client:native:performance"],
-    "node tools/scripts/client-native-performance.mjs",
-    "the performance smoke script must point at the managed runner",
-  );
   assert.ok(runnerSource.includes("cargo-client.mjs"), "runner must delegate to the managed lease");
   assert.ok(runnerSource.includes("--smoke"), "runner must support smoke mode");
   assert.ok(runnerSource.includes("cases_completed"), "runner must record structural counters");

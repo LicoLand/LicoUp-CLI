@@ -84,7 +84,7 @@ export function invokeAdoptionTarget() {
     "tools/scripts/cargo-client.mjs",
     "test",
     "-p",
-    "licoup-native",
+    "licoup",
     "--features",
     "test-support",
     "--test",

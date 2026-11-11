@@ -24,7 +24,7 @@ pub fn probe(executable: &Path) -> CapabilityProbe {
     }
     let help_ok = {
         let mut command = Command::new(executable);
-        command.arg("--help");
+        command.args(["agent", "run", "--help"]);
         user_shell_environment::apply_to_command(&mut command);
         configure_untrusted_agent_command(&mut command);
         command

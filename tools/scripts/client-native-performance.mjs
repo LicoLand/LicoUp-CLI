@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const benchmark = "native_backend";
-const manifestPath = "crates/licoup-native/Cargo.toml";
+const manifestPath = "crates/licoup/Cargo.toml";
 const cargoClient = path.join(repoRoot, "tools", "scripts", "cargo-client.mjs");
 const SMOKE_MAX_MS = 20 * 60_000;
 const FULL_MAX_MS = 60 * 60_000;

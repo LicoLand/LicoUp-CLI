@@ -1,22 +1,21 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
 const read = (path) => readFileSync(path, "utf8");
-const application = read("crates/licoup-native/src/domain/subagents/mod.rs");
-const production = read("crates/licoup-native/src/domain/subagents/production.rs");
+const application = read("crates/licoup/src/domain/subagents/mod.rs");
+const production = read("crates/licoup/src/domain/subagents/production.rs");
 const engine = read("crates/licoup-public-gateway/src/server.rs");
 const library = read("crates/licoup-public-gateway/src/lib.rs");
-const core = read("crates/licoup-native/src/core/mcp.rs");
+const core = read("crates/licoup/src/core/mcp.rs");
 const connector = read("crates/licoup-public-gateway/src/connector.rs");
 const transport = read("crates/licoup-public-gateway/src/transport.rs");
 const remoteApplication = read("crates/licoup-public-gateway/src/application.rs");
-const lifecycle = read("crates/licoup-native/src/platform/mcp_service_process.rs");
+const lifecycle = read("crates/licoup/src/platform/mcp_service_process.rs");
 const mcpCargo = read("crates/licoup-public-gateway/Cargo.toml");
 const runtime = read("crates/licoup-agent-runtime/src/lib.rs");
 const adapters = read("crates/licoup-agent-adapters/src/lib.rs");
@@ -24,11 +23,11 @@ const claims = read("crates/licoup-conversation/src/store/dispatches.rs");
 const providerRuntime = read(
   "crates/licoup-agent-drivers/src/runtime_adapters/subagent_mesh.rs",
 );
-const agentHubCatalog = read("crates/licoup-native/src/domain/agent_hub/catalog.rs");
-const agentHubVersion = read("crates/licoup-native/src/domain/agent_hub/version_check.rs");
-const cliSurface = read("crates/licoup-native/src/ffi/commands/subagents.rs");
-const commandTable = read("crates/licoup-native/src/ffi/commands/mod.rs");
-const applicationPorts = read("crates/licoup-native/src/domain/application_port.rs");
+const agentHubCatalog = read("crates/licoup/src/domain/agent_hub/catalog.rs");
+const agentHubVersion = read("crates/licoup/src/domain/agent_hub/version_check.rs");
+const cliSurface = read("crates/licoup/src/ffi/commands/subagents.rs");
+const commandTable = read("crates/licoup/src/ffi/commands/mod.rs");
+const applicationPorts = read("crates/licoup/src/domain/application_port.rs");
 const schema = JSON.parse(read("schemas/subagent_mcp/subagent_mcp.schema.json"));
 
 const TOOLS = [
@@ -55,11 +54,11 @@ test("independent MCP freezes its protocol, identity, and five public operations
   assert.match(remoteApplication, /"subagents"\.into\(\).*"execute"\.into\(\)/su);
   assert.match(remoteApplication, /"rpc", "stdio"/u);
   const dependencies = mcpCargo.split("[[bin]]")[0];
-  const foundation = /^licoup-foundation = \{ path = "\.\.\/licoup-foundation"(?:, version = "[^"]+")? \}$/mu;
+  const foundation = /^licoup-foundation\.workspace = true$/mu;
   assert.match(dependencies, foundation);
   assert.doesNotMatch(
     dependencies.replace(foundation, ""),
-    /(?:licoup-[\w-]+\s*=|path\s*=|workspace\s*=)/u,
+    /(?:licoup-[\w.-]+\s*=|path\s*=)/u,
     "only neutral Foundation may be shared; runtime and domain authority stay behind the CLI",
   );
   assert.match(application, /"additionalProperties": false/u);
@@ -92,7 +91,7 @@ test("delegated work is reached through the shared facade and nothing else", () 
 });
 
 test("CLI and MCP meet at one argv envelope for the same tool call", () => {
-  // The MCP crate deliberately shares no type with `licoup-native`, so the seam
+  // The MCP crate deliberately shares no type with `licoup`, so the seam
   // the two interfaces meet at is the JSON the MCP puts on the CLI argv and the
   // CLI decodes. If one side renamed a field, the two interfaces would quietly
   // stop asking for the same thing.
@@ -155,7 +154,7 @@ test("the service process comes from the installed package generation, not a nei
   assert.match(lifecycle, /mcp_package_absent/u);
   assert.match(lifecycle, /mcp_package_disabled/u);
   const selection = read(
-    "crates/licoup-native/src/platform/extension_packages/selection.rs",
+    "crates/licoup/src/platform/extension_packages/selection.rs",
   );
   assert.match(selection, /pub fn select_generation/u);
   assert.match(selection, /pub fn switched_on/u);
@@ -295,12 +294,12 @@ test("no kernel crate reaches the optional MCP payload, and the neutral engine s
   // gate, the bounded outbound HTTP transport, the approval plan store, and the
   // shared guide resource. None of them names the payload crate.
   const neutralOwners = [
-    "crates/licoup-native/src/core/mcp.rs",
-    "crates/licoup-native/src/core/mcp/wire.rs",
-    "crates/licoup-native/src/core/mcp/transfer.rs",
-    "crates/licoup-native/src/platform/mcp_streamable_http.rs",
-    "crates/licoup-native/src/platform/mcp_approval_plan_store.rs",
-    "crates/licoup-native/resources/licoup-guide/SKILL.md",
+    "crates/licoup/src/core/mcp.rs",
+    "crates/licoup/src/core/mcp/wire.rs",
+    "crates/licoup/src/core/mcp/transfer.rs",
+    "crates/licoup/src/platform/mcp_streamable_http.rs",
+    "crates/licoup/src/platform/mcp_approval_plan_store.rs",
+    "crates/licoup/resources/licoup-guide/SKILL.md",
   ];
   for (const relative of neutralOwners) {
     const source = read(relative);
@@ -310,18 +309,26 @@ test("no kernel crate reaches the optional MCP payload, and the neutral engine s
     assert.equal(source.includes("licoup-mcp"), false,
       `${relative} is a neutral owner and must not name the optional payload`);
   }
-  assert.match(read("crates/licoup-native/src/core/mcp.rs"), /Service-neutral/u);
-  assert.match(read("crates/licoup-native/src/core/mcp.rs"), /McpExternalTransferGate/u);
-  assert.match(read("crates/licoup-native/src/core/mcp.rs"), /DEFAULT_TRANSFER_APPROVAL_TTL/u);
+  assert.match(read("crates/licoup/src/core/mcp.rs"), /Service-neutral/u);
+  assert.match(read("crates/licoup/src/core/mcp.rs"), /McpExternalTransferGate/u);
+  assert.match(read("crates/licoup/src/core/mcp.rs"), /DEFAULT_TRANSFER_APPROVAL_TTL/u);
 });
 
 test("caller and target ports meet only in one registry", () => {
-  assert.match(runtime, /pub trait McpCallerIntegration/u);
-  assert.match(runtime, /pub trait SubagentRuntimeAdapter/u);
-  assert.match(runtime, /pub enum InstructionPolicy/u);
-  assert.match(runtime, /pub fn reduce_readiness/u);
-  assert.match(runtime, /pub fn reduce_execution_admission/u);
-  assert.match(runtime, /pub struct ExecutionAdmissionEvidence/u);
+  // The port vocabulary lives in the shared adapter core `a4aa`; the product
+  // crate re-exports exactly these names and nothing more, so every former
+  // `licoup_agent_runtime` path keeps reaching the same registry.
+  assert.match(runtime, /pub use a4aa::runtime::\{/u);
+  for (const name of [
+    "McpCallerIntegration",
+    "SubagentRuntimeAdapter",
+    "InstructionPolicy",
+    "reduce_readiness",
+    "reduce_execution_admission",
+    "ExecutionAdmissionEvidence",
+  ]) {
+    assert.match(runtime, new RegExp(`\\b${name}\\b`, "u"));
+  }
   assert.match(adapters, /register_pair/u);
   assert.match(adapters, /BTreeMap<ProviderId/u);
   assert.match(providerRuntime, /production_subagent_registry/u);
@@ -363,7 +370,7 @@ test("durable authority rejects unsafe lineage before adapter effects", () => {
 
 test("generated guidance is adapter-declared and old visible markup is retired", () => {
   const dispatch = read(
-    "crates/licoup-native/src/bin/licoup/stdio_rpc/server/conversation.rs",
+    "crates/licoup/src/bin/licoup/stdio_rpc/server/conversation.rs",
   );
   assert.match(providerRuntime, /NativeDeveloperInstructions/u);
   assert.match(providerRuntime, /OrdinaryWirePrefix/u);
@@ -400,69 +407,19 @@ test("independent verification routes retain one target-keyed latest-version Man
 // failure.
 // ---------------------------------------------------------------------------
 
-const packaging = JSON.parse(read("apps/desktop/packaging.modules.json"));
 const conversationHost = read(
-  "crates/licoup-native/src/bin/licoup/conversation_host.rs",
+  "crates/licoup/src/bin/licoup/conversation_host.rs",
 );
-const stagedEntry = read("crates/licoup-public-gateway/package/bin/lico-subagent-mcp");
-const stageToolPath = "tools/distribution/client-release-package-stage.mjs";
-const stageTool = read(stageToolPath);
-// The tool exports its own entry-point-scoped gate, so one package's staged
-// bytes can be asked about directly instead of whichever one the whole-set
-// command reaches first. Importing it runs nothing: the CLI has its own guard.
-const { loadStagedPlan, verifyEntries } = await import(
-  pathToFileURL(path.join(repoRoot, stageToolPath)).href);
-
-function runStage(args) {
-  return spawnSync(process.execPath, [stageToolPath, ...args], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    shell: false,
-    stdio: ["ignore", "pipe", "pipe"],
-    timeout: 120_000,
-    maxBuffer: 16 * 1024 * 1024,
-  });
-}
-
-test("the minimal client carries no MCP payload in any packaging module", () => {
-  const service = packaging.modules["subagents-mcp"];
-  assert.equal(service.required, false, "the service module is optional");
-  assert.equal(service.enabled, false, "the minimal client does not bundle it");
-  assert.equal(service.cargoBin, undefined, "the module bundles no binary");
-  assert.equal(service.embeddedCargoBin, undefined);
-
-  // Nothing enabled anywhere bundles the connector, directly or embedded.
-  for (const [id, module] of Object.entries(packaging.modules)) {
-    if (module.enabled === false) continue;
-    for (const binary of [module.cargoBin, module.embeddedCargoBin]) {
-      assert.notEqual(binary, "lico-subagent-mcp",
-        `${id} must not bundle the optional connector`);
-    }
-  }
-
-  // The Codex plugin is installed from the Codex plugin marketplace: it carries
-  // no second copy of the connector and does not depend on the optional module.
-  const codex = packaging.modules["codex-plugin"];
-  assert.equal(codex.embeddedCargoBin, undefined);
-  assert.equal(codex.embeddedCargoTarget, undefined);
-  assert.equal((codex.requires || []).includes("subagents-mcp"), false);
-
-  // The declared bundle set is the architecture ratchet's own truth: it derives
-  // the set from this config and refuses a module that bundles an optional
-  // artifact without declaring it, so re-bundling the payload stops being a
-  // quiet packaging edit (`verify-client-architecture.mjs`).
-});
-
 test("nothing starts the optional service, and no hidden switch remains", () => {
   assert.equal(conversationHost.includes("LICOUP_MCP_AUTOSTART"), false);
   assert.equal(conversationHost.includes("mcp_service_process"), false,
     "the conversation host does not reach the optional service at all");
   for (const relative of [
     "crates/licoup-public-gateway/src/application.rs",
-    "crates/licoup-native/src/bin/licoup/conversation_host.rs",
-    "crates/licoup-native/src/platform/mcp_service_process.rs",
-    "crates/licoup-native/tests/cli_command_contract_cases.rs",
-    "crates/licoup-native/tests/data_home_process.rs",
+    "crates/licoup/src/bin/licoup/conversation_host.rs",
+    "crates/licoup/src/platform/mcp_service_process.rs",
+    "crates/licoup/tests/cli_command_contract_cases.rs",
+    "crates/licoup/tests/data_home_process.rs",
   ]) {
     assert.equal(read(relative).includes("LICOUP_MCP_AUTOSTART"), false,
       `${relative} must not carry the retired autostart switch`);
@@ -495,77 +452,10 @@ test("the service is a package, and the package declares when it may run", () =>
     ["mcp-server.v1"],
   );
   assert.deepEqual(manifest.requires, [], "the package requires nothing");
-  assert.match(packaging.modules["subagents-mcp"].label,
-    /org\.licoland\.feature\.mcp/u,
-    "the optional module names the package that delivers it");
 
   // The capability's declared owner is that package, so absence is a fact about
   // this installation rather than a defect of the client.
   const deployment = read("crates/licoup-extension-contracts/src/deployment.rs");
   assert.match(deployment,
     /"mcp-server\.v1",\s*\n\s*PackOwnership::Optional\("org\.licoland\.feature\.mcp"\),/u);
-});
-
-test("the release stage fills the declared native entry before the payload is built", () => {
-  // The committed entry is the staged placeholder the package declares, and the
-  // payload tooling accepts it so a checkout packages deterministically.
-  assert.match(stagedEntry, /staged entry/u);
-  assert.match(stagedEntry, /cargo build --bin lico-subagent-mcp/u);
-  assert.match(stagedEntry, /tools\/scripts\/client-release-package-index\.mjs/u);
-
-  // The release step builds through the client's own native build owner and
-  // refuses an entry that is not a compiled program for the target platform.
-  assert.match(stageTool, /buildNativeSidecars/u);
-  assert.match(stageTool, /package_stage_entry_not_compiled/u);
-  assert.match(stageTool, /compiledProgramHeader/u);
-  assert.match(stageTool, /chmodSync\(entry\.stagedPath, 0o755\)/u);
-  assert.match(stageTool, /client-release-package-index\.mjs build/u);
-
-  const plan = runStage(["plan"]);
-  assert.equal(plan.status, 0, plan.stderr);
-  const planned = JSON.parse(plan.stdout);
-  const mcp = planned.entries.find((entry) => entry.packageId === "org.licoland.feature.mcp");
-  assert.deepEqual(
-    { source: mcp.source, entry: mcp.entry, binary: mcp.binary },
-    {
-      source: "crates/licoup-public-gateway/package",
-      entry: "bin/lico-subagent-mcp",
-      binary: "lico-subagent-mcp",
-    },
-  );
-  assert.equal(mcp.staged.sha256, `sha256:${createHash("sha256")
-    .update(readFileSync("crates/licoup-public-gateway/package/bin/lico-subagent-mcp")).digest("hex")}`,
-  "the plan reports the bytes actually staged in the checkout");
-
-  // A checkout cannot pass the release gate: the placeholder is not a program.
-  // That refusal is exactly what proves the release step is the only thing that
-  // can put an MCP payload on a released machine.
-  //
-  // The refusal is asked for the MCP entry on its own, because the release set
-  // declares several packages and the whole-set command stops at whichever
-  // placeholder it reaches first; that first refusal is still asserted below,
-  // but it is no longer evidence about this package.
-  let refusal;
-  try {
-    const mcpEntries = loadStagedPlan().filter(
-      (entry) => entry.packageId === "org.licoland.feature.mcp");
-    assert.equal(mcpEntries.length, 1, "the release set declares exactly one MCP package");
-    verifyEntries(mcpEntries);
-    assert.fail("a checkout must not pass the release gate");
-  } catch (error) {
-    refusal = error;
-  }
-  assert.equal(refusal.code, "package_stage_entry_not_compiled");
-  assert.equal(refusal.details?.packageId, "org.licoland.feature.mcp");
-  assert.equal(refusal.details?.entry, "bin/lico-subagent-mcp");
-
-  const verify = runStage(["verify"]);
-  assert.equal(verify.status, 1, verify.stdout);
-  assert.equal(JSON.parse(verify.stderr).code, "package_stage_entry_not_compiled");
-
-  // The gate itself accepts a compiled entry, so it is a real check rather than
-  // a rule nothing can satisfy.
-  const selfTest = runStage(["--self-test"]);
-  assert.equal(selfTest.status, 0, selfTest.stderr);
-  assert.equal(JSON.parse(selfTest.stdout).ok, true);
 });

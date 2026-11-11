@@ -5,7 +5,7 @@
 //! error messages never cross this boundary.
 //!
 //! This is Hermes' own transport, so it is the package's: VENDOR-CODE-REMOVAL
-//! moved it out of `licoup-native`'s platform tree together with the turn it
+//! moved it out of `licoup`'s platform tree together with the turn it
 //! drives ([`crate::tui_gateway_driver`]) and the conversation-history
 //! projection over it ([`crate::remote_gateway_history`]). The composition above
 //! still picks the lane — it is the one place the runtime connection is in view

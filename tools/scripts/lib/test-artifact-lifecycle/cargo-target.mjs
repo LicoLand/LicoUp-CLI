@@ -2,8 +2,6 @@ import { existsSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
-  ANDROID_NATIVE_CARGO_TARGET,
-  FLUTTER_TEST_TARGET,
   NATIVE_CARGO_TEST_TARGET,
   ROOT_CARGO_TARGET,
 } from "./constants.mjs";
@@ -260,10 +258,7 @@ export function isManagedCargoTarget(repoRoot, targetPath) {
   }
   const normalized = relative.split(path.sep).join("/");
   if (normalized === ROOT_CARGO_TARGET ||
-      normalized === NATIVE_CARGO_TEST_TARGET ||
-      normalized === ANDROID_NATIVE_CARGO_TARGET) return true;
-  if (normalized === FLUTTER_TEST_TARGET ||
-      normalized.startsWith(`${FLUTTER_TEST_TARGET}/`)) return false;
+      normalized === NATIVE_CARGO_TEST_TARGET) return true;
   const nativeTargetRoot = /^build\/crates\/[^/]+\/(?:target|[a-z0-9._-]+-target)$/u;
   return nativeTargetRoot.test(normalized);
 }

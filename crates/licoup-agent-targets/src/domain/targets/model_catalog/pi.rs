@@ -62,7 +62,7 @@ fn collect_pi_models_from_output(
             continue;
         }
         let efforts = (columns.get(4).copied() == Some("yes"))
-            .then(|| ["off", "minimal", "low", "medium", "high", "xhigh", "max"])
+            .then_some(["off", "minimal", "low", "medium", "high", "xhigh", "max"])
             .into_iter()
             .flatten()
             .map(str::to_owned)

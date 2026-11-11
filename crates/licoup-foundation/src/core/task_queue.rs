@@ -237,23 +237,20 @@ impl<T> TaskQueue<T> {
 
 impl<T> TaskWorker<T> {
     pub fn recv(&self) -> Result<T, RecvError> {
-        self.receiver.recv().map(|task| {
+        self.receiver.recv().inspect(|_task| {
             self.mark_received();
-            task
         })
     }
 
     pub fn recv_timeout(&self, timeout: Duration) -> Result<T, RecvTimeoutError> {
-        self.receiver.recv_timeout(timeout).map(|task| {
+        self.receiver.recv_timeout(timeout).inspect(|_task| {
             self.mark_received();
-            task
         })
     }
 
     pub fn try_recv(&self) -> Result<T, TryRecvError> {
-        self.receiver.try_recv().map(|task| {
+        self.receiver.try_recv().inspect(|_task| {
             self.mark_received();
-            task
         })
     }
 

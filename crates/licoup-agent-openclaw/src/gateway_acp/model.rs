@@ -43,7 +43,7 @@ impl RunResult {
     ) -> Self {
         let session_id = failure.session_id.clone().unwrap_or_default();
         let transitions =
-            crate::parser::failed_transitions(&failure.code, &failure.stage, &failure.message);
+            crate::parser::failed_transitions(failure.code, failure.stage, failure.message);
         Self {
             ok: false,
             output: String::new(),

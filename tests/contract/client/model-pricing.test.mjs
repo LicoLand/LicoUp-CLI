@@ -10,10 +10,6 @@ import {
   runSelfTest,
   validateCatalog,
 } from "../../../tools/scripts/model-pricing-facts.mjs";
-import {
-  CLIENT_GATE_LANES,
-  classifyClientGatePaths,
-} from "../../../tools/scripts/client-gate-policy.mjs";
 
 const source = readFileSync(
   path.join(PRICING_FACT_PATHS.repoRoot, "tools/scripts/model-pricing-facts.mjs"),
@@ -26,11 +22,6 @@ const rust = readFileSync(
   ),
   "utf8",
 );
-const packageJson = JSON.parse(readFileSync(
-  path.join(PRICING_FACT_PATHS.repoRoot, "package.json"),
-  "utf8",
-));
-
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
@@ -154,15 +145,7 @@ test("Rust and release commands consume only the canonical catalog", () => {
     /date_key\(&route\.verified_on\) > date_key\(last_updated\)/u,
   );
   assert.doesNotMatch(source, /writeFileSync|mkdirSync|rmSync/u);
-  assert.equal(packageJson.scripts[["client", "pricing", "generate"].join(":")], undefined);
-  assert.equal(packageJson.scripts["client:pricing:release-check"], undefined);
-  assert.ok(CLIENT_GATE_LANES["release-policy"].includes("client:pricing:check"));
   assert.doesNotMatch(source, /pricing_verification_stale|release-check/u);
-  const selection = classifyClientGatePaths([
-    "crates/licoup-model-catalog/src/pricing/pricing_catalog.json",
-    "tools/scripts/model-pricing-facts.mjs",
-  ]);
-  assert.equal(selection.lanes["release-policy"], false);
 });
 
 test("read-only validator self-test is deterministic", () => {

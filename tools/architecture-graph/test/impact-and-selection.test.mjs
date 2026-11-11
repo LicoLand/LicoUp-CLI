@@ -48,7 +48,7 @@ test("impact rejects unknown references instead of silently returning nothing", 
 });
 
 test("the catalog selection is the existing one, not a second implementation", () => {
-  const changed = ["docs/architecture/architecture-map.json", "apps/desktop/lib/src/frontend/layout/dock/x.dart"];
+  const changed = ["docs/architecture/architecture-map.json", "crates/licoup/src/lib.rs"];
   const expected = selectModulesForChangedPaths(changed, CLIENT_MODULE_CATALOG).map((module) => module.id).sort();
   const selection = buildRegressionSelection({ graph: fixtureGraph(), paths: changed, repoRoot: REPOSITORY_ROOT });
   assert.ok(expected.length > 0, "the public catalog must observe a public architecture path");
@@ -75,7 +75,8 @@ test("an uncovered changed path is reported instead of being silently skipped", 
   assert.deepEqual(selection.unmapped_paths, expectedGaps);
   assert.ok(selection.unmapped_paths.includes("unobserved/not-in-any-catalog-module.txt"),
     "a changed path no catalog module observes must be reported");
-  assert.ok(selection.catalog_modules.some((module) => module.id === "regression.documentation-governance"));
+  assert.ok(selection.catalog_modules.some((module) => module.id === "regression.architecture-graph"),
+    "the changed architecture-graph source is claimed by its own regression module");
 });
 
 test("declared module coverage exposes architecture modules with no observing entry", () => {

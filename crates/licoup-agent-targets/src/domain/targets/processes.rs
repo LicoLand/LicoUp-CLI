@@ -54,7 +54,9 @@ pub(super) fn target_uses_running_process_detection(target: &str) -> bool {
             | "command-code"
             | "pi"
             | "deepseek-harness"
-            | "lico-agent"
+            // `lico-agent` shares the `licoup` process image; a name match
+            // cannot distinguish it from other `licoup` subcommands, so it
+            // stays out of running-process detection.
             | "codebuddy"
             | "trae-agent"
     )

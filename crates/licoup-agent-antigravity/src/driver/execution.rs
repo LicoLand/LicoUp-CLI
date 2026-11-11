@@ -320,10 +320,8 @@ fn run_turn_process(
         }
         match receiver.recv_timeout(PROCESS_POLL_INTERVAL) {
             Ok(PtyEvent::Data(bytes)) => {
-                if !stdout_truncated {
-                    if let Some(text) = parser.push(&bytes) {
-                        emit_resume_chunk(event_session_id, control_session_id, turn_id, &text);
-                    }
+                if !stdout_truncated && let Some(text) = parser.push(&bytes) {
+                    emit_resume_chunk(event_session_id, control_session_id, turn_id, &text);
                 }
             }
             Ok(PtyEvent::Truncated) => {

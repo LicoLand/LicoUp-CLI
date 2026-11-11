@@ -1,10 +1,10 @@
 [package]
 name = "licoup-agent-opencode"
-version = "0.14.0"
-edition = "2024"
-rust-version = "1.95.0"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "OpenCode adapter package: the serve HTTP/SSE protocol and its frame interpretation"
 
 # The crate is one package's program. `parser` is this Agent's vendor protocol
@@ -30,17 +30,17 @@ description = "OpenCode adapter package: the serve HTTP/SSE protocol and its fra
 default = []
 
 [dependencies]
-licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+licoup-agent-adapter-sdk.workspace = true
 # The shared ACP driver vocabulary this Agent's declaration, result and failure
 # types are stated in, and the shared serve vocabulary its policy speaks. The
 # engine itself — starting the process, reading HTTP, framing SSE, admitting an
 # active turn — arrives through `port::serve`, and the one engine entry the
 # package calls directly is the active-turn registry's control answer, which
 # needs no host translation.
-licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+licoup-agent-drivers.workspace = true
 # The ACP protocol generation this Agent's capability answer reports, and the
 # raw-execution vocabulary the package's test host records through.
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-foundation.workspace = true
 serde_json.workspace = true
 # The workspace-query routing one serve request carries, and the turn identity
 # one execution is stamped with.
@@ -56,4 +56,4 @@ path = "src/bin/lico-agent-opencode.rs"
 # reading of it. Nothing here enters the package binary, which links no kernel
 # crate and reads its own package documents as data.
 [dev-dependencies]
-licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-extension-contracts.workspace = true

@@ -77,19 +77,19 @@ pub(super) fn runtime_executable_with_discovery(
         // discovery authority used by one-to-one chat. This is especially
         // important for product-bundled runtimes such as Codex and Kilo Code,
         // whose official CLIs may live inside desktop or editor packages.
-        if requested == adapter.default_binary() {
-            if let Some(discovered) = default_runtime_discovery(
+        if requested == adapter.default_binary()
+            && let Some(discovered) = default_runtime_discovery(
                 adapter,
                 adapter.id(),
                 discover_manual,
                 discover_current,
                 discover_cached,
-            )? {
-                return discovered
-                    .to_str()
-                    .map(str::to_string)
-                    .ok_or(RuntimeAdapterError::ExecutableUnavailable);
-            }
+            )?
+        {
+            return discovered
+                .to_str()
+                .map(str::to_string)
+                .ok_or(RuntimeAdapterError::ExecutableUnavailable);
         }
         return Ok(requested.to_string());
     }

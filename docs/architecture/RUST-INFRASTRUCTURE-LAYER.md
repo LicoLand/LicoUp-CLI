@@ -9,7 +9,7 @@ Updated: 2026-09-30
 | **Architecture Root** | [docs/architecture/README.md](README.md) | 4-tier client architecture overview |
 | **Conversation Domain** | [CONVERSATION-DOMAIN.md](CONVERSATION-DOMAIN.md) | Canonical conversation store, memberships, and dispatch |
 | **Shared Foundation** | `crates/licoup-foundation/` | Lexical paths, private-file and archive operations, bounded queues, ACP wire codec, ANSI stripping, and strict URL validation |
-| **Native Adaptation** | `crates/licoup-native/src/platform/` | OS-specific APIs, native processes, drivers, and platform scripts |
+| **Native Adaptation** | `crates/licoup/src/platform/` | OS-specific APIs, native processes, drivers, and platform scripts |
 | **Security & Data** | [SECURITY-AND-DATA-BOUNDARY.md](SECURITY-AND-DATA-BOUNDARY.md) | Data flow boundaries and zero-trust rules |
 
 This document defines the **Infrastructure and External Boundary Layer** residing within **Tier 3: Rust Functional Core Layer**. This layer interacts directly with the underlying operating system, local filesystem, terminal devices, network, and external processes, acting as the explicit **boundary interface between LicoUp's internal domain logic and the external physical world**.
@@ -31,12 +31,12 @@ flowchart TB
         DB["1. Database Storage<br/>SQLite/WAL Engine · Transaction Isolation · Migrations · Indices"]
         CONFIG["2. Dynamic Configuration System<br/>Hot-reloading & Dynamic Perception · Priority Merging · Overrides"]
         SECRETS["3. Secret & Key Custody Facade<br/>Crypto Abstraction · Key Derivation · Layered atop Native OS"]
-        NETWORK["4. Network & Transport<br/>HTTP/HTTPS · SSE Streams · RPC Client · SSH Tunnels · P2P Envelopes"]
+        NETWORK["4. Network & Transport<br/>HTTP/HTTPS · SSE Streams · RPC Client · SSH Tunnels · LicoArc Device Mailbox"]
         PTY["5. PTY / TTY Pseudo-Terminal & Subprocess (PTY / TTY & Subprocess)<br/>Master/Slave PTY · Window Resizing · Control Injections · Supervision"]
     end
 
     subgraph NATIVE["Tier 4: Native OS / System Adaptation Layer"]
-        OS_KEYCHAIN["macOS Keychain / WinCred / D-Bus Secret / Keystore / Secure Enclave"]
+        OS_KEYCHAIN["macOS Keychain / WinCred / D-Bus Secret Service"]
         OS_SYSTEM["Filesystem / Local Sockets / POSIX Signals / Process Management"]
         OS_NETWORK["Platform Network Stack / OpenSSH Batch Tooling"]
         OS_PTY["POSIX openpty / termios / Win ConPTY / Named Pipes"]
@@ -77,8 +77,6 @@ flowchart TB
     - macOS: `Security.framework` (Keychain Services)
     - Windows: Windows Credential Manager (WinCred)
     - Linux: D-Bus Freedesktop Secret Service (libsecret / GNOME Keyring / KWallet)
-    - Android: Android Keystore System
-    - iOS: Apple Secure Enclave Hardware Keychain
   - **Ephemeral In-Memory Fallback**: When system secure storage is unavailable, explicitly falls back to ephemeral memory storage (discarded on process exit).
 - **Invariants**:
   - Hides platform-specific C-ABI and FFI complexity from upper domain code, exposing only closed, typed key handles.
@@ -88,7 +86,7 @@ flowchart TB
 - **Implementation Highlights**:
   - **HTTP / SSE Client**: High-throughput, backpressure-aware client for SSE streaming and vendor APIs.
   - **Secure Batch SSH Tunnels**: Launches system SSH in batch mode (`ssh -o BatchMode=yes -o StrictHostKeyChecking=yes`) for VM and remote agent bridges.
-  - **P2P Encrypted Envelopes**: Implements `licoarc.relay.v1` 5-field envelope framing and zero-trust relay interactions.
+  - **LicoArc Device Mailbox Boundary**: Desktop pairing, paired-device messages and results cross the untrusted station through the pinned published `licoarc-client` release; this repository owns no pairwise-session or envelope framing of its own.
 - **Invariants**:
   - Manages byte/frame IO and connection lifecycles without inspecting semantic business state.
 

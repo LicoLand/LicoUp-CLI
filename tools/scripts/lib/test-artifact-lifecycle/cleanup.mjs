@@ -2,9 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, readdirSync, rmSync } from "node:fs";
 import path from "node:path";
 import {
-  ANDROID_NATIVE_CARGO_TARGET,
   DEAD_LEASE_GRACE_MS,
-  FLUTTER_TEST_TARGET,
   NATIVE_CARGO_TEST_TARGET,
   REGISTRY_PATH,
   ROOT_CARGO_TARGET,
@@ -96,7 +94,6 @@ export function unmanagedArtifactCount(repoRoot) {
 function knownTargetPaths(repoRoot, env = process.env) {
   const targets = new Set([
     ROOT_CARGO_TARGET, NATIVE_CARGO_TEST_TARGET,
-    FLUTTER_TEST_TARGET, ANDROID_NATIVE_CARGO_TARGET,
   ]);
   const cargoTarget = resolveCargoTargetDirectory({
     cwd: repoRoot,

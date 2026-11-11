@@ -247,7 +247,7 @@ pub(super) fn collect_model_catalog_from_cli_lines(
     for line in raw.lines() {
         let trimmed = line
             .trim()
-            .trim_start_matches(|ch| matches!(ch, '-' | '*') || ch == '\u{2022}')
+            .trim_start_matches(['-', '*', '\u{2022}'])
             .trim();
         if trimmed.is_empty()
             || trimmed.starts_with("Usage")

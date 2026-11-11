@@ -393,7 +393,7 @@ fn run_turn(
         &receiver,
         session_id,
         prompt,
-        &workspace,
+        workspace,
         params,
         deadline,
         max_stdout,
@@ -856,52 +856,6 @@ fn observe_command(command: &Command) {
     }
 }
 
-#[cfg(test)]
-mod raw_execution_tests {
-    use super::*;
-    use std::sync::{Arc, Mutex};
-
-    #[test]
-    fn raw_execution_records_each_actual_argument_without_shell_encoding() {
-        let records = Arc::new(Mutex::new(Vec::new()));
-        let captured = Arc::clone(&records);
-        let observer = RawExecutionObserver::new(move |source, direction, text| {
-            captured
-                .lock()
-                .unwrap()
-                .push((source.to_owned(), direction, text.to_owned()));
-            Ok(())
-        });
-        let _scope = RawExecutionScope::enter(Some(observer));
-        let mut command = Command::new("synthetic-cursor");
-        command.args([
-            "--resume",
-            "synthetic-session",
-            "literal 'quoted'\nand multiline prompt",
-        ]);
-        observe_command(&command);
-        let records = records.lock().unwrap();
-        assert_eq!(
-            records
-                .iter()
-                .map(|record| record.2.as_str())
-                .collect::<Vec<_>>(),
-            vec![
-                "synthetic-cursor",
-                "--resume",
-                "synthetic-session",
-                "literal 'quoted'\nand multiline prompt"
-            ]
-        );
-        assert!(
-            records
-                .iter()
-                .all(|record| record.1 == RawExecutionDirection::Sent)
-        );
-        assert_eq!(records[3].0, "cursor.argv");
-    }
-}
-
 fn read_bounded(
     mut reader: impl Read,
     max_output: Option<usize>,
@@ -990,4 +944,50 @@ fn timestamp() -> String {
         .unwrap_or_default()
         .as_millis()
         .to_string()
+}
+
+#[cfg(test)]
+mod raw_execution_tests {
+    use super::*;
+    use std::sync::{Arc, Mutex};
+
+    #[test]
+    fn raw_execution_records_each_actual_argument_without_shell_encoding() {
+        let records = Arc::new(Mutex::new(Vec::new()));
+        let captured = Arc::clone(&records);
+        let observer = RawExecutionObserver::new(move |source, direction, text| {
+            captured
+                .lock()
+                .unwrap()
+                .push((source.to_owned(), direction, text.to_owned()));
+            Ok(())
+        });
+        let _scope = RawExecutionScope::enter(Some(observer));
+        let mut command = Command::new("synthetic-cursor");
+        command.args([
+            "--resume",
+            "synthetic-session",
+            "literal 'quoted'\nand multiline prompt",
+        ]);
+        observe_command(&command);
+        let records = records.lock().unwrap();
+        assert_eq!(
+            records
+                .iter()
+                .map(|record| record.2.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                "synthetic-cursor",
+                "--resume",
+                "synthetic-session",
+                "literal 'quoted'\nand multiline prompt"
+            ]
+        );
+        assert!(
+            records
+                .iter()
+                .all(|record| record.1 == RawExecutionDirection::Sent)
+        );
+        assert_eq!(records[3].0, "cursor.argv");
+    }
 }

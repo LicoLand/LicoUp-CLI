@@ -9,7 +9,7 @@
 //! SIGTERM, and the channel reports readiness through its state files the same
 //! way it did when it ran inside the gateway runtime.
 
-use licoup_native::platform::gateway_composition;
+use licoup::platform::gateway_composition;
 use licoup_public_gateway::telegram::{self, RuntimeConfig, clear_ready, run_channel_loop};
 use std::env;
 use std::process::ExitCode;

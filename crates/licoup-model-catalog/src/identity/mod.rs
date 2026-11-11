@@ -97,7 +97,7 @@ fn runtime() -> &'static RegistryRuntime {
 pub fn snapshot() -> Arc<RegistrySnapshot> {
     #[cfg(test)]
     {
-        return test_snapshot();
+        test_snapshot()
     }
     #[cfg(not(test))]
     runtime().snapshot()
@@ -108,7 +108,7 @@ pub fn snapshot() -> Arc<RegistrySnapshot> {
 pub fn refresh_cached_snapshot() -> Arc<RegistrySnapshot> {
     #[cfg(test)]
     {
-        return test_snapshot();
+        test_snapshot()
     }
     #[cfg(not(test))]
     {

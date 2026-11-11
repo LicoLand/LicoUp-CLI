@@ -4,13 +4,13 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
-
+repository.workspace = true
+description = "Durable LicoUp workflow state, command, queue, subscription and commit contracts."
 [dependencies]
 acativa = "0.2.0"
 anyhow.workspace = true
-licoup-foundation = { path = "../licoup-foundation" }
-licoup-workflow = { path = "../licoup-workflow" }
+licoup-foundation.workspace = true
+licoup-workflow.workspace = true
 rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true

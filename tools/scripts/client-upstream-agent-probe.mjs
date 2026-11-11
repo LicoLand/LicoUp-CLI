@@ -62,9 +62,7 @@ import {
 
 const manifestDirectory = path.resolve(
   workspaceRoot,
-  "packages",
-  "contracts",
-  "client",
+  "tests",
   "fixtures",
   "agent-conversation-adapter",
   "manifests",
@@ -443,8 +441,8 @@ async function main(argv = process.argv.slice(2), output = process.stdout, error
     if (options.selfTest) {
       return selfTestVersionMeasurement(output);
     }
-    const inventory = readJson("crates/licoup-native/resources/agent-conversation-drivers.json");
-    const evidence = readJson("crates/licoup-native/resources/agent-conversation-evidence.json");
+    const inventory = readJson("crates/licoup/resources/agent-conversation-drivers.json");
+    const evidence = readJson("crates/licoup/resources/agent-conversation-evidence.json");
     const driverByAgent = new Map(inventory.drivers.map((driver) => [driver.agentId, driver]));
     const evidenceRows = new Map((evidence.adapters || []).map((row) => [row.agentId, row]));
     const observedVersions = readObservedVersions(

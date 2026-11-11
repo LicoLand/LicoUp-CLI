@@ -5,7 +5,7 @@ Extracted Conversation domain crate.
 ## Migration Target
 
 This crate will own the canonical Conversation domain logic, extracted from
-`licoup-native/src/domain/client_conversation/` and related conversation modules.
+`licoup/src/domain/client_conversation/` and related conversation modules.
 
 ## Responsibilities
 
@@ -18,16 +18,16 @@ This crate will own the canonical Conversation domain logic, extracted from
 ## Does NOT Own
 
 - Agent adapter protocol details (→ `licoup-agent-runtime`)
-- FFI/binary entry points (→ `licoup-native`)
-- Crypto and key custody (→ `licoup-endpoint-core`)
+- FFI/binary entry points (→ `licoup`)
+- Crypto and key custody (→ `licoarc-client`)
 - Storage engine (→ uses SQLite via typed port)
 
 ## Migration Source
 
 ```
-crates/licoup-native/src/domain/client_conversation/
-crates/licoup-native/src/domain/conversation_semantic.rs
-crates/licoup-native/src/domain/conversation_snapshots.rs
-crates/licoup-native/src/domain/conversations.rs
-crates/licoup-native/src/domain/conversation_archive_jobs.rs
+crates/licoup/src/domain/client_conversation/
+crates/licoup/src/domain/conversation_semantic.rs
+crates/licoup/src/domain/conversation_snapshots.rs
+crates/licoup/src/domain/conversations.rs
+crates/licoup/src/domain/conversation_archive_jobs.rs
 ```

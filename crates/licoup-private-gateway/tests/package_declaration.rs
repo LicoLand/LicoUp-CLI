@@ -18,7 +18,7 @@ use licoup_extension_contracts::manifest::{PackageManifest, Runtime};
 use serde_json::Value;
 
 const PACKAGE_ID: &str = "org.licoland.feature.gateway";
-const RUNTIME_ENTRY: &str = "bin/lico-gateway";
+const RUNTIME_ENTRY: &str = "bin/licoup";
 /// The client line this package declares, and one outside it in each direction.
 const COVERED_CLIENT: &str = "0.3.0";
 const OLDER_CLIENT: &str = "0.2.9";

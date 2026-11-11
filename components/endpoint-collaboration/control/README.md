@@ -44,9 +44,9 @@ a real stop, force stop, remote control, authentication or device operation.
 ## Wiring this package needs from its owners
 
 * A kernel adapter that implements `LocalWorkOwner` over
-  `crates/licoup-native/src/platform/stop_control.rs` and the
-  `secure_mesh_command_runtime` command arms, so the unsupported-command gap is
-  replaced by a real call. The package does not depend on `licoup-native`, and
+  `crates/licoup/src/platform/stop_control.rs` and the
+  `domain::devices` command executor, so the unsupported-command gap is
+  replaced by a real call. The package does not depend on `licoup`, and
   the kernel does not yet depend on this package.
 * The client-bridge schema (`schemas/client_bridge/remote_work.json`) if the
   intents are to cross the Dart boundary as generated types.

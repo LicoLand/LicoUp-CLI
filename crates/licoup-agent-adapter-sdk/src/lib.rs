@@ -21,15 +21,15 @@
 //! selection that maps an agent id to its parser, and the thirteen-entry
 //! packaged inventory are all composed *above* this crate and reach it through
 //! [`port::AdapterParserSet`], the port this SDK declares and composition
-//! injects. There is no reference from this crate into `licoup-native` and no
+//! injects. There is no reference from this crate into `licoup` and no
 //! vendor frame, vendor field name or vendor protocol name in it.
 //!
 //! Visibility in this crate is `pub` because the trees that consume it are one
-//! crate away — `licoup-native` today, the driver and per-Agent crates after
+//! crate away — `licoup` today, the driver and per-Agent crates after
 //! the split. The re-exported vocabulary above is `pub` permanently: it is the
 //! extension contract. The remaining items under [`adapters`] and [`replay`]
 //! are also `pub` for the duration of the extraction, because the per-Agent
-//! parser trees that name them are still in `licoup-native`; they narrow to
+//! parser trees that name them are still in `licoup`; they narrow to
 //! what an adapter program actually needs once those trees have moved.
 
 pub mod adapters;

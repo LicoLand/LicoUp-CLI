@@ -65,7 +65,7 @@ flowchart TB
 Regardless of whether an agent speaks standard ACP, CLI PTY, or proprietary Codex/OpenCode protocols, LicoUp decouples and normalizes them through four core layers:
 
 ### ① Returned-Frame Parser Boundary (ADR 0008)
-- Each runtime owns an isolated parser. An Agent the kernel still holds keeps it under `crates/licoup-native/src/platform/native_agent_parser/adapters/<agent>/`; an Agent whose protocol has moved into its adapter package keeps it in that package (`crates/licoup-agent-<agent>/src/parser.rs`), and the composition names the package instead of keeping a second copy.
+- Each runtime owns an isolated parser. An Agent the kernel still holds keeps it under `crates/licoup/src/platform/native_agent_parser/adapters/<agent>/`; an Agent whose protocol has moved into its adapter package keeps it in that package (`crates/licoup-agent-<agent>/src/parser.rs`), and the composition names the package instead of keeping a second copy.
 - Raw returned frames enter this parser **exactly once**.
 - The parser outputs closed `Typed Transitions`:
   - `ThinkingDelta` / `Reasoning` (thinking/reasoning trace);

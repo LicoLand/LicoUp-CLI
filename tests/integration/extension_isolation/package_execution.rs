@@ -16,11 +16,13 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use licoup::platform::extension_host::isolation::IsolationMode;
+use licoup::platform::extension_host::{AgentExecutionCall, ExtensionRuntime};
+use licoup::platform::extension_packages::{
+    PackageStore, TrustRecord, content_digest, running_client_version,
+};
 use licoup_extension_contracts::manifest::PermissionRequest;
 use licoup_extension_contracts::wire;
-use licoup_native::platform::extension_host::isolation::IsolationMode;
-use licoup_native::platform::extension_host::{AgentExecutionCall, ExtensionRuntime};
-use licoup_native::platform::extension_packages::{PackageStore, TrustRecord, content_digest};
 use serde_json::{Value, json};
 
 /// The capability the synthetic package's `agent-execution` profile serves.
@@ -62,13 +64,25 @@ impl Drop for Fixture {
 }
 
 /// One manifest for a package that may or may not be a process program.
+///
+/// The compatibility list names the running client's own line, exactly as the
+/// committed package fixtures do: a development binary is not the released
+/// product version, and a manifest declaring no client is admitted by nothing.
 fn manifest_json(id: &str, version: &str, runtime: Value, profiles: Value) -> Vec<u8> {
+    let client = running_client_version().expect("the binary declares a product version");
+    let next_major = client
+        .split('.')
+        .next()
+        .and_then(|major| major.parse::<u64>().ok())
+        .map(|major| major + 1)
+        .expect("a semantic major version");
     json!({
         "schema": wire::MANIFEST,
         "id": id,
         "version": version,
         "displayName": format!("Fixture {id}"),
         "hostProtocol": { "major": 1, "minimumMinor": 0 },
+        "compatibility": { "clientVersions": [format!(">={client}, <{next_major}")] },
         "profiles": profiles,
         "runtime": runtime,
         "activation": "on-demand",

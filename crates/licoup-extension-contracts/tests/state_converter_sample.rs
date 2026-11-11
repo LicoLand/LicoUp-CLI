@@ -11,7 +11,7 @@
 //!
 //! They do not import or run the payload. Import is the host's own path and
 //! execution is the caller's, and both are exercised where those owners live:
-//! `crates/licoup-migrate/tests/state_converter_sample.rs` compiles the entry,
+//! `crates/licoup (migrate module)/tests/state_converter_sample.rs` compiles the entry,
 //! assembles the payload and drives it through `PackageStore` and the converter
 //! protocol. A contract test reads declarations; it does not pretend to be the
 //! host.
@@ -31,10 +31,10 @@ const RELEASE: &str = include_str!("../samples/state-converter/package-release.j
 const CONVERTER_SOURCE: &str = include_str!("../samples/state-converter/converter/main.rs");
 const SCHEMA: &str = include_str!("../../../schemas/extensions/manifest.schema.json");
 /// The client's own embedded migration frontier: the required pair is read from
-/// the document `licoup_native::domain::client_state_migration` embeds, not from
+/// the document `licoup::domain::client_state_migration` embeds, not from
 /// a pair restated here.
 const FRONTIER: &str =
-    include_str!("../../../crates/licoup-native/resources/client-state-migration-frontier.json");
+    include_str!("../../../crates/licoup/resources/client-state-migration-frontier.json");
 const PRODUCT: &str = include_str!("../../../tools/client-version.json");
 
 /// The declaration the sample ships, as the manifest writes it.
@@ -410,7 +410,7 @@ fn the_sample_converter_source_implements_the_invocation_it_documents() {
     // The invocation is the contract's, and the sample's program is the half a
     // package author writes. Asserting each documented argument is present is
     // what keeps the source and the documented protocol from drifting apart:
-    // the real invocation is exercised by `licoup-migrate`'s suite.
+    // the real invocation is exercised by the `licoup migrate` suite.
     for argument in [
         "--source",
         "--target",

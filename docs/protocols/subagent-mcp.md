@@ -83,13 +83,9 @@ licoup mcp reload --binary <built-lico-subagent-mcp>
 
 A release fills the package's declared native entry before that directory is
 packaged into a payload, so the committed entry is a staged placeholder rather
-than a program:
-
-```sh
-node tools/distribution/client-release-package-stage.mjs stage
-node tools/distribution/client-release-package-stage.mjs verify
-npm run client:release:package-index:build
-```
+than a program. This repository does not yet provide the release stage that
+fills the optional package's native entry; the committed entry remains a
+placeholder until that stage runs.
 
 The module also accepts `service start|stop|status|reload` directly. Its native
 CLI executable is explicitly supplied in `LICOUP_CLI_BINARY`; state is scoped by

@@ -9,7 +9,7 @@ export const FRONTIER_SCHEMA = "v0.0.1:client-state-migration-frontier-1";
 // The embedded frontier is the admission's own definition. This tool never
 // accepts an alternative: an operator-supplied frontier could authorize a step
 // the running binary does not implement.
-export const FRONTIER_REF = "crates/licoup-native/resources/client-state-migration-frontier.json";
+export const FRONTIER_REF = "crates/licoup/resources/client-state-migration-frontier.json";
 
 export const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

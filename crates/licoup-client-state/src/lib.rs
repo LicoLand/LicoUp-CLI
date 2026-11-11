@@ -9,7 +9,7 @@
 //! spools, log segments, state quotas, and maintenance batches.
 //!
 //! The journal owners above the store (`ActivityLog`, `SnapshotStore`) still
-//! live in `licoup-native` and read the store's rules from here through their
+//! live in `licoup` and read the store's rules from here through their
 //! former paths. Nothing here reaches upward: the Agent inventory depends on
 //! this crate rather than on the host that serves requests.
 

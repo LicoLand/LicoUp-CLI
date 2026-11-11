@@ -11,7 +11,7 @@
 //!
 //! # The boundaries this crate keeps
 //!
-//! - **No client crate.** Nothing here reaches into `licoup-native` or any
+//! - **No client crate.** Nothing here reaches into `licoup` or any
 //!   other composition crate. What the package needs from its host arrives
 //!   through [`port`], and the host installs it with one [`host::install`].
 //! - **One parse.** A raw serve document becomes this Agent's facts here and is

@@ -2,8 +2,8 @@
 //! modifying its granted root after host drain. Only nonce-bound fixture
 //! cleanup ends it; neither the owner nor the durable predecessor is cleared.
 use crate::support::*;
-use licoup_native::platform::extension_host::isolation::{IsolationMode, ReleaseScope};
-use licoup_native::platform::extension_host::{
+use licoup::platform::extension_host::isolation::{IsolationMode, ReleaseScope};
+use licoup::platform::extension_host::{
     CatalogJournal, ExtensionHost, RuntimeCatalogJournal, SessionOwner,
 };
 use serde_json::{Value, json};

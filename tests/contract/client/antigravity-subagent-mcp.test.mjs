@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const read = (path) => readFileSync(path, "utf8");
-const common = read("crates/licoup-native/src/platform/provider_mcp_registration.rs");
-const manager = read("crates/licoup-native/src/platform/antigravity_subagent_mcp_manager.rs");
+const common = read("crates/licoup/src/platform/provider_mcp_registration.rs");
+const manager = read("crates/licoup/src/platform/antigravity_subagent_mcp_manager.rs");
 // The driver is the Antigravity package's; the host keeps no module of its own.
 const driver = "crates/licoup-agent-antigravity/src/driver";
 const execution = read(`${driver}/execution.rs`);
@@ -12,7 +12,7 @@ const hooks = read(`${driver}/hooks.rs`);
 const oauth_source = read(`${driver}/auth.rs`);
 const registration = read("crates/licoup-agent-antigravity/src/registration.rs");
 const runtime = read("crates/licoup-agent-drivers/src/runtime_adapters/subagent_mesh.rs");
-const adapters = read("crates/licoup-native/src/platform/native_agent_parser/adapters/mod.rs");
+const adapters = read("crates/licoup/src/platform/native_agent_parser/adapters/mod.rs");
 const startup = read("tests/product-e2e/cli/subagent-mcp/upstream/antigravity-startup-recognition.mjs");
 
 test("Antigravity registration uses one common namespaced ownership contract", () => {

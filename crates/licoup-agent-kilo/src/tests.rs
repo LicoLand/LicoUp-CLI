@@ -122,9 +122,8 @@ fn both_registration_queries_are_answered_rather_than_fail_closed() {
 #[test]
 fn the_five_recorded_transcripts_replay_through_the_real_parser() {
     assert_eq!(KILO_SCENARIOS, SCENARIOS);
-    assert_eq!(
+    assert!(
         fixture_root().join("kilo-code").is_dir(),
-        true,
         "the kilo-code corpus must exist for its own claims to be checkable"
     );
     let coverage = replay_corpus(&registration::parser_set(), &fixture_root());

@@ -1,9 +1,8 @@
-[build]
-target-dir = "build/crates/licoup-native/target"
+# An untracked `.cargo/local.toml` may carry developer-only overrides (for
+# example a `[patch.crates-io]` table resolving a crate under parallel
+# development from a sibling checkout). A fresh clone has no such file and
+# resolves every dependency from crates.io.
+include = [{ path = "local.toml", optional = true }]
 
-# The fixed LicoArc SDK is a revision-pinned git source whose read credentials
-# live in the platform credential helper. Cargo's built-in git client cannot
-# authenticate with that helper (HTTP 401), so git dependencies are fetched
-# with the git CLI, which can.
-[net]
-git-fetch-with-cli = true
+[build]
+target-dir = "build/crates/licoup/target"

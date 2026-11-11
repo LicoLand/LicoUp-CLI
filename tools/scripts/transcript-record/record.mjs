@@ -14,7 +14,7 @@ import {
 } from "./shared.mjs";
 
 function usage() {
-  throw new Error(`usage: record.mjs --adapter <${adapterIds.join("|")}> --scenario <${scenarioClasses.join("|")}> --output <private-raw.json> [--native-bin <licoup-cli>]`);
+  throw new Error(`usage: record.mjs --adapter <${adapterIds.join("|")}> --scenario <${scenarioClasses.join("|")}> --output <private-raw.json> [--native-bin <licoup>]`);
 }
 
 const options = process.argv.slice(2);
@@ -25,7 +25,7 @@ const option = (name) => {
 const adapterId = option("--adapter");
 const scenario = option("--scenario");
 const output = option("--output");
-const nativeBin = resolve(option("--native-bin") || "build/crates/licoup-native/target/debug/licoup-cli");
+const nativeBin = resolve(option("--native-bin") || "build/crates/licoup/target/debug/licoup");
 const catalogCache = option("--catalog-cache") ? resolve(option("--catalog-cache")) : null;
 if (!adapterId || !scenario || !output) usage();
 assertAdapterAndScenario(adapterId, scenario);

@@ -23,7 +23,7 @@ already exist rather than keeping a second copy of any of them.
 the data-root admission lock and the data-root inventory grammar; this package
 calls those owners.
 
-`licoup-native` owns platform credential custody, the authenticated
+`licoup` owns platform credential custody, the authenticated
 replacement-endpoint authority, the bounded custody inventory and the erase
 loop that walks it. This package deletes no credential, reads no protected key
 and never reaches the platform keychain.

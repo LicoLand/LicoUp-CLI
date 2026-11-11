@@ -4,7 +4,8 @@ English (normative) · [简体中文](llm-gateway.zh-CN.md)
 
 The LLM Gateway is the **lower layer** of the Gateway Runtime. Authority for
 this layer is `crates/licoup-private-gateway/src/model/llm_gateway.rs`,
-`crates/licoup-private-gateway/src/http/transport.rs`, and the unified `lico-gateway`
+`crates/licoup-private-gateway/src/http/transport.rs`, and the gateway service process
+  (`licoup gateway run`)
 process (`crates/licoup-private-gateway/src/runtime`). The layer
 binds only to loopback and routes by the exact client-protocol/requested-model
 pair; there is no global active provider. Messaging channels are documented in
@@ -22,7 +23,7 @@ pair; there is no global active provider. Messaging channels are documented in
   Inventory responses contain no secret suffix or value.
 - Owner authorization (Touch ID whenever usable, with a system password only
   when biometry is unavailable) unlocks
-  credentials in the long-lived `licoup-cli` process. A cold Gateway start
+  credentials in the long-lived `licoup` process. A cold Gateway start
   hands the unlocked session to the sidecar over an inherited file descriptor;
   the sidecar never reads the Keychain itself. While a managed Gateway is
   already running, authorize and clear hot-apply the updated lease over a
@@ -89,7 +90,7 @@ Gateway endpoint directly without an embedded model list.
 The one-click OpenCode/Pi helpers refuse to apply an empty snapshot.
 
 The configuration must be an absolute regular file no larger than 1 MiB. Run
-`lico-llm-gateway --config <absolute-path> --check` before starting the
+`licoup gateway run --config <absolute-path> --check` before starting the
 sidecar. It listens on `127.0.0.1:15722` by default. Non-loopback HTTP
 endpoints, redirects, unknown providers, unnamespaced dynamic models, and
 unknown fields fail closed.
@@ -155,9 +156,9 @@ The native surface is closed to these operations:
 - `llm-gateway credentials create --stdin-json true`
 - `llm-gateway credentials delete <credential-id>`
 - `llm-gateway credentials lease <days>`
-- `llm-gateway service status`
-- `llm-gateway service start [--port]`
-- `llm-gateway service stop [--port]`
+- `gateway service status`
+- `gateway service start [--port]`
+- `gateway service stop [--port]`
 - `llm-gateway agent-config plan <codex|claude-code|opencode|pi> <absolute-config-root>`
 - `llm-gateway agent-config apply <codex|claude-code|opencode|pi> <absolute-config-root> --confirmation <digest> --confirmed [--stdin-json true]`
 

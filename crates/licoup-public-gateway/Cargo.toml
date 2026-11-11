@@ -1,10 +1,10 @@
 [package]
 name = "licoup-public-gateway"
-version = "0.1.0"
-edition = "2024"
-rust-version = "1.95.0"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "LicoUp Public Gateway: the public-facing optional services — the service-neutral MCP engine, the subagent MCP service and the Telegram communication channel."
 
 # The crate is two layers. `wire` and `server` are the service-neutral MCP
@@ -29,7 +29,7 @@ a4mc.workspace = true
 a4mc-telegram.workspace = true
 anyhow = "1.0"
 fs2 = "0.4"
-licoup-foundation = { path = "../licoup-foundation", version = "0.3.0" }
+licoup-foundation.workspace = true
 libc = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -58,4 +58,4 @@ required-features = ["service"]
 # reading of it. Nothing here enters the optional service binary, which links
 # no kernel crate and reads its own package documents as data.
 [dev-dependencies]
-licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-extension-contracts.workspace = true

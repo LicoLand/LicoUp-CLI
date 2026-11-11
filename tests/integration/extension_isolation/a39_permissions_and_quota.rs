@@ -12,8 +12,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
-use licoup_native::platform::extension_host::ExtensionCarrier;
-use licoup_native::platform::extension_host::isolation::{
+use licoup::platform::extension_host::ExtensionCarrier;
+use licoup::platform::extension_host::isolation::{
     IsolationMode, IsolationRecord, LimitScope, NetworkGrant, PlatformConfinement, ReleaseScope,
     ResolvedProgram, ResourceLimits, RevocationReason, StaticPrograms,
 };

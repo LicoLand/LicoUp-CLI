@@ -228,19 +228,18 @@ impl EvolutionStrategyPort for DefaultEvolutionStrategyPort {
         explicit_user_choice: Option<&AgentModelOptionSeam>,
     ) -> Option<StrategySuggestion> {
         // D09 / D21: Explicit user configuration strictly takes precedence.
-        if let Some(user_choice) = explicit_user_choice {
-            if candidates.contains(user_choice) {
-                return Some(StrategySuggestion {
-                    candidate: user_choice.clone(),
-                    ranking_basis: "user-configured".to_owned(),
-                    source: None,
-                    scope: Some(scope.clone()),
-                    is_default: false,
-                    has_execution_permission: false, // Invariant: no execution permission granted
-                    rationale: "Explicit user selection preserved without implicit upgrade"
-                        .to_owned(),
-                });
-            }
+        if let Some(user_choice) = explicit_user_choice
+            && candidates.contains(user_choice)
+        {
+            return Some(StrategySuggestion {
+                candidate: user_choice.clone(),
+                ranking_basis: "user-configured".to_owned(),
+                source: None,
+                scope: Some(scope.clone()),
+                is_default: false,
+                has_execution_permission: false, // Invariant: no execution permission granted
+                rationale: "Explicit user selection preserved without implicit upgrade".to_owned(),
+            });
         }
 
         let defaults_guard = self.defaults.read().unwrap_or_else(|p| p.into_inner());
@@ -705,27 +704,26 @@ pub fn recheck_before_effect(
     }
 
     // 3. Resource Recheck: check single-writer lock and token budget limits
-    if let (Some(registry), Some(session)) = (ctx.single_writer_registry, ctx.session_id) {
-        if let Some(active_writer) = registry.current_writer(session) {
-            if active_writer != ctx.claimant {
-                return Err(EffectRecheckFailure::ResourceUnavailable {
-                    code: "session_writer_conflict".into(),
-                    reason: format!(
-                        "Native session '{}' is currently locked by claimant '{}'",
-                        session, active_writer
-                    ),
-                });
-            }
-        }
+    if let (Some(registry), Some(session)) = (ctx.single_writer_registry, ctx.session_id)
+        && let Some(active_writer) = registry.current_writer(session)
+        && active_writer != ctx.claimant
+    {
+        return Err(EffectRecheckFailure::ResourceUnavailable {
+            code: "session_writer_conflict".into(),
+            reason: format!(
+                "Native session '{}' is currently locked by claimant '{}'",
+                session, active_writer
+            ),
+        });
     }
 
-    if let (Some(req), Some(remaining)) = (ctx.required_tokens, ctx.token_budget_remaining) {
-        if req > remaining {
-            return Err(EffectRecheckFailure::ResourceUnavailable {
-                code: "token_budget_exhausted".into(),
-                reason: format!("Required tokens ({req}) exceed remaining budget ({remaining})"),
-            });
-        }
+    if let (Some(req), Some(remaining)) = (ctx.required_tokens, ctx.token_budget_remaining)
+        && req > remaining
+    {
+        return Err(EffectRecheckFailure::ResourceUnavailable {
+            code: "token_budget_exhausted".into(),
+            reason: format!("Required tokens ({req}) exceed remaining budget ({remaining})"),
+        });
     }
 
     let now_ms = std::time::SystemTime::now()
@@ -847,7 +845,7 @@ mod tests {
         let suggestion = port.suggest_strategy(&scope, &candidates, None).unwrap();
         assert_eq!(suggestion.candidate.agent_id, "agent-1");
         // CRITICAL INVARIANT: Strategy selection NEVER grants execution permission!
-        assert_eq!(suggestion.has_execution_permission, false);
+        assert!(!suggestion.has_execution_permission);
     }
 
     #[test]
@@ -889,8 +887,8 @@ mod tests {
             .unwrap();
         assert_eq!(suggestion.candidate.agent_id, "agent-2");
         assert_eq!(suggestion.ranking_basis, "user-configured");
-        assert_eq!(suggestion.is_default, false);
-        assert_eq!(suggestion.has_execution_permission, false);
+        assert!(!suggestion.is_default);
+        assert!(!suggestion.has_execution_permission);
     }
 
     #[test]
@@ -931,19 +929,19 @@ mod tests {
         // Default takes effect when no explicit user choice
         let suggestion = port.suggest_strategy(&scope, &candidates, None).unwrap();
         assert_eq!(suggestion.candidate.agent_id, "reviewer-2");
-        assert_eq!(suggestion.is_default, true);
+        assert!(suggestion.is_default);
         assert_eq!(
             suggestion.ranking_basis,
             "adopted-default-comparable-outcome"
         );
-        assert_eq!(suggestion.has_execution_permission, false);
+        assert!(!suggestion.has_execution_permission);
 
         // Revoking the strategy drops back to the routing policy, which selects
         // the configured alternative it admits.
         port.revoke_strategy("eval-42");
         let after_revoke = port.suggest_strategy(&scope, &candidates, None).unwrap();
         assert_eq!(after_revoke.candidate.agent_id, "reviewer-1");
-        assert_eq!(after_revoke.is_default, false);
+        assert!(!after_revoke.is_default);
         assert_eq!(
             after_revoke.ranking_basis, "candidate-policy",
             "the basis the routing port reports for a policy-selected alternative"
@@ -978,9 +976,9 @@ mod tests {
         let receipt = recheck_before_effect(&ctx).unwrap();
         assert_eq!(receipt.run_id, "run-1");
         assert_eq!(receipt.command_id, "cmd-1");
-        assert_eq!(receipt.permission_verified, true);
-        assert_eq!(receipt.version_verified, true);
-        assert_eq!(receipt.resource_verified, true);
+        assert!(receipt.permission_verified);
+        assert!(receipt.version_verified);
+        assert!(receipt.resource_verified);
     }
 
     #[test]
@@ -1145,7 +1143,7 @@ mod tests {
 
         // Suggestions assertions
         assert_eq!(payload.suggestions.recommended_decision, "advance");
-        assert!(payload.suggestions.decision_reasons.len() >= 1);
+        assert!(!payload.suggestions.decision_reasons.is_empty());
         assert!(
             payload
                 .suggestions

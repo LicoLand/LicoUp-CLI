@@ -129,13 +129,6 @@ function wrapperResources(command) {
       command.args[0] === "tests/smoke/native-client-smoke.mjs") {
     return ["cargo-target"];
   }
-  if (command.program === "node" &&
-      command.args[0] === "tools/scripts/client-android-native-tests.mjs") {
-    // This bounded wrapper owns a Gradle test run, two Cargo FFI filters, and
-    // may consult Flutter Doctor while resolving Java. Charge every shared
-    // toolchain resource instead of disguising it as a pure Node leaf.
-    return ["cargo-target", "flutter-cache", "gradle-cache"];
-  }
   if (command.program === "node" && command.args[0] === "--test") {
     const resources = [];
     for (const file of nodeTestFiles(command.args)) {

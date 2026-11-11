@@ -170,7 +170,7 @@ export async function runSelfTest() {
     }), { mode: 0o600 });
     let productFixtureReceiptRejected = false;
     try {
-      validateProductReceipt(fixtureProductReceiptPath, "codex");
+      validateProductReceipt(fixtureProductReceiptPath, "codex", join(temporaryDirectory, "LicoUp.app"));
     } catch (error) {
       productFixtureReceiptRejected = error instanceof AcceptanceError;
     }

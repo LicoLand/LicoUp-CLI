@@ -6,7 +6,7 @@
 //! [`AgentProtocolRegistration`] — how that Agent's protocol adapter is built,
 //! how its driver is executed and which inventory id lane control addresses it
 //! by — and the composition above this crate supplies those implementations:
-//! `licoup-native` today, `licoup-agent-codex` and `licoup-agent-pi` once
+//! `licoup` today, `licoup-agent-codex` and `licoup-agent-pi` once
 //! those crates exist.
 //!
 //! The seam also reaches the host's own conversation lane on the steer and

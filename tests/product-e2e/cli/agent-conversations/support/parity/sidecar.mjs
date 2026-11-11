@@ -3,10 +3,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { coreProbeIds, dispatchLaneHarnessVersion, driversInventoryPath, workspaceRoot } from "./constants.mjs";
 
-export function releaseSidecarCandidates() {
+// The CLI sidecar inside an explicitly supplied Desktop release bundle.
+export function releaseSidecarCandidates(releaseApp) {
+  if (!releaseApp) return [];
   return [
-    join(workspaceRoot, "build", "apps", "desktop", "runnable", "macos", "release", "LicoUp.app", "Contents", "Helpers", "LicoUpCustody.app", "Contents", "MacOS", "licoup-cli"),
-    join(workspaceRoot, "apps", "desktop", "build", "macos", "Build", "Products", "Release", "licoup.app", "Contents", "Helpers", "LicoUpCustody.app", "Contents", "MacOS", "licoup-cli"),
+    join(releaseApp, "Contents", "Helpers", "LicoUpCustody.app", "Contents", "MacOS", "licoup"),
   ];
 }
 
@@ -46,7 +47,7 @@ export function sidecarSupportsDispatchLane(executable) {
 
 export function resolveSidecar(explicit, options = {}) {
   const releaseOnly = options.releaseUi === true;
-  const releaseCandidates = releaseSidecarCandidates();
+  const releaseCandidates = releaseSidecarCandidates(options.releaseApp);
   const normalizedExplicit = explicit ? resolve(workspaceRoot, explicit) : "";
   const normalizedEnvironment = process.env.LICO_CLIENT_PATH
     ? resolve(workspaceRoot, process.env.LICO_CLIENT_PATH)
@@ -55,12 +56,12 @@ export function resolveSidecar(explicit, options = {}) {
     // Prefer the workspace CARGO_TARGET_DIR debug build, then other debug
     // artifacts, ahead of packaged/release copies that may lag the checkout.
     // Skip binaries that do not yet expose agent.conversation.* (stale target/).
-    join(workspaceRoot, "build", "crates", "licoup-native", "target", "debug", "licoup-cli"),
-    join(workspaceRoot, "crates", "licoup-native", "target", "debug", "licoup-cli"),
-    join(workspaceRoot, "target", "debug", "licoup-cli"),
-    join(workspaceRoot, "build", "crates", "licoup-native", "target", "release", "licoup-cli"),
-    join(workspaceRoot, "target", "release", "licoup-cli"),
-    join(workspaceRoot, "crates", "licoup-native", "target", "release", "licoup-cli"),
+    join(workspaceRoot, "build", "crates", "licoup", "target", "debug", "licoup"),
+    join(workspaceRoot, "crates", "licoup", "target", "debug", "licoup"),
+    join(workspaceRoot, "target", "debug", "licoup"),
+    join(workspaceRoot, "build", "crates", "licoup", "target", "release", "licoup"),
+    join(workspaceRoot, "target", "release", "licoup"),
+    join(workspaceRoot, "crates", "licoup", "target", "release", "licoup"),
   ];
   const candidates = [
     normalizedExplicit,

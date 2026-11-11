@@ -218,13 +218,13 @@ pub fn accept_workflow_notice(
             )
             .optional()
             .map_err(sql_failure)?;
-        if let Some((known_conversation, known_kind)) = existing {
-            if known_conversation != conversation_id || known_kind != kind {
-                return Err(continuity_failure(
-                    ContinuityFailureCode::IdentityConflict,
-                    ContinuityFailureStage::ContinuityAdmission,
-                ));
-            }
+        if let Some((known_conversation, known_kind)) = existing
+            && (known_conversation != conversation_id || known_kind != kind)
+        {
+            return Err(continuity_failure(
+                ContinuityFailureCode::IdentityConflict,
+                ContinuityFailureStage::ContinuityAdmission,
+            ));
         }
         let accept_count: Option<i64> = unit
             .query_row(

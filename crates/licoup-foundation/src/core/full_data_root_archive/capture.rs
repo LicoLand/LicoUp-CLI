@@ -450,10 +450,7 @@ mod tests {
     impl Write for FaultyZipWriter {
         fn write(&mut self, buffer: &[u8]) -> io::Result<usize> {
             if self.inner.position() as usize >= self.fail_after {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "injected write failure",
-                ));
+                return Err(io::Error::other("injected write failure"));
             }
             self.inner.write(buffer)
         }
@@ -477,10 +474,7 @@ mod tests {
     impl Write for FailingWriter {
         fn write(&mut self, buffer: &[u8]) -> io::Result<usize> {
             if self.written >= self.fail_after {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "injected write failure",
-                ));
+                return Err(io::Error::other("injected write failure"));
             }
             let remaining = self.fail_after - self.written;
             let accepted = buffer.len().min(remaining.max(1));
@@ -501,10 +495,7 @@ mod tests {
         }
 
         fn flush(&mut self) -> io::Result<()> {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                "injected flush failure",
-            ))
+            Err(io::Error::other("injected flush failure"))
         }
     }
 

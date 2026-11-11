@@ -26,8 +26,10 @@ node_modules/
 
 # Rust
 target/
+# Developer-only Cargo overrides included optionally by .cargo/config.toml.
+/.cargo/local.toml
 **/target/
-crates/licoup-native/target/
+crates/licoup/target/
 
 # Generated archives / binaries
 *.app

@@ -4,24 +4,24 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
-
+repository.workspace = true
+description = "Event-driven LicoUp workflow execution: durable admission, routing, node execution and the graph driver."
 [dependencies]
 acativa = "0.2.0"
 anyhow.workspace = true
 fs2.workspace = true
 # The Canonical Conversation crate owns the durable conversation records this
 # runtime reads for its actor bindings. It never reaches back into the runtime.
-licoup-conversation = { path = "../licoup-conversation" }
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-conversation.workspace = true
+licoup-foundation.workspace = true
 # The selection owner holds the candidate vocabulary and the routing policy the
 # runtime's evolution seam asks. Selection sits below workflow, so the runtime
 # reads it directly instead of reaching up into the kernel.
-licoup-model-catalog = { path = "../licoup-model-catalog" }
-licoup-workflow = { path = "../licoup-workflow" }
+licoup-model-catalog.workspace = true
+licoup-workflow.workspace = true
 # The durable store is the runtime's only persistence owner. The runtime holds
 # the store contract in one direction: pure machine ← store ← runtime.
-licoup-workflow-store = { path = "../licoup-workflow-store" }
+licoup-workflow-store.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

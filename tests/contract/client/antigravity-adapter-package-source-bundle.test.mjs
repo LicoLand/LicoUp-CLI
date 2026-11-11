@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
 // The kernel's composition, which names this package's driver directly. The host
 // keeps no Antigravity driver module and no Antigravity driver tree of its own.
-const compositionPath = "crates/licoup-native/src/platform/runtime_adapters/drivers.rs";
+const compositionPath = "crates/licoup/src/platform/runtime_adapters/drivers.rs";
 // The wire half and the process half, both owned by the Antigravity adapter
 // package: the protocol moved there first and the driver followed it. One
 // package carries one Agent's program; the client names the package for it
@@ -38,17 +38,17 @@ test("the kernel carries no second copy of the Antigravity protocol", async () =
   // The parser tree is gone from the host: a `mod antigravity;` there would be a
   // second copy of the Agent's protocol, and the composition names the package.
   assert.equal(
-    await exists("crates/licoup-native/src/platform/native_agent_parser/adapters/antigravity.rs"),
+    await exists("crates/licoup/src/platform/native_agent_parser/adapters/antigravity.rs"),
     false,
   );
   assert.equal(
     await exists(
-      "crates/licoup-native/src/platform/native_agent_parser/replay/adapters/antigravity.rs",
+      "crates/licoup/src/platform/native_agent_parser/replay/adapters/antigravity.rs",
     ),
     false,
   );
   const composition = await read(
-    "crates/licoup-native/src/platform/native_agent_parser/adapters/mod.rs",
+    "crates/licoup/src/platform/native_agent_parser/adapters/mod.rs",
   );
   assert.ok(composition.includes("licoup_agent_antigravity::registration::REGISTRATION"));
   assert.equal(composition.includes("mod antigravity;"), false);
@@ -59,7 +59,7 @@ test("the kernel carries no second copy of the Antigravity protocol", async () =
   assert.equal(composition.includes("licoup_agent_antigravity::parser"), false);
   assert.equal(composition.includes("as antigravity;"), false);
   const replay = await read(
-    "crates/licoup-native/src/platform/native_agent_parser/replay/adapters/mod.rs",
+    "crates/licoup/src/platform/native_agent_parser/replay/adapters/mod.rs",
   );
   assert.ok(replay.includes("licoup_agent_antigravity::replay::replay_arm"));
   assert.equal(replay.includes("mod antigravity;"), false);
@@ -90,16 +90,16 @@ test("the host declares no Antigravity driver and reads the package's", async ()
   // A kernel module or tree for this Agent would be a second owner of its
   // program; both are gone, and the module tree declares neither.
   assert.equal(
-    await exists("crates/licoup-native/src/platform/antigravity_driver.rs"),
+    await exists("crates/licoup/src/platform/antigravity_driver.rs"),
     false,
     "the host still declares an Antigravity driver module",
   );
   assert.equal(
-    await exists("crates/licoup-native/src/platform/antigravity_driver"),
+    await exists("crates/licoup/src/platform/antigravity_driver"),
     false,
     "the host still declares an Antigravity driver tree",
   );
-  const platform = await read("crates/licoup-native/src/platform/mod.rs");
+  const platform = await read("crates/licoup/src/platform/mod.rs");
   assert.doesNotMatch(platform, /mod antigravity_driver;/u,
     "the host module tree still declares an Antigravity driver module");
 
@@ -133,7 +133,7 @@ test("the host declares no Antigravity driver and reads the package's", async ()
   }
   // The cancel and cleanup arms reach the package's own control entries, so the
   // host holds no Antigravity control plane either.
-  const lane = await read("crates/licoup-native/src/platform/conversation_lane.rs");
+  const lane = await read("crates/licoup/src/platform/conversation_lane.rs");
   assert.ok(lane.includes("licoup_agent_antigravity::driver::cancel(&session_id)"));
   assert.ok(lane.includes("licoup_agent_antigravity::driver::cleanup_session(&session_id)"));
   assert.ok(
@@ -152,7 +152,7 @@ test("the package owns the protocol and no part of the client", async () => {
   ).join("\n");
   // A client path in the package's sources would be the kernel reaching back in
   // through it: what the package needs from its host arrives through its ports.
-  for (const clientPath of ["crate::platform", "licoup_native", "licoup-native"]) {
+  for (const clientPath of ["crate::platform", "licoup::", '"licoup"']) {
     assert.equal(sources.includes(clientPath), false, clientPath);
   }
   // The package is a program of its own: its manifest names the shared adapter
@@ -162,7 +162,7 @@ test("the package owns the protocol and no part of the client", async () => {
   // rather than keeping a second copy of either rule.
   const manifest = await read(packageManifest);
   assert.ok(manifest.includes("licoup-agent-adapter-sdk"));
-  assert.equal(manifest.includes("licoup-native"), false, "licoup-native");
+  assert.doesNotMatch(manifest, /^licoup(?:\.workspace)?\s*=/mu);
   for (const sharedCrate of ["licoup-agent-drivers", "licoup-agent-targets"]) {
     assert.ok(manifest.includes(sharedCrate), sharedCrate);
   }
@@ -287,9 +287,9 @@ test("the package declares the ports its host answers", async () => {
   // platform layer's; the execution admission answer is the crate root's,
   // because composing the host's close-admission barrier is what the root owns
   // rather than a second policy inside `platform`.
-  const platform = await read("crates/licoup-native/src/platform/mod.rs");
+  const platform = await read("crates/licoup/src/platform/mod.rs");
   assert.ok(platform.includes("antigravity_turn_event_port"));
-  const composition = await read("crates/licoup-native/src/lib.rs");
+  const composition = await read("crates/licoup/src/lib.rs");
   assert.ok(composition.includes("licoup_agent_antigravity::port::turn_event::install("));
   assert.ok(composition.includes("licoup_agent_antigravity::port::execution::install("));
   // The execution port's admission field carries this host's own answer, read

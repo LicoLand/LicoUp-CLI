@@ -25,7 +25,7 @@ test("the settlement slice is part of the package and performs no effect itself"
   for (const source of [control, owner, settlement, composerTests]) {
     assert.doesNotMatch(source, /std::process|libc::|Command::new|kill\(/u);
   }
-  assert.doesNotMatch(manifest, /licoup-native|nix|libc|windows-sys/u);
+  assert.doesNotMatch(manifest, /licoup(?![\w-])|nix|libc|windows-sys/u);
 });
 
 test("only locally admitted execution enters the local update gate", () => {

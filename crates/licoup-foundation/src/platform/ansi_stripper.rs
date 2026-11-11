@@ -36,6 +36,12 @@ enum StripState {
     Other,
 }
 
+impl Default for AnsiStripper {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AnsiStripper {
     pub fn new() -> Self {
         Self {

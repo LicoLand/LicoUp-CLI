@@ -142,38 +142,6 @@ fn list_result(path: &Path, events: VecDeque<Value>) -> Value {
     })
 }
 
-#[cfg(test)]
-pub(super) mod retention_probe {
-    use std::cell::Cell;
-
-    #[derive(Clone, Copy, Debug, Default)]
-    pub struct Snapshot {
-        pub validated_lines: usize,
-        pub peak_retained: usize,
-        pub peak_line_buffer_bytes: usize,
-    }
-
-    thread_local! {
-        static SNAPSHOT: Cell<Snapshot> = Cell::new(Snapshot::default());
-    }
-
-    pub fn reset() {
-        SNAPSHOT.set(Snapshot::default());
-    }
-
-    pub fn observe(validated_lines: usize, peak_retained: usize, peak_line_buffer_bytes: usize) {
-        SNAPSHOT.set(Snapshot {
-            validated_lines,
-            peak_retained,
-            peak_line_buffer_bytes,
-        });
-    }
-
-    pub fn snapshot() -> Snapshot {
-        SNAPSHOT.with(|snapshot| snapshot.get())
-    }
-}
-
 fn validate_event_type(event_type: &str) -> Result<()> {
     ensure!(
         !event_type.is_empty()
@@ -216,4 +184,36 @@ fn matches_activity_filter(event: &Value, filter: &Value) -> bool {
         .map(|expected| event.get("target").and_then(Value::as_str) == Some(expected))
         .unwrap_or(true);
     type_matches && target_matches
+}
+
+#[cfg(test)]
+pub(super) mod retention_probe {
+    use std::cell::Cell;
+
+    #[derive(Clone, Copy, Debug, Default)]
+    pub struct Snapshot {
+        pub validated_lines: usize,
+        pub peak_retained: usize,
+        pub peak_line_buffer_bytes: usize,
+    }
+
+    thread_local! {
+        static SNAPSHOT: Cell<Snapshot> = Cell::new(Snapshot::default());
+    }
+
+    pub fn reset() {
+        SNAPSHOT.set(Snapshot::default());
+    }
+
+    pub fn observe(validated_lines: usize, peak_retained: usize, peak_line_buffer_bytes: usize) {
+        SNAPSHOT.set(Snapshot {
+            validated_lines,
+            peak_retained,
+            peak_line_buffer_bytes,
+        });
+    }
+
+    pub fn snapshot() -> Snapshot {
+        SNAPSHOT.with(|snapshot| snapshot.get())
+    }
 }

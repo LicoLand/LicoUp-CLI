@@ -17,14 +17,8 @@ const binaries = read("crates/licoup-agent-targets/src/domain/targets/binaries.r
   "#[cfg(test)]",
   1,
 )[0];
-const agentServiceActions = read(
-  "apps/desktop/lib/src/platform/native_client/agent_service_actions.dart",
-);
 const historyDiscovery = read(
-  "crates/licoup-native/src/domain/conversation/history_discovery.rs",
-);
-const lifecycleFacade = read(
-  "apps/desktop/lib/src/application/controller/client_lifecycle_facade.dart",
+  "crates/licoup/src/domain/conversation/history_discovery.rs",
 );
 
 test("Agent discovery is an allowlisted TOML scan, not a PATH walk", () => {
@@ -59,7 +53,10 @@ test("Agent discovery is an allowlisted TOML scan, not a PATH walk", () => {
   assert.match(nativeHome, /fn user_home_from_env/u);
   assert.match(nativeHome, /fn strip_macos_data_volume/u);
   assert.doesNotMatch(nativeHome, /UserDirs::new/u);
-  assert.match(binaries, /scan_paths::denied/u);
+  // Denied-location enforcement moved into the shared scan engine: binary
+  // resolution reaches it through `scan_manifest().find_binary_in_dirs`, which
+  // skips denied prefixes and refuses symlink escapes internally.
+  assert.match(binaries, /scan_manifest\(\)\.find_binary_in_dirs/u);
   assert.match(manifest, /Library\/Mobile Documents/u);
   assert.match(manifest, /Library\/CloudStorage/u);
   assert.match(scanPaths, /fn automatic_agent_execution_admitted/u);
@@ -84,32 +81,7 @@ test("Agent discovery is an allowlisted TOML scan, not a PATH walk", () => {
     )[0] ?? "",
     /cursor_binary_supports_acp/u,
   );
-  assert.match(
-    agentServiceActions,
-    /'--include-history-model-catalog',\s*'false'/u,
-  );
-  const selectedBatch = (agentServiceActions.split("scanTargetsBatch")[1] ?? "")
-    .split("_targetScanSlot")[0] ?? "";
-  assert.match(
-    selectedBatch,
-    /bool enableAgentCliModelLookup = false/u,
-  );
-  assert.match(
-    selectedBatch,
-    /runCliWithStdin\([\s\S]*'--stdin-json',[\s\S]*'true'/u,
-  );
-  assert.match(selectedBatch, /'targetIds': normalizedTargetIds/u);
-  assert.match(
-    selectedBatch,
-    /'modelCatalogTargetIds': enableAgentCliModelLookup[\s\S]*\? normalizedTargetIds/u,
-  );
-  assert.equal(selectedBatch.match(/runCliWithStdin/gu)?.length, 1);
-  assert.match(agentServiceActions, /enable-agent-cli-model-lookup/u);
   assert.match(historyDiscovery, /denied_personal_location/u);
   assert.match(historyDiscovery, /denied_symlink_escape/u);
   assert.match(scanPaths, /fn symlink_escapes_denied_location/u);
-  assert.doesNotMatch(
-    lifecycleFacade.split("_finalizeClientInitialization")[1] ?? "",
-    /startAgentUsagePolling/u,
-  );
 });

@@ -276,10 +276,11 @@ fn staging_version(root: &Path) -> Option<String> {
     for entry in entries.flatten() {
         let name = entry.file_name();
         let name = name.to_string_lossy();
-        if let Some(stripped) = name.strip_prefix('.') {
-            if !stripped.is_empty() && entry.path().is_dir() {
-                found = Some(stripped.to_string());
-            }
+        if let Some(stripped) = name.strip_prefix('.')
+            && !stripped.is_empty()
+            && entry.path().is_dir()
+        {
+            found = Some(stripped.to_string());
         }
     }
     found
@@ -481,7 +482,7 @@ mod tests {
         let root = temp_root("stale-idle");
         touch_lock(&root);
         backdate_lock(&root, Duration::from_secs(60));
-        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), || vec![]);
+        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), std::vec::Vec::new);
         assert_eq!(watcher.watch(1001), None);
         assert!(!root.join(".install.lock").exists());
         fs::remove_dir_all(&root).unwrap();
@@ -491,7 +492,7 @@ mod tests {
     fn lock_alone_starts_update_with_preparing_phase() {
         let root = temp_root("lock-only");
         touch_lock(&root);
-        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), || vec![]);
+        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), std::vec::Vec::new);
         assert_eq!(
             watcher.watch(1001),
             Some(UpdateChange::Started {
@@ -507,7 +508,7 @@ mod tests {
         let root = temp_root("staging");
         touch_lock(&root);
         staging(&root, "2026.08.04-aaa8809");
-        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), || vec![]);
+        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), std::vec::Vec::new);
         assert_eq!(
             watcher.watch(1001),
             Some(UpdateChange::Started {
@@ -522,7 +523,7 @@ mod tests {
     fn orphaned_staging_dir_does_not_start_an_update() {
         let root = temp_root("orphaned-staging");
         staging(&root, "2026.08.04-aaa8809");
-        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), || vec![]);
+        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), std::vec::Vec::new);
         assert_eq!(watcher.watch(1001), None);
         assert_eq!(watcher.watch(1001), None);
         fs::remove_dir_all(&root).unwrap();
@@ -573,7 +574,7 @@ mod tests {
     fn phase_change_only_emitted_on_transition() {
         let root = temp_root("phase-transition");
         touch_lock(&root);
-        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), || vec![]);
+        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), std::vec::Vec::new);
         assert_eq!(
             watcher.watch(1001),
             Some(UpdateChange::Started {
@@ -591,7 +592,7 @@ mod tests {
         let root = temp_root("complete");
         touch_lock(&root);
         staging(&root, "2026.08.04-aaa8809");
-        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), || vec![]);
+        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), std::vec::Vec::new);
         assert!(watcher.watch(1001).is_some());
         // Both signals disappear (install finished, staging renamed).
         fs::remove_file(root.join(".install.lock")).unwrap();
@@ -610,7 +611,7 @@ mod tests {
     fn lock_disappears_without_staging_completes() {
         let root = temp_root("lock-gone");
         touch_lock(&root);
-        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), || vec![]);
+        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), std::vec::Vec::new);
         assert!(watcher.watch(1001).is_some());
         fs::remove_file(root.join(".install.lock")).unwrap();
         assert_eq!(
@@ -624,7 +625,7 @@ mod tests {
     fn stale_lock_interrupts_and_is_removed() {
         let root = temp_root("interrupt");
         touch_lock(&root);
-        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), || vec![]);
+        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), std::vec::Vec::new);
         assert!(watcher.watch(1001).is_some());
         backdate_lock(&root, Duration::from_secs(60));
         assert_eq!(
@@ -641,7 +642,7 @@ mod tests {
         let root = temp_root("stale-staging");
         touch_lock(&root);
         staging(&root, "2026.08.04-aaa8809");
-        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), || vec![]);
+        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), std::vec::Vec::new);
         assert!(watcher.watch(1001).is_some());
         backdate_lock(&root, Duration::from_secs(60));
         assert_eq!(
@@ -659,7 +660,7 @@ mod tests {
     fn fresh_lock_without_process_stays_updating() {
         let root = temp_root("fresh-stay");
         touch_lock(&root);
-        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), || vec![]);
+        let mut watcher = AgentUpdateWatcher::with_process_reader(root.clone(), std::vec::Vec::new);
         assert!(watcher.watch(1001).is_some());
         // Fresh lock, no process, no staging: no interruption, no change.
         assert_eq!(watcher.watch(1001), None);

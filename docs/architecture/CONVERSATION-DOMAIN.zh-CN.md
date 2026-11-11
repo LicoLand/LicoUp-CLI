@@ -6,7 +6,7 @@
 | **架构主文档** | [docs/architecture/README.zh-CN.md](README.zh-CN.md) | 四层顶层客户端架构与总览 |
 | **Rust 基础设施层** | [RUST-INFRASTRUCTURE-LAYER.zh-CN.md](RUST-INFRASTRUCTURE-LAYER.zh-CN.md) | 数据库、动态配置、密钥管理、网络与 PTY 规范 |
 | **智能体适配器** | [AGENT-ADAPTERS-ARCHITECTURE.zh-CN.md](AGENT-ADAPTERS-ARCHITECTURE.zh-CN.md) | 13 驱动分类、标准与私有协议归一化 |
-| **桥接协议规范** | [CLIENT-NATIVE-INTERACTION.md](CLIENT-NATIVE-INTERACTION.md) | 前后端 RPC / FFI 协议格式与帧规范 |
+| **桥接协议规范** | [CLIENT-NATIVE-INTERACTION.md](CLIENT-NATIVE-INTERACTION.md) | 前后端 RPC 协议格式与帧规范 |
 | **产品定义** | [PRODUCT.zh-CN.md](../../PRODUCT.zh-CN.md) | 长期「一个 Conversation」产品目标与理念 |
 
 在 LicoUp 中，**Conversation（智能体对话）被正式确立为一个端到端的垂直业务架构（End-to-End Vertical Architecture Slice）**，而非仅仅局限于 Rust 内部的一个孤立模块。它自上而下纵向贯穿四个水平架构层级，连接用户交互、通信协议、领域状态机、基础设施与底层操作系统。
@@ -48,7 +48,6 @@ flowchart TB
     subgraph TIER2["【第 2 层】Bridging Contract 桥接协议层 (Contract Layer)"]
         direction LR
         RPC_DESK["桌面端 JSON-RPC<br/>(licoup.stdio.v1 方法帧)"]:::box
-        RPC_MOBILE["移动端 C-ABI FFI<br/>(Platform Bridges 命令)"]:::box
         RPC_OBSERVER["双向 Observer 事件流<br/>(实时 Parts · 状态机步进)"]:::box
     end
 
@@ -87,14 +86,12 @@ flowchart TB
         direction LR
         N_PTY["终端设备子系统<br/>(POSIX openpty / Win ConPTY)"]:::box
         N_PROC["操作系统进程与信号<br/>(SIGINT / SIGTERM / SIGKILL)"]:::box
-        N_SEC["系统原生硬件凭据库<br/>(macOS Keychain / WinCred / Keystore / Enclave)"]:::box
+        N_SEC["系统原生硬件凭据库<br/>(macOS Keychain / WinCred / D-Bus Secret Service)"]:::box
     end
 
     %% 层与层之间的连接
     UI_CTRL ==>|"① 下行用户行为"| RPC_DESK
-    UI_CTRL ==>|"① 移动端调用"| RPC_MOBILE
     RPC_DESK ==>|"② 传递 (Principal+Profile+Event)"| D_INGEST
-    RPC_MOBILE ==>|"② 传递 (Principal+Profile+Event)"| D_INGEST
 
     I_PTY ==>|"③ 系统 PTY 挂接"| N_PTY
     I_PTY ==>|"③ 进程监督"| N_PROC
@@ -246,7 +243,6 @@ Conversation 作为一个垂直业务切片，在水平四层中均有明确的�
 ### ② 第 2 层：Bridging Contract 桥接协议层（Contract Layer）
 - **通信通道**：
   - 桌面端：`licoup.stdio.v1` 强类型 JSON-RPC 方法帧；
-  - 移动端：C-ABI 跨语言内存安全 FFI 命令。
 - **数据穿透保证**：
   - 完整透传 `(Principal + Profile + Event)` 强类型数据载荷；
   - 建立双向 Observer 事件流通道，实时回传后端状态机步进、增量文本与终态证据。
@@ -277,7 +273,7 @@ Conversation 作为一个垂直业务切片，在水平四层中均有明确的�
 - **进程监督与信号回收**：
   - 操作系统级信号响应（`SIGINT`, `SIGTERM`, `SIGKILL`）与进程退出状态回收；
 - **平台安全凭据**：
-  - 系统硬件密钥库（Keychain / WinCred / D-Bus Secret / Keystore / Secure Enclave）存取。
+  - 系统硬件密钥库（Keychain / WinCred / D-Bus Secret Service）存取。
 
 ---
 
@@ -293,7 +289,7 @@ Conversation 作为一个垂直业务切片，在水平四层中均有明确的�
 | 架构分层 | 核心职责 | 数据与控制边界原则 |
 |:---|:---|:---|
 | **前端外观与应用层**<br>(Presentation Layer) | 1. 捕获用户键盘、手势与表单输入；<br>2. 前端交互状态防抖与锁（如发送期间锁住输入框、清空草稿）；<br>3. 将用户行为打包为 Dart 强类型请求；<br>4. 监听后端 Observer 事件流并响应式更新过程黑板与气泡；<br>5. 渲染安全摘要与一次性交互审批卡片。 | **状态镜像原则**：作为后端状态机的呈现镜像，完全基于后端推流的规范证据更新 UI；不持有本地 SQLite 副本，不自行推导或伪造生命周期事实。 |
-| **桥接协议层**<br>(Contract Layer) | 1. 结构化 JSON-RPC 方法帧双向编码与解码；<br>2. 跨进程（stdio）与跨语言（FFI）边界内存安全传递；<br>3. 方法调用超时与通道断开的类型化错误保护。 | **无状态通道原则**：作为纯净的数据传输通道，透传类型化请求与事件流，不承载有状态业务逻辑。 |
+| **桥接协议层**<br>(Contract Layer) | 1. 结构化 JSON-RPC 方法帧双向编码与解码；<br>2. 跨进程（stdio）边界内存安全传递；<br>3. 方法调用超时与通道断开的类型化错误保护。 | **无状态通道原则**：作为纯净的数据传输通道，透传类型化请求与事件流，不承载有状态业务逻辑。 |
 | **Rust 领域与基础设施层**<br>(Functional Core & Infra) | 1. 规范 Conversation 事实的独占持久化权威（SQLite/WAL 唯一读写方）；<br>2. 独占调度门准入权（解析 `@mention`、群策略与 Membership）；<br>3. 独占生命周期裁决权（L1 统一完成谓词与终态仲裁）；<br>4. 独占进程生命周期管理（启动、输入管道、Grace Period 监督、SIGTERM/KILL）；<br>5. 维护交互路由（一次性 Token 挂起与 Fail-Closed 结算）。 | **事实权威原则**：作为规范 Conversation 事实的唯一权威源。服务商管理的历史仍是经授权的外部来源，不能静默合并进该权威；所有向前端暴露的规范事件均具备不可变持久化事实依据，并严格保证 Exact Resume 会话身份一致性。 |
 
 ---
@@ -425,7 +421,7 @@ sequenceDiagram
 
 - **全链路贯穿能力**：
   - **前端**：具备完整的展示、编辑与回显能力（支持头像、显示名、上下文偏好、安全级别）；
-  - **协议层**：作为结构化字段无损穿透 RPC / FFI 边界；
+  - **协议层**：作为结构化字段无损穿透 RPC 边界；
   - **后端**：由 Rust 领域承接层接纳，作为状态机驱动底层 Agent 执行的输入依据。
 
 ---

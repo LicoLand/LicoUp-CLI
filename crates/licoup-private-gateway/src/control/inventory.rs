@@ -304,7 +304,7 @@ mod tests {
         // One generated readiness fixture owns the verified document.
         let readiness = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../licoup-native/resources/agent-conversation-readiness.json"
+            "/../licoup/resources/agent-conversation-readiness.json"
         ));
         let mut applied = false;
         for _ in 0..40 {

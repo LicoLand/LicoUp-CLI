@@ -13,6 +13,7 @@ export function parseArguments(argv) {
     binary: "",
     sidecar: "",
     productReceipt: "",
+    releaseApp: "",
     cleanupProductSession: "",
     timeoutMs: Number(process.env.LICO_ACP_PARITY_TIMEOUT_MS || defaultTimeoutMs),
     maxOutputBytes: Number(process.env.LICO_ACP_PARITY_MAX_OUTPUT_BYTES || defaultMaxOutputBytes),
@@ -27,7 +28,7 @@ export function parseArguments(argv) {
       parsed.releaseUi = true;
     } else if (argument === "--print-live-gate") {
       parsed.printLiveGate = true;
-    } else if (["--agent", "--binary", "--sidecar", "--product-receipt", "--cleanup-product-session", "--timeout-ms", "--max-output-bytes"].includes(argument)) {
+    } else if (["--agent", "--binary", "--sidecar", "--product-receipt", "--release-app", "--cleanup-product-session", "--timeout-ms", "--max-output-bytes"].includes(argument)) {
       const value = argv[index + 1];
       requireFact(typeof value === "string" && value.length > 0, "cli_argument_missing");
       index += 1;
@@ -35,6 +36,7 @@ export function parseArguments(argv) {
       if (argument === "--binary") parsed.binary = value;
       if (argument === "--sidecar") parsed.sidecar = value;
       if (argument === "--product-receipt") parsed.productReceipt = resolve(value);
+      if (argument === "--release-app") parsed.releaseApp = resolve(value);
       if (argument === "--cleanup-product-session") parsed.cleanupProductSession = resolve(value);
       if (argument === "--timeout-ms") parsed.timeoutMs = Number(value);
       if (argument === "--max-output-bytes") parsed.maxOutputBytes = Number(value);
@@ -52,6 +54,7 @@ export function parseArguments(argv) {
   if (parsed.releaseUi) {
     requireFact(parsed.strict, "release_ui_requires_strict");
     requireFact(parsed.productReceipt.length > 0, "release_ui_product_receipt_required");
+    requireFact(parsed.releaseApp.length > 0, "release_ui_release_app_required");
   }
   if (!parsed.selfTest && !parsed.printLiveGate) {
     requireFact(parsed.agent.length > 0, "agent_required");

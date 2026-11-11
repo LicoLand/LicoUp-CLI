@@ -2,7 +2,7 @@
 //!
 //! The pinned SDK owns the protocol: it commits one delivery unit together with
 //! the protocol snapshot and hands that same unit back when it is re-driven or
-//! settled. `licoup_endpoint_core` declares the caller-owned port that carries
+//! settled. `licoarc_client::ports` declares the caller-owned port that carries
 //! those units ([`AtomicState`]), and this module is the endpoint collaboration
 //! package's implementation of it.
 //!
@@ -25,7 +25,7 @@
 //! [`AtomicState::Pending`] stay generic, so no second dialect of protocol state is
 //! created here and nothing has to be rebuilt on the way back into the protocol.
 
-use licoup_endpoint_core::{
+use licoarc_client::ports::{
     AtomicState, CustodyLifecycle, CustodyPurpose, KeyMutation, PortFailure, Revision, StateCommit,
     TransportOutcome, Versioned,
 };
@@ -188,7 +188,7 @@ fn validate_key_mutations(mutations: &[KeyMutation]) -> Result<(), PortFailure> 
 #[cfg(test)]
 mod tests {
     use super::{DurableDeliveryStore, may_settle};
-    use licoup_endpoint_core::{
+    use licoarc_client::ports::{
         AtomicState, CustodyHandle, CustodyLifecycle, CustodyPurpose, KeyMutation, PortFailure,
         Revision, StateCommit, TransportOutcome,
     };
@@ -381,14 +381,14 @@ mod tests {
     #[test]
     fn the_revision_bound_is_refused_before_anything_is_applied() {
         let mut store = DurableDeliveryStore::restored(
-            Revision::from_value(licoup_endpoint_core::MAX_SAFE_INTEGER),
+            Revision::from_value(licoarc_client::ports::MAX_SAFE_INTEGER),
             "snapshot",
             vec![Unit(1)],
         );
 
         assert_eq!(
             store.compare_and_swap(
-                Revision::from_value(licoup_endpoint_core::MAX_SAFE_INTEGER),
+                Revision::from_value(licoarc_client::ports::MAX_SAFE_INTEGER),
                 commit(vec![Unit(2)])
             ),
             Err(PortFailure::BoundExceeded)

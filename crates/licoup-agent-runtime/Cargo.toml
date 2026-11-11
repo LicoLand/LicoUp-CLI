@@ -3,10 +3,9 @@ name = "licoup-agent-runtime"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-repository.workspace = true
 license.workspace = true
-publish = false
-
+repository.workspace = true
+description = "Host-neutral LicoUp Agent runtime boundary: provider identity, capability evidence, session bindings and driver contracts."
 [dependencies]
 # The host-neutral runtime contracts — provider identity, the evidence and
 # readiness reducers, the dispatch vocabulary, the runtime ports and the

@@ -123,8 +123,8 @@ fn explicit_nested_default_model(value: &Value, depth: usize) -> Option<String> 
     }
     match value {
         Value::Object(object) => {
-            if depth > 0 {
-                if let Some(name) = model_name_for_normalized_keys(
+            if depth > 0
+                && let Some(name) = model_name_for_normalized_keys(
                     object,
                     &[
                         "defaultmodel",
@@ -139,9 +139,9 @@ fn explicit_nested_default_model(value: &Value, depth: usize) -> Option<String> 
                         "geminimodel",
                         "kimimodel",
                     ],
-                ) {
-                    return Some(name);
-                }
+                )
+            {
+                return Some(name);
             }
             for (key, child) in object {
                 if nested_default_branch_is_scoped(&normalize_model_catalog_key(key)) {
@@ -182,10 +182,11 @@ fn flagged_default_model(value: &Value, depth: usize, model_context: bool) -> Op
                     normalize_model_catalog_key(key) == *wanted && child.as_bool() == Some(true)
                 })
             });
-            if flagged && model_context {
-                if let Some(name) = model_name_from_object(object) {
-                    return Some(name);
-                }
+            if flagged
+                && model_context
+                && let Some(name) = model_name_from_object(object)
+            {
+                return Some(name);
             }
             for (key, child) in object {
                 let normalized_key = normalize_model_catalog_key(key);
@@ -290,10 +291,10 @@ pub(super) fn model_names_from_value(value: &Value, include_object_keys: bool) -
     match value {
         Value::String(value) => {
             let trimmed = value.trim();
-            if trimmed.starts_with('{') || trimmed.starts_with('[') {
-                if let Ok(parsed) = serde_json::from_str::<Value>(trimmed) {
-                    return model_names_from_value(&parsed, include_object_keys);
-                }
+            if (trimmed.starts_with('{') || trimmed.starts_with('['))
+                && let Ok(parsed) = serde_json::from_str::<Value>(trimmed)
+            {
+                return model_names_from_value(&parsed, include_object_keys);
             }
             sanitize_model_name(value).into_iter().collect()
         }

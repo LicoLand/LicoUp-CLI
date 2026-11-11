@@ -283,7 +283,7 @@ fn scan_target_with_manual_projection(
 
 // A caller may ask a scan to ignore every automatic host source and answer from
 // the process snapshot alone. It is a test seam, and `cfg(test)` is false for a
-// dependency: while this tree lived inside `licoup-native` the attribute was
+// dependency: while this tree lived inside `licoup` the attribute was
 // true, and once it moved out the seam silently stopped working and the fixture
 // began discovering the developer's real machine. It travels as an explicit
 // feature, which is `licoup-foundation`'s pattern, and native's test build
@@ -382,9 +382,11 @@ fn project_virtual_machine_target(
     if runtime_ready {
         capabilities.conversation_blocker = None;
     }
-    let supported_actions = runtime_ready
-        .then(|| vec!["runtime.message.send".to_string()])
-        .unwrap_or_default();
+    let supported_actions = if runtime_ready {
+        vec!["runtime.message.send".to_string()]
+    } else {
+        Default::default()
+    };
     TargetCandidate {
         id: Some(def.id.to_string()),
         target: def.id.to_string(),

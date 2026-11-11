@@ -4,12 +4,12 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Portable private client-state collections, snapshots and activity log"
-
 [dependencies]
 # The private-file access and portable data root every activity and snapshot
 # write stands on.
-licoup-foundation = { path = "../licoup-foundation", version = "0.3.0" }
+licoup-foundation.workspace = true
 # The published collection document store: bounded, atomically written JSON
 # under the portable client-state directory.
 collection-store.workspace = true
@@ -28,4 +28,4 @@ nix = { version = "0.27", default-features = false, features = ["fs", "user", "s
 [dev-dependencies]
 # The collection tests exercise the exact metadata-to-open window in the
 # foundation reader; that observation point exists only behind its test feature.
-licoup-foundation = { path = "../licoup-foundation", features = ["test-support"] }
+licoup-foundation = { workspace = true, features = ["test-support"] }

@@ -126,7 +126,7 @@ fn the_committed_package_serves_the_capability_the_host_leaves_optional() {
     assert_eq!(manifest.display_name, "Copilot adapter");
     assert_eq!(manifest.host_protocol.major, 1);
     assert_eq!(
-        serde_json::to_value(&manifest.activation).expect("the activation mode serializes"),
+        serde_json::to_value(manifest.activation).expect("the activation mode serializes"),
         Value::String("on-demand".to_owned()),
         "the adapter starts when a conversation needs it"
     );

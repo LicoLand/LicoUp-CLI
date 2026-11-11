@@ -33,7 +33,7 @@
 //! its driver execution and its frame parser arrive through the ports declared
 //! in [`port`], in [`acp_driver_runtime::parser_port`] and in
 //! `licoup-agent-adapter-sdk::port`; the composition above this crate supplies
-//! them — `licoup-native` while the Agent crates do not exist,
+//! them — `licoup` while the Agent crates do not exist,
 //! `licoup-agent-<agent>` once they do — and the host's own lane reach arrives
 //! the same way. The ACP dialogs this crate does hold are shared: the ACP
 //! profile Copilot, OpenCode and Kilo Code all speak and the persistent ACP

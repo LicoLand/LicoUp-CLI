@@ -2,9 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, lstatSync } from "node:fs";
 import path from "node:path";
 import {
-  ANDROID_NATIVE_CARGO_TARGET,
   FORBIDDEN_TARGET_SEGMENTS,
-  FLUTTER_TEST_TARGET,
   NATIVE_CARGO_TEST_TARGET,
   REGISTRY_PATH,
   ROOT_CARGO_TARGET,
@@ -26,10 +24,7 @@ export function normalizeTestArtifactTarget(repoRoot, targetPath) {
   const normalized = relative.split(path.sep).join("/");
   const managedCompilerOutput = normalized === ROOT_CARGO_TARGET ||
     normalized === NATIVE_CARGO_TEST_TARGET ||
-    normalized === ANDROID_NATIVE_CARGO_TARGET ||
-    /^build\/crates\/[^/]+\/(?:target|[a-z0-9._-]+-target)$/u.test(normalized) ||
-    normalized === FLUTTER_TEST_TARGET ||
-    normalized.startsWith(`${FLUTTER_TEST_TARGET}/`);
+    /^build\/crates\/[^/]+\/(?:target|[a-z0-9._-]+-target)$/u.test(normalized);
   if (!managedCompilerOutput || normalized === REGISTRY_PATH ||
       normalized.startsWith(`${REGISTRY_PATH}/`)) {
     throw new Error("test artifact target must be a managed build output");

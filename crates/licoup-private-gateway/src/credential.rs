@@ -88,7 +88,9 @@ impl CredentialKind for LlmApiKeyProvider {
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(try_from = "u16", into = "u16")]
+#[derive(Default)]
 pub enum GatewayCredentialLeaseDays {
+    #[default]
     Seven,
     Thirty,
     Sixty,
@@ -111,12 +113,6 @@ impl GatewayCredentialLeaseDays {
 
     pub fn duration(self) -> Duration {
         Duration::from_secs(u64::from(self.days()) * 24 * 60 * 60)
-    }
-}
-
-impl Default for GatewayCredentialLeaseDays {
-    fn default() -> Self {
-        Self::Seven
     }
 }
 

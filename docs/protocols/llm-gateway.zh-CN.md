@@ -4,7 +4,7 @@
 
 LLM Gateway 是 Gateway Runtime 的**下层**。本层权威实现位于
 `crates/licoup-private-gateway/src/model/llm_gateway.rs`、
-`crates/licoup-private-gateway/src/http/transport.rs`，以及统一进程 `lico-gateway`
+`crates/licoup-private-gateway/src/http/transport.rs`，以及统一进程 `licoup gateway run`
 （`crates/licoup-private-gateway/src/runtime`）。下层只监听回环地址，并按
 “客户端协议 + 请求模型”精确路由，不使用全局当前供应商。消息 channel 见
 [`gateway-runtime.zh-CN.md`](gateway-runtime.zh-CN.md)。
@@ -18,7 +18,7 @@ LLM Gateway 是 Gateway Runtime 的**下层**。本层权威实现位于
 - Kimi、DeepSeek 与 Kilo API Key 分别存为独立的系统密钥库项目。原生宿主在释放
   密钥内容前要求 macOS 机主授权；清单不返回密钥尾号或内容。
 - 机主授权（Touch ID 可用时必须使用，仅生物识别不可用时允许系统密码）在长驻的
-  `licoup-cli` 进程中解锁密钥。
+  `licoup` 进程中解锁密钥。
   冷启动 Gateway 时，通过继承的文件描述符把已解锁会话交给 sidecar；sidecar
   自身从不读取 Keychain。若托管 Gateway 已在运行，授权与撤销会通过 Gateway
   状态目录下的私有 Unix 控制套接字（权限 0600、同 uid）热加载更新后的租约，
@@ -74,7 +74,7 @@ OpenCode 与 Pi 的自定义厂商配置要求显式模型项，因此其 agent-
 OpenCode/Pi 一键脚本拒绝应用空快照。
 
 配置文件必须是绝对路径、普通文件且不超过 1 MiB。可先用
-`lico-llm-gateway --config <绝对路径> --check` 校验，再启动 sidecar；默认监听
+`licoup gateway run --config <绝对路径> --check` 校验，再启动 sidecar；默认监听
 `127.0.0.1:15722`。非回环 HTTP 端点、重定向、未知厂商、没有厂商命名空间的动态
 模型和未知字段都会关闭失败。
 
@@ -123,9 +123,9 @@ ACL 不匹配或签名身份变化。原 ACL 允许静默访问的旧项目仍�
 - `llm-gateway credentials create --stdin-json true`
 - `llm-gateway credentials delete <credential-id>`
 - `llm-gateway credentials lease <days>`
-- `llm-gateway service status`
-- `llm-gateway service start [--port]`
-- `llm-gateway service stop [--port]`
+- `gateway service status`
+- `gateway service start [--port]`
+- `gateway service stop [--port]`
 - `llm-gateway agent-config plan <codex|claude-code|opencode|pi> <绝对配置根目录>`
 - `llm-gateway agent-config apply <codex|claude-code|opencode|pi> <绝对配置根目录> --confirmation <digest> --confirmed [--stdin-json true]`
 

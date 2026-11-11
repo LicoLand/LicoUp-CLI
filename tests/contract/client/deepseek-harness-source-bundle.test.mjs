@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
 // The kernel's composition, which names this package's driver directly. The
 // host keeps no DeepSeek Harness module of its own.
-const compositionPath = "crates/licoup-native/src/platform/runtime_adapters/drivers.rs";
+const compositionPath = "crates/licoup/src/platform/runtime_adapters/drivers.rs";
 // The wire half, the process half and the session-log reader, all owned by the
 // DeepSeek adapter package since DEEPSEEK-PACKAGE and VENDOR-CODE-REMOVAL moved
 // them out of the kernel. One package carries one Agent's protocol; the client
@@ -53,16 +53,16 @@ test("the client names the package for the protocol and keeps no Harness driver 
   // the Agent through the package and cannot hold a second owner of its
   // protocol.
   assert.equal(
-    await exists("crates/licoup-native/src/platform/deepseek_harness_driver.rs"),
+    await exists("crates/licoup/src/platform/deepseek_harness_driver.rs"),
     false,
     "the host still declares a DeepSeek Harness driver module",
   );
   assert.equal(
-    await exists("crates/licoup-native/src/platform/deepseek_harness_driver"),
+    await exists("crates/licoup/src/platform/deepseek_harness_driver"),
     false,
     "the host still declares a DeepSeek Harness driver tree",
   );
-  const platform = await read("crates/licoup-native/src/platform/mod.rs");
+  const platform = await read("crates/licoup/src/platform/mod.rs");
   assert.doesNotMatch(platform, /mod deepseek_harness_driver;/u,
     "the host module tree still declares a DeepSeek Harness driver module");
 
@@ -114,7 +114,7 @@ test("the process half runs the vendor's own executable and still declares no fr
   // Nothing in either leaf reaches a client crate, and the one host fact the
   // launch needs crosses the package's own port rather than a client path.
   const joined = Object.values(sources).join("\n");
-  for (const clientPath of ["crate::platform", "licoup_native", "licoup_native::"]) {
+  for (const clientPath of ["crate::platform", "licoup::"]) {
     assert.equal(joined.includes(clientPath), false, clientPath);
   }
   assert.ok(driver.includes("crate::port::launch_environment::apply_to_command"),
@@ -165,7 +165,7 @@ test("the Harness protocol, its session-log reader, and its registration have si
     .split("\n")
     .filter((line) => !line.trimStart().startsWith("//"))
     .join("\n");
-  for (const clientPath of ["crate::platform", "licoup_native", "licoup_native::"]) {
+  for (const clientPath of ["crate::platform", "licoup::"]) {
     assert.equal(joined.includes(clientPath), false, clientPath);
   }
   // No Node worker is started for the session log any more, and no vendor

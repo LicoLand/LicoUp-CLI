@@ -18,184 +18,104 @@ function ownsInput(inputs, file) {
 
 test("layer, FFI, bridge, packaging, and release paths select dedicated modules", () => {
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/domain/mobile_relay/config.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.domain.mobile-relay.configuration"]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-agent-targets/src/domain/targets/binaries.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
     "regression.agent-scan-paths",
-    "architecture.client-boundaries",
     "rust.domain.targets.binaries",
     "rust.domain.targets.platform-integration",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/ffi/android_ffi.rs",
+    "crates/licoup/src/ffi/commands/mcp.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.ffi.android-secret-store-tristate",
-    "bridge.android",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/ffi/commands/mcp.rs",
-  ])), [
-    "regression.rust-format",
-    "regression.rust-clippy",
-    "regression.cli-command-admission-source-bundle",
-    "architecture.client-boundaries",
     "rust.ffi.cli-command-admission",
     "bridge.native-mcp-command",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/platform/mcp_streamable_http.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.platform.mcp-streamable-http"]);
+    "crates/licoup/src/platform/mcp_streamable_http.rs",
+  ])), ["regression.rust-format","regression.rust-clippy","rust.platform.mcp-streamable-http"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/platform/mcp_approval_plan_store.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.platform.mcp-approval-plan-store"]);
+    "crates/licoup/src/platform/mcp_approval_plan_store.rs",
+  ])), ["regression.rust-format","regression.rust-clippy","rust.platform.mcp-approval-plan-store"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/bin/licoup.rs",
+    "crates/licoup/src/bin/licoup.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "rust.ffi.cli-command-admission",
     "rust.bin.licoup",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/bin/licoup/stdio_rpc.rs",
+    "crates/licoup/src/bin/licoup/stdio_rpc.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "rust.bin.licoup.rpc",
     "bridge.native-mcp-rpc-guard",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/bin/licoup/stdio_rpc/request.rs",
+    "crates/licoup/src/bin/licoup/stdio_rpc/request.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "rust.ffi.client-state-contract",
     "rust.ffi.cli-command-admission",
     "rust.bin.licoup.rpc",
     "bridge.native-mcp-rpc-guard",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/bin/licoup/tests/rpc/request.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.bin.licoup.rpc"]);
+    "crates/licoup/src/bin/licoup/tests/rpc/request.rs",
+  ])), ["regression.rust-format","regression.rust-clippy","rust.bin.licoup.rpc"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/bin/licoup/tests/skill_commands.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.bin.licoup.skill-commands"]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/ios/Runner/SecureMeshIosBridge.swift",
-  ])), ["architecture.client-boundaries", "bridge.ios"]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/scripts/build-android-apk.mjs",
-  ])), ["packaging.android"]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "tools/scripts/client-gate-policy.mjs",
-  ])), ["architecture.client-boundaries", "release.contracts"]);
-});
-
-test("Android Secure Mesh leaves select boundary tests and Kotlin compile independently", () => {
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/android/app/src/main/kotlin/land/lico/licoup/MainActivity.kt",
-  ])), [
-    "architecture.client-boundaries",
-    "bridge.android.secure-mesh-boundaries",
-    "bridge.android.kotlin-compile",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/android/app/src/test/kotlin/land/lico/licoup/SecureMeshAndroidBridgeBoundaryTest.kt",
-  ])), [
-    "architecture.client-boundaries",
-    "bridge.android.secure-mesh-boundaries",
-  ]);
-  for (const source of [
-    "SecureMeshAndroidAtomicRecordWriter.kt",
-    "SecureMeshAndroidNativeDispatchQueue.kt",
-  ]) {
-    assert.deepEqual(ids(selectModulesForChangedPaths([
-      `apps/desktop/android/app/src/main/kotlin/land/lico/licoup/${source}`,
-    ])), [
-      "architecture.client-boundaries",
-      "flutter.feature.mobile-relay.scenario.android-bridge",
-    ]);
-  }
-
-  const boundaries = CLIENT_MODULE_CATALOG.find(
-    (module) => module.id === "bridge.android.secure-mesh-boundaries",
-  );
-  const compile = CLIENT_MODULE_CATALOG.find(
-    (module) => module.id === "bridge.android.kotlin-compile",
-  );
-  assert.equal(boundaries.command.args.includes(":app:testDebugUnitTest"), true);
-  for (const className of [
-    "land.lico.licoup.SecureMeshAndroidBridgeBoundaryTest",
-    "land.lico.licoup.SecureMeshAndroidSecretStoreBoundaryTest",
-    "land.lico.licoup.SecureMeshAndroidSecretContractTest",
-  ]) {
-    assert.equal(boundaries.command.args.includes(className), true);
-  }
-  assert.equal(compile.command.args.includes(":app:compileDebugKotlin"), true);
+    "crates/licoup/src/bin/licoup/tests/skill_commands.rs",
+  ])), ["regression.rust-format","regression.rust-clippy","rust.bin.licoup.skill-commands"]);
 });
 
 test("foundation adapters and architecture scripts have explicit changed-path owners", () => {
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/scripts/verify-client-architecture.mjs",
-  ])), [
-    "regression.client-architecture-modules",
-    "regression.client-architecture-ratchet",
-    "architecture.client-boundaries",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-foundation/src/core/acp.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.core.acp.composition"]);
+  ])), ["regression.rust-format","regression.rust-clippy","rust.core.acp.composition"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-foundation/src/core/acp/requests.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.core.acp.requests"]);
+  ])), ["regression.rust-format","regression.rust-clippy","rust.core.acp.requests"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-foundation/src/core/acp/responses.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.core.acp.responses"]);
+  ])), ["regression.rust-format","regression.rust-clippy","rust.core.acp.responses"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-foundation/src/core/acp/codec.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.core.acp.codec"]);
+  ])), ["regression.rust-format","regression.rust-clippy","rust.core.acp.codec"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-foundation/src/core/task_queue.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.core.task-queue"]);
+  ])), ["regression.rust-format","regression.rust-clippy","rust.core.task-queue"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-foundation/src/platform/ansi_stripper.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.platform.ansi-stripper"]);
+  ])), ["regression.rust-format","regression.rust-clippy","rust.platform.ansi-stripper"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-foundation/src/platform/url_security.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.platform.url-security"]);
+  ])), ["regression.rust-format","regression.rust-clippy","rust.platform.url-security"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/core/authorized_secure_record.rs",
+    "crates/licoup/src/core/authorized_secure_record.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.core.secure-mesh.secret-custody-port",
+    "rust.core.secret-store",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/platform/authorized_secure_record/ledger.rs",
+    "crates/licoup/src/platform/authorized_secure_record/ledger.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.platform.secure-mesh-secret-store.authorization",
+    "rust.platform.secret-store.authorization",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/platform/user_presence.rs",
+    "crates/licoup/src/platform/user_presence.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.platform.secure-mesh-secret-store.authorization",
+    "rust.platform.secret-store.authorization",
   ]);
   for (const source of [
     "authority.rs",
@@ -204,31 +124,29 @@ test("foundation adapters and architecture scripts have explicit changed-path ow
     "transaction.rs",
   ]) {
     assert.deepEqual(ids(selectModulesForChangedPaths([
-      `crates/licoup-native/src/domain/collaboration_plugin/${source}`,
+      `crates/licoup/src/domain/collaboration_plugin/${source}`,
     ])), [
       "regression.rust-format",
       "regression.rust-clippy",
-      "architecture.client-boundaries",
       "rust.domain.optional-collaboration",
     ]);
   }
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/domain/collaboration_plugin/workflow/mcp_transaction.rs",
+    "crates/licoup/src/domain/collaboration_plugin/workflow/mcp_transaction.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "rust.domain.optional-collaboration.workflow-operations.apply-mcp",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/core/mcp.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.core.mcp.composition"]);
+    "crates/licoup/src/core/mcp.rs",
+  ])), ["regression.rust-format","regression.rust-clippy","rust.core.mcp.composition"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/core/mcp/wire.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.core.mcp.wire"]);
+    "crates/licoup/src/core/mcp/wire.rs",
+  ])), ["regression.rust-format","regression.rust-clippy","rust.core.mcp.wire"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/core/mcp/transfer.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.core.mcp.transfer"]);
+    "crates/licoup/src/core/mcp/transfer.rs",
+  ])), ["regression.rust-format","regression.rust-clippy","rust.core.mcp.transfer"]);
   for (const source of [
     "crates/licoup-foundation/src/core/safe_archive.rs",
     "crates/licoup-foundation/src/core/safe_archive/zip_structure.rs",
@@ -236,7 +154,6 @@ test("foundation adapters and architecture scripts have explicit changed-path ow
     assert.deepEqual(ids(selectModulesForChangedPaths([source])), [
       "regression.rust-format",
       "regression.rust-clippy",
-      "architecture.client-boundaries",
       "rust.domain.adaptive-flywheel",
       "rust.domain.optional-collaboration",
       "rust.core.safe-archive",
@@ -250,23 +167,21 @@ test("foundation adapters and architecture scripts have explicit changed-path ow
     "regression.rust-format",
     "regression.rust-clippy",
     "regression.agent-scan-paths",
-    "architecture.client-boundaries",
     "rust.domain.targets.scan-paths",
     "rust.domain.targets.platform-paths",
     "rust.platform.paths",
     "rust.platform",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/platform/extension_packages/artifact.rs",
+    "crates/licoup/src/platform/extension_packages/artifact.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "rust.platform.extension-packages",
     "rust.platform.extension-packages.artifact",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/tests/package_lifecycle/main.rs",
+    "crates/licoup/tests/package_lifecycle/main.rs",
   ])), ["regression.rust-format","regression.rust-clippy","rust.platform.extension-packages"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "tests/integration/package_lifecycle/verify_component_lifecycle.py",
@@ -277,168 +192,11 @@ test("foundation adapters and architecture scripts have explicit changed-path ow
     [
       "test",
       "--manifest-path",
-      "crates/licoup-native/Cargo.toml",
+      "crates/licoup/Cargo.toml",
       "--test",
       "package_lifecycle",
     ],
   );
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/core/secure_mesh_pairwise.rs",
-  ])), [
-    "regression.rust-format",
-    "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.core.secure-mesh.pairwise-codec",
-    "rust.core.secure-mesh.pairwise-key-ratchet.core",
-    "rust.core.secure-mesh.pairwise-manager-fanout",
-    "rust.core.secure-mesh.pairwise-persistence",
-    "rust.core.secure-mesh.pairwise-runtime-self-test",
-    "rust.core.secure-mesh.pairwise-session-negotiation.handshake-machine",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/core/secure_mesh_pairwise/codec.rs",
-  ])), [
-    "regression.rust-format",
-    "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.core.secure-mesh.pairwise-codec",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-protocol-bindings/src/licoarc_relay.rs",
-  ])), [
-    "regression.rust-format",
-    "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.core.protocol-bindings",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-protocol-bindings/src/licoarc_relay/mailbox/schedule.rs",
-  ])), [
-    "regression.rust-format",
-    "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.core.protocol-bindings",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-protocol-bindings/src/licoarc_relay/private_header.rs",
-  ])), [
-    "regression.rust-format",
-    "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.core.protocol-bindings",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/core/secure_mesh_command.rs",
-  ])), [
-    "regression.rust-format",
-    "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.core.secure-mesh.command",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/core/secure_mesh_command/schema.rs",
-  ])), [
-    "regression.rust-format",
-    "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.core.secure-mesh.command.schema",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "crates/licoup-native/src/core/secure_mesh_directory/authority.rs",
-  ])), [
-    "regression.rust-format",
-    "regression.rust-clippy",
-    "architecture.client-boundaries",
-    "rust.core.secure-mesh.directory",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/test/skill_hub_controller_test.dart",
-  ])), ["flutter.feature.skill-hub"]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/test/target_controller_test.dart",
-  ])), ["flutter.feature.targets"]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/test/client_navigation_controller_test.dart",
-  ])), ["flutter.layer.shell"]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/test/native_cli_runtime_context_test.dart",
-  ])), ["bridge.flutter-native-client"]);
-  for (const source of [
-    "native_conversation_command_policy.dart",
-    "native_conversation_port.dart",
-  ]) {
-    assert.deepEqual(ids(selectModulesForChangedPaths([
-      `apps/desktop/lib/src/platform/native_client/${source}`,
-    ])), [
-      "architecture.client-boundaries",
-      "bridge.flutter-native-client.stdio-transport",
-      "regression.native-stdio-rpc-source-bundle",
-    ]);
-  }
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/lib/src/platform/native_client/agent_service_stdio_rpc/client.dart",
-  ])), [
-    "architecture.client-boundaries",
-    "bridge.flutter-native-client.stdio-transport",
-    "bridge.flutter-native-client.stdio-integration",
-    "regression.native-stdio-rpc-source-bundle",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/lib/src/platform/native_client/agent_service_stdio_rpc/protocol.dart",
-  ])), [
-    "architecture.client-boundaries",
-    "bridge.flutter-native-client.stdio-codec",
-    "bridge.flutter-native-client.stdio-integration",
-    "regression.native-stdio-rpc-source-bundle",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/test/native_stdio_rpc_protocol_test.dart",
-  ])), [
-    "bridge.flutter-native-client.stdio-codec",
-    "regression.native-stdio-rpc-source-bundle",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/test/native_stdio_rpc_client_test.dart",
-  ])), [
-    "bridge.flutter-native-client.stdio-transport",
-    "bridge.flutter-native-client.stdio-integration",
-    "regression.native-stdio-rpc-source-bundle",
-  ]);
-  const stdioCodec = CLIENT_MODULE_CATALOG.find((module) =>
-    module.id === "bridge.flutter-native-client.stdio-codec");
-  const stdioTransport = CLIENT_MODULE_CATALOG.find((module) =>
-    module.id === "bridge.flutter-native-client.stdio-transport");
-  const stdioIntegration = CLIENT_MODULE_CATALOG.find((module) =>
-    module.id === "bridge.flutter-native-client.stdio-integration");
-  const stdioSourceBundle = CLIENT_MODULE_CATALOG.find((module) =>
-    module.id === "regression.native-stdio-rpc-source-bundle");
-  assert.deepEqual(stdioCodec.command.args.slice(-2), [
-    "test/native_stdio_rpc_line_framer_test.dart",
-    "test/native_stdio_rpc_protocol_test.dart",
-  ]);
-  assert.deepEqual(stdioTransport.command.args.slice(-10), [
-    "test/stdio_rpc_method_policy_test.dart",
-    "test/native_stdio_rpc_client_test.dart",
-    "test/native_stdio_rpc_read_pool_test.dart",
-    "test/native_stdio_rpc_decoding_test.dart",
-    "test/native_stdio_rpc_operation_pending_queue_test.dart",
-    "test/conversation_execution_transport_test.dart",
-    "test/native_conversation_port_test.dart",
-    "test/stdio_rpc_operation_queue_test.dart",
-    "test/stdio_transport/transport_control_priority_test.dart",
-    "test/stdio_transport/transport_decode_lane_test.dart",
-  ]);
-  assert.deepEqual(stdioIntegration.command.args.slice(-2), ["--name", "RPC"]);
-  assert.deepEqual(stdioSourceBundle.command.args, [
-    "--test",
-    "tests/contract/client/native-stdio-rpc-source-bundle.test.mjs",
-  ]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "apps/desktop/test/directory_path_controller_test.dart",
-  ])), ["flutter.feature.settings"]);
-  assert.deepEqual(ids(selectModulesForChangedPaths([
-    "tools/scripts/client-module-regression.mjs",
-  ])), ["regression.infrastructure", "architecture.client-boundaries"]);
 });
 
 test("Cursor and OpenAgent leaves retain exact tests and complete source ownership", async () => {
@@ -451,8 +209,7 @@ test("Cursor and OpenAgent leaves retain exact tests and complete source ownersh
       "domain::conversation::history::cursor_openagent::tests::cursor::"],
     ["rust.domain.agent-conversations.parser-cursor-openagent.cursor-projection",
       "domain::conversation::history::cursor_openagent::tests::cursor_projection::"],
-    ["rust.domain.agent-conversations.parser-cursor-openagent.openagent",
-      "domain::conversation::history::cursor_openagent::tests::openagent::"],
+
     ["rust.domain.agent-conversations.parser-cursor-openagent.fallback",
       "domain::conversation::history::cursor_openagent::tests::fallback::"],
     ["rust.domain.agent-conversations.parser-cursor-openagent.integration",
@@ -475,11 +232,11 @@ test("Cursor and OpenAgent leaves retain exact tests and complete source ownersh
     ...sourceCheck.inputs,
   ]);
   const splitSources = await sourceFiles(
-    "crates/licoup-native/src/domain/conversation/history/cursor_openagent",
+    "crates/licoup/src/domain/conversation/history/cursor_openagent",
     ".rs",
   );
   for (const relativePath of [
-    "crates/licoup-native/src/domain/conversation/history/cursor_openagent.rs",
+    "crates/licoup/src/domain/conversation/history/cursor_openagent.rs",
     ...splitSources,
   ]) {
     assert.equal(ownsInput(ownedInputs, relativePath), true,
@@ -543,16 +300,15 @@ test("neutral ACP runtime and session transport retain bounded ownership", async
   }
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-agent-drivers/src/acp_driver_runtime/session_plan.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.platform.acp-runtime.continuity"]);
+  ])), ["regression.rust-format","regression.rust-clippy","rust.platform.acp-runtime.continuity"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-agent-drivers/src/acp_driver_runtime/params.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.platform.acp-runtime.params"]);
+  ])), ["regression.rust-format","regression.rust-clippy","rust.platform.acp-runtime.params"]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-agent-copilot/src/dialect.rs",
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "rust.core.agent-copilot-package",
     "rust.platform.acp-runtime.events",
     "rust.platform.acp-runtime.interaction",
@@ -563,7 +319,6 @@ test("neutral ACP runtime and session transport retain bounded ownership", async
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "rust.platform.acp-runtime.stdio-transport",
   ]);
   assert.deepEqual(ids(selectModulesForChangedPaths([
@@ -571,7 +326,6 @@ test("neutral ACP runtime and session transport retain bounded ownership", async
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "rust.platform.acp-session-transport.collaboration-mcp",
   ]);
   assert.equal(CLIENT_MODULE_CATALOG.find((candidate) =>
@@ -634,7 +388,7 @@ test("Kilo Code adapter leaves retain exact tests and complete source ownership"
   }
   assert.deepEqual(ids(selectModulesForChangedPaths([
     "crates/licoup-agent-kilo/src/port/serve.rs",
-  ])), ["regression.rust-format","regression.rust-clippy","architecture.client-boundaries","rust.platform.kilo-code-driver.transport","rust.core.agent-kilo-package"]);
+  ])), ["regression.rust-format","regression.rust-clippy","rust.platform.kilo-code-driver.transport","rust.core.agent-kilo-package"]);
 });
 
 test("runtime adapter modules retain leaf-owned inputs and exact command filters", () => {
@@ -654,7 +408,7 @@ test("runtime adapter modules retain leaf-owned inputs and exact command filters
     const module = CLIENT_MODULE_CATALOG.find((candidate) => candidate.id === id);
     assert.equal(module.command.args.at(-1), filter);
     assert.equal(module.inputs.includes(
-      "crates/licoup-native/src/platform/runtime_adapters.rs"), false);
+      "crates/licoup/src/platform/runtime_adapters.rs"), false);
   }
 });
 
@@ -683,7 +437,7 @@ test("Codex app-server leaves retain exact narrow regression ownership", async (
       source,
     ])), [
       "regression.rust-format", "regression.rust-clippy", sourceBundleId,
-      "architecture.client-boundaries", "rust.core.agent-codex-package", moduleId,
+      "rust.core.agent-codex-package", moduleId,
     ]);
   }
 
@@ -905,7 +659,7 @@ test("client state leaves retain exact tests and complete source ownership", asy
     assert.equal(module.command.args.at(-1), filter);
     if (!id.endsWith(".composition")) {
       assert.equal(module.inputs.includes(
-        "crates/licoup-native/src/platform/client_state.rs"), false);
+        "crates/licoup/src/platform/client_state.rs"), false);
     }
   }
   const sourceCheck = CLIENT_MODULE_CATALOG.find((candidate) =>
@@ -917,9 +671,9 @@ test("client state leaves retain exact tests and complete source ownership", asy
     ...sourceCheck.inputs,
   ]);
   const splitSources = await sourceFiles(
-    "crates/licoup-native/src/platform/client_state", ".rs");
+    "crates/licoup/src/platform/client_state", ".rs");
   for (const relativePath of [
-    "crates/licoup-native/src/platform/client_state.rs",
+    "crates/licoup/src/platform/client_state.rs",
     ...splitSources,
   ]) {
     assert.equal(ownsInput(ownedInputs, relativePath), true,
@@ -947,9 +701,9 @@ test("OpenCode serve leaves retain exact tests and complete source ownership", a
     ...sourceCheck.inputs,
   ]);
   const splitSources = await sourceFiles(
-    "crates/licoup-native/src/platform/opencode_serve", ".rs");
+    "crates/licoup/src/platform/opencode_serve", ".rs");
   for (const relativePath of [
-    "crates/licoup-native/src/platform/opencode_serve.rs",
+    "crates/licoup/src/platform/opencode_serve.rs",
     ...splitSources,
   ]) {
     assert.equal(ownsInput(ownedInputs, relativePath), true,
@@ -977,9 +731,9 @@ test("Kilo Code serve leaves retain exact tests and complete source ownership", 
     ...sourceCheck.inputs,
   ]);
   const splitSources = await sourceFiles(
-    "crates/licoup-native/src/platform/kilo_code_host", ".rs");
+    "crates/licoup/src/platform/kilo_code_host", ".rs");
   for (const relativePath of [
-    "crates/licoup-native/src/platform/kilo_code_host.rs",
+    "crates/licoup/src/platform/kilo_code_host.rs",
     ...splitSources,
   ]) {
     assert.equal(ownsInput(ownedInputs, relativePath), true,
@@ -1011,9 +765,9 @@ test("OpenClaw Gateway leaves retain exact tests and complete source ownership",
     ...sourceCheck.inputs,
   ]);
   const splitSources = await sourceFiles(
-    "crates/licoup-native/src/platform/openclaw_gateway", ".rs");
+    "crates/licoup/src/platform/openclaw_gateway", ".rs");
   for (const relativePath of [
-    "crates/licoup-native/src/platform/openclaw_gateway.rs",
+    "crates/licoup/src/platform/openclaw_gateway.rs",
     ...splitSources,
   ]) {
     assert.equal(ownsInput(ownedInputs, relativePath), true,
@@ -1140,7 +894,6 @@ test("OpenClaw driver leaves retain exact tests and complete source ownership", 
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "regression.openclaw-driver-source-bundle",
     "rust.platform.openclaw-driver.params",
     "rust.core.agent-openclaw-package",
@@ -1150,7 +903,6 @@ test("OpenClaw driver leaves retain exact tests and complete source ownership", 
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "regression.openclaw-driver-source-bundle",
     "rust.platform.openclaw-driver.continuity",
     "rust.core.agent-openclaw-package",
@@ -1293,7 +1045,6 @@ test("OpenCode driver leaves retain exact tests and complete source ownership", 
   ])), [
     "regression.rust-format",
     "regression.rust-clippy",
-    "architecture.client-boundaries",
     "rust.platform.opencode-driver.serve-transport",
     "rust.core.agent-opencode-package",
     "regression.adapter-package-contracts",
@@ -1370,14 +1121,14 @@ test("native CLI modules retain exact binary-scoped command filters", () => {
     assert.deepEqual(module.command.args, [
       "test",
       "-p",
-      "licoup-native",
+      "licoup",
       "--bin",
-      "licoup-cli",
+      "licoup",
       ...filter,
     ]);
     if (id !== "rust.bin.licoup") {
       assert.equal(module.inputs.includes(
-        "crates/licoup-native/src/bin/licoup.rs"), false);
+        "crates/licoup/src/bin/licoup.rs"), false);
     }
   }
 });

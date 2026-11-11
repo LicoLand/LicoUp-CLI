@@ -47,7 +47,7 @@ pub fn set_portable_data_dir_override(path: Option<PathBuf>) -> Option<PathBuf> 
 /// The desktop owns the custody helper, while independently supervised
 /// sidecars remain in the outer app's executable directory.
 pub fn desktop_bundle_for_cli(executable: &Path) -> Option<&Path> {
-    if !executable.ends_with("Contents/Helpers/LicoUpCustody.app/Contents/MacOS/licoup-cli") {
+    if !executable.ends_with("Contents/Helpers/LicoUpCustody.app/Contents/MacOS/licoup") {
         return None;
     }
     executable.ancestors().nth(6).filter(|bundle| {
@@ -151,10 +151,10 @@ fn absolutize_data_home_selection(
     mut selection: DataHomeSelection,
     current_dir: Option<&Path>,
 ) -> DataHomeSelection {
-    if selection.path.is_relative() {
-        if let Some(current_dir) = current_dir {
-            selection.path = current_dir.join(selection.path);
-        }
+    if selection.path.is_relative()
+        && let Some(current_dir) = current_dir
+    {
+        selection.path = current_dir.join(selection.path);
     }
     selection.path = normalize_path(&selection.path);
     selection
@@ -312,9 +312,7 @@ pub fn portable_data_dir_override_path() -> Option<PathBuf> {
 }
 
 fn portable_data_dir_from_value(value: Option<String>) -> Option<PathBuf> {
-    let Some(value) = value else {
-        return None;
-    };
+    let value = value?;
     let trimmed = value.trim();
     if trimmed.is_empty()
         || trimmed.starts_with('$')
@@ -410,27 +408,25 @@ mod tests {
     #[test]
     fn custody_helper_resolves_outer_app_and_sidecars() {
         let bundle = Path::new("fixture/Custom Client.app");
-        let cli = bundle.join("Contents/Helpers/LicoUpCustody.app/Contents/MacOS/licoup-cli");
+        let cli = bundle.join("Contents/Helpers/LicoUpCustody.app/Contents/MacOS/licoup");
         assert_eq!(desktop_bundle_for_cli(&cli), Some(bundle));
         assert_eq!(
             packaged_binary_directory(&cli),
             Some(bundle.join("Contents/MacOS"))
         );
         assert_eq!(
-            desktop_bundle_for_cli(&bundle.join("Contents/MacOS/licoup-cli")),
+            desktop_bundle_for_cli(&bundle.join("Contents/MacOS/licoup")),
             None
         );
         assert_eq!(
-            desktop_bundle_for_cli(Path::new(
-                "fixture/LicoUpCustody.app/Contents/MacOS/licoup-cli"
-            )),
+            desktop_bundle_for_cli(Path::new("fixture/LicoUpCustody.app/Contents/MacOS/licoup")),
             None
         );
     }
 
     #[test]
     fn standalone_cli_keeps_its_packaged_siblings() {
-        let cli = Path::new("fixture/bin/licoup-cli");
+        let cli = Path::new("fixture/bin/licoup");
         assert_eq!(desktop_bundle_for_cli(cli), None);
         assert_eq!(
             packaged_binary_directory(cli),

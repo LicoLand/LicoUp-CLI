@@ -6,7 +6,7 @@ const migrationPaths = [
   "/Users/maintainer/private/state.db",
 ];
 const sourcePaths = new Set([
-  "crates/licoup-migrate/src/archive.rs",
+  "crates/licoup/src/migrate/archive.rs",
   "tools/scripts/lib/privacy-test-fixtures.mjs",
 ]);
 

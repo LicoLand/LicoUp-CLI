@@ -68,8 +68,7 @@ pub fn parse_created_session(output: &str) -> Result<String, CreatedSessionFailu
 
 pub fn safe_session_id(session_id: &str) -> bool {
     let len = session_id.len();
-    len >= MIN_SESSION_ID_LEN
-        && len <= MAX_SESSION_ID_LEN
+    (MIN_SESSION_ID_LEN..=MAX_SESSION_ID_LEN).contains(&len)
         && session_id
             .chars()
             .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '_' | '-'))
@@ -100,6 +99,8 @@ pub struct CursorParser {
     observed_tool_error_ids: BTreeSet<String>,
 }
 
+// One effect is produced per frame and consumed at once, never collected.
+#[allow(clippy::large_enum_variant)]
 pub enum CursorEffect {
     Accepted {
         session_id: String,
@@ -262,27 +263,27 @@ impl NativeLineParser for CursorParser {
                 error_code,
             });
         }
-        if is_assistant_frame(&message) {
-            if let Some(text) = assistant_text(&message) {
-                // Current Cursor stream-json marks partial deltas with a
-                // timestamp and then emits one timestamp-free cumulative
-                // assistant snapshot before the result frame. A rewritten
-                // snapshot is not a failed turn: keep the already-emitted
-                // reply so a later result frame can still complete.
-                let form = if message.get("timestamp_ms").is_some() {
-                    TextForm::Delta(&text)
-                } else {
-                    TextForm::Cumulative(&text)
-                };
-                if let Ok(suffix) = self.text.observe("assistant", form)
-                    && !suffix.is_empty()
-                {
-                    effects.push(CursorEffect::Text {
-                        session_id: self.observed_session.clone(),
-                        turn_id: self.turn_id.clone(),
-                        text: suffix,
-                    });
-                }
+        if is_assistant_frame(&message)
+            && let Some(text) = assistant_text(&message)
+        {
+            // Current Cursor stream-json marks partial deltas with a
+            // timestamp and then emits one timestamp-free cumulative
+            // assistant snapshot before the result frame. A rewritten
+            // snapshot is not a failed turn: keep the already-emitted
+            // reply so a later result frame can still complete.
+            let form = if message.get("timestamp_ms").is_some() {
+                TextForm::Delta(&text)
+            } else {
+                TextForm::Cumulative(&text)
+            };
+            if let Ok(suffix) = self.text.observe("assistant", form)
+                && !suffix.is_empty()
+            {
+                effects.push(CursorEffect::Text {
+                    session_id: self.observed_session.clone(),
+                    turn_id: self.turn_id.clone(),
+                    text: suffix,
+                });
             }
         }
         if let Some(result) = terminal {

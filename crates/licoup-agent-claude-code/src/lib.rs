@@ -11,7 +11,7 @@
 //!
 //! # The boundaries this crate keeps
 //!
-//! - **No composition crate.** Nothing here reaches into `licoup-native` or any
+//! - **No composition crate.** Nothing here reaches into `licoup` or any
 //!   other crate that composes Agents. What the package needs from its host
 //!   arrives through [`port`], and the host installs it. The process half also
 //!   reads the two shared libraries below the composition that name no Agent —

@@ -4096,8 +4096,7 @@ fn normalize_reserved_group(connection: &Connection) -> StoreResult<()> {
     }
 
     if !automatic.is_empty() {
-        let placeholders = std::iter::repeat("?")
-            .take(automatic.len())
+        let placeholders = std::iter::repeat_n("?", automatic.len())
             .collect::<Vec<_>>()
             .join(",");
         connection.execute(

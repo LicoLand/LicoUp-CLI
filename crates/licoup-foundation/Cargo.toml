@@ -1,12 +1,11 @@
 [package]
 name = "licoup-foundation"
-version = "0.3.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Shared LicoUp foundations: bounded private file I/O, portable data-home paths, secret bytes, safe archive expansion and process supervision."
-
 [features]
 # Test-only zeroize observation probes consumed by the custody test suites.
 test-support = []

@@ -4,7 +4,7 @@ import test from 'node:test';
 
 // Each Agent owns its parser, declaration and replay arm. The host composes
 // all thirteen package registrations through the shared adapter SDK.
-const parserRoot = 'crates/licoup-native/src/platform/native_agent_parser';
+const parserRoot = 'crates/licoup/src/platform/native_agent_parser';
 const compositionRoot = `${parserRoot}/adapters`;
 const sdkRoot = 'crates/licoup-agent-adapter-sdk/src';
 
@@ -241,12 +241,12 @@ test('normalized runtime responses cross the typed final parser boundary', () =>
   assert.doesNotMatch(parserCore, /ReturnedFrames|DecodePolicy|decode_execution/);
 
   const service = readFileSync(
-    'crates/licoup-native/src/domain/client_conversation/service.rs',
+    'crates/licoup/src/domain/client_conversation/service.rs',
     'utf8',
   );
   assert.match(service, /compose_generated_instruction_delivery/);
   const persistentServer = readFileSync(
-    'crates/licoup-native/src/bin/licoup/stdio_rpc/server/conversation.rs',
+    'crates/licoup/src/bin/licoup/stdio_rpc/server/conversation.rs',
     'utf8',
   );
   assert.match(persistentServer, /context\.private_instructions\(\)/);

@@ -8,7 +8,7 @@ Updated: 2026-10-03
 | **Extension contract** | [EXTENSION-PLATFORM.md](EXTENSION-PLATFORM.md) | Profiles, carrier, lifecycle and versions |
 | **Schemas** | [`schemas/extensions/deployment.schema.json`](../../schemas/extensions/deployment.schema.json) | Machine-readable form of the facts below |
 | **Ownership and closure rules** | [`crates/licoup-extension-contracts/src/deployment.rs`](../../crates/licoup-extension-contracts/src/deployment.rs) | The closure algorithm, the ownership table and the refusals |
-| **Package lifecycle** | [`crates/licoup-native/src/platform/extension_packages/`](../../crates/licoup-native/src/platform/extension_packages) | Install, activation admission, uninstall and storage accounting |
+| **Package lifecycle** | [`crates/licoup/src/platform/extension_packages/`](../../crates/licoup/src/platform/extension_packages) | Install, activation admission, uninstall and storage accounting |
 | **Security and data boundaries** | [SECURITY-AND-DATA-BOUNDARY.md](SECURITY-AND-DATA-BOUNDARY.md) | Trust, consent and data handling |
 | **Current evidence** | [STATUS.md](../STATUS.md) | Implemented and verified capability |
 | **Documentation Index** | [docs/README.md](../README.md) | Complete documentation table of contents |

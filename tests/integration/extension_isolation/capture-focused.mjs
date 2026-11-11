@@ -26,7 +26,6 @@ const directories = [
 const individual = [
   "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml",
   "tools/scripts/client-module-regression.mjs",
-  "apps/desktop/scripts/client-architecture/checks/native/crate-core-and-facade-bounds.mjs",
   "tests/contract/client/client-architecture-modules.test.mjs",
 ];
 function snapshot() {

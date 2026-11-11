@@ -19,7 +19,7 @@ const packageFiles = Object.freeze([
 ]);
 // The kernel's composition, which names this package's driver directly. The
 // host keeps no Kimi module of its own.
-const compositionPath = "crates/licoup-native/src/platform/runtime_adapters/drivers.rs";
+const compositionPath = "crates/licoup/src/platform/runtime_adapters/drivers.rs";
 // The shared ACP engine, which names no Agent.
 const enginePath = "crates/licoup-agent-drivers/src/acp_driver_runtime";
 
@@ -89,7 +89,7 @@ test("one package carries the Kimi Code dialect, its parser and its program", ()
   for (const file of ["lib.rs", "dialect.rs", "parser.rs", "driver.rs", "registration.rs",
     "replay.rs", "port/mod.rs", "port/execution.rs", "bin/lico-agent-kimi.rs"]) {
     const source = read(`${sourceRoot}/${file}`);
-    assert.equal(source.includes("licoup_native"), false,
+    assert.equal(source.includes("licoup::"), false,
       `${file} reaches back into the client`);
   }
 });
@@ -125,16 +125,16 @@ test("the client names the package for the protocol and keeps no Kimi driver mod
   // The kernel has no Kimi driver module at all: the host reaches the Agent
   // through the package and cannot hold a second owner of its protocol.
   assert.equal(
-    exists("crates/licoup-native/src/platform/kimi_code_driver.rs"),
+    exists("crates/licoup/src/platform/kimi_code_driver.rs"),
     false,
     "the host still declares a Kimi Code driver module",
   );
   assert.equal(
-    exists("crates/licoup-native/src/platform/kimi_code_driver"),
+    exists("crates/licoup/src/platform/kimi_code_driver"),
     false,
     "the host still declares a Kimi Code driver tree",
   );
-  const platform = read("crates/licoup-native/src/platform/mod.rs");
+  const platform = read("crates/licoup/src/platform/mod.rs");
   assert.doesNotMatch(platform, /mod kimi_code_driver;/u,
     "the host module tree still declares a Kimi Code driver module");
 
@@ -186,10 +186,10 @@ test("the shared ACP engine names no Agent and holds no Kimi branch", () => {
 });
 
 test("the moved parser leaves no copy in the host and the inventory keeps thirteen", () => {
-  assert.equal(exists("crates/licoup-native/src/platform/native_agent_parser/adapters/kimi_code.rs"),
+  assert.equal(exists("crates/licoup/src/platform/native_agent_parser/adapters/kimi_code.rs"),
     false, "the host still carries a copy of the moved Kimi parser");
   const composition = read(
-    "crates/licoup-native/src/platform/native_agent_parser/adapters/mod.rs",
+    "crates/licoup/src/platform/native_agent_parser/adapters/mod.rs",
   );
   // The composition names no Kimi Code parser at all: this host parses none of
   // that Agent's frames, so the package's own dialect registration is what

@@ -95,9 +95,9 @@ fn the_automatic_search_dirs_are_manifest_paths_not_the_process_path() {
         "the packaged Codex entrypoint is one of the automatic search dirs"
     );
     assert!(
-        !dirs.iter().any(
-            |path| path.to_string_lossy().contains("/bin") == false && path.starts_with("/usr")
-        ),
+        !dirs
+            .iter()
+            .any(|path| !path.to_string_lossy().contains("/bin") && path.starts_with("/usr")),
         "no system PATH directory is searched"
     );
 

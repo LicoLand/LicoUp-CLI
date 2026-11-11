@@ -9,12 +9,12 @@ const repoRoot = join(moduleRoot, "../../../../../..");
 function resolveLicoupCli() {
   const candidates = [
     process.env.LICO_CLIENT_PATH,
-    "/Applications/LicoUp.app/Contents/Helpers/LicoUpCustody.app/Contents/MacOS/licoup-cli",
-    join(repoRoot, "build", "crates", "licoup-native", "target", "debug", "licoup-cli"),
-    join(repoRoot, "crates", "licoup-native", "target", "debug", "licoup-cli"),
-    join(repoRoot, "target", "debug", "licoup-cli"),
-    join(repoRoot, "build", "crates", "licoup-native", "target", "release", "licoup-cli"),
-    join(repoRoot, "target", "release", "licoup-cli"),
+    "/Applications/LicoUp.app/Contents/Helpers/LicoUpCustody.app/Contents/MacOS/licoup",
+    join(repoRoot, "build", "crates", "licoup", "target", "debug", "licoup"),
+    join(repoRoot, "crates", "licoup", "target", "debug", "licoup"),
+    join(repoRoot, "target", "debug", "licoup"),
+    join(repoRoot, "build", "crates", "licoup", "target", "release", "licoup"),
+    join(repoRoot, "target", "release", "licoup"),
     join(
       repoRoot,
       "build",
@@ -26,7 +26,7 @@ function resolveLicoupCli() {
       "LicoUp.app",
       "Contents",
       "MacOS",
-      "licoup-cli",
+      "licoup",
     ),
   ].filter(Boolean);
   return candidates.find((path) => existsSync(path)) || "";

@@ -149,15 +149,15 @@ impl CatalogConvergenceEngine {
             if !tracks_key && tracked_partition_count(&state) >= self.max_partitions {
                 continue;
             }
-            if let Some(current) = state.partitions.get(&key) {
-                if is_stale_candidate(
+            if let Some(current) = state.partitions.get(&key)
+                && is_stale_candidate(
                     current,
                     source_revision,
                     audience_revision,
                     &catalog_revision,
-                ) {
-                    continue;
-                }
+                )
+            {
+                continue;
             }
             if let Some(prior) = state.pending.get(&key) {
                 let same_revision = prior.audience_revision == audience_revision

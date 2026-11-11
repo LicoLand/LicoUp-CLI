@@ -153,10 +153,8 @@ pub(super) fn wait_for_catalog_responses(
                 if id == MODEL_LIST_ID {
                     let result = message.get("result").cloned().ok_or(())?;
                     model_list = Some(result);
-                    if rate_limits_received {
-                        if let Some(model_list) = model_list.take() {
-                            return Ok((model_list, reserve_available));
-                        }
+                    if rate_limits_received && let Some(model_list) = model_list.take() {
+                        return Ok((model_list, reserve_available));
                     }
                 }
             }

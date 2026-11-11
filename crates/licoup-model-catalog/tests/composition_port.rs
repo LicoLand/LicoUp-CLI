@@ -108,10 +108,7 @@ fn an_unanswered_process_fails_closed_and_the_installed_answer_is_the_only_one()
             .map(|model| model.id.as_str()),
         Some("openai/gpt-5.6-sol")
     );
-    assert_eq!(
-        report.entries[0].observed.observed_at_unix_ms().is_some(),
-        true
-    );
+    assert!(report.entries[0].observed.observed_at_unix_ms().is_some());
     assert_eq!(
         declared_facts(&registry(), "openai/gpt-5.6-sol", None, None).evidence(),
         SelectionEvidence::DeclaredOnly

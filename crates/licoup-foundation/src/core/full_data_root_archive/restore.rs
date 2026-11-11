@@ -706,10 +706,10 @@ impl<'a> PublicationGuard<'a> {
         if fs::symlink_metadata(path).is_ok() {
             return Ok(());
         }
-        if let Some(parent) = path.parent() {
-            if !parent.as_os_str().is_empty() {
-                self.create_missing_chain(parent)?;
-            }
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            self.create_missing_chain(parent)?;
         }
         fs::create_dir(path).map_err(|_| anyhow!("archive_target_unwritable"))?;
         self.created.insert(path.to_path_buf());
@@ -729,17 +729,17 @@ impl<'a> PublicationGuard<'a> {
             if *directory {
                 directories.insert(path.clone());
             }
-            if let Some(parent) = path.parent() {
-                if !parent.as_os_str().is_empty() {
-                    directories.insert(parent.to_path_buf());
-                }
+            if let Some(parent) = path.parent()
+                && !parent.as_os_str().is_empty()
+            {
+                directories.insert(parent.to_path_buf());
             }
         }
         for path in &self.created {
-            if let Some(parent) = path.parent() {
-                if !parent.as_os_str().is_empty() {
-                    directories.insert(parent.to_path_buf());
-                }
+            if let Some(parent) = path.parent()
+                && !parent.as_os_str().is_empty()
+            {
+                directories.insert(parent.to_path_buf());
             }
         }
         directories

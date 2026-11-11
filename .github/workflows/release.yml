@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release ${{ github.ref_name }}
+    runs-on: macos-15
+    permissions:
+      contents: write
+    env:
+      TARGET: aarch64-apple-darwin
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "24"
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: Verify the tag names the released version
+        run: |
+          version="$(node -p 'require("./tools/cli-version.json").productVersion')"
+          test "v${version}" = "${GITHUB_REF_NAME}"
+          echo "VERSION=${version}" >> "${GITHUB_ENV}"
+      - name: Build the released binary
+        run: |
+          node tools/scripts/cargo-client.mjs build --release --locked --target "${TARGET}" \
+            -p licoup --bin licoup
+      - name: Write the release contract
+        run: |
+          out="build/crates/licoup/target/${TARGET}/release"
+          node tools/scripts/release/cli-release-contract.mjs \
+            --binary "${out}/licoup" --target "${TARGET}" --output "build/release/contract.json"
+      - name: Archive
+        run: |
+          out="build/crates/licoup/target/${TARGET}/release"
+          stage="build/release/licoup-${VERSION}-${TARGET}"
+          mkdir -p "${stage}"
+          cp "${out}/licoup" "build/release/contract.json" "${stage}/"
+          tar -C "${stage}" -czf "build/release/licoup-${VERSION}-${TARGET}.tar.gz" licoup contract.json
+          (cd build/release && shasum -a 256 licoup-*.tar.gz > SHA256SUMS)
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --verify-tag \
+            --title "LicoUp CLI ${VERSION}" --notes "LicoUp CLI ${VERSION} (${TARGET})" \
+            "build/release/licoup-${VERSION}-${TARGET}.tar.gz" build/release/SHA256SUMS

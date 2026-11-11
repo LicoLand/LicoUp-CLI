@@ -48,6 +48,13 @@ pub struct TestCases {
     caller_file: &'static str,
 }
 
+impl Default for TestCases {
+    #[track_caller]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TestCases {
     #[track_caller]
     pub fn new() -> Self {
@@ -103,15 +110,15 @@ impl TestCases {
             let privacy_output = temporary
                 .compile_delayed_privacy_probe()
                 .unwrap_or_else(|error| panic!("trybuild_compiler_unavailable: {error}"));
-            if !privacy_output.success {
-                if let Ok(privacy_diagnostics) = diagnostics_from_json(
+            if !privacy_output.success
+                && let Ok(privacy_diagnostics) = diagnostics_from_json(
                     &privacy_output.stdout,
                     &temporary.source_path(),
                     &fixture_display,
                     Some("E0451"),
-                ) {
-                    actual.push_str(&privacy_diagnostics);
-                }
+                )
+            {
+                actual.push_str(&privacy_diagnostics);
             }
         }
         let expected = read_bounded_utf8(&expected_path, MAX_DIAGNOSTIC_BYTES)
@@ -167,7 +174,7 @@ impl TemporaryCase {
             .map_err(|_| "temporary source directory cannot be created".to_string())?;
         let dependency = toml_string(&dependency_root.to_string_lossy());
         let mut manifest = format!(
-            "[package]\nname = \"trybuild-case\"\nversion = \"0.0.0\"\nedition = \"2024\"\npublish = false\n\n[dependencies]\nlicoup-native = {{ path = {dependency} }}\n\n[workspace]\nresolver = \"3\"\n"
+            "[package]\nname = \"trybuild-case\"\nversion = \"0.0.0\"\nedition = \"2024\"\npublish = false\n\n[dependencies]\nlicoup = {{ path = {dependency} }}\n\n[workspace]\nresolver = \"3\"\n"
         );
         manifest.push_str(&workspace_patch(workspace_root)?);
         fs::write(self.root.join("Cargo.toml"), manifest)

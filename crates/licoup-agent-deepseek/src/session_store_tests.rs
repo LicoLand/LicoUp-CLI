@@ -20,7 +20,7 @@ use std::path::PathBuf;
 /// One synthetic session artifact under a disposable root.
 fn artifact(name: &str, rows: &[Value], compressed: bool) -> (PathBuf, PathBuf) {
     let root = std::env::temp_dir().join(format!(
-        "licoup-native-deepseek-{}-{name}",
+        "licoup-deepseek-{}-{name}",
         uuid::Uuid::new_v4()
     ));
     std::fs::create_dir_all(&root).unwrap();

@@ -107,7 +107,7 @@ depart from, inspect, or extend the terminal default.
 ## Implementation evidence
 
 - 2026-09-05: Decision 2's shared environment snapshot is implemented.
-  `crates/licoup-native/src/platform/user_shell_environment.rs` captures the
+  `crates/licoup/src/platform/user_shell_environment.rs` captures the
   user's login-shell environment once per process (bounded, sentinel-framed,
   process-environment fallback) and every conversation-execution launch site
   starts from that snapshot before applying its own functional injections;

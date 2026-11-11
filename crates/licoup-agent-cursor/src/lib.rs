@@ -11,7 +11,7 @@
 //!
 //! # The boundaries this crate keeps
 //!
-//! - **No client crate.** Nothing here reaches into `licoup-native` or any other
+//! - **No client crate.** Nothing here reaches into `licoup` or any other
 //!   composition crate. What the package needs from its host arrives through
 //!   [`port`], and the host installs it.
 //! - **One parse.** A raw strict-NDJSON line becomes this Agent's effects here
@@ -29,7 +29,7 @@
 //! The package ships Cursor's declaration, its protocol and the process half
 //! that runs one turn ([`driver`]): the workspace binding, the chat
 //! creation/resume, the `cursor-agent` launch on the host's pty, the stream
-//! classification and the turn's outcome. `licoup-native`'s composition names
+//! classification and the turn's outcome. `licoup`'s composition names
 //! [`driver`] directly and keeps no Cursor driver module of its own, so the
 //! launch, the probe and the turn are described in exactly one place.
 //!

@@ -4,7 +4,7 @@
 //! Two claims, and this file fails if either stops being true:
 //!
 //! 1. **The client keeps no Codex app-server and no plugin-repository route.**
-//!    `crates/licoup-native/src` holds no `codex_app_server` module and no
+//!    `crates/licoup/src` holds no `codex_app_server` module and no
 //!    `LicoUp-Plugins` literal. The claim is asserted against the real tree
 //!    rather than described, so re-introducing either one fails here.
 //! 2. **An installed Codex package binary serves one turn.** The package
@@ -32,11 +32,13 @@ use std::path::{Path, PathBuf};
 use std::process::Command as TestCommand;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use licoup::platform::extension_host::isolation::IsolationMode;
+use licoup::platform::extension_host::{AgentExecutionCall, ExtensionRuntime};
+use licoup::platform::extension_packages::{
+    PackageStore, TrustRecord, content_digest, running_client_version,
+};
 use licoup_extension_contracts::manifest::PermissionRequest;
 use licoup_extension_contracts::wire;
-use licoup_native::platform::extension_host::isolation::IsolationMode;
-use licoup_native::platform::extension_host::{AgentExecutionCall, ExtensionRuntime};
-use licoup_native::platform::extension_packages::{PackageStore, TrustRecord, content_digest};
 use serde_json::{Value, json};
 
 /// The package identity the synthetic archive declares.
@@ -81,7 +83,7 @@ fn rust_sources(relative_root: &str) -> Vec<PathBuf> {
 
 #[test]
 fn the_client_keeps_no_codex_app_server_and_no_plugin_repository_route() {
-    let kernel = repository_root().join("crates/licoup-native/src");
+    let kernel = repository_root().join("crates/licoup/src");
 
     // The module is gone as a module: no file, no directory, no declaration and
     // no path into one. A comment saying otherwise would not satisfy this.
@@ -93,7 +95,7 @@ fn the_client_keeps_no_codex_app_server_and_no_plugin_repository_route() {
         !kernel.join("platform/codex_app_server").exists(),
         "the kernel must not keep a Codex app-server module directory"
     );
-    let sources = rust_sources("crates/licoup-native/src");
+    let sources = rust_sources("crates/licoup/src");
     assert!(
         !sources.is_empty(),
         "the kernel sources must be readable for this claim to mean anything"
@@ -155,7 +157,7 @@ fn package_program() -> PathBuf {
     }
     candidates.push(
         repository_root()
-            .join("build/crates/licoup-native/target/debug")
+            .join("build/crates/licoup/target/debug")
             .join(format!("lico-agent-codex{}", std::env::consts::EXE_SUFFIX)),
     );
     if let Some(target) = std::env::var_os("CARGO_TARGET_DIR") {
@@ -224,12 +226,20 @@ fn archive(files: &[(&str, Vec<u8>)]) -> Vec<u8> {
 /// profile, a process runtime whose entry is the package's own program, and the
 /// capability that profile serves.
 fn manifest_json() -> Vec<u8> {
+    let client = running_client_version().expect("the binary declares a product version");
+    let next_major = client
+        .split('.')
+        .next()
+        .and_then(|major| major.parse::<u64>().ok())
+        .map(|major| major + 1)
+        .expect("a semantic major version");
     json!({
         "schema": wire::MANIFEST,
         "id": PACKAGE_ID,
         "version": PACKAGE_VERSION,
         "displayName": "Codex adapter",
         "hostProtocol": { "major": 1, "minimumMinor": 0 },
+        "compatibility": { "clientVersions": [format!(">={client}, <{next_major}")] },
         "profiles": [
             { "id": "agent-execution", "major": 1, "capabilities": [CAPABILITY] }
         ],
@@ -287,8 +297,7 @@ fn install_package(fixture: &Fixture) -> PathBuf {
 /// One fixture, shared with the host's own end-to-end Codex suites: this test
 /// drives a real app-server process rather than a second stand-in.
 fn compile_fake_app_server() -> PathBuf {
-    let fixture =
-        repository_root().join("crates/licoup-native/tests/fixtures/fake_codex_app_server.rs");
+    let fixture = repository_root().join("crates/licoup/tests/fixtures/fake_codex_app_server.rs");
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()

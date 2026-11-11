@@ -1,7 +1,7 @@
 {
   "schemaVersion": "licoup.package-release.v1",
   "packageId": "org.licoland.adapter.claude-code",
-  "packageVersion": "0.3.0",
+  "packageVersion": "0.3.1",
   "clientCompatibility": {
     "kind": "range",
     "range": ">=0.3.0, <1.0.0"

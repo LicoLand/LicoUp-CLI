@@ -63,13 +63,8 @@ licoup mcp reload --binary <built-lico-subagent-mcp>
 ```
 
 发布时会在打包该目录前填充包声明的原生入口，因此仓库中提交的入口是暂存占位符，
-而不是程序：
-
-```sh
-node tools/distribution/client-release-package-stage.mjs stage
-node tools/distribution/client-release-package-stage.mjs verify
-npm run client:release:package-index:build
-```
+而不是程序。本仓库尚未提供填充该可选包原生入口的发布阶段；在该阶段运行之前，
+提交的入口保持为占位符。
 
 模块也可直接执行 `service start|stop|status|reload`，通过 `LICOUP_CLI_BINARY`
 明确指定原生 CLI，通过 `LICOUP_HOME` 限定状态目录。已发布安装仍可使用优先级更低的

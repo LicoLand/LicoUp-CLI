@@ -9,11 +9,11 @@
 //! * [`licoup_foundation`] owns the data home, the bounded private-file
 //!   primitives, the data-root admission lock and the data-root inventory
 //!   grammar.
-//! * `licoup-native` owns platform credential custody, the authenticated
+//! * `licoup` owns platform credential custody, the authenticated
 //!   replacement-endpoint authority, its presence authorization and its
 //!   capability facts. Credential deletion and terminal settlement stay there;
 //!   this package reports those stages as outstanding.
-//! * `licoup-endpoint-core` owns the closed endpoint session and operation
+//! * `licoarc-client` owns the closed endpoint session and operation
 //!   policy enums and the transport port.
 //!
 //! Nothing here authenticates a caller with a cleanup-local scheme, reads a

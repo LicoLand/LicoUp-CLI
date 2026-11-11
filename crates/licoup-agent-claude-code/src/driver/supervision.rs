@@ -155,13 +155,13 @@ pub(super) fn remove_transport(managed: &Arc<ManagedTransport>, cleanup: bool) {
     if let Ok(mut registry) = supervisor().lock() {
         detach_transport(&mut registry, managed.id);
     }
-    if cleanup && managed.lifecycle.begin_closing() {
-        if let Ok(mut transport) = managed.transport.lock() {
-            if transport.shutdown().is_ok() {
-                clear_transcript(managed);
-                let _ = managed.lifecycle.mark_closed();
-            }
-        }
+    if cleanup
+        && managed.lifecycle.begin_closing()
+        && let Ok(mut transport) = managed.transport.lock()
+        && transport.shutdown().is_ok()
+    {
+        clear_transcript(managed);
+        let _ = managed.lifecycle.mark_closed();
     }
 }
 

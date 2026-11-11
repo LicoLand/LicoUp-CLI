@@ -4,16 +4,16 @@ import test from "node:test";
 
 const read = (path) => readFileSync(path, "utf8");
 const exists = (path) => existsSync(path);
-const common = read("crates/licoup-native/src/platform/provider_mcp_registration.rs");
-const manager = read("crates/licoup-native/src/platform/cursor_subagent_mcp_manager.rs");
+const common = read("crates/licoup/src/platform/provider_mcp_registration.rs");
+const manager = read("crates/licoup/src/platform/cursor_subagent_mcp_manager.rs");
 // Cursor's turn — the launch, the stream it reads and the active turn it
 // cancels — is the Cursor adapter package's own driver; the client composes it
 // and keeps no copy of it.
 const driver = read("crates/licoup-agent-cursor/src/driver/execution.rs");
 // The client's composition of that driver, and the host module tree that
 // declares no Cursor module of its own.
-const composition = read("crates/licoup-native/src/platform/runtime_adapters/drivers.rs");
-const platform = read("crates/licoup-native/src/platform/mod.rs");
+const composition = read("crates/licoup/src/platform/runtime_adapters/drivers.rs");
+const platform = read("crates/licoup/src/platform/mod.rs");
 // Cursor's fixed launch arguments and capability surface are the package's own
 // vocabulary, read where the package declares them.
 const model = read("crates/licoup-agent-cursor/src/model.rs");
@@ -23,7 +23,7 @@ const model = read("crates/licoup-agent-cursor/src/model.rs");
 const parser = read("crates/licoup-agent-cursor/src/parser.rs");
 const registration = read("crates/licoup-agent-cursor/src/registration.rs");
 const runtime = read("crates/licoup-agent-drivers/src/runtime_adapters/subagent_mesh.rs");
-const adapters = read("crates/licoup-native/src/platform/native_agent_parser/adapters/mod.rs");
+const adapters = read("crates/licoup/src/platform/native_agent_parser/adapters/mod.rs");
 const startup = read("tests/product-e2e/cli/subagent-mcp/upstream/cursor-startup-recognition.mjs");
 
 test("Cursor registration is namespaced, digest-bound, owned, and ambiguity-closed", () => {
@@ -69,9 +69,9 @@ test("the client declares no Cursor driver module and re-states no Cursor protoc
   // The host has no Cursor driver module or tree: the launch, the stream
   // classification and the turn are the package's, and the path the move
   // retired must not come back as a second owner.
-  assert.equal(exists("crates/licoup-native/src/platform/cursor_driver.rs"), false,
+  assert.equal(exists("crates/licoup/src/platform/cursor_driver.rs"), false,
     "the host still declares a Cursor driver module");
-  assert.equal(exists("crates/licoup-native/src/platform/cursor_driver"), false,
+  assert.equal(exists("crates/licoup/src/platform/cursor_driver"), false,
     "the host still declares a Cursor driver tree");
   assert.doesNotMatch(platform, /mod cursor_driver;/u,
     "the host module tree still declares a Cursor driver module");

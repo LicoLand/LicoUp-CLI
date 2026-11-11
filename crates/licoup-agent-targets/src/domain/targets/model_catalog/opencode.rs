@@ -312,7 +312,7 @@ pub(super) fn collect_opencode_models_from_cli_output(
     for line in raw.lines() {
         let trimmed = line
             .trim()
-            .trim_start_matches(|ch| matches!(ch, '-' | '*') || ch == '\u{2022}')
+            .trim_start_matches(['-', '*', '\u{2022}'])
             .trim();
         if trimmed.is_empty()
             || trimmed.starts_with("Usage")

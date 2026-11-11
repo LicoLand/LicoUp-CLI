@@ -38,7 +38,7 @@ pub fn ensure_token_at(path: &Path) -> Result<SecretBytes> {
 }
 
 fn ensure_token(path: &Path) -> Result<SecretBytes> {
-    if let Some(token) = read_token_if_present(&path)? {
+    if let Some(token) = read_token_if_present(path)? {
         return Ok(token);
     }
 
@@ -48,11 +48,11 @@ fn ensure_token(path: &Path) -> Result<SecretBytes> {
     random.fill(0);
     validate_token_text(&encoded)?;
 
-    match file_security::create_private_state_marker(&path, encoded.as_bytes()) {
+    match file_security::create_private_state_marker(path, encoded.as_bytes()) {
         Ok(()) => SecretBytes::try_from_string(encoded)
             .map_err(|_| anyhow!("gateway_client_token_invalid")),
         Err(_) => {
-            read_token_if_present(&path)?.ok_or_else(|| anyhow!("gateway_client_token_unavailable"))
+            read_token_if_present(path)?.ok_or_else(|| anyhow!("gateway_client_token_unavailable"))
         }
     }
 }

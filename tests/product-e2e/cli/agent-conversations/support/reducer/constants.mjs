@@ -34,25 +34,21 @@ export const CONDITIONAL_CHECK_IDS = Object.freeze([
 
 const SCRIPT_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 export const REPOSITORY_ROOT = resolve(SCRIPT_DIRECTORY, "../../../../../..");
-export const PACKAGING_REGISTRY_FILE = resolve(
-  REPOSITORY_ROOT,
-  "apps/desktop/packaging.modules.json",
-);
 export const DRIVER_INVENTORY_FILE = resolve(
   REPOSITORY_ROOT,
-  "crates/licoup-native/resources/agent-conversation-drivers.json",
+  "crates/licoup/resources/agent-conversation-drivers.json",
 );
 export const READINESS_FILE = resolve(
   REPOSITORY_ROOT,
-  "crates/licoup-native/resources/agent-conversation-readiness.json",
+  "crates/licoup/resources/agent-conversation-readiness.json",
 );
 export const CANONICAL_EVIDENCE_FILE = resolve(
   REPOSITORY_ROOT,
-  "crates/licoup-native/resources/agent-conversation-evidence.json",
+  "crates/licoup/resources/agent-conversation-evidence.json",
 );
 export const ADAPTER_MANIFEST_DIRECTORY = resolve(
   REPOSITORY_ROOT,
-  "packages/contracts/client/fixtures/agent-conversation-adapter/manifests",
+  "tests/fixtures/agent-conversation-adapter/manifests",
 );
 
 export const SAFE_CODE = /^[a-z0-9][a-z0-9._:+-]{0,127}$/;

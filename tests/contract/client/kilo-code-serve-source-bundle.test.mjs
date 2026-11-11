@@ -11,10 +11,10 @@ const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)
 const packageRoot = "crates/licoup-agent-kilo/src";
 // What the client still owns is the engine the package's ports are answered
 // with, plus the force-stop entry that reads the same endpoint policy.
-const facadePath = "crates/licoup-native/src/platform/kilo_code_host.rs";
+const facadePath = "crates/licoup/src/platform/kilo_code_host.rs";
 // The kernel's composition, which names this package's driver directly. The
 // host keeps no Kilo Code module of its own.
-const compositionPath = "crates/licoup-native/src/platform/runtime_adapters/drivers.rs";
+const compositionPath = "crates/licoup/src/platform/runtime_adapters/drivers.rs";
 
 async function read(relativePath) {
   return fs.readFile(path.join(repoRoot, relativePath), "utf8");
@@ -76,16 +76,16 @@ test("the client names the package for the protocol and keeps no Kilo Code drive
   // The kernel has no Kilo Code driver module at all: the host reaches the
   // Agent through the package and cannot hold a second owner of its protocol.
   assert.equal(
-    await exists("crates/licoup-native/src/platform/kilo_code_driver.rs"),
+    await exists("crates/licoup/src/platform/kilo_code_driver.rs"),
     false,
     "the host still declares a Kilo Code driver module",
   );
   assert.equal(
-    await exists("crates/licoup-native/src/platform/kilo_code_driver"),
+    await exists("crates/licoup/src/platform/kilo_code_driver"),
     false,
     "the host still declares a Kilo Code driver tree",
   );
-  const platform = await read("crates/licoup-native/src/platform/mod.rs");
+  const platform = await read("crates/licoup/src/platform/mod.rs");
   assert.doesNotMatch(platform, /mod kilo_code_driver;/u,
     "the host module tree still declares a Kilo Code driver module");
 

@@ -39,7 +39,7 @@ A package is a ZIP archive whose root carries `manifest.json`. The store expands
 it in a private staging directory, reads the manifest, checks that the declared
 entry is a real file inside the payload, and installs it through
 `PackageStore::install_local_import(package_id, version, trust, bytes)` — the
-local-import path in `crates/licoup-native/src/platform/extension_packages/`. No
+local-import path in `crates/licoup/src/platform/extension_packages/`. No
 network, no marketplace and no signature is involved: the trust record binds the
 specific bytes the user supplied.
 
@@ -65,7 +65,7 @@ to it unchanged:
 - Manual stop resolves the durable owner of the admitted work and routes the
   request to that owner; force stop may terminate only a LicoUp-owned process
   group whose ownership record is re-verified at execution time
-  (`crates/licoup-native/src/platform/stop_control.rs`). A request is not proof of
+  (`crates/licoup/src/platform/stop_control.rs`). A request is not proof of
   exit, and an unconfirmed stop stays unconfirmed.
 
 ## The update contract a converter must respect
@@ -82,6 +82,6 @@ be reading, so both mutating operations pass one idle-guard seam
   replaced: the host decides admission, and the package is never the authority on
   whether its own replacement is safe.
 
-`crates/licoup-native/tests/extension_contract/a30_generation.rs` and the
+`crates/licoup/tests/extension_contract/a30_generation.rs` and the
 `maintenance.rs` unit tests prove the admission and generation rules against
 synthetic packages, without installing a real conversion.

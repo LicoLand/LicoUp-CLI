@@ -147,17 +147,18 @@ fn run() -> Result<(), ()> {
                 discovery = current;
                 session_id = None;
             }
-            if session_id.is_none() && initialize_protocol_revision(&message).is_none() {
-                if let Some(initialize) = initialization.as_ref() {
-                    let body = encode_http_body(initialize, MAX_MCP_FRAME_BYTES).map_err(|_| ())?;
-                    match connector_exchange(&discovery, None, &protocol_revision, &body) {
-                        Ok((200, Some(id), _)) => {
-                            session_id = Some(id);
-                        }
-                        _ => {
-                            module_unavailable(&message, &writer, false)?;
-                            continue;
-                        }
+            if session_id.is_none()
+                && initialize_protocol_revision(&message).is_none()
+                && let Some(initialize) = initialization.as_ref()
+            {
+                let body = encode_http_body(initialize, MAX_MCP_FRAME_BYTES).map_err(|_| ())?;
+                match connector_exchange(&discovery, None, &protocol_revision, &body) {
+                    Ok((200, Some(id), _)) => {
+                        session_id = Some(id);
+                    }
+                    _ => {
+                        module_unavailable(&message, &writer, false)?;
+                        continue;
                     }
                 }
             }

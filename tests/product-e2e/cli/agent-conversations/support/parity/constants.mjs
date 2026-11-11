@@ -3,12 +3,10 @@ import { fileURLToPath } from "node:url";
 
 export const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../../..");
 
-export const packagingRegistryPath = join(workspaceRoot, "apps", "desktop", "packaging.modules.json");
-
 export const driversInventoryPath = join(
   workspaceRoot,
   "crates",
-  "licoup-native",
+  "licoup",
   "resources",
   "agent-conversation-drivers.json",
 );
@@ -16,20 +14,9 @@ export const driversInventoryPath = join(
 export const evidenceManifestPath = join(
   workspaceRoot,
   "crates",
-  "licoup-native",
+  "licoup",
   "resources",
   "agent-conversation-evidence.json",
-);
-
-export const packagedReleaseAppPath = join(
-  workspaceRoot,
-  "build",
-  "apps",
-  "desktop",
-  "runnable",
-  "macos",
-  "release",
-  "LicoUp.app",
 );
 
 export const sidecarArgs = ["agent", "conversation", "send", "--stdin-json", "true"];
@@ -227,9 +214,9 @@ export const agentConfigs = Object.freeze({
   "lico-agent": Object.freeze({
     id: "lico-agent",
     driverId: "lico-agent-rpc",
-    executable: "lico-agent",
+    executable: "licoup",
     binaryEnvironment: ["LICO_AGENT_PATH", "LICO_AGENT_BIN"],
-    acpArgs: ["--mode", "rpc"],
+    acpArgs: ["agent", "run", "--mode", "rpc"],
     runtimeProtocol: "lico-agent-rpc-stdio-jsonl",
     laneFamily: "rpc",
     cleanupKind: "lico-agent-rpc",

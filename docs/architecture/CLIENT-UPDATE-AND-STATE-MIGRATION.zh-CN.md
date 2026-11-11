@@ -21,7 +21,7 @@ LicoUp 只有一个应用身份、安装名称和数据根目录。`nightly` 与
 已发布步骤前缀。本地构建或 schema 修正不会建立新的受支持发布。
 
 存储 owner 定义物理 schema 和转换。启动准入与独立原生工具复用这些 owner，
-不建立第二套格式写入实现。独立程序为 `crates/licoup-migrate`：单个 Rust
+不建立第二套格式写入实现。迁移程序为 `licoup migrate`：单一客户端二进制的进程入口，单个 Rust
 二进制，无需 Node.js 或已安装客户端即可运行。发布分发必须提供可单独下载的
 制品，而不是永久捆绑的包。其命令为 `inspect`、`plan`、`convert`、`resume`、
 `export`、`import` 与 `rehearse`。每次调用输出一份 JSON 报告，并在仍有未完成

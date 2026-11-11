@@ -263,10 +263,8 @@ pub(super) fn model_catalog_for_target(
         }
     }
 
-    if target == "pi" {
-        if collect_pi_cli_model_catalog(params, &mut entries, &mut diagnostics) {
-            sources.insert("pi-cli:list-models".to_string());
-        }
+    if target == "pi" && collect_pi_cli_model_catalog(params, &mut entries, &mut diagnostics) {
+        sources.insert("pi-cli:list-models".to_string());
     }
 
     if target == "deepseek-harness"

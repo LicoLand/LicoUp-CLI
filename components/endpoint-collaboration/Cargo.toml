@@ -11,5 +11,6 @@ description = "Optional endpoint collaboration package (org.licoland.feature.end
 
 [dependencies]
 # The consumer-owned port declaration this package implements: custody, durable
-# state, clock and carrier, with no SDK type in its signature.
-licoup-endpoint-core = { path = "../../crates/licoup-endpoint-core" }
+# state, clock and carrier, with no SDK type in its signature
+# (`licoarc_client::ports`).
+licoarc-client = "=0.2.0"

@@ -22,14 +22,14 @@ test("the cleanup slice is its own workspace and composes the existing owners", 
   );
   // The data-home, private-file, admission-lock and inventory owner. The
   // credential custody owner, the authenticated replacement-endpoint authority
-  // and the erase loop stay in `licoup-native`; this slice never deletes a
+  // and the erase loop stay in `licoup`; this slice never deletes a
   // credential and never reaches for a second walker, writer or keychain.
   assert.match(
     manifest,
     /licoup-foundation = \{ path = "\.\.\/\.\.\/\.\.\/crates\/licoup-foundation" \}/u,
   );
   assert.doesNotMatch(manifest, /keyring|security-framework|windows-sys|libsecret/u);
-  assert.doesNotMatch(manifest, /licoup-native/u);
+  assert.doesNotMatch(manifest, /^licoup\s*=/mu);
   assert.doesNotMatch(
     read(`${CLEANUP}/src/cleanup/mod.rs`),
     /cleanup_authority|SecretStoreHandle/u,

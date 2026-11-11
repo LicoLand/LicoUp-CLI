@@ -1,10 +1,10 @@
 [package]
 name = "licoup-agent-kimi"
-version = "0.1.0"
-edition = "2024"
-rust-version = "1.95.0"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "Kimi Code adapter package: the Kimi ACP driver half and its frame dialect"
 
 # The crate is one package's program. `parser` is this Agent's vendor protocol
@@ -30,13 +30,13 @@ default = []
 test-support = ["licoup-agent-drivers/test-support"]
 
 [dependencies]
-licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+licoup-agent-adapter-sdk.workspace = true
 # The shared ACP engine and the port its transport reads one Agent's frame
 # dialect through. This package owns Kimi's half of that dialect; it owns no
 # part of the engine, and the engine names no Agent.
-licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+licoup-agent-drivers.workspace = true
 # The ACP envelope codec every ACP dialect decodes through.
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-foundation.workspace = true
 serde_json.workspace = true
 
 [[bin]]
@@ -48,8 +48,8 @@ path = "src/bin/lico-agent-kimi.rs"
 # reading of it. Nothing here enters the package binary, which links no kernel
 # crate and reads its own package documents as data.
 [dev-dependencies]
-licoup-extension-contracts = { path = "../licoup-extension-contracts" }
-licoup-agent-drivers = { path = "../licoup-agent-drivers", features = ["test-support"] }
+licoup-extension-contracts.workspace = true
+licoup-agent-drivers = { workspace = true, features = ["test-support"] }
 # The package's own integration test drives the replay arm, so the test build
 # enables the feature that compiles it. It is a self-dependency because
 # `dev-dependencies` features apply to the test targets and nothing else.

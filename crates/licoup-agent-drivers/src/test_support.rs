@@ -109,7 +109,7 @@ fn shared_profile() -> AcpParserRegistration {
         client_request,
         permission_request,
         completed_transitions: transport_completed_transitions,
-        failed_transitions: failed_transitions,
+        failed_transitions,
     }
 }
 

@@ -163,6 +163,8 @@ fn terminal_transitions(unit_id: &str, output: &str) -> Vec<Transition> {
 ///
 /// It carries only what the frame said. Every identity the parser bound earlier
 /// is already on the report or the failure, so an effect never re-derives it.
+// One effect is produced per frame and consumed at once, never collected.
+#[allow(clippy::large_enum_variant)]
 pub enum ClaudeEffect {
     /// The CLI is asking the user to decide about one tool call.
     Permission(PermissionRequest),

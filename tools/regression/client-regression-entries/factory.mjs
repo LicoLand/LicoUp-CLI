@@ -8,11 +8,11 @@ import { agentConfigs } from "../../../tests/product-e2e/cli/agent-conversations
 export const regressionRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
 const driverInventory = JSON.parse(readFileSync(path.resolve(
   regressionRoot,
-  "crates/licoup-native/resources/agent-conversation-drivers.json",
+  "crates/licoup/resources/agent-conversation-drivers.json",
 ), "utf8"));
 const readinessInventory = JSON.parse(readFileSync(path.resolve(
   regressionRoot,
-  "crates/licoup-native/resources/agent-conversation-readiness.json",
+  "crates/licoup/resources/agent-conversation-readiness.json",
 ), "utf8"));
 
 function executableCandidates(name) {
@@ -40,15 +40,12 @@ function sidecarPath() {
   if (cachedSidecarPath !== undefined) return cachedSidecarPath;
   const candidates = [
     process.env.LICO_CLIENT_PATH,
-    "build/crates/licoup-native/target/debug/licoup-cli",
-    "build/crates/licoup-native/target/release/licoup-cli",
-    "crates/licoup-native/target/debug/licoup-cli",
-    "crates/licoup-native/target/release/licoup-cli",
-    "target/debug/licoup-cli",
-    "target/release/licoup-cli",
-    "build/apps/desktop/runnable/macos/release/LicoUp.app/Contents/Helpers/LicoUpCustody.app/Contents/MacOS/licoup-cli",
-    "build/apps/desktop/runnable/linux/release/licoup-cli",
-    "build/apps/desktop/runnable/windows/release/licoup-cli.exe",
+    "build/crates/licoup/target/debug/licoup",
+    "build/crates/licoup/target/release/licoup",
+    "crates/licoup/target/debug/licoup",
+    "crates/licoup/target/release/licoup",
+    "target/debug/licoup",
+    "target/release/licoup",
   ].filter(Boolean);
   cachedSidecarPath = candidates
     .map((candidate) => path.resolve(regressionRoot, candidate))

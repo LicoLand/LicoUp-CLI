@@ -5,7 +5,7 @@
 //! Every claim that names an Agent — which parsers exist, which declaration
 //! each one reports, what one Agent's parser does with a vendor frame — is a
 //! claim about the composition and is asserted where both halves are in view,
-//! in `licoup-native`'s `native_agent_parser`.
+//! in `licoup`'s `native_agent_parser`.
 
 use super::*;
 use crate::adapters::AdapterContract;

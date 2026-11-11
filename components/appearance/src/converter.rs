@@ -14,7 +14,7 @@
 //!   and a run that leaves the domain owed exits non-zero.
 
 use anyhow::Result;
-use licoup_native::domain::client_state_migration::{
+use licoup::domain::client_state_migration::{
     AdmissionResult, DomainAuthority, DomainStateProjection, admit, domain_state_projection,
 };
 use serde::Serialize;

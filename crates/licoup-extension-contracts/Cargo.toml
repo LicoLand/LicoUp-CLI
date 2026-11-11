@@ -6,9 +6,8 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Language-agnostic extension SDK contract: the C09-C13 profiles, package closure and capability ownership."
-
 [dependencies]
-licoup-application = { path = "../licoup-application", version = "0.3.0" }
+licoup-application.workspace = true
 # The C11 usage vocabulary is owned by the published detector crate; this
 # contract re-exports it at the path extensions already import.
 token-usage-detector.workspace = true

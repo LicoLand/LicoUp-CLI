@@ -4,8 +4,8 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
-
+repository.workspace = true
+description = "Shared contract vocabulary every LicoUp Agent adapter program composes."
 [features]
 default = []
 
@@ -23,4 +23,4 @@ sha2.workspace = true
 # The parser lifecycle machine is declared in this crate's own
 # `resources/state-machines/parser-lifecycle.json` and compiled by the shared
 # code generator, exactly as `licoup-secure-mesh` compiles the machines it owns.
-licoup-state-machine-codegen = { path = "../licoup-state-machine-codegen" }
+licoup-state-machine-codegen.workspace = true

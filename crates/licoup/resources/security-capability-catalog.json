@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "capabilities": [
+    {
+      "id": "custody.memory_only_ephemeral",
+      "derived": true,
+      "prerequisites": []
+    },
+    {
+      "id": "custody.os_secure_store",
+      "derived": false,
+      "prerequisites": ["custody.memory_only_ephemeral"]
+    },
+    {
+      "id": "custody.software_backed",
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.non_exportable",
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.device_bound",
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.unlocked_device_required",
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.os_user_presence",
+      "derived": false,
+      "prerequisites": ["custody.unlocked_device_required"]
+    },
+    {
+      "id": "custody.device_credential",
+      "derived": false,
+      "prerequisites": ["custody.os_user_presence"]
+    },
+    {
+      "id": "custody.strong_biometric",
+      "derived": false,
+      "prerequisites": ["custody.os_user_presence"]
+    },
+    {
+      "id": "custody.authentication_validity_window",
+      "derived": false,
+      "prerequisites": ["custody.os_user_presence"]
+    },
+    {
+      "id": "custody.enrollment_change_invalidation",
+      "derived": false,
+      "prerequisites": ["custody.strong_biometric"]
+    },
+    {
+      "id": "custody.hardware_backed",
+      "derived": false,
+      "prerequisites": [
+        "custody.non_exportable",
+        "custody.device_bound"
+      ]
+    },
+    {
+      "id": "custody.hardware_enforced_user_authentication",
+      "derived": false,
+      "prerequisites": [
+        "custody.hardware_backed",
+        "custody.os_user_presence"
+      ]
+    },
+    {
+      "id": "custody.android_keystore",
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.apple_keychain",
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.linux_secret_service",
+      "derived": false,
+      "prerequisites": ["custody.os_secure_store"]
+    },
+    {
+      "id": "custody.data_protection_keychain",
+      "derived": false,
+      "prerequisites": [
+        "custody.apple_keychain",
+        "custody.device_bound",
+        "custody.unlocked_device_required"
+      ]
+    },
+    {
+      "id": "custody.tee",
+      "derived": false,
+      "prerequisites": ["custody.hardware_backed"]
+    },
+    {
+      "id": "custody.strongbox",
+      "derived": false,
+      "prerequisites": [
+        "custody.android_keystore",
+        "custody.hardware_backed"
+      ]
+    },
+    {
+      "id": "custody.secure_enclave",
+      "derived": false,
+      "prerequisites": [
+        "custody.apple_keychain",
+        "custody.hardware_backed"
+      ]
+    }
+  ]
+}

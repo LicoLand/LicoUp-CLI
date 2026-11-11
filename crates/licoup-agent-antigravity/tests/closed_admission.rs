@@ -9,7 +9,7 @@
 //!
 //! The other half of the chain is asserted where the host lives: the host's
 //! composition installs an admission answer that reads that barrier (see
-//! `crates/licoup-native/src/lib.rs` and the source-bundle contract over it).
+//! `crates/licoup/src/lib.rs` and the source-bundle contract over it).
 
 use licoup_agent_antigravity::driver;
 use licoup_agent_antigravity::port::execution;

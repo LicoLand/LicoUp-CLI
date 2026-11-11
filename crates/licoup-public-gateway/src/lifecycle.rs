@@ -124,10 +124,10 @@ fn clean_stale_generation(generation: &str) {
     if lease.try_lock_exclusive().is_err() {
         return;
     }
-    if current().is_some_and(|value| value.generation == generation) {
-        if let Ok(path) = transport::discovery_path_read_only() {
-            let _ = fs::remove_file(path);
-        }
+    if current().is_some_and(|value| value.generation == generation)
+        && let Ok(path) = transport::discovery_path_read_only()
+    {
+        let _ = fs::remove_file(path);
     }
 }
 fn start() -> Result<Value> {

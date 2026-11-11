@@ -4,8 +4,8 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
-
+repository.workspace = true
+description = "LicoUp Agent inventory: target declarations, local discovery, scan paths and readiness evidence."
 [features]
 default = []
 # The facts an out-of-crate test build states its expectations against travel
@@ -23,14 +23,14 @@ anyhow.workspace = true
 a4aa = { workspace = true }
 # The path, IO, process, environment and user-shell primitives every scan on
 # this machine stands on.
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-foundation.workspace = true
 # The portable client-state store the discovery cache and the target-route
 # records are written through.
-licoup-client-state = { path = "../licoup-client-state" }
+licoup-client-state.workspace = true
 # The DeepSeek Harness adapter package owns the provider catalogue a default
 # installation starts from; the registry here merges it rather than executing a
 # Node probe to discover it.
-licoup-agent-deepseek = { path = "../licoup-agent-deepseek" }
+licoup-agent-deepseek.workspace = true
 rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true

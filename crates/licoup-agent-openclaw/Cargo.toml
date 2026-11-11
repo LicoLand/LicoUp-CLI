@@ -1,10 +1,10 @@
 [package]
 name = "licoup-agent-openclaw"
-version = "0.14.0"
-edition = "2024"
-rust-version = "1.95.0"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "OpenClaw adapter package: the Gateway ACP driver vocabulary and its vendor protocol"
 
 # The crate is one package's program. `parser` is this Agent's vendor protocol
@@ -27,24 +27,24 @@ description = "OpenClaw adapter package: the Gateway ACP driver vocabulary and i
 default = []
 
 [dependencies]
-licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+licoup-agent-adapter-sdk.workspace = true
 # The neutral ACP runtime: the active-turn control plane this package's driver
 # registers a running turn in and cancels through, so force stop reaches an
 # OpenClaw session through the same registry as every other ACP Agent. The
 # package owns the identity it pools its sessions by; the engine owns the
 # registry.
-licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+licoup-agent-drivers.workspace = true
 # The shared ACP wire vocabulary a Gateway ACP frame is validated against, the
 # one predicate that decides whether an ACP working directory is absolute, the
 # user login-shell environment the bridge is launched in, and the SSH target it
 # is launched through. All are shared facts this package and the client read from
 # the same owner rather than client facts this package asks for, so they are
 # dependencies rather than ports — exactly as `licoup-agent-drivers` reads them.
-licoup-agent-targets = { path = "../licoup-agent-targets" }
+licoup-agent-targets.workspace = true
 # The bounded process supervisor and the raw-execution diagnostic record: the
 # same primitives the client's own drivers launch children with, so the package
 # cannot keep a second process implementation of its own.
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-foundation.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
@@ -58,4 +58,4 @@ path = "src/bin/lico-agent-openclaw.rs"
 # reading of it. Nothing here enters the package binary, which links no kernel
 # crate and reads its own package documents as data.
 [dev-dependencies]
-licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-extension-contracts.workspace = true

@@ -16,8 +16,8 @@ const syntheticFixtureRoot = join(repositoryRoot, "tests/fixtures/adapter-replay
 const usingDeveloperCorpus = directoryExists(developerCorpusRoot);
 const corpusRoot = usingDeveloperCorpus ? developerCorpusRoot : syntheticFixtureRoot;
 const replaySource = usingDeveloperCorpus ? "tests/replay-corpus" : "tests/fixtures/adapter-replay";
-const e2ePath = join(repositoryRoot, "crates/licoup-native/resources/agent-conversation-evidence.json");
-const outputPath = join(repositoryRoot, "crates/licoup-native/resources/agent-adapter-tiers.json");
+const e2ePath = join(repositoryRoot, "crates/licoup/resources/agent-conversation-evidence.json");
+const outputPath = join(repositoryRoot, "crates/licoup/resources/agent-adapter-tiers.json");
 const e2e = new Map((parseJson(e2ePath).adapters || []).map((entry) => [entry.agentId, entry]));
 
 const adapters = adapterIds.map((agentId) => {

@@ -1,6 +1,6 @@
 //! The package's own replay parity evidence.
 //!
-//! `licoup-native` still composes the production parser set, and its own
+//! `licoup` still composes the production parser set, and its own
 //! `native_agent_parser` corpus check proves the thirteen-adapter corpus is
 //! complete and frame-deterministic through that composition. This test proves
 //! the same thing one layer down, where the parser now lives: the `antigravity`

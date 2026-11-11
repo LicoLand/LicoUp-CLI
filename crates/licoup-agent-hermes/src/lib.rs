@@ -11,7 +11,7 @@
 //!
 //! # The boundaries this crate keeps
 //!
-//! - **No client crate.** Nothing here reaches into `licoup-native` or any other
+//! - **No client crate.** Nothing here reaches into `licoup` or any other
 //!   composition crate. Composition names this package; the package names none of
 //!   the client's own types.
 //! - **One parse.** A raw ACP line becomes a frame here and is never re-parsed
@@ -36,7 +36,7 @@
 //!
 //! # Who executes Hermes
 //!
-//! The package runs every Hermes turn. `licoup-native`'s composition names
+//! The package runs every Hermes turn. `licoup`'s composition names
 //! [`driver`] and keeps no Hermes ACP module of its own, so one Hermes turn is
 //! described in exactly one place. Hermes reaches one target through two
 //! protocols, and both are this package's: a local turn speaks the ACP frame

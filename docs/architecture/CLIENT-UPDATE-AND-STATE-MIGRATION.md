@@ -25,9 +25,9 @@ build or schema correction does not establish another supported release.
 
 Store owners define physical schemas and conversions. Startup admission and the
 standalone native tool use those owners, rather than separate format writers.
-The standalone program is `crates/licoup-migrate`: one Rust binary that runs
-without Node.js or an installed client. Release distribution must provide it as a
-separately downloadable asset rather than a permanently bundled package. Its
+The migration program is `licoup migrate`: one process entry of the single
+client binary that runs without Node.js or an installed client. Release
+distribution provides it inside the single `licoup` release archive. Its
 verbs are `inspect`, `plan`, `convert`, `resume`, `export`, `import`, and
 `rehearse`. Every invocation prints one JSON report and exits non-zero when the
 run leaves work owed. `inspect` and `plan` are read-only; `convert`, `resume`,

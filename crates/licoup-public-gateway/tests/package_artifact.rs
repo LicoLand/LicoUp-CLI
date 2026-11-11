@@ -120,7 +120,7 @@ fn the_committed_package_is_the_capability_the_host_leaves_optional() {
     assert_eq!(manifest.display_name, "LicoUp Subagent MCP service");
     assert_eq!(manifest.host_protocol.major, 1);
     assert_eq!(
-        serde_json::to_value(&manifest.activation).expect("the activation mode serializes"),
+        serde_json::to_value(manifest.activation).expect("the activation mode serializes"),
         Value::String("on-demand".to_owned()),
         "the service starts when a call needs it"
     );

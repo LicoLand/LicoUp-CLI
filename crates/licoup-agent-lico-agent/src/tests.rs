@@ -403,8 +403,7 @@ fn the_replay_arm_refuses_an_adapter_this_package_does_not_carry() {
             channel: "lf-ndjson-acp".to_owned(),
             payload: "{}".to_owned(),
         })
-        .err()
-        .expect("a foreign channel is refused");
+        .expect_err("a foreign channel is refused");
     assert!(error.contains(FRAMING), "{error}");
 }
 

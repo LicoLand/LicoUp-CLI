@@ -65,7 +65,7 @@ PackageStore::open(store_root)?.install_local_import(
 )
 ```
 
-`crates/licoup-migrate` reaches the same path when a caller names an offline
+`crates/licoup (migrate module)` reaches the same path when a caller names an offline
 payload, so the two ways in agree by construction rather than by convention.
 
 Before the version is published, the import refuses a payload that:
@@ -84,16 +84,16 @@ Before the version is published, the import refuses a payload that:
 
 The three checks above are the ones a package author gets wrong, and each one
 names the field it read: see
-[`artifact.rs`](../../../../crates/licoup-native/src/platform/extension_packages/artifact.rs)
+[`artifact.rs`](../../../../crates/licoup/src/platform/extension_packages/artifact.rs)
 and
-[`install.rs`](../../../../crates/licoup-native/src/platform/extension_packages/install.rs).
+[`install.rs`](../../../../crates/licoup/src/platform/extension_packages/install.rs).
 
 ## The stop contract
 
 A conversion runs over a data root that other owners write to. Two people have to
 have stopped writing before this program is allowed to start:
 
-- **The operator.** `licoup-migrate package-convert --writers-stopped` is the
+- **The operator.** `licoup migrate package-convert --writers-stopped` is the
   statement that every writer is stopped against that data root. It is a
   parameter, not a gate the tool can check for the caller: the tool's own lock
   cannot stop a writer that never heard of it. Without the statement the caller
@@ -187,7 +187,7 @@ compatibility rule doing its job rather than a defect in the sample.
   reads this directory's manifest and release declaration and holds them to the
   contract: the declaration parses, the entry is inside the payload, the required
   pair is one the declaration reads and produces, and the two documents agree.
-- `crates/licoup-migrate/tests/state_converter_sample.rs` compiles
+- `crates/licoup (migrate module)/tests/state_converter_sample.rs` compiles
   [`converter/main.rs`](converter/main.rs), assembles the payload above, imports
   it through `PackageStore::install_local_import` and through the coordinator's
   own offline-payload path, selects it by declaration, and drives the stop,

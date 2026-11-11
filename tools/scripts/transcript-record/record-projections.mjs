@@ -60,7 +60,7 @@ export function record(root) {
       join(repositoryRoot, "tools/scripts/cargo-client.mjs"),
       "test",
       "--manifest-path",
-      "crates/licoup-native/Cargo.toml",
+      "crates/licoup/Cargo.toml",
       "--lib",
       "--",
       "--ignored",

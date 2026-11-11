@@ -15,10 +15,7 @@ import {
 const repoRoot = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
 // The CLI-owned product-version authority for `LICO_CLIENT_PRODUCT_VERSION`
-// (`crates/licoup-native/build.rs` consumes it). In the monorepo this came from
-// `apps/desktop/scripts/package-client/build/native.mjs` reading
-// `tools/client-version.json`; this repository owns `tools/cli-version.json`
-// instead. Keep the same manifest shape and validation.
+// (`crates/licoup/build.rs` consumes it) is `tools/cli-version.json`.
 function clientProductVersion() {
   const manifest = JSON.parse(readFileSync(
     path.join(repoRoot, "tools", "cli-version.json"),
@@ -62,7 +59,7 @@ export function runCargoClient(args, {
     }
   }
   if (args.includes("llvm-cov")) {
-    mkdirSync(path.join(root, "build", "coverage", "crates", "licoup-native"), { recursive: true });
+    mkdirSync(path.join(root, "build", "coverage", "crates", "licoup"), { recursive: true });
   }
 
   const targetPath = cargoClientTargetPath({ repoRoot: root, args, env, cwd });

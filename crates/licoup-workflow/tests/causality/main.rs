@@ -1202,10 +1202,7 @@ fn an_earlier_visit_never_satisfies_a_new_join_round() {
         "waiting on a mixed epoch is a named run fact, not a silent stall"
     );
     // The reference reaches the same verdict from the same outcome log.
-    assert_eq!(
-        machine_table(&advanced.snapshot).contains_key(&InputBinding::key("join", 1)),
-        false
-    );
+    assert!(!machine_table(&advanced.snapshot).contains_key(&InputBinding::key("join", 1)));
     let reference = reference_reduce(
         &workflow,
         &[
@@ -2036,7 +2033,8 @@ fn the_incremental_ledger_agrees_with_the_reference_over_every_ordering() {
     // decisions run in the parked order; with only branch-a parked, branch-b
     // arrives through its flow edge first and branch-a advances afterwards.
     // The declared input set must not depend on which of the two that was.
-    let cases: [(&str, bool, bool, Vec<(&str, bool)>, Vec<Outcome>); 2] = [
+    type OrderingCase<'a> = (&'a str, bool, bool, Vec<(&'a str, bool)>, Vec<Outcome>);
+    let cases: [OrderingCase<'_>; 2] = [
         (
             "both-parked-a-then-b",
             true,

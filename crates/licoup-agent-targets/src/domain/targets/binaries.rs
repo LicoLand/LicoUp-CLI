@@ -30,6 +30,11 @@ fn find_binary_with_path_dirs(names: &[&str], path_dirs: &[PathBuf]) -> Option<P
 }
 
 pub(super) fn find_target_binary(def: &TargetDef, params: &Value) -> Option<PathBuf> {
+    // The Lico Agent runtime ships inside this binary: its availability is the
+    // running `licoup` executable itself, never a `lico-agent` on PATH.
+    if def.id == "lico-agent" {
+        return std::env::current_exe().ok();
+    }
     if def.id == "command-code" {
         return find_command_code_binary();
     }
@@ -104,7 +109,7 @@ fn find_codex_binary_with_source() -> Option<(PathBuf, &'static str)> {
     let bundled_dirs = scan_paths::agent_binary_dirs("codex", os, &roots);
     find_codex_binary_with_source_from_dirs(
         &bundled_dirs,
-        || crate::platform::user_shell_environment::search_path_dirs(),
+        crate::platform::user_shell_environment::search_path_dirs,
         || scan_paths::binary_dirs(os, &roots),
     )
 }

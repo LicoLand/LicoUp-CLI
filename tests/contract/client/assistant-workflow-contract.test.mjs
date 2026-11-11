@@ -10,22 +10,22 @@ const read = (relative) => readFileSync(path.join(root, relative), "utf8");
 const decision0003 = read("docs/adrs/0003-group-conversation-agent-profile.md");
 const decision0004 = read("docs/adrs/0004-assistant-authored-flexible-workflows.md");
 const decision0005 = read("docs/adrs/0005-assistant-auto-adaptation-and-deepseek-harness.md");
-const domain = read("crates/licoup-native/src/domain/client_conversation/mod.rs");
+const domain = read("crates/licoup/src/domain/client_conversation/mod.rs");
 const conversationDomain = read("crates/licoup-conversation/src/client_conversation/mod.rs");
 const store = read("crates/licoup-conversation/src/store/mod.rs");
 const schema = read("crates/licoup-conversation/src/store/schema.rs");
-const profile = read("crates/licoup-native/src/domain/client_conversation/profile_snapshot.rs");
+const profile = read("crates/licoup/src/domain/client_conversation/profile_snapshot.rs");
 const assistant = read("crates/licoup-workflow-runtime/src/assistant.rs");
 const flywheelService = read("crates/licoup-workflow-runtime/src/service.rs");
 // The route receipt and the source revisions it names are the port surface's
 // own contract, so they are read where the runtime declares them.
 const portContracts = read("crates/licoup-workflow-runtime/src/ports.rs");
-const usage = read("crates/licoup-native/src/domain/agent_usage.rs");
+const usage = read("crates/licoup/src/domain/agent_usage.rs");
 const policy = read("crates/licoup-client-state/src/policy.rs");
-const subagents = read("crates/licoup-native/src/domain/subagents/mod.rs");
+const subagents = read("crates/licoup/src/domain/subagents/mod.rs");
 const conversationContract = JSON.parse(read("schemas/client_bridge/conversation.json"));
 const strategyContract = JSON.parse(read("schemas/client_bridge/strategy.json"));
-const bundledSkill = read("crates/licoup-native/resources/licoup-guide/SKILL.md");
+const bundledSkill = read("crates/licoup/resources/licoup-guide/SKILL.md");
 
 const FORBIDDEN_PRIVATE = [
   /prompt body/u,
@@ -144,7 +144,7 @@ test("receipts freeze exact bindings and allowlisted sources without private dat
     "skillHub",
     "assistantWorkflowAuthoringBundle",
   ]) {
-    assert.match(portContracts + read("crates/licoup-native/src/domain/client_conversation/service.rs"), new RegExp(`"${owner}"`, "u"));
+    assert.match(portContracts + read("crates/licoup/src/domain/client_conversation/service.rs"), new RegExp(`"${owner}"`, "u"));
   }
   for (const pattern of FORBIDDEN_PRIVATE) {
     assert.doesNotMatch(assistant, pattern, pattern);

@@ -18,7 +18,7 @@ fn fake_child_proves_spawn_stdin_concurrent_drain_and_completion() {
     // One fixture, shared with the host's own end-to-end Codex suites.
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
-        .join("licoup-native")
+        .join("licoup")
         .join("tests")
         .join("fixtures")
         .join("fake_codex_app_server.rs");
@@ -109,7 +109,7 @@ fn fake_child_acknowledges_native_guidance_during_the_active_turn() {
     // One fixture, shared with the host's own end-to-end Codex suites.
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
-        .join("licoup-native")
+        .join("licoup")
         .join("tests")
         .join("fixtures")
         .join("fake_codex_app_server.rs");
@@ -175,7 +175,7 @@ fn fake_child_keeps_the_turn_active_after_steer_so_interrupt_is_observable() {
     // One fixture, shared with the host's own end-to-end Codex suites.
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
-        .join("licoup-native")
+        .join("licoup")
         .join("tests")
         .join("fixtures")
         .join("fake_codex_app_server.rs");

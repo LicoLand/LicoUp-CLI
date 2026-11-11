@@ -1,10 +1,10 @@
 [package]
 name = "licoup-agent-pi"
-version = "0.14.0"
-edition = "2024"
-rust-version = "1.95.0"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "Pi adapter package: the Pi RPC driver, its process half and its vendor protocol"
 
 # The crate is one package's program. `parser` and `driver` are this Agent's
@@ -23,19 +23,19 @@ description = "Pi adapter package: the Pi RPC driver, its process half and its v
 default = []
 
 [dependencies]
-licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+licoup-agent-adapter-sdk.workspace = true
 # The user login-shell environment snapshot every Agent CLI launch observes. It
 # is a launch fact of the machine rather than a client fact this package asks
 # its host for, so it is a dependency rather than a port — exactly as
 # `licoup-agent-openclaw` reads the same snapshot and the absolute-path
 # predicate beside it.
-licoup-agent-targets = { path = "../licoup-agent-targets" }
+licoup-agent-targets.workspace = true
 # The parked-interaction registry a Pi dialog is registered in, the supervised
 # child every Pi launch spawns, the bounded stdin writer the RPC channel is
 # written through and the raw-execution observer its bytes are recorded by are
 # all foundation primitives, so the package reaches the same single
 # implementation the host does rather than keeping second copies of its own.
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-foundation.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
 
@@ -48,8 +48,8 @@ path = "src/bin/lico-agent-pi.rs"
 # reading of it. Nothing here enters the package binary, which links no kernel
 # crate and reads its own package documents as data.
 [dev-dependencies]
-licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-extension-contracts.workspace = true
 # The driver suite waits for a parked interaction route through the foundation
 # registry's own waiting primitive, which travels behind that crate's
 # `test-support` surface because `cfg(test)` is false for a dependency.
-licoup-foundation = { path = "../licoup-foundation", features = ["test-support"] }
+licoup-foundation = { workspace = true, features = ["test-support"] }

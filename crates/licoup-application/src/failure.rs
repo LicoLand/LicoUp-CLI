@@ -236,7 +236,9 @@ impl<'de> Deserialize<'de> for PresentationArgs {
     }
 }
 
-/// Whether a failure named no component.
+/// Whether a failure named no component. Serde's `skip_serializing_if` hands
+/// the field by reference, so the boxed field arrives as `&Box<str>`.
+#[allow(clippy::borrowed_box)]
 fn is_empty_component(component: &Box<str>) -> bool {
     component.is_empty()
 }

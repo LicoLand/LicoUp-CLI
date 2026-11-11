@@ -161,10 +161,11 @@ pub fn register_session(session_id: &str, managed: &Arc<ManagedTransport>) {
             driver_id: managed.key.driver_id,
             session_id: session_id.to_string(),
         };
-        if sessions.len() >= MAX_TRACKED_SESSIONS && !sessions.contains_key(&key) {
-            if let Some(oldest_available) = sessions.keys().next().cloned() {
-                sessions.remove(&oldest_available);
-            }
+        if sessions.len() >= MAX_TRACKED_SESSIONS
+            && !sessions.contains_key(&key)
+            && let Some(oldest_available) = sessions.keys().next().cloned()
+        {
+            sessions.remove(&oldest_available);
         }
         sessions.insert(key, Arc::downgrade(managed));
     }
@@ -177,13 +178,12 @@ pub fn set_active_session(managed: &ManagedTransport, session_id: Option<String>
 }
 
 pub fn remove_transport(managed: &Arc<ManagedTransport>, cleanup: bool) {
-    if let Ok(mut pool) = transport_pool().lock() {
-        if pool
+    if let Ok(mut pool) = transport_pool().lock()
+        && pool
             .get(&managed.key)
             .is_some_and(|current| Arc::ptr_eq(current, managed))
-        {
-            pool.remove(&managed.key);
-        }
+    {
+        pool.remove(&managed.key);
     }
     if let Ok(mut sessions) = session_transports().lock() {
         sessions.retain(|_, weak| {

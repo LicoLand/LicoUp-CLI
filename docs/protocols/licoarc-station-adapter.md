@@ -1,13 +1,15 @@
-# Lico Arc Candidate Station Adapter
+# Lico Arc Station Adapter
 
 English (normative) ·
 [简体中文](licoarc-station-adapter.zh-CN.md) ·
 [Protocol index](README.md)
 
-This document describes LicoUp's client-owned adaptation of endpoint-protected
-content to the candidate `licoarc.relay.v1` station-facing contract. Lico Arc
-Protocol remains the wire authority. BadTower remains an independently
-implemented, intentionally untrusted station. Neither repository is a runtime
+This document describes LicoUp's boundary against the published
+`licoarc-client` adapter. Lico Arc Protocol remains the wire authority; the
+station-facing transport contract, envelope validation, Pairwise Protection,
+session, and replay policy are implemented by the pinned `licoarc` /
+`licoarc-client` releases, not by this repository. A station is independently
+implemented and intentionally untrusted; no station repository is a runtime
 or release dependency of LicoUp.
 
 ## Protocol and endpoint authority
@@ -18,92 +20,72 @@ contract. LicoUp owns conforming local execution, private keys, Provider
 configuration, plaintext, history, backups, user trust, approvals, and local
 effects.
 
-The [current retiring endpoint-protection Preview](../STATUS.md) is a LicoUp
-implementation, not a Lico Arc Profile. It has no future interoperability
-promise and is to be retired directly when a complete pinned Lico Arc Protocol
-Line replaces it. This is independent of the current `licoarc.relay.v1` outer
-adapter described below, which remains an implemented and locally verified
-Candidate adapter.
+The retired in-repository endpoint-protection preview — the local
+`licoarc.relay.v1` outer adapter, its OpenMLS pairwise sessions, ratchets,
+key transparency, and the HTTP BadTower station transport — is removed. The
+published LicoArc client stack is the only station adapter this repository
+executes; there is no dual station-wire compatibility mode or translation
+gateway.
 
-## Closed outer boundary
+## Local adapter boundary
 
-The adapter emits and accepts exactly the five fields defined by the pinned
-candidate:
+LicoUp's side of the adapter owns four bounded responsibilities:
 
-- `contractVersion`;
-- `envelopeId`;
-- `mailboxId`;
-- `ciphertext`; and
-- `expiresAt`.
+- Credentials. The station URL and access token are explicit client
+  configuration; no official-network default is populated. The device
+  signing key never leaves custody: `SessionCustody` resolves key handles
+  through `KeyCustody` into the operating-system secret store and hands the
+  SDK custody handles, never exported key material.
+- Durable state. Pairing offers/claims, peer sessions, cursors, and the
+  outbound outbox are persisted atomically under the device data home by
+  `SessionState` / `DevicesState`. `devices sync` retries durable outbound
+  work for every peer session, including sessions untouched by the current
+  process.
+- Receive loop. While the device is enrolled, the host runs
+  `MailboxClient` with the SDK's reconnect semantics: unbounded retry with
+  jittered backoff, terminal on superseded, revoked, device-mismatch, or
+  refused. Every delivery is forwarded to the processing thread; a
+  delivery's ACK is sent only after the processor reports `Done`, and a
+  `Defer` leaves it stored for the next connection to redeliver.
+- Bridged dispatch. Session protocol work runs on a synchronous processing
+  thread; each outbound packet crosses a bridged `Transport` that blocks
+  until the async half reports the station outcome — accepted, rejected,
+  transient, or ambiguous.
 
-The client rejects an unknown field, duplicate field, unsupported contract
-identifier, invalid identifier, invalid expiry, malformed carrier, or
-over-limit value. The outer object contains no plaintext field.
+## Untrusted station boundary
 
-The endpoint-protected carrier is one canonical value inside `ciphertext`.
-LicoUp binds the complete outer routing context as authenticated data and
-protects the private header with XChaCha20-Poly1305. The endpoint content
-remains protected by the current endpoint-protection Preview session and
-ratchet. Those inner carrier, session, and ratchet details describe the current
-LicoUp preview; they are not a normative Lico Arc Pairwise Protection or
-Transport Profile and are not BadTower algorithms.
+Station-reported state is a transport hint, never endpoint evidence. A
+lease, an acceptance flag, a duplicate flag, a deletion acknowledgement, an
+HTTP status, a station timestamp, or queue state cannot establish delivery,
+admission, read, or acceptance — the SDK's `StationHint` type makes this
+constant (`is_endpoint_evidence()` is `false`).
 
-## Four station operations
-
-The BadTower transport adapter exposes only four bounded operations:
-
-| Operation | Station-local effect | Endpoint meaning |
-| --- | --- | --- |
-| Lease mailbox | Request temporary mailbox work eligibility | Untrusted transport hint |
-| Send envelope | Submit one closed Lico Arc envelope | Station acceptance is not peer receipt |
-| Receive envelopes | Read one bounded candidate set | Every value requires strict endpoint verification |
-| Delete envelope | Request removal of one received envelope | Station acknowledgement is not endpoint evidence |
-
-The station URL is explicit client configuration. No official-network default
-is populated. The adapter accepts HTTPS origins and loopback HTTP for bounded
-local work; it does not discover a station, import sibling source, or accept a
+The adapter accepts HTTPS origins and loopback HTTP for bounded local work.
+It does not discover a station, import sibling source, or accept a
 station-provided algorithm, key, trust root, identity, policy, or executable
 code.
 
-## Endpoint acceptance order
+## Acceptance order
 
-A received envelope is eligible for deletion only after the client:
+A received packet is eligible for ACK and removal only after the client:
 
-1. strictly validates the five-field outer object and encrypted carrier;
-2. authenticates and decrypts the private header and protected content;
-3. checks the expected endpoint, session, direction, freshness, and replay
-   state; and
-4. accepts the endpoint-authenticated command or result transition.
+1. accepts it through the SDK's closed outer validation;
+2. authenticates and verifies it inside the LicoArc session engine —
+   expected peer, session, direction, freshness, and replay state; and
+3. the processor applies the endpoint-authenticated command or result
+   transition and reports `Done`.
 
-A lease, HTTP status, station timestamp, queue state, acceptance flag,
-duplicate flag, or deletion acknowledgement cannot bypass this order or
-establish final receipt.
+No station hint can bypass this order or establish final receipt.
 
-## Verified candidate scenario
+## Local verification
 
-The bounded local acceptance uses two freshly initialized endpoints with
-separate client state, a pinned Lico Arc candidate bundle, and an actual
-BadTower candidate process. It verifies:
+Deterministic in-process coverage exercises two data homes end to end:
+pairing offer/claim/cancel, paired message send and result retrieval,
+duplicate idempotency, unpair refusal while live work remains, completed-
+pairing cancellation that cannot destroy a live session, and `devices sync`
+draining durable outbound work across all peer sessions. Live station
+acceptance remains a separately assigned workflow and is not engineering
+proof for this boundary.
 
-- one protected command and authenticated result round trip;
-- exactly five station-visible outer fields;
-- absence of endpoint plaintext from station-visible storage;
-- rejection of unsupported and extended envelopes; and
-- no promotion of station transport hints into endpoint evidence.
-
-The receipt is privacy-minimal and excludes endpoint content, ciphertext, key
-material, endpoint or machine identity, private addresses, and raw runtime
-records.
-
-This scenario is candidate interoperability evidence only. It does not publish
-Lico Arc Protocol, release LicoUp or BadTower, declare platform support, or
-prove that an official network is operating.
-
-## Migration state
-
-The retired client-specific station envelope/API, route family,
-service-session scope, configuration, fixtures, and documentation are removed.
-There is no dual station-wire compatibility mode or station translation
-gateway. That completed station migration does not mean that the
-current retiring endpoint-protection Preview has already been removed or
-accepted as a Lico Arc Profile.
+Diagnostics stay bounded: no private paths, stored values, credential
+material, raw secrets, or ciphertext appear in command output or evidence.

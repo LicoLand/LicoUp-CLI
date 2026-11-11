@@ -65,7 +65,7 @@ fn admit_attachments(
         if !metadata.file_type().is_file() {
             return Err(RuntimeAdapterError::AttachmentFileUnavailable);
         }
-        total_bytes = total_bytes.checked_add(metadata.len()).unwrap_or(u64::MAX);
+        total_bytes = total_bytes.saturating_add(metadata.len());
         if metadata.len() > MAX_IMAGE_ATTACHMENT_BYTES_PER_FILE
             || total_bytes > MAX_IMAGE_ATTACHMENT_BYTES_TOTAL
         {

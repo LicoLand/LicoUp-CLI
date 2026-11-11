@@ -76,7 +76,7 @@ pub fn run(payload: &str) -> io::Result<HookOutcome> {
     let Some(path) = receipt_path() else {
         return Ok(HookOutcome::NoIdentity);
     };
-    Ok(record(&path, payload)?)
+    record(&path, payload)
 }
 
 /// Resolve the receipt path this turn's driver exported.

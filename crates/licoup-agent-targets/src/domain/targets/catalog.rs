@@ -275,8 +275,12 @@ pub fn target_defs() -> Vec<TargetDef> {
             label: "Lico Agent CLI",
             kind: "cli",
             config_hint: "LicoUp first-party Agent sessions",
-            binary_names: &["lico-agent"],
-            process_names: &["lico-agent.exe", "lico-agent"],
+            // The runtime is the running `licoup` executable re-exec'd with
+            // argv[1] = `lico-agent`: availability comes from
+            // `std::env::current_exe()`, and no separate `lico-agent` binary
+            // or process image name ever exists to scan for.
+            binary_names: &[],
+            process_names: &[],
         },
         TargetDef {
             id: "workbuddy",

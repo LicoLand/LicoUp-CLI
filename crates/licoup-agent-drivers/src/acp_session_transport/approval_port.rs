@@ -4,7 +4,7 @@
 //! The authority is the host's own: it decides whether a parked interaction may
 //! be raised, registers it with the endpoints that may answer, and fans the
 //! request out. This crate declares the two evaluations it asks for and the
-//! composition above this crate answers them — `licoup-native` today, whose
+//! composition above this crate answers them — `licoup` today, whose
 //! Secure Mesh approval authority lives inside the host — so the transport
 //! names no authority and depends on no security crate.
 //!

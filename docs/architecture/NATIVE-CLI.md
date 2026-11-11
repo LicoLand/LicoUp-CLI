@@ -93,13 +93,13 @@ executable. The MCP adapter's narrower remote exposure is owned by its
 
 | Concern | Source |
 | --- | --- |
-| Admission, help, and command catalog | `crates/licoup-native/src/ffi/commands/mod.rs` |
+| Admission, help, and command catalog | `crates/licoup/src/ffi/commands/mod.rs` |
 | Generated RPC method authority | `schemas/conversation_protocol/conversation_protocol.schema.json` |
-| CLI request projection | `crates/licoup-native/src/ffi/commands/native_rpc.rs` |
-| Native host frames and stream output | `crates/licoup-native/src/platform/conversation_host_client.rs` |
-| Native executable and host startup | `crates/licoup-native/src/bin/licoup.rs` and `bin/licoup/conversation_host.rs` |
-| Local Subagents and MCP lifecycle commands | `crates/licoup-native/src/ffi/commands/subagents.rs` |
-| Local Subagents invocation and caller admission | `crates/licoup-native/src/domain/subagents/local.rs` |
+| CLI request projection | `crates/licoup/src/ffi/commands/native_rpc.rs` |
+| Native host frames and stream output | `crates/licoup/src/platform/conversation_host_client.rs` |
+| Native executable and host startup | `crates/licoup/src/bin/licoup.rs` and `bin/licoup/conversation_host.rs` |
+| Local Subagents and MCP lifecycle commands | `crates/licoup/src/ffi/commands/subagents.rs` |
+| Local Subagents invocation and caller admission | `crates/licoup/src/domain/subagents/local.rs` |
 
 ## Custom operation properties
 

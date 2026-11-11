@@ -12,14 +12,14 @@ use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 
-use licoup_extension_contracts::deployment::InstanceLifecycle;
-use licoup_native::platform::extension_host::isolation::{
+use licoup::platform::extension_host::isolation::{
     IsolationMode, IsolationRecord, ReleaseScope, ResolvedProgram, ResourceLimits, StaticPrograms,
 };
-use licoup_native::platform::extension_host::{
+use licoup::platform::extension_host::{
     CancelDisposition, CatalogJournal, ExtensionHost, InvocationOutcome, RuntimeCatalogJournal,
     SessionOwner,
 };
+use licoup_extension_contracts::deployment::InstanceLifecycle;
 use serde_json::{Value, json};
 
 use crate::support::{

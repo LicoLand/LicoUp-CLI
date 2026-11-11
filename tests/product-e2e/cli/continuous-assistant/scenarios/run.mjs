@@ -43,7 +43,7 @@ export function invokeScenarioTarget() {
     "tools/scripts/cargo-client.mjs",
     "test",
     "-p",
-    "licoup-native",
+    "licoup",
     "--features",
     "test-support",
     "--test",

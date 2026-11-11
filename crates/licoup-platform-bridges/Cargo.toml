@@ -4,8 +4,8 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
-
+repository.workspace = true
+description = "LicoUp platform bridges: same-process ABI identity and the generation-index handle arena."
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

@@ -10,12 +10,10 @@ const repoRoot = path.resolve(
   "../../..",
 );
 const sourceRoot =
-  "crates/licoup-native/src/domain/agent_usage/agent_usage_codex";
-const integrationRoot = "crates/licoup-native/tests/agent_usage_cache_cases";
+  "crates/licoup/src/domain/agent_usage/agent_usage_codex";
+const integrationRoot = "crates/licoup/tests/agent_usage_cache_cases";
 const integrationFacade =
-  "crates/licoup-native/tests/agent_usage_incremental_cache.rs";
-const architectureRegistry =
-  "apps/desktop/scripts/client-architecture/checks/native/domain-and-crypto-boundaries.mjs";
+  "crates/licoup/tests/agent_usage_incremental_cache.rs";
 const compositionModuleId = "rust.domain.agent-usage-cache";
 
 const productionLeaves = Object.freeze([
@@ -116,59 +114,6 @@ function assertIntegrationTestCommand(module, expectedFilter) {
     "agent_usage_incremental_cache",
   );
   assert.equal(module.command.args.at(-1), expectedFilter);
-}
-
-function architectureIntegrationLeaves(source) {
-  const registryMarker =
-    "const agentUsageCacheScenarioLeaves = new Set([";
-  const registryStart = source.indexOf(registryMarker);
-  assert.notEqual(registryStart, -1, "missing Codex usage architecture registry");
-  const entriesStart = registryStart + registryMarker.length;
-  const registryEnd = source.indexOf("]);", entriesStart);
-  assert.notEqual(registryEnd, -1, "unterminated Codex usage architecture registry");
-  const nextDeclaration = source.indexOf(
-    "const agentUsageCacheIntegrationFacade",
-    registryEnd + 3,
-  );
-  assert.notEqual(
-    nextDeclaration,
-    -1,
-    "missing declaration after Codex usage architecture registry",
-  );
-  assert.match(
-    source.slice(registryEnd + 3, nextDeclaration),
-    /^\s*$/u,
-    "Codex usage architecture registry must end after its static Set",
-  );
-
-  const entriesSource = source.slice(entriesStart, registryEnd);
-  const entryPattern =
-    /`\$\{agentUsageCacheIntegrationRoot\}\/([a-z_]+\.rs)`/yu;
-  const leaves = [];
-  let cursor = 0;
-  while (cursor < entriesSource.length) {
-    const whitespace = /^\s*/u.exec(entriesSource.slice(cursor));
-    cursor += whitespace[0].length;
-    if (cursor === entriesSource.length) break;
-    entryPattern.lastIndex = cursor;
-    const entry = entryPattern.exec(entriesSource);
-    assert.ok(
-      entry,
-      `non-static Codex usage architecture registry entry at offset ${cursor}`,
-    );
-    leaves.push(entry[1]);
-    cursor = entryPattern.lastIndex;
-    const trailingWhitespace = /^\s*/u.exec(entriesSource.slice(cursor));
-    cursor += trailingWhitespace[0].length;
-    if (cursor === entriesSource.length) break;
-    assert.equal(
-      entriesSource[cursor],
-      ",",
-      `missing Codex usage architecture registry delimiter at offset ${cursor}`,
-    );
-    cursor += 1;
-  }
-  return leaves;
 }
 
 async function sources() {
@@ -286,17 +231,6 @@ test("Codex usage integration composition matches every ordinary leaf on disk ex
     assert.equal(body.includes("include!("), false);
     assert.equal(body.includes("#[path"), false);
   }
-});
-
-test("Codex usage architecture registry owns the complete integration leaf set exactly once", async () => {
-  const registeredLeaves = architectureIntegrationLeaves(
-    await read(architectureRegistry),
-  );
-  assert.equal(registeredLeaves.length, new Set(registeredLeaves).size);
-  assert.deepEqual(
-    [...registeredLeaves].sort(),
-    [...integrationLeaves].sort(),
-  );
 });
 
 test("Codex usage regression catalog gives every scenario one precise owner and support one composition owner", () => {

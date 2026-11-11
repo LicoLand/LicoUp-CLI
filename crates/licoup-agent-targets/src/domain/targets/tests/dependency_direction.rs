@@ -1,19 +1,19 @@
 //! The inventory is a capability slice and must stay below the host that
 //! composes it.
 //!
-//! `licoup-native` depends on this crate and answers its port; a dependency in
+//! `licoup` depends on this crate and answers its port; a dependency in
 //! the other direction would be a cycle, and a dependency on any other host
 //! crate would put an owner above the inventory. The manifests are the
 //! contract, so they are asserted directly rather than inferred from a build
 //! that happens to link.
 
 const MANIFEST: &str = include_str!("../../../../Cargo.toml");
-const HOST_MANIFEST: &str = include_str!("../../../../../licoup-native/Cargo.toml");
+const HOST_MANIFEST: &str = include_str!("../../../../../licoup/Cargo.toml");
 
 /// Every crate this inventory is allowed to reach downward: LicoUp's own
 /// foundation/state/adapter packages and `a4aa`, the shared adapter core the
 /// discovery engine, host environment and SSH remote live in. None is a host
-/// crate — `licoup-native` composes this inventory, not the reverse.
+/// crate — `licoup` composes this inventory, not the reverse.
 const DOWNWARD_DEPENDENCIES: &[&str] = &[
     "a4aa",
     "licoup-foundation",
@@ -38,7 +38,9 @@ fn path_dependency_names(manifest: &str) -> Vec<String> {
 #[test]
 fn the_inventory_depends_on_no_host_crate() {
     assert!(
-        !MANIFEST.contains("licoup-native"),
+        !path_dependency_names(MANIFEST)
+            .iter()
+            .any(|name| name == "licoup"),
         "the Agent inventory must not depend on the host that composes it"
     );
     for name in path_dependency_names(MANIFEST) {

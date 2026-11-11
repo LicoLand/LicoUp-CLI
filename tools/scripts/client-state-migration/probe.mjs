@@ -20,7 +20,7 @@ export const GATEWAY_CUSTODY_DOMAIN = "gateway-credential-custody";
 /** Platform-owner projection; Node's platform names are only transport aliases. */
 export function gatewayCredentialMigrationDisposition(platform) {
   const platformId = ({ darwin: "macos", win32: "windows" })[platform] ?? platform;
-  const policy = readJsonArtifact(path.join(REPO_ROOT, "crates/licoup-native/resources/gateway-credential-migration.json"));
+  const policy = readJsonArtifact(path.join(REPO_ROOT, "crates/licoup/resources/gateway-credential-migration.json"));
   const disposition = policy?.[platformId];
   requireValue(["requires-authorization", "not-applicable"].includes(disposition), "probe_capability_unavailable");
   return disposition;
@@ -39,7 +39,6 @@ const CONVERSATION_SCHEMA_VERSION = "19";
 const CONVERSATION_COMPLETION_MARKER = "schema=v5\nstatus=complete\n";
 export const ADAPTIVE_FLYWHEEL_SCHEMA_VERSIONS = Object.freeze({ "3": 2, "2": 1 });
 const MOBILE_RELAY_SCHEMA_VERSION = 2;
-const MOBILE_RELAY_E2EE_PROTOCOL_VERSION = "licomesh.mobile-relay.e2ee.pqxdh-mlkem1024.v1";
 const SQLITE_HEADER = `SQLite format 3${String.fromCharCode(0)}`;
 
 /** Domain documents and their own schema markers, not store-internal versions. */
@@ -116,23 +115,13 @@ function agentTabOrderProbe(root, shape) {
 }
 
 function mobileRelayProbe(root, shape) {
-  const document = readJsonArtifact(documentPath(root, shape));
-  if (document === null) return { storeSchemaVersion: 0, present: false, documentSchemaVersion: null };
-  requireValue(isPlainObject(document), "unsupported_state_shape");
-  const version = asU64(document.schemaVersion);
-  if (version === shape.schemaVersion || version === 0 || version === 1) {
-    requireValue(!protocolIsIncompatible(document), "unsupported_state_shape");
-    return { storeSchemaVersion: version === shape.schemaVersion ? 1 : 0, present: true, documentSchemaVersion: version };
-  }
-  if (version !== undefined && version > shape.schemaVersion) throw new MigrationStateError("state_newer_than_binary");
-  throw new MigrationStateError("unsupported_state_shape");
-}
-
-function protocolIsIncompatible(document) {
-  const state = document.mobileRelayE2ee;
-  if (!isPlainObject(state)) return false;
-  const protocol = state.protocolVersion;
-  return typeof protocol === "string" && protocol.trim() !== MOBILE_RELAY_E2EE_PROTOCOL_VERSION;
+  // The retired pairing store of the pre-LicoArc device relay. The code that
+  // used it is gone and users pair again; the store itself is preserved
+  // exactly as it is. Its presence alone is observed — the document is never
+  // read, rewritten or deleted — so a present store reports the domain's
+  // target and an absent one completes the domain without creating it.
+  const present = regularFileExists(documentPath(root, shape));
+  return { storeSchemaVersion: present ? 1 : 0, present, documentSchemaVersion: null };
 }
 
 function collectionsProbe(root, shape) {

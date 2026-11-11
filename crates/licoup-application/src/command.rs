@@ -114,6 +114,10 @@ impl Operation {
 }
 
 /// The Assistant Profile listing and workflow control family.
+///
+/// A command envelope is decoded once per call and moved, never stored in
+/// bulk, so its widest variant is kept inline rather than boxed.
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(tag = "command", rename_all = "kebab-case")]
 pub enum AssistantCommand {

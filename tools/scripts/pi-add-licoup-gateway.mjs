@@ -60,11 +60,11 @@ function defaultPiAgentRoot() {
 function resolveLicoupCli() {
   const candidates = [
     process.env.LICO_CLIENT_PATH,
-    join(repoRoot, "build", "crates", "licoup-native", "target", "debug", "licoup-cli"),
-    join(repoRoot, "crates", "licoup-native", "target", "debug", "licoup-cli"),
-    join(repoRoot, "target", "debug", "licoup-cli"),
-    join(repoRoot, "build", "crates", "licoup-native", "target", "release", "licoup-cli"),
-    join(repoRoot, "target", "release", "licoup-cli"),
+    join(repoRoot, "build", "crates", "licoup", "target", "debug", "licoup"),
+    join(repoRoot, "crates", "licoup", "target", "debug", "licoup"),
+    join(repoRoot, "target", "debug", "licoup"),
+    join(repoRoot, "build", "crates", "licoup", "target", "release", "licoup"),
+    join(repoRoot, "target", "release", "licoup"),
     join(
       repoRoot,
       "build",
@@ -76,7 +76,7 @@ function resolveLicoupCli() {
       "LicoUp.app",
       "Contents",
       "MacOS",
-      "licoup-cli",
+      "licoup",
     ),
   ].filter(Boolean);
   return candidates.find((path) => existsSync(path)) || "";
@@ -89,9 +89,9 @@ function buildLicoupCli() {
       join(repoRoot, "tools/scripts/cargo-client.mjs"),
       "build",
       "--manifest-path",
-      "crates/licoup-native/Cargo.toml",
+      "crates/licoup/Cargo.toml",
       "--bin",
-      "licoup-cli",
+      "licoup",
     ],
     { cwd: repoRoot, encoding: "utf8", stdio: "inherit" },
   );

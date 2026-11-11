@@ -3,17 +3,16 @@ name = "licoup-conversation"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-repository.workspace = true
 license.workspace = true
-publish = false
-
+repository.workspace = true
+description = "Durable LicoUp Canonical Conversation authority backed by SQLite."
 [features]
 default = []
 test-counters = []
 
 [dependencies]
 anyhow.workspace = true
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-foundation.workspace = true
 rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -24,4 +23,4 @@ uuid.workspace = true
 proptest = "1.7"
 
 [build-dependencies]
-licoup-state-machine-codegen = { path = "../licoup-state-machine-codegen" }
+licoup-state-machine-codegen.workspace = true

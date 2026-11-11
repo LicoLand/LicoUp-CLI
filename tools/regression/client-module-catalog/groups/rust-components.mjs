@@ -44,12 +44,6 @@ export const RUST_COMPONENT_MODULES = Object.freeze([
     ["crates/licoup-private-gateway/src/**", "crates/licoup-private-gateway/tests/**"],
   ),
   crateTests(
-    "rust.crate.mobile-core",
-    "Portable mobile entry and group bridge contracts",
-    "licoup-mobile-core",
-    ["crates/licoup-mobile-core/src/**", "crates/licoup-mobile-core/tests/**"],
-  ),
-  crateTests(
     "rust.crate.model-catalog",
     "Model candidate policy and composition port",
     "licoup-model-catalog",

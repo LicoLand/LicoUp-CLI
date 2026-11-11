@@ -4,7 +4,7 @@
  * Public real-conversation executor for every agent directory.
  *
  * One real conversation: send exactly one message from the LicoUp interface
- * (licoup-cli sidecar `agent conversation send`) to the named agent and
+ * (licoup sidecar `agent conversation send`) to the named agent and
  * assert that the agent returns a non-empty reply.
  */
 

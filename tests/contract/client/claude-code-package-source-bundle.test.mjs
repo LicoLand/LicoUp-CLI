@@ -149,8 +149,8 @@ test("the package names no client crate and reparses no raw vendor detail", asyn
   const code = codeOf(sources);
   for (const clientPath of [
     "crate::platform",
-    "licoup_native",
-    "licoup-native",
+    "licoup::",
+    '"licoup"',
     "licoup_agent_drivers",
   ]) {
     assert.equal(
@@ -162,10 +162,10 @@ test("the package names no client crate and reparses no raw vendor detail", asyn
   // The process half does read the two shared libraries below the composition
   // — the user-shell environment every launcher observes and the approval park
   // registry every Agent's permission route parks in — and still names no
-  // composition crate. A driver that reached `licoup-native` would be a second
+  // composition crate. A driver that reached `licoup` would be a second
   // composition inside one package.
   const driverCode = codeOf(await driverSources());
-  for (const compositionPath of ["crate::platform", "licoup_native", "licoup-native"]) {
+  for (const compositionPath of ["crate::platform", "licoup::", '"licoup"']) {
     assert.equal(
       driverCode.includes(compositionPath),
       false,

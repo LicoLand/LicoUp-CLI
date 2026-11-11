@@ -2,7 +2,7 @@
 //!
 //! VENDOR-CODE-REMOVAL moved this module, its client ([`crate::tui_gateway`])
 //! and the conversation-history projection over the same connection
-//! ([`crate::remote_gateway_history`]) out of `licoup-native`'s platform tree:
+//! ([`crate::remote_gateway_history`]) out of `licoup`'s platform tree:
 //! the Gateway is one Agent's vendor transport, so it belongs to that Agent's
 //! package. The composition above still owns the lane choice — a turn bound to
 //! the Gateway speaks this protocol and a local turn speaks [`crate::driver`]'s

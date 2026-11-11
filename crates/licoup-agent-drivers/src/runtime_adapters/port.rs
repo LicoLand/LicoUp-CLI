@@ -9,7 +9,7 @@
 //! how its executable is probed, how one of its turns is executed, and whether
 //! a durable native identity is valid for it — arrives through
 //! [`AgentDriverRegistration`], and the composition above this crate supplies
-//! the registrations: `licoup-native` while the Agent crates do not exist,
+//! the registrations: `licoup` while the Agent crates do not exist,
 //! `licoup-agent-<agent>` once they do.
 //!
 //! The same shape is used one layer down by `licoup-agent-adapter-sdk`, whose
@@ -109,7 +109,7 @@ pub struct AcpCapabilityFacts {
 /// This is the projection of one Agent's own `RunResult`. It is a superset of
 /// every Agent's result, so an Agent that reports no ACP capability facts and
 /// no transitions leaves them empty and nothing is inferred on its behalf.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct DrivenRun {
     pub ok: bool,
     pub output: String,
@@ -134,29 +134,6 @@ pub struct DrivenRun {
     pub runtime_protocol: &'static str,
     /// This Agent's driver identity, as its own engine reports it.
     pub driver_id: &'static str,
-}
-
-impl Default for DrivenRun {
-    fn default() -> Self {
-        Self {
-            ok: false,
-            output: String::new(),
-            transitions: Vec::new(),
-            error: None,
-            session_id: String::new(),
-            thread_id: String::new(),
-            turn_id: String::new(),
-            turn_status: String::new(),
-            effective: DriverEffectiveSettings::default(),
-            acp_capabilities: None,
-            status_code: None,
-            stdout_truncated: false,
-            stderr_truncated: false,
-            started_at: String::new(),
-            runtime_protocol: "",
-            driver_id: "",
-        }
-    }
 }
 
 /// One Agent's driver run, in the shape the host's dispatch resolves it.

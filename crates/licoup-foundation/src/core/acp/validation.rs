@@ -42,10 +42,10 @@ pub(super) fn validate_optional_meta(
     }
 }
 
-pub(super) fn optional_object<'a>(
-    value: Option<&'a Value>,
+pub(super) fn optional_object(
+    value: Option<&Value>,
     error: AcpError,
-) -> Result<Option<&'a Map<String, Value>>, AcpError> {
+) -> Result<Option<&Map<String, Value>>, AcpError> {
     match value {
         None | Some(Value::Null) => Ok(None),
         Some(Value::Object(value)) => Ok(Some(value)),

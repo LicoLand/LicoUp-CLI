@@ -180,13 +180,12 @@ fn cli_exact_resume_places_session_and_prompt_in_argv() {
     // per-turn fragments.
     let chunks: Vec<String> = events
         .iter()
-        .filter_map(|event| {
-            (event["event"] == "agent.message.chunk").then(|| {
-                event["payload"]["text"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .to_owned()
-            })
+        .filter(|&event| event["event"] == "agent.message.chunk")
+        .map(|event| {
+            event["payload"]["text"]
+                .as_str()
+                .unwrap_or_default()
+                .to_owned()
         })
         .collect();
     assert_eq!(

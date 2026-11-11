@@ -65,6 +65,7 @@ pub(super) fn node(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn edge(
     edge_id: &str,
     project_id: &ProjectId,

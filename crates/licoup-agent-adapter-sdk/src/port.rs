@@ -5,7 +5,7 @@
 //! registry lookup, the replay harness and the parser lifecycle machine — and
 //! it owns no Agent's protocol. Everything it reports *about* one Agent arrives
 //! through [`AdapterParserSet`], the collection of Agent parsers that the
-//! composition above the SDK injects: `licoup-native` today, the driver and
+//! composition above the SDK injects: `licoup` today, the driver and
 //! per-Agent crates once those exist.
 //!
 //! The port is a value of `fn` pointers rather than a trait, so the SDK keeps

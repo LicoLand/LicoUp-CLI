@@ -6,8 +6,8 @@
 #[test]
 fn reference_interpreter_spawns_the_same_allowed_target_only_in_control() {
     use crate::support::*;
-    use licoup_native::platform::extension_host::ExtensionCarrier;
-    use licoup_native::platform::extension_host::isolation::IsolationMode;
+    use licoup::platform::extension_host::ExtensionCarrier;
+    use licoup::platform::extension_host::isolation::IsolationMode;
     use std::time::Duration;
     let python = python_runtime();
     let sandbox = Sandbox::new("python-creation");
@@ -82,8 +82,8 @@ fn reference_interpreter_spawns_the_same_allowed_target_only_in_control() {
 #[test]
 fn same_allowed_target_creation_controls() {
     use crate::support::{Sandbox, carrier, carrier_spec, policy, programs, read_text, wait_for};
-    use licoup_native::platform::extension_host::ExtensionCarrier;
-    use licoup_native::platform::extension_host::isolation::{
+    use licoup::platform::extension_host::ExtensionCarrier;
+    use licoup::platform::extension_host::isolation::{
         IsolationMode, ReleaseScope, ResolvedProgram,
     };
     use std::process::Command;

@@ -229,12 +229,14 @@ fn match_spec(adapter: RuntimeAdapter, kind: NativeCapabilityKind) -> Option<Mat
             ..BASE
         },
         (RuntimeAdapter::LicoAgent, Cli) => MatchSpec {
-            names: &["lico-agent"],
+            names: &["licoup"],
+            substring: Some(" agent run "),
             exclude_tokens: &["--mode"],
             ..BASE
         },
         (RuntimeAdapter::LicoAgent, Rpc) => MatchSpec {
-            names: &["lico-agent"],
+            names: &["licoup"],
+            substring: Some(" agent run "),
             token: Some("rpc"),
             ..BASE
         },
@@ -295,7 +297,7 @@ impl LiveSnapshot {
 
 /// Parse `ps -axo pid=,args=` output. The executable base name comes from the
 /// first argument so truncated Unix `comm` fields never hide long names such
-/// as `lico-llm-gateway`.
+/// as `licoup gateway run`.
 pub fn parse_ps_entries(output: &str) -> Vec<ProcessEntry> {
     output
         .lines()

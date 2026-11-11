@@ -433,7 +433,7 @@ static INSTALLED: OnceLock<CandidatePolicyPort> = OnceLock::new();
 
 /// Install this host's answers for the candidate policy port, once per process.
 ///
-/// The composition that calls it lives at the `licoup-native` crate root, above
+/// The composition that calls it lives at the `licoup` crate root, above
 /// both layers: the declared registry holds the identity fact, the Gateway read
 /// holds the route it observed, and the credential and quota owners answer for
 /// their own facts. One answer per port: reinstalling the same answers is

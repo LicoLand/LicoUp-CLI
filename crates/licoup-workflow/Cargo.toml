@@ -4,8 +4,8 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
-
+repository.workspace = true
+description = "LicoUp Adaptive Flywheel workflow compiler and transition machine."
 [dependencies]
 acativa = "0.2.0"
 anyhow.workspace = true

@@ -5,7 +5,7 @@ The packages this run installs are produced here, outside the Rust crate, by
 this file alone: an ordinary package and its update, a package that ships an
 install script, and an archive that tries to escape its package root. The
 ignored black-box scenario in
-``crates/licoup-native/src/platform/extension_packages/scenarios/external_fixtures.rs``
+``crates/licoup/src/platform/extension_packages/scenarios/external_fixtures.rs``
 installs them on a real filesystem, and this driver then inspects the sandbox
 after the Rust process has exited.
 
@@ -112,7 +112,7 @@ def run_scenario(fixtures: Path, sandbox: Path) -> subprocess.CompletedProcess:
         "tools/scripts/cargo-client.mjs",
         "test",
         "--manifest-path",
-        "crates/licoup-native/Cargo.toml",
+        "crates/licoup/Cargo.toml",
         "--lib",
         "--locked",
         FILTER,

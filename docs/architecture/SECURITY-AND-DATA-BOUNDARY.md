@@ -18,27 +18,13 @@ ssh -o BatchMode=yes -o StrictHostKeyChecking=yes <user>@<host> <command>
 ```
 It passes one fixed, shell-quoted guest command. Both ACP and Hermes TUI gateway protocols use bounded JSON-RPC over stdin/stdout.
 
-## 2. Retiring Endpoint-Protection Preview Layers
-
-The current retiring endpoint-protection Preview uses a fixed security profile:
-
-```mermaid
-flowchart TB
-    ID["Peer identity<br/>Ed25519 signatures"] --> SETUP["Session setup<br/>X25519 + ML-KEM-1024"]
-    SETUP --> DERIVE["Key derivation and ratchets<br/>HKDF-SHA256"]
-    DERIVE --> CONTENT["Message protection<br/>ChaCha20-Poly1305"]
-    CONTENT --> VERIFY["Verify before use<br/>no plaintext fallback"]
-```
-
-Algorithms are combined only when they have distinct roles and validated compositions. The profile locks during the initial handshake. Missing or failed security checks strictly prohibit fallback to plaintext communication.
-
-## 3. Platform Secret Custody
+## 2. Platform Secret Custody
 
 The client probes platform capabilities and selects system secure storage when available, otherwise explicitly falling back to ephemeral in-memory storage. Private key custody and local Provider selection remain LicoUp responsibilities; wire-observable profiles and negotiation belong to the fixed Lico Arc Protocol Line.
 
-The canonical five-field Lico Arc envelope, bounded carrier, private-header format, mailbox derivation, and authenticated-padding bucket validator have one implementation in `licoup-protocol-bindings`. Native endpoint callers supply ratchet/header material and retain content encryption, bucket selection and padding effects, key custody, persistence, and Station I/O; they consume the shared codec directly.
+Cross-device envelopes, carriers, sessions and record protection belong to LicoArc and are consumed through the `licoarc-client` crate (mailbox carrier, receive loop, session drives). LicoUp keeps the device key in the OS secret store, the application command payload, its receive policy and replay ledger (`domain::devices`), and the command group the Desktop calls.
 
-## 4. Provider-Managed History and Recovery
+## 3. Provider-Managed History and Recovery
 
 Provider-managed cloud history is a separate source from the local Canonical
 Conversation store. After provider authorization, retained history is readable
@@ -70,7 +56,7 @@ flowchart LR
     S["Malicious Station<br/>transport only"]
 ```
 
-## 5. Data Boundaries and Rules
+## 4. Data Boundaries and Rules
 
 ```mermaid
 sequenceDiagram
@@ -93,7 +79,7 @@ The client strictly adheres to these data boundaries:
 - **Zero-Trust Stations**: Compatible stations are outside the trusted boundary and outside LicoUp's history path. Private keys and approval policies stay entirely with endpoints.
 - **Safe Summaries**: Logs and reports retain only security summaries, never raw user content or secret keys.
 
-## 6. Collaboration authority and isolation
+## 5. Collaboration authority and isolation
 
 For the accepted workflow refactor, IPC caller admission, Conversation Membership
 and operation grants remain separate from operating-system isolation. An untrusted
@@ -107,7 +93,7 @@ restricted visibility. Recording the fact does not renew a grant, permit another
 or authorize a successor to read its content. These requirements must be verified at
 the actual adapter and store boundaries; this section makes no new sandbox claim.
 
-## 7. Device Identity Ownership and Credential Custody
+## 6. Device Identity Ownership and Credential Custody
 
 One subject may operate several devices, and each device owns a distinct device
 identity. A replacement device provisions new per-device identity material

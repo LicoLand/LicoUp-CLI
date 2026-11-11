@@ -399,12 +399,9 @@ mod tests {
         let close_deadline = Instant::now() + Duration::from_secs(5);
         let mut closed = false;
         while Instant::now() < close_deadline {
-            match receiver.recv_timeout(Duration::from_millis(50)) {
-                Ok(PtyEvent::Closed) => {
-                    closed = true;
-                    break;
-                }
-                _ => {}
+            if let Ok(PtyEvent::Closed) = receiver.recv_timeout(Duration::from_millis(50)) {
+                closed = true;
+                break;
             }
         }
         assert!(closed, "master read must unblock after terminate_tree");

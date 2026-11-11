@@ -1,7 +1,5 @@
 export const TEST_ARTIFACT_SCHEMA_VERSION = "licoup.test-artifact.v1";
-export const NATIVE_CARGO_TEST_TARGET = "build/crates/licoup-native/target";
-export const ANDROID_NATIVE_CARGO_TARGET = "build/crates/licoup-native/android-target";
-export const FLUTTER_TEST_TARGET = "apps/desktop/build";
+export const NATIVE_CARGO_TEST_TARGET = "build/crates/licoup/target";
 export const ROOT_CARGO_TARGET = "target";
 export const REGISTRY_PATH = "build/.test-artifacts";
 export const LOCK_WAIT_MS = 25;

@@ -5,8 +5,8 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
-const facadePath = "crates/licoup-native/src/domain/client_update.rs";
-const moduleRoot = "crates/licoup-native/src/domain/client_update";
+const facadePath = "crates/licoup/src/domain/client_update.rs";
+const moduleRoot = "crates/licoup/src/domain/client_update";
 const productionFiles = [
   facadePath,
   ...[

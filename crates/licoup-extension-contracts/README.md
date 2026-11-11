@@ -58,7 +58,7 @@ is native — the payload carries the program and borrows no interpreter — so 
 example is compiled by the checks that import it rather than committed as a
 binary. `tests/state_converter_sample.rs` holds the two declarations to the
 contract and to the published JSON Schema, and
-`crates/licoup-migrate/tests/state_converter_sample.rs` builds the entry,
+`crates/licoup/tests/migrate/state_converter_sample.rs` builds the entry,
 assembles the payload, imports it through the host's own path and drives the
 stop-and-resume contract over it. See
 [its README](samples/state-converter/README.md) for the payload layout, the

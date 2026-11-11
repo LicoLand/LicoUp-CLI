@@ -10,7 +10,7 @@
 //!
 //! # The boundaries this crate keeps
 //!
-//! - **No client crate.** Nothing here reaches into `licoup-native` or any other
+//! - **No client crate.** Nothing here reaches into `licoup` or any other
 //!   composition crate. What the package needs from its host arrives through
 //!   [`port`], and the host installs it.
 //! - **One parse.** A raw ACP line becomes this Agent's effects here and is
@@ -42,7 +42,7 @@
 //!
 //! # Who reaches this package
 //!
-//! The kernel reaches this Agent's driver only here: `licoup-native`'s
+//! The kernel reaches this Agent's driver only here: `licoup`'s
 //! composition names [`driver`] directly and keeps no Kimi module of its own, so
 //! one Kimi execution is described in exactly one place. The packaged binary
 //! route is completed by the agent-execution port above.

@@ -12,7 +12,7 @@ const repoRoot = path.resolve(
 // its parser, the replay arm and the process that speaks them. The host keeps
 // no Claude Code driver module of its own, so this contract reads the package's
 // leaves from its own crate and the host's composition from the kernel.
-const kernelRoot = "crates/licoup-native/src/platform";
+const kernelRoot = "crates/licoup/src/platform";
 const driverRoot = "crates/licoup-agent-claude-code/src/driver";
 const packageRoot = "crates/licoup-agent-claude-code";
 const parserRoot = `${packageRoot}/src/protocol/parser`;
@@ -86,12 +86,12 @@ test("the host declares no Claude Code driver and the composition reads the pack
   // the Agent's protocol and process through the package and cannot hold a
   // second owner of either.
   assert.equal(
-    await exists("crates/licoup-native/src/platform/claude_code_driver.rs"),
+    await exists("crates/licoup/src/platform/claude_code_driver.rs"),
     false,
     "the host still declares a Claude Code driver module",
   );
   assert.equal(
-    await exists("crates/licoup-native/src/platform/claude_code_driver"),
+    await exists("crates/licoup/src/platform/claude_code_driver"),
     false,
     "the host still declares a Claude Code driver tree",
   );
@@ -139,7 +139,7 @@ test("the host declares no Claude Code driver and the composition reads the pack
   // same bytes, so the driver and the host's fold cannot drift apart.
   for (const fixture of fixtureMirrors) {
     assert.equal(
-      await read(`crates/licoup-native/tests/fixtures/${fixture}`),
+      await read(`crates/licoup/tests/fixtures/${fixture}`),
       await read(`${packageRoot}/tests/fixtures/${fixture}`),
       `the mirrored Claude Code fixture drifted: ${fixture}`,
     );
@@ -183,7 +183,7 @@ test("Claude Code keeps the fixed streaming-input lane with native resume and no
 
 test("Claude Code public lifecycle contract is bounded and exact-session scoped", async () => {
   const manifest = JSON.parse(await read(
-    "packages/contracts/client/fixtures/agent-conversation-adapter/manifests/claude-code.json",
+    "tests/fixtures/agent-conversation-adapter/manifests/claude-code.json",
   ));
   assert.equal(manifest.transport.sessionScope, "persistent");
   assert.equal(manifest.transport.continuityChannel, "launch-argument");
@@ -272,15 +272,13 @@ test("Claude Code product controls and parity use one persistent stdio RPC owner
   const [
     request,
     server,
-    processIo,
     rpcClient,
     processLocalRound,
     results,
     evidence,
   ] = await Promise.all([
-    read("crates/licoup-native/src/bin/licoup/stdio_rpc/request.rs"),
-    read("crates/licoup-native/src/bin/licoup/stdio_rpc/server.rs"),
-    read("apps/desktop/lib/src/platform/native_client/agent_service_process_io.dart"),
+    read("crates/licoup/src/bin/licoup/stdio_rpc/request.rs"),
+    read("crates/licoup/src/bin/licoup/stdio_rpc/server.rs"),
     read("tests/product-e2e/cli/agent-conversations/support/parity/clients/stdio-rpc-client.mjs"),
     read("tests/product-e2e/cli/agent-conversations/support/parity/process-local-round.mjs"),
     read("tests/product-e2e/cli/agent-conversations/support/parity/results.mjs"),
@@ -302,7 +300,6 @@ test("Claude Code product controls and parity use one persistent stdio RPC owner
     );
   }
   assert.ok(server.includes("PersistentConversationRuntime"));
-  assert.ok(processIo.includes("executeStructured"));
   assert.ok(rpcClient.includes('["rpc", "stdio"]'));
   assert.ok(processLocalRound.includes('continuityScope: "process-local"'));
   assert.equal(processLocalRound.includes("nativeTurn("), false);
@@ -322,8 +319,8 @@ test("Claude Code product controls and parity use one persistent stdio RPC owner
 
 test("Claude Code capabilities expose supervised active-turn cancel", async () => {
   const [manifestText, inventoryText] = await Promise.all([
-    read("packages/contracts/client/fixtures/agent-conversation-adapter/manifests/claude-code.json"),
-    read("crates/licoup-native/resources/agent-conversation-drivers.json"),
+    read("tests/fixtures/agent-conversation-adapter/manifests/claude-code.json"),
+    read("crates/licoup/resources/agent-conversation-drivers.json"),
   ]);
   const manifest = JSON.parse(manifestText);
   const inventory = JSON.parse(inventoryText);

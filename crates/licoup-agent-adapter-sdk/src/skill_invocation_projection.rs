@@ -62,7 +62,7 @@ fn inspect_node(
     }
 }
 
-fn known_children<'a>(value: &'a Value, profile: SkillInvocationProfile) -> Vec<&'a Value> {
+fn known_children(value: &Value, profile: SkillInvocationProfile) -> Vec<&Value> {
     let mut children = Vec::new();
     if let Some(items) = value.as_array() {
         children.extend(items.iter());
@@ -145,7 +145,7 @@ fn skill_invocation_from_node(value: &Value, profile: SkillInvocationProfile) ->
             marker.as_str(),
             "tool.call" | "tool-call" | "function_call" | "functioncall"
         ));
-    if !explicit_skill_event && !(single_call_or_start && skill_tool) {
+    if !(explicit_skill_event || single_call_or_start && skill_tool) {
         return None;
     }
 

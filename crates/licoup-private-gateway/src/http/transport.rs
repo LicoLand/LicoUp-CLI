@@ -322,6 +322,9 @@ impl CredentialResolver for GatewayLeaseResolver {
     }
 }
 
+// The adapter constructors answer `a4mp`'s registration signature, whose error
+// type the provider crate owns; the constructors cannot box it.
+#[allow(clippy::result_large_err)]
 fn gateway_router(
     gateway: &CompiledGateway,
     credentials: &Arc<GatewayCredentialSlot>,

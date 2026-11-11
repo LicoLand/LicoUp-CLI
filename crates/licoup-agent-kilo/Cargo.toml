@@ -1,10 +1,10 @@
 [package]
 name = "licoup-agent-kilo"
-version = "0.14.0"
-edition = "2024"
-rust-version = "1.95.0"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "Kilo Code adapter package: the serve driver, its endpoint policy and its vendor protocol"
 
 # The crate is one package's program. `parser` and `serve` are this Agent's
@@ -26,12 +26,12 @@ description = "Kilo Code adapter package: the serve driver, its endpoint policy 
 default = []
 
 [dependencies]
-licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+licoup-agent-adapter-sdk.workspace = true
 # The shared engine this Agent's two bounded entry points are stated in: the
 # host's normalized driver vocabulary and the port an Agent's own protocol is
 # keyed on. This package answers that engine; it never reaches into a client
 # crate for it.
-licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+licoup-agent-drivers.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
 
@@ -44,4 +44,4 @@ path = "src/bin/lico-agent-kilo.rs"
 # reading of it. Nothing here enters the package binary, which links no kernel
 # crate and reads its own package documents as data.
 [dev-dependencies]
-licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-extension-contracts.workspace = true

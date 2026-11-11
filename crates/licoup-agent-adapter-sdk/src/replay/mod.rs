@@ -14,7 +14,7 @@
 //! [`AdapterParserSet`]; this module is the harness, the corpus resolution and
 //! the properties, and it names no Agent. A composing program runs the corpus
 //! checks it owns against its own set — the checks this extraction left in
-//! `licoup-native`'s `native_agent_parser::replay`.
+//! `licoup`'s `native_agent_parser::replay`.
 
 pub mod adapters;
 
@@ -201,10 +201,10 @@ pub fn replay(
     adapter: &str,
     scenario: &str,
 ) -> Result<(), String> {
-    if !document
+    if document
         .get("frames")
         .and_then(Value::as_array)
-        .is_some_and(|frames| !frames.is_empty())
+        .is_none_or(|frames| frames.is_empty())
     {
         return Err(format!(
             "adapter={adapter} scenario={scenario}: frames missing or empty"

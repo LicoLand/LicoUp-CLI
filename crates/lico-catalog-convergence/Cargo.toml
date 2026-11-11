@@ -1,11 +1,11 @@
 [package]
 name = "lico-catalog-convergence"
-version = "0.0.1-alpha"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
-
+repository.workspace = true
+description = "Portable catalog convergence engine shared by LicoUp desktop and mobile targets."
 [dependencies]
 anyhow.workspace = true
 serde.workspace = true

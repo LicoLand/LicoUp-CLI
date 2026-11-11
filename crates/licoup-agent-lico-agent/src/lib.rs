@@ -14,7 +14,7 @@
 //!
 //! # The boundaries this crate keeps
 //!
-//! - **No client crate.** Nothing here reaches into `licoup-native` or any other
+//! - **No client crate.** Nothing here reaches into `licoup` or any other
 //!   composition crate. What the package needs from its host arrives through
 //!   [`port`], and the host installs it.
 //! - **One parse.** A raw JSONL frame becomes this Agent's effect here and is
@@ -43,7 +43,7 @@
 //! The package ships the whole of one Lico Agent turn: the `--mode rpc` launch,
 //! the supervised stdio exchange, the raw-execution observation, the workspace
 //! bound, the persisted-transcript resume rule and the sealed profile a Plan turn
-//! runs under. `licoup-native`'s composition names [`driver`] directly and keeps
+//! runs under. `licoup`'s composition names [`driver`] directly and keeps
 //! no Lico Agent module of its own; what the client keeps is the answer for the
 //! two facts this package may not decide for itself — admission to run at all
 //! ([`port::execution`]) and the platform's sandbox primitive

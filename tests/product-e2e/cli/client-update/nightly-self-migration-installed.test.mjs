@@ -11,7 +11,7 @@ const installRoot = process.env.LICO_CLIENT_INSTALL_DIR
   ? path.resolve(process.env.LICO_CLIENT_INSTALL_DIR)
   : "/Applications";
 const installedApp = path.join(installRoot, "LicoUp.app");
-const installedCli = path.join(installedApp, "Contents", "Helpers", "LicoUpCustody.app", "Contents", "MacOS", "licoup-cli");
+const installedCli = path.join(installedApp, "Contents", "Helpers", "LicoUpCustody.app", "Contents", "MacOS", "licoup");
 const installedMain = path.join(installedApp, "Contents", "MacOS", "licoup");
 const infoPlist = path.join(installedApp, "Contents", "Info.plist");
 const productVersion = JSON.parse(

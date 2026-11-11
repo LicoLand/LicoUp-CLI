@@ -13,7 +13,7 @@ internal implementation is owned by its respective code module.
 
 ## Design Principles
 
-1. **CLI is the product, Flutter is a display adapter** — The Rust native host (licoup-cli) is a
+1. **CLI is the product, Flutter is a display adapter** — The Rust native host (licoup) is a
    complete semantic client. It runs independently of any UI. Flutter's sole job is to send
    user commands and render `UI = f(State)`.
 
@@ -96,13 +96,13 @@ suppressed, and each source owns its subscription and disposal independently.
 │ L2  Protocol Frame Transport (stdio JSON-RPC + codegen)         │
 │     Commands ↑ StateDelta ↓ (structured enum, not JSON Patch)   │
 ├─────────────────────────────────────────────────────────────────┤
-│ L3  Conversation Domain (crates/licoup-native/src/domain/)      │
+│ L3  Conversation Domain (crates/licoup/src/domain/)      │
 │     Canonical state owner, mutation → delta emission            │
 ├─────────────────────────────────────────────────────────────────┤
-│ L4  Agent Runtime (crates/licoup-native/src/platform/)          │
+│ L4  Agent Runtime (crates/licoup/src/platform/)          │
 │     Agent adapter dispatch, protocol translation, I/O           │
 ├─────────────────────────────────────────────────────────────────┤
-│ L5  Settlement Arbiter (crates/licoup-native/src/platform/)     │
+│ L5  Settlement Arbiter (crates/licoup/src/platform/)     │
 │     Turn terminal verdict from protocol signals                 │
 ├─────────────────────────────────────────────────────────────────┤
 │ L6  Flutter State Mirror (apps/desktop/lib/src/)                │
@@ -324,7 +324,7 @@ the `ConnectionState` delta will inform the UI.
 ## L2: Protocol Frame Transport
 
 **Location**: `apps/desktop/lib/src/platform/native_client/` (Dart) ↔
-`crates/licoup-native/src/bin/licoup/stdio_rpc/` (Rust)
+`crates/licoup/src/bin/licoup/stdio_rpc/` (Rust)
 
 **Responsibility**: Bidirectional transport of Commands (↑) and StateDelta (↓) over stdio.
 Type safety enforced by **codegen from a shared schema** using **structured enums**.
@@ -417,7 +417,7 @@ one frame budget. Flutter applies the append and re-renders only the new text po
 
 ## L3: Conversation Domain (State Owner)
 
-**Location**: `crates/licoup-native/src/domain/client_conversation/`
+**Location**: `crates/licoup/src/domain/client_conversation/`
 
 **Responsibility**: Owns canonical `ConversationState`. Processes commands → mutates state →
 emits deltas. Source-agnostic (same entry for local Flutter, future remote peers, CLI commands).
@@ -494,7 +494,7 @@ This means:
 
 ## L4: Agent Runtime
 
-**Location**: `crates/licoup-native/src/platform/` (adapter drivers)
+**Location**: `crates/licoup/src/platform/` (adapter drivers)
 
 **Responsibility**: Dispatch commands to the appropriate agent adapter, manage subprocess/RPC
 lifecycle, translate agent-specific protocols into a normalized event stream.
@@ -561,7 +561,7 @@ chunks. Final committed content is assembled by L5 and stored as a single Event 
 
 ## L5: Settlement Arbiter
 
-**Location**: `crates/licoup-native/src/platform/` (settlement module)
+**Location**: `crates/licoup/src/platform/` (settlement module)
 
 **Responsibility**: Determine the terminal verdict for a turn based solely on protocol-level
 signals from L4. This is the ONLY place that decides TurnOutcome.

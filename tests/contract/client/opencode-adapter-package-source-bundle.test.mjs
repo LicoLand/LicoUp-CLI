@@ -22,28 +22,28 @@ const packageFiles = Object.freeze([
 // specification and the answer for the package's ports. They read the package
 // and own no vendor protocol of their own.
 const processHalfFiles = Object.freeze([
-  "crates/licoup-native/src/platform/opencode_serve.rs",
-  "crates/licoup-native/src/platform/opencode_serve/policy.rs",
-  "crates/licoup-native/src/platform/opencode_host.rs",
+  "crates/licoup/src/platform/opencode_serve.rs",
+  "crates/licoup/src/platform/opencode_serve/policy.rs",
+  "crates/licoup/src/platform/opencode_host.rs",
 ]);
 // Every path the retired kernel-side driver used to occupy. The host declares
 // none of them any more: the driver is the package's.
 const retiredDriverPaths = Object.freeze([
-  "crates/licoup-native/src/platform/opencode_driver.rs",
-  "crates/licoup-native/src/platform/opencode_driver",
-  "crates/licoup-native/src/platform/opencode_driver/serve_transport.rs",
-  "crates/licoup-native/src/platform/opencode_driver/continuity.rs",
-  "crates/licoup-native/src/platform/opencode_driver/probe.rs",
-  "crates/licoup-native/src/platform/opencode_driver/control.rs",
+  "crates/licoup/src/platform/opencode_driver.rs",
+  "crates/licoup/src/platform/opencode_driver",
+  "crates/licoup/src/platform/opencode_driver/serve_transport.rs",
+  "crates/licoup/src/platform/opencode_driver/continuity.rs",
+  "crates/licoup/src/platform/opencode_driver/probe.rs",
+  "crates/licoup/src/platform/opencode_driver/control.rs",
 ]);
 const compositionPath =
-  "crates/licoup-native/src/platform/native_agent_parser/adapters/mod.rs";
+  "crates/licoup/src/platform/native_agent_parser/adapters/mod.rs";
 const replayCompositionPath =
-  "crates/licoup-native/src/platform/native_agent_parser/replay/adapters/mod.rs";
+  "crates/licoup/src/platform/native_agent_parser/replay/adapters/mod.rs";
 const driverCompositionPath =
-  "crates/licoup-native/src/platform/runtime_adapters/drivers.rs";
+  "crates/licoup/src/platform/runtime_adapters/drivers.rs";
 const movedParserPath =
-  "crates/licoup-native/src/platform/native_agent_parser/adapters/opencode.rs";
+  "crates/licoup/src/platform/native_agent_parser/adapters/opencode.rs";
 const admissionGate = "crate::port::execution::admits_execution()";
 const attachCall = "serve::ensure_attachment(executable)";
 
@@ -115,7 +115,7 @@ test("one package carries the OpenCode serve protocol, its parser and its progra
     "port/turn_event.rs",
     "bin/lico-agent-opencode.rs",
   ]) {
-    assert.equal(read(`${sourceRoot}/${file}`).includes("licoup_native"), false,
+    assert.equal(read(`${sourceRoot}/${file}`).includes("licoup::"), false,
       `${file} reaches back into the client`);
   }
   // The driver performs a turn through the ports the host answers; the one
@@ -171,7 +171,7 @@ test("the client keeps the engine half, names the package and declares no driver
     assert.equal(exists(retired), false,
       `the host still carries the retired OpenCode driver path ${retired}`);
   }
-  const platform = read("crates/licoup-native/src/platform/mod.rs");
+  const platform = read("crates/licoup/src/platform/mod.rs");
   assert.doesNotMatch(platform, /mod opencode_driver;/u,
     "the host still declares an OpenCode driver module");
   assert.match(platform, /pub\(crate\) mod opencode_host;/u,
@@ -203,11 +203,11 @@ test("the client keeps the engine half, names the package and declares no driver
   // The facade classifies nothing: the readiness reader is the package's, named
   // by the endpoint specification through the composition's own name for that
   // parser, and the facade only frames what the engine hands it.
-  const facade = read("crates/licoup-native/src/platform/opencode_serve.rs");
+  const facade = read("crates/licoup/src/platform/opencode_serve.rs");
   assert.doesNotMatch(facade, /adapters::opencode/u,
     "the serve facade still classifies the package's frames");
   assert.match(facade, /local_service::sse::watch_frames/u);
-  const policy = read("crates/licoup-native/src/platform/opencode_serve/policy.rs");
+  const policy = read("crates/licoup/src/platform/opencode_serve/policy.rs");
   assert.match(policy, /native_agent_parser::adapters::opencode::readiness/u);
   // The endpoint facts are the package's, field for field, and the client keeps
   // no second copy of them.
@@ -236,7 +236,7 @@ test("the client keeps the engine half, names the package and declares no driver
 test("the assignment this package reads is the host's, and the host installs it", () => {
   // The host owns the idle-admission decision and joins it to the package's
   // ports once per process.
-  const composition = read("crates/licoup-native/src/lib.rs");
+  const composition = read("crates/licoup/src/lib.rs");
   assert.match(composition, /licoup_agent_opencode::port::execution::install\(/u);
   assert.match(composition, /admits_execution: admits_agent_execution/u);
   assert.match(composition, /licoup_agent_opencode::host::install\(/u);
@@ -255,7 +255,7 @@ test("the assignment this package reads is the host's, and the host installs it"
   // The host answers that port from this client's engine, and the answer names
   // no vendor field or failure code of its own: the engine is protocol-agnostic
   // and the vocabulary is the package's.
-  const host = read("crates/licoup-native/src/platform/opencode_host.rs");
+  const host = read("crates/licoup/src/platform/opencode_host.rs");
   assert.match(host, /pub\(crate\) fn serve_port\(\) -> ServePort/u);
   assert.doesNotMatch(host, /opencode_serve_/u,
     "the host answer restates the package's own failure vocabulary");
@@ -265,7 +265,7 @@ test("the moved protocol leaves no copy in the host and the composition keeps on
   assert.equal(exists(movedParserPath), false,
     "the host still carries a copy of the moved OpenCode parser");
   assert.equal(
-    exists("crates/licoup-native/src/platform/native_agent_parser/replay/adapters/opencode.rs"),
+    exists("crates/licoup/src/platform/native_agent_parser/replay/adapters/opencode.rs"),
     false,
     "the host still carries a copy of the moved OpenCode replay arm");
   const composition = read(compositionPath);

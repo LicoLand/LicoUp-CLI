@@ -11,16 +11,16 @@ use std::process::Command;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime};
 
-use licoup_application::{ActivationMode, ApplicationFailure, CapabilityDescriptor, ContractRange};
-use licoup_extension_contracts::profile::ProfileDeclaration;
-use licoup_native::platform::extension_host::isolation::{
+use licoup::platform::extension_host::isolation::{
     IsolatedProcessCarrier, IsolationMode, IsolationPolicy, ResolvedProgram, ResourceLimits,
     StaticPrograms,
 };
-use licoup_native::platform::extension_host::{
+use licoup::platform::extension_host::{
     ActivationReceipt, CarrierSpec, ExtensionCarrier, ExtensionHost, InvocationBinding,
     InvocationOutcome,
 };
+use licoup_application::{ActivationMode, ApplicationFailure, CapabilityDescriptor, ContractRange};
+use licoup_extension_contracts::profile::ProfileDeclaration;
 
 /// The synthetic extension process, embedded so a test cannot drift from it.
 pub const AGENT_SH: &str = include_str!("../fixtures/agent.sh");
@@ -204,7 +204,7 @@ pub fn contract_range() -> ContractRange {
 pub fn stage_request(
     package: &str,
     capabilities: &[&str],
-) -> licoup_native::platform::extension_host::StageRequest {
+) -> licoup::platform::extension_host::StageRequest {
     let descriptor: CapabilityDescriptor = serde_json::from_value(serde_json::json!({
         "pluginId": package,
         "implementationVersion": "1.0.0",
@@ -212,7 +212,7 @@ pub fn stage_request(
         "capabilities": capabilities,
     }))
     .expect("descriptor");
-    licoup_native::platform::extension_host::StageRequest {
+    licoup::platform::extension_host::StageRequest {
         descriptor,
         methods: licoup_extension_contracts::profile::DeclaredMethods::minimal_agent(),
         profiles: vec![

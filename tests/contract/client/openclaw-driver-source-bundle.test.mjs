@@ -24,14 +24,14 @@ const repoRoot = path.resolve(
   "../../..",
 );
 /// The driver module the host used to declare, and must not declare again.
-const retiredDriverRoot = "crates/licoup-native/src/platform/openclaw_driver";
+const retiredDriverRoot = "crates/licoup/src/platform/openclaw_driver";
 /// The kernel's composition, which names this package's driver directly.
-const compositionPath = "crates/licoup-native/src/platform/runtime_adapters/drivers.rs";
+const compositionPath = "crates/licoup/src/platform/runtime_adapters/drivers.rs";
 /// The kernel's answers for this package's ports.
-const hostPortsPath = "crates/licoup-native/src/platform/openclaw_host.rs";
+const hostPortsPath = "crates/licoup/src/platform/openclaw_host.rs";
 /// The client's Gateway engine, which the port answer reads and the package
 /// never reaches.
-const gatewayRoot = "crates/licoup-native/src/platform/openclaw_gateway";
+const gatewayRoot = "crates/licoup/src/platform/openclaw_gateway";
 const packageRoot = "crates/licoup-agent-openclaw/src";
 
 /// The process half this package now owns.
@@ -101,7 +101,7 @@ test("the host declares no OpenClaw driver and the composition names the package
     false,
     "the host still declares an OpenClaw driver tree",
   );
-  const platform = await read("crates/licoup-native/src/platform/mod.rs");
+  const platform = await read("crates/licoup/src/platform/mod.rs");
   assert.doesNotMatch(platform, /mod openclaw_driver;/u,
     "the host module tree still declares an OpenClaw driver module");
 
@@ -161,7 +161,7 @@ test("the package's driver leaves read the protocol and restate none of it", asy
       );
     }
     assert.equal(
-      implementation.includes("licoup_native"),
+      implementation.includes("licoup::"),
       false,
       `driver/${leaf} must not reach the client crate`,
     );
@@ -278,7 +278,7 @@ test("OpenClaw split contains no production unsafe or client reach from the pack
   assert.equal(joined.includes("#[path"), false);
   // The whole package is composed by the client, so none of it may reach back
   // into a client crate — the moved process half included.
-  for (const clientReach of ["licoup_native", "crate::platform", "crate::domain"]) {
+  for (const clientReach of ["licoup::", "crate::platform", "crate::domain"]) {
     assert.equal(
       joined.includes(clientReach),
       false,

@@ -164,8 +164,8 @@ impl RunResult {
         let failure = failure.namespaced(driver);
         let transitions = (super::parser_port::parser_for(driver.agent_id).failed_transitions)(
             &failure.code,
-            &failure.stage,
-            &failure.message,
+            failure.stage,
+            failure.message,
         );
         Self {
             ok: false,

@@ -622,14 +622,14 @@ fn successful_utf8_output_history_reports_exact_encoded_byte_count() {
     let expected = "多字节🙂";
     assert!(result.ok, "UTF-8 fixture turn failed: {:?}", result.error);
     assert_eq!(result.output, expected);
-    assert_ne!(expected.as_bytes().len(), expected.chars().count());
+    assert_ne!(expected.len(), expected.chars().count());
 
     let transcript = history(&result.session_id, None, 50)
         .expect("the live transport projects its own transcript");
     assert_eq!(transcript["turnCount"], 1);
     assert_eq!(transcript["turns"][0]["turnId"], result.turn_id);
     assert_eq!(transcript["turns"][0]["output"], expected);
-    assert_eq!(transcript["byteCount"], json!(expected.as_bytes().len()));
+    assert_eq!(transcript["byteCount"], json!(expected.len()));
     assert_eq!(
         cleanup_session(result.session_id.as_str()),
         ControlDisposition::Accepted

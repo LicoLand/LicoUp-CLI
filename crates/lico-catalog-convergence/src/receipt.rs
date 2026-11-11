@@ -323,10 +323,10 @@ pub fn scan_privacy_map(map: &Map<String, Value>) -> Result<()> {
         if PRIVACY_FORBIDDEN_KEYS.contains(&key.as_str()) {
             return Err(anyhow!("official_client_receipt_privacy_unsafe"));
         }
-        if key == "path" {
-            if let Value::String(text) = value {
-                scan_privacy_text(text)?;
-            }
+        if key == "path"
+            && let Value::String(text) = value
+        {
+            scan_privacy_text(text)?;
         }
         scan_privacy_value(value)?;
     }

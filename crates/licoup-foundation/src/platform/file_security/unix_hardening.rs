@@ -101,8 +101,7 @@ pub(super) fn ensure_metadata_matches_stat(
 ) -> Result<()> {
     let stat_device =
         u64::try_from(stat.st_dev).map_err(|_| anyhow!("private append file device is invalid"))?;
-    let stat_inode =
-        u64::try_from(stat.st_ino).map_err(|_| anyhow!("private append file inode is invalid"))?;
+    let stat_inode: u64 = stat.st_ino;
     ensure!(
         metadata.dev() == stat_device && metadata.ino() == stat_inode,
         "private append file path was replaced"

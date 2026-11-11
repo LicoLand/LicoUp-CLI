@@ -5,7 +5,6 @@ members = [
     "crates/licoup-foundation",
     "crates/licoup-agent-targets",
     "crates/licoup-model-catalog",
-    "crates/licoup-protocol-bindings",
     "crates/licoup-client-state",
     "crates/licoup-agent-adapter-sdk",
     "crates/licoup-agent-drivers",
@@ -22,7 +21,6 @@ members = [
     "crates/licoup-agent-lico-agent",
     "crates/licoup-agent-openclaw",
     "crates/licoup-agent-opencode",
-    "crates/licoup-endpoint-core",
     "crates/licoup-platform-bridges",
     "crates/licoup-agent-adapters",
     "crates/licoup-agent-runtime",
@@ -34,25 +32,57 @@ members = [
     "crates/licoup-workflow-runtime",
     "crates/licoup-workflow-store",
     "crates/licoup-private-gateway",
-    "crates/licoup-private-gateway/entry",
-    "crates/licoup-mobile-core",
     "crates/licoup-conversation",
     "crates/licoup-public-gateway",
     "crates/licoup-public-gateway/entry",
-    "crates/licoup-migrate",
-    "crates/licoup-native",
+    "crates/licoup",
     "crates/trybuild",
 ]
 resolver = "3"
 
 [workspace.package]
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 rust-version = "1.95.0"
 repository = "https://github.com/LicoLand/LicoUp-CLI.git"
 license = "AGPL-3.0-or-later"
 
 [workspace.dependencies]
+# Internal publishable crates, pinned to the workspace version.
+lico-catalog-convergence = { path = "crates/lico-catalog-convergence", version = "=0.3.1" }
+licoup = { path = "crates/licoup", version = "=0.3.1" }
+licoup-agent-adapter-sdk = { path = "crates/licoup-agent-adapter-sdk", version = "=0.3.1" }
+licoup-agent-adapters = { path = "crates/licoup-agent-adapters", version = "=0.3.1" }
+licoup-agent-antigravity = { path = "crates/licoup-agent-antigravity", version = "=0.3.1" }
+licoup-agent-claude-code = { path = "crates/licoup-agent-claude-code", version = "=0.3.1" }
+licoup-agent-codex = { path = "crates/licoup-agent-codex", version = "=0.3.1" }
+licoup-agent-copilot = { path = "crates/licoup-agent-copilot", version = "=0.3.1" }
+licoup-agent-cursor = { path = "crates/licoup-agent-cursor", version = "=0.3.1" }
+licoup-agent-deepseek = { path = "crates/licoup-agent-deepseek", version = "=0.3.1" }
+licoup-agent-drivers = { path = "crates/licoup-agent-drivers", version = "=0.3.1" }
+licoup-agent-hermes = { path = "crates/licoup-agent-hermes", version = "=0.3.1" }
+licoup-agent-kilo = { path = "crates/licoup-agent-kilo", version = "=0.3.1" }
+licoup-agent-kimi = { path = "crates/licoup-agent-kimi", version = "=0.3.1" }
+licoup-agent-lico-agent = { path = "crates/licoup-agent-lico-agent", version = "=0.3.1" }
+licoup-agent-openclaw = { path = "crates/licoup-agent-openclaw", version = "=0.3.1" }
+licoup-agent-opencode = { path = "crates/licoup-agent-opencode", version = "=0.3.1" }
+licoup-agent-pi = { path = "crates/licoup-agent-pi", version = "=0.3.1" }
+licoup-agent-runtime = { path = "crates/licoup-agent-runtime", version = "=0.3.1" }
+licoup-agent-targets = { path = "crates/licoup-agent-targets", version = "=0.3.1" }
+licoup-application = { path = "crates/licoup-application", version = "=0.3.1" }
+licoup-client-state = { path = "crates/licoup-client-state", version = "=0.3.1" }
+licoup-conversation = { path = "crates/licoup-conversation", version = "=0.3.1" }
+licoup-extension-contracts = { path = "crates/licoup-extension-contracts", version = "=0.3.1" }
+licoup-foundation = { path = "crates/licoup-foundation", version = "=0.3.1" }
+licoup-model-catalog = { path = "crates/licoup-model-catalog", version = "=0.3.1" }
+licoup-platform-bridges = { path = "crates/licoup-platform-bridges", version = "=0.3.1" }
+licoup-private-gateway = { path = "crates/licoup-private-gateway", version = "=0.3.1" }
+licoup-project = { path = "crates/licoup-project", version = "=0.3.1" }
+licoup-public-gateway = { path = "crates/licoup-public-gateway", version = "=0.3.1", default-features = false }
+licoup-state-machine-codegen = { path = "crates/licoup-state-machine-codegen", version = "=0.3.1" }
+licoup-workflow = { path = "crates/licoup-workflow", version = "=0.3.1" }
+licoup-workflow-runtime = { path = "crates/licoup-workflow-runtime", version = "=0.3.1" }
+licoup-workflow-store = { path = "crates/licoup-workflow-store", version = "=0.3.1" }
 # One canonical version per shared dependency. Members reference these via
 # `workspace = true`; keep direct-dependency generations in one place.
 #
@@ -61,7 +91,7 @@ license = "AGPL-3.0-or-later"
 # repositories. The owner record and the Cargo.lock checksum are the published
 # artifact's provenance; an exact version keeps a registry substitution a
 # reviewable manifest edit.
-a4aa = "=0.5.0"
+a4aa = "=0.5.1"
 a4aa-copilot = "=0.5.0"
 # The forwarding core lives in Fairliny: the private gateway composes the same
 # sibling checkout fairliny-gateway binds, so adapter, wire and canonical types
@@ -103,30 +133,14 @@ env_logger = "0.11"
 flate2 = "1.0"
 fs2 = "0.4"
 hkdf = "0.12"
-hmac = "0.12"
 icu_segmenter = { version = "2", features = ["compiled_data", "lstm"] }
 interprocess = "2.4"
-jni = "0.22"
 libc = "0.2"
-# Fixed LicoArc stable-core SDK for the Candidate integrated in L03 (D22/5.7).
-# The package is not published to any registry and its repository is private, so
-# a revision-pinned git source is the reproducible fixed input; an adjacent
-# directory path dependency would not be reproducible outside this machine.
-licoarc = { package = "licoarc-rust", git = "https://github.com/LicoLand/LicoArc-Rust.git", rev = "244ce7186cac1690c18f091dbe02df36a0860ef4" }
-libcrux-ml-kem = { version = "=0.0.11", default-features = false, features = [
-    "alloc",
-    "incremental",
-    "mlkem1024",
-] }
-libcrux-sha3 = "=0.0.11"
-libcrux-traits = "=0.0.9"
+# The LicoArc endpoint client, published by crates.io owner `Unka-Malloc` from
+# the LicoArc-Client repository.
+licoarc-client = "=0.2.0"
 log = "0.4"
 mime_guess = "2.0"
-openmls = { git = "https://github.com/openmls/openmls.git", rev = "e0b21a70a55a9014b8de2772b36bf3d638adad51", features = ["openmls_rust_crypto"] }
-openmls_basic_credential = { git = "https://github.com/openmls/openmls.git", rev = "e0b21a70a55a9014b8de2772b36bf3d638adad51" }
-openmls_memory_storage = { git = "https://github.com/openmls/openmls.git", rev = "e0b21a70a55a9014b8de2772b36bf3d638adad51", features = ["persistence"] }
-openmls_rust_crypto = { git = "https://github.com/openmls/openmls.git", rev = "e0b21a70a55a9014b8de2772b36bf3d638adad51" }
-openmls_traits = { git = "https://github.com/openmls/openmls.git", rev = "e0b21a70a55a9014b8de2772b36bf3d638adad51" }
 rand_core = { version = "0.6", features = ["getrandom"] }
 regex = "1.11"
 rusqlite = { version = "0.40", features = ["bundled", "fallible_uint"] }
@@ -143,23 +157,13 @@ trash = "5.2"
 ureq = { version = "2.10", features = ["json"] }
 url = "2.5"
 uuid = { version = "1.11", features = ["v4", "serde"] }
-x25519-dalek = { version = "2.0", features = ["static_secrets", "zeroize"] }
-zeroize = "1.8"
+zeroize = { version = "1.8", features = ["derive"] }
 zip = { version = "9.0.3", default-features = false, features = ["deflate"] }
 # The DeepSeek Harness records a session as a concatenated Zstandard container,
 # one independently decodable frame per durable batch. The DeepSeek adapter
 # package reads that artifact natively, so the decoder is a real dependency of
 # the package rather than of the kernel.
 zstd = "0.13"
-
-# RUSTSEC-2026-0173 (proc-macro-error2 unmaintained) resolution: hax-lib
-# 0.3.7 on crates.io still vendors proc-macro-error2, and no newer release
-# exists (verified 2026-08-24). Upstream removed the dependency in commit
-# 8f9cb576e58f6cc7e9ed249a7d4439b0f7ed0da7 (hacspec/hax, version stays
-# "=0.3.7"), so the crates.io source is patched to that pinned revision.
-# Revisit when hax publishes a release with the fix.
-[patch.crates-io]
-hax-lib = { git = "https://github.com/hacspec/hax.git", rev = "8f9cb576e58f6cc7e9ed249a7d4439b0f7ed0da7" }
 
 [profile.release]
 codegen-units = 1

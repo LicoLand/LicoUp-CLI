@@ -12,7 +12,7 @@ pub mod probe;
 // not a behaviour of this crate, and the host's own lane reads it in its test
 // build. It is therefore gated on a FEATURE rather than on `cfg(test)`: a
 // `cfg(test)` seam is compiled out of every crate that is a dependency, and
-// `licoup-native` is exactly such a consumer.
+// `licoup` is exactly such a consumer.
 #[cfg(any(test, feature = "test-support"))]
 pub mod protocol_selector {
     pub use licoup_agent_runtime::protocol_selector::*;

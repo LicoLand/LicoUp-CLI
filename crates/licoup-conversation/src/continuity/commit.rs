@@ -351,17 +351,15 @@ fn apply_proposal(
         }
         created_card = admit_or_reuse_child(unit, proposal, admission, basis)?;
         let wrote_obligation = persist_child_work_obligation(unit, conversation_id, admission)?;
-        if wrote_obligation {
-            if let Some((event_id, ingress_recipient)) = user_posted {
-                issue_current_input_grants(
-                    unit,
-                    conversation_id,
-                    admission,
-                    event_id,
-                    ingress_recipient,
-                    &proposal.envelope.request_id,
-                )?;
-            }
+        if wrote_obligation && let Some((event_id, ingress_recipient)) = user_posted {
+            issue_current_input_grants(
+                unit,
+                conversation_id,
+                admission,
+                event_id,
+                ingress_recipient,
+                &proposal.envelope.request_id,
+            )?;
         }
     }
 
@@ -692,15 +690,14 @@ fn apply_control_to_goal(
         },
         event,
     )?;
-    if event == ContinuityGoalEvent::Resume {
-        if let Some(relation) = load_relation(unit, goal_id)? {
-            if source_is_revoked(unit, conversation_id, &relation.created_event)? {
-                return Err(continuity_failure(
-                    ContinuityFailureCode::ScopeDenied,
-                    ContinuityFailureStage::ContinuityAdmission,
-                ));
-            }
-        }
+    if event == ContinuityGoalEvent::Resume
+        && let Some(relation) = load_relation(unit, goal_id)?
+        && source_is_revoked(unit, conversation_id, &relation.created_event)?
+    {
+        return Err(continuity_failure(
+            ContinuityFailureCode::ScopeDenied,
+            ContinuityFailureStage::ContinuityAdmission,
+        ));
     }
     progress.lifecycle = next.lifecycle;
     progress.control = next.control;
@@ -760,13 +757,13 @@ fn admit_or_reuse_child(
     basis: &ContinuityCommitBasis,
 ) -> Result<bool, ContinuityFailure> {
     if let Some(existing) = load_relation(unit, &admission.goal_id)? {
-        if let Some(observed) = &admission.observed_child_conversation_id {
-            if observed != &existing.child_conversation_id {
-                return Err(continuity_failure(
-                    ContinuityFailureCode::IdentityConflict,
-                    ContinuityFailureStage::ContinuityAdmission,
-                ));
-            }
+        if let Some(observed) = &admission.observed_child_conversation_id
+            && observed != &existing.child_conversation_id
+        {
+            return Err(continuity_failure(
+                ContinuityFailureCode::IdentityConflict,
+                ContinuityFailureStage::ContinuityAdmission,
+            ));
         }
         if let Some(observed) = &admission.observed_card_anchor {
             super::admission::admit_card_identity_stable(&existing.card_anchor, observed)?;
@@ -1228,10 +1225,10 @@ fn validated_exact_source(
                     }
                 }
                 other if other == canonical_kind => {
-                    if let Some(span) = requested.span.as_ref() {
-                        if admit_utf8_span(content, span.start_byte, span.end_byte).is_err() {
-                            return None;
-                        }
+                    if let Some(span) = requested.span.as_ref()
+                        && admit_utf8_span(content, span.start_byte, span.end_byte).is_err()
+                    {
+                        return None;
                     }
                 }
                 _ => return None,
@@ -1466,13 +1463,13 @@ pub fn put_effect(
                 ));
             }
         }
-        if status == ContinuityEffectStatus::NotExecuted {
-            if let Some(ContinuityEffectStatus::Unknown) = load_effect(unit, logical_effect_id)? {
-                return Err(continuity_failure(
-                    ContinuityFailureCode::ReconciliationRequired,
-                    ContinuityFailureStage::ContinuityEffects,
-                ));
-            }
+        if status == ContinuityEffectStatus::NotExecuted
+            && let Some(ContinuityEffectStatus::Unknown) = load_effect(unit, logical_effect_id)?
+        {
+            return Err(continuity_failure(
+                ContinuityFailureCode::ReconciliationRequired,
+                ContinuityFailureStage::ContinuityEffects,
+            ));
         }
         let stored = record_effect(unit, conversation_id, goal_id, logical_effect_id, status)?;
         unit.request_commit();

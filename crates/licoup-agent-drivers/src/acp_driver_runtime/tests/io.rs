@@ -74,7 +74,7 @@ fn stdout_reader_enforces_the_configured_aggregate_limit() {
 fn stdout_reader_rejects_an_oversized_no_newline_frame_before_unbounded_buffering() {
     let (sender, receiver) = mpsc::sync_channel(ACP_EVENT_CHANNEL_CAPACITY);
     let mut frame = b"{\"id\":1,\"text\":\"".to_vec();
-    frame.extend(std::iter::repeat(b'x').take(acp::MAX_JSON_LINE_BYTES + 1024));
+    frame.extend(std::iter::repeat_n(b'x', acp::MAX_JSON_LINE_BYTES + 1024));
     frame.extend(b"\"}");
     read_protocol_messages(Cursor::new(frame), None, sender);
     assert!(matches!(
@@ -93,7 +93,7 @@ fn stdout_reader_reconstructs_fragmented_and_exact_boundary_frames() {
     let suffix = b"\"}\n";
     let exact_pad = 8192 - prefix.len() - suffix.len();
     let mut exact_frame = prefix.to_vec();
-    exact_frame.extend(std::iter::repeat(b'x').take(exact_pad));
+    exact_frame.extend(std::iter::repeat_n(b'x', exact_pad));
     exact_frame.extend_from_slice(suffix);
     assert_eq!(exact_frame.len(), 8192);
     input.extend_from_slice(&exact_frame);
@@ -103,7 +103,7 @@ fn stdout_reader_reconstructs_fragmented_and_exact_boundary_frames() {
     let suffix = b"\"}\n";
     let fragmented_pad = 20_000 - prefix.len() - suffix.len();
     let mut fragmented_frame = prefix.to_vec();
-    fragmented_frame.extend(std::iter::repeat(b'y').take(fragmented_pad));
+    fragmented_frame.extend(std::iter::repeat_n(b'y', fragmented_pad));
     fragmented_frame.extend_from_slice(suffix);
     input.extend_from_slice(&fragmented_frame);
 

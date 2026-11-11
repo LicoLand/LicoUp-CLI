@@ -133,7 +133,7 @@ static FAIL_CLOSED_MATRIX_PORT: OnceLock<SelectionMatrixPort> = OnceLock::new();
 
 /// Install the candidate facts this host established, once per process.
 ///
-/// The composition that calls it lives at the `licoup-native` crate root,
+/// The composition that calls it lives at the `licoup` crate root,
 /// above both layers: the facts come from the owners that know them, and this
 /// module reads no catalogue, credential store or target of its own.
 pub fn install_candidate_facts(facts: Arc<dyn CandidateFactSource>) {

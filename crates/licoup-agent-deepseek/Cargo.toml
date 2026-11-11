@@ -1,10 +1,10 @@
 [package]
 name = "licoup-agent-deepseek"
-version = "0.14.0"
-edition = "2024"
-rust-version = "1.95.0"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "DeepSeek Harness adapter package: the Harness SDK driver and its vendor protocol"
 
 # The crate is one package's program. `parser` is this Agent's vendor protocol
@@ -26,12 +26,12 @@ description = "DeepSeek Harness adapter package: the Harness SDK driver and its 
 default = []
 
 [dependencies]
-licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+licoup-agent-adapter-sdk.workspace = true
 # The workspace-owned process supervisor, raw-execution record and turn-event
 # emitters every Agent launch stands on. They are the host's shared half and
 # name no Agent, so the package composes them directly instead of declaring a
 # seam for a fact the foundation already owns.
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-foundation.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 # One turn's start is stamped in RFC 3339 because that is the vocabulary the
@@ -54,4 +54,4 @@ path = "src/bin/lico-agent-deepseek.rs"
 # reading of it. Nothing here enters the package binary, which reads its own
 # package documents as data.
 [dev-dependencies]
-licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-extension-contracts.workspace = true

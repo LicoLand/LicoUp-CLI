@@ -16,6 +16,8 @@ fn registry() -> &'static Mutex<HashMap<RegistryKey, RegistryValue>> {
     DRIVER_REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+/// A refusal carries no detail of its own; each caller maps it to its code.
+#[allow(clippy::result_unit_err)]
 pub fn registry_insert<T>(
     namespace: &'static str,
     key: &str,
@@ -52,6 +54,7 @@ where
 
 /// Insert without replacing a concurrently registered value. The existing
 /// typed value is returned to the caller so it can discard duplicate work.
+#[allow(clippy::result_unit_err)]
 pub fn registry_insert_if_absent<T>(
     namespace: &'static str,
     key: &str,

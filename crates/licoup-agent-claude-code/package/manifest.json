@@ -1,7 +1,7 @@
 {
   "schema": "licoup.extension-package.v1",
   "id": "org.licoland.adapter.claude-code",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "displayName": "Claude Code adapter",
   "hostProtocol": {
     "major": 1,

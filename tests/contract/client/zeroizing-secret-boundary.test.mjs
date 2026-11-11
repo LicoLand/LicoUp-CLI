@@ -5,9 +5,8 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
-const nativeRoot = "crates/licoup-native/src";
-const custodyRoot = `${nativeRoot}/domain/mobile_relay/secret_custody`;
-const platformRoot = `${nativeRoot}/platform/secure_mesh_secret_store`;
+const nativeRoot = "crates/licoup/src";
+const platformRoot = `${nativeRoot}/platform/secret_store`;
 const catalogRoot = "tools/regression/client-module-catalog";
 const RUST_WHITESPACE = String.raw`\s`;
 
@@ -81,7 +80,7 @@ function rustFunctionBlock(source, functionName) {
 }
 
 test("every secret-store implementation transfers bounded owned SecretBytes", async () => {
-  const port = await read(`${nativeRoot}/core/secure_mesh_secret_store/port.rs`);
+  const port = await read(`${nativeRoot}/core/secret_store/port.rs`);
   assert.match(
     port,
     /fn set_secret\([^)]*secret:\s*SecretBytes\)\s*->\s*Result<\(\)>/su,
@@ -100,7 +99,7 @@ test("every secret-store implementation transfers bounded owned SecretBytes", as
 
   const allNativeSources = await rustSources(nativeRoot);
   const implementations = allNativeSources.flatMap(([relativePath, source]) =>
-    implementationBlocks(source, "SecureMeshSecretStore")
+    implementationBlocks(source, "SecretStore")
       .map((block) => [relativePath, block]));
   assert.ok(implementations.length > 0);
   for (const [relativePath, block] of implementations) {
@@ -111,295 +110,14 @@ test("every secret-store implementation transfers bounded owned SecretBytes", as
   }
 });
 
-test("platform and mobile bridges have no String compatibility secret payload", async () => {
+test("the platform secret store has no String compatibility secret payload", async () => {
   const platform = (await rustSources(platformRoot))
     .map(([relativePath, source]) => `// ${relativePath}\n${source}`)
     .join("\n");
-  const android = await read(`${nativeRoot}/ffi/android_ffi.rs`);
-  const ios = await read(`${nativeRoot}/ffi/ios_ffi.rs`);
-
-  for (const [label, source] of [
-    ["platform secret store", platform],
-    ["Android secret bridge", android],
-    ["iOS secret bridge", ios],
-  ]) {
-    assert.ok(source.includes("SecretBytes"), `${label} must use SecretBytes`);
-    assert.doesNotMatch(source, /Option<String>\s*>\s*\{\s*[^}]*secret/isu, label);
-    assert.doesNotMatch(source, /secret:\s*&str/u, label);
-    assert.doesNotMatch(source, /Zeroizing<String>/u, label);
-  }
-  assert.doesNotMatch(android, /normalize_android_secret_store_get\s*\([^)]*Option<String>/su);
-  assert.ok(android.includes("JByteArray"));
-  assert.ok(android.includes("convert_byte_array"));
-  assert.ok(android.includes("AndroidSecretByteArrayGuard"));
-  assert.match(
-    android,
-    /impl Drop for AndroidSecretByteArrayGuard[\s\S]*\.set_region\(self\.env, 0, &zeros\)/u,
-  );
-  assert.ok(android.includes("MAX_SECRET_BYTES"));
-  assert.match(
-    android,
-    /secureMeshAndroidSecretStoreSet[\s\S]*\(Ljava\/lang\/String;Ljava\/lang\/String;\[B\)Z/u,
-  );
-  assert.match(
-    android,
-    /secureMeshAndroidSecretStoreGet[\s\S]*\(Ljava\/lang\/String;Ljava\/lang\/String;\)\[B/u,
-  );
-  assert.doesNotMatch(
-    android,
-    /secureMeshAndroidSecretStoreSet[\s\S]*\(Ljava\/lang\/String;Ljava\/lang\/String;Ljava\/lang\/String;\)Z/u,
-  );
-  assert.doesNotMatch(android, /env\.new_string\s*\(\s*secret/u);
-  assert.doesNotMatch(
-    android,
-    /(?:let\s+text:\s*String|JString::from\(value\))[\s\S]{0,240}normalize_android_secret_store_get/u,
-  );
-
-  assert.match(
-    ios,
-    /set_secret:\s*Option<[\s\S]*secret:\s*\*const u8[\s\S]*secret_len:\s*usize/u,
-  );
-  assert.match(
-    ios,
-    /get_secret:\s*Option<[\s\S]*value_out:\s*\*mut \*mut u8[\s\S]*value_len_out:\s*\*mut usize/u,
-  );
-  assert.ok(ios.includes("bytes_zeroize_and_free"));
-  const ios_store_blocks = implementationBlocks(ios, "SecureMeshSecretStore");
-  const ios_store = ios_store_blocks.find((block) =>
-    block.includes("IOS_SECRET_STORE_BACKEND"));
-  assert.ok(ios_store, "missing iOS callback secret-store implementation");
-  assert.match(ios_store, /secret:\s*SecretBytes/u);
-  assert.match(ios_store, /Result<Option<SecretBytes>>/u);
-  assert.match(ios_store, /secret\.expose_bytes\s*\(\)/u);
-  assert.match(ios_store, /bytes_zeroize_and_free/u);
-  assert.doesNotMatch(ios_store, /CString::new\s*\(\s*secret/u);
-  assert.doesNotMatch(ios_store, /CStr::from_ptr/u);
-  assert.doesNotMatch(ios_store, /(?:to_owned|to_string)\s*\(\)/u);
-});
-
-test("native hydration and admitted secrets move only into RuntimeSecretMaterial", async () => {
-  const runtimeCarrierPath = `${custodyRoot}/runtime_secret_material.rs`;
-  assert.equal(await exists(runtimeCarrierPath), true);
-  const runtimeCarrier = await read(runtimeCarrierPath);
-  const secretMaterial = await read(`${custodyRoot}/secret_material.rs`);
-
-  assert.match(runtimeCarrier, /struct RuntimeSecretMaterial/u);
-  assert.ok(runtimeCarrier.includes("SecretBytes"));
-  assert.doesNotMatch(runtimeCarrier, /serde(?:_json)?::/u);
-  assert.doesNotMatch(runtimeCarrier, /\bValue\b/u);
-  assert.doesNotMatch(runtimeCarrier, /json!\s*\(/u);
-  assert.doesNotMatch(runtimeCarrier, /derive\([^)]*(?:Serialize|Deserialize)/su);
-  for (const required of [
-    "hydrate_runtime_secret_material_from_native_store",
-    "hydrate_runtime_secret_material_from_native_store_with_batch",
-  ]) {
-    assert.ok(secretMaterial.includes(required), required);
-  }
-  for (const retired of [
-    "hydrate_config_secret_material_from_native_store",
-    "hydrate_config_secret_material_from_native_store_with_batch",
-    "hydrate_config_secret_material_from_secret_store",
-    "hydrate_config_token_secret_material_from_secret_store",
-  ]) {
-    assert.equal(secretMaterial.includes(retired), false, retired);
-  }
-
-  const hydrationFunctions = [
-    "hydrate_runtime_secret_material_from_native_store",
-    "hydrate_runtime_secret_material_from_native_store_with_batch",
-    "hydrate_runtime_secret_material_from_secret_store",
-    "hydrate_runtime_secret_material_from_store_with_session",
-  ].map((name) => [name, rustFunctionBlock(secretMaterial, name)]);
-  for (const [name, block] of hydrationFunctions) {
-    assert.match(block, /config:\s*&Value/u, name);
-    assert.match(block, /material:\s*&mut RuntimeSecretMaterial/u, name);
-    assert.doesNotMatch(block, /config:\s*&mut Value/u, name);
-    assert.doesNotMatch(block, /json!\s*\(/u, name);
-    assert.doesNotMatch(block, /Vec<\(\s*&(?:'static\s+)?str\s*,\s*String\s*\)>/u, name);
-    assert.doesNotMatch(block, /secret(?:_bytes|_value)?\.to_string\s*\(\)/u, name);
-  }
-  const sessionHydration = hydrationFunctions.at(-1)[1];
-  assert.ok(sessionHydration.includes("material.set_token"));
-  assert.ok(sessionHydration.includes("material.set_paired_device_token"));
-  assert.ok(sessionHydration.includes("material.merge_e2ee_bundle"));
-
-  const runtime = await read(`${custodyRoot}/runtime.rs`);
-  assert.match(
-    runtime,
-    /struct RuntimeSecretContext\s*\{[^}]*material:\s*RuntimeSecretMaterial/su,
-  );
-  const configStore = await read(`${custodyRoot}/config_store.rs`);
-  const loadContext = rustFunctionBlock(
-    configStore,
-    "load_config_with_runtime_secret_context_unchecked",
-  );
-  assert.ok(loadContext.includes("hydrate_runtime_secret_material"));
-  assert.ok(loadContext.includes("context.material"));
-  assert.doesNotMatch(
-    loadContext,
-    /hydrate_[a-z_]*secret[a-z_]*\(\s*&mut config/su,
-  );
-  assert.doesNotMatch(loadContext, /config\[[^\]]+\]\s*=\s*json!\s*\(\s*secret/su);
-
-  const pairingPresentation = await read(
-    `${nativeRoot}/domain/mobile_relay/endpoint_trust/pairing_presentation.rs`,
-  );
-  const inviteAdmission = rustFunctionBlock(
-    pairingPresentation,
-    "apply_pairing_invite_params_with_context",
-  );
-  assert.match(
-    inviteAdmission,
-    /secret_context:\s*Option<&mut RuntimeSecretContext>/u,
-  );
-  assert.match(
-    inviteAdmission,
-    /context\.material\.replace_e2ee_secret\s*\(/u,
-  );
-  assert.match(
-    inviteAdmission,
-    /SecretBytes::try_from_(?:bytes|string)\s*\(/u,
-  );
-  assert.doesNotMatch(
-    inviteAdmission,
-    /config\s*\[\s*"(?:e2eePairingSecret|pairingSecretBase64url)"\s*\]\s*=/u,
-  );
-});
-
-test("cryptographic and relay consumers borrow explicit typed secret views", async () => {
-  const endpointStateSource = await read(
-    `${nativeRoot}/domain/mobile_relay/endpoint_trust/local_material/state_codec.rs`,
-  );
-  const endpointPrimitives = await read(
-    `${nativeRoot}/domain/mobile_relay/endpoint_trust/primitives.rs`,
-  );
-  const endpointMutation = await read(
-    `${nativeRoot}/domain/mobile_relay/endpoint_trust/local_material/material_mutation.rs`,
-  );
-  const pairing = await read(`${nativeRoot}/domain/mobile_relay/pairing.rs`);
-  const relayCreate = await read(
-    `${nativeRoot}/domain/mobile_relay/relay_operations/command_handlers/create.rs`,
-  );
-  const relayResult = await read(
-    `${nativeRoot}/domain/mobile_relay/relay_operations/command_handlers/result.rs`,
-  );
-
-  const localEndpointState = rustFunctionBlock(
-    endpointStateSource,
-    "local_endpoint_state",
-  );
-  assert.match(
-    localEndpointState,
-    /secret_material:\s*&(?:'[a-z_][a-z0-9_]*\s+)?RuntimeSecretMaterial/u,
-  );
-  assert.match(localEndpointState, /\.expose_utf8\s*\(\)/u);
-  assert.doesNotMatch(
-    localEndpointState,
-    /descriptor_text\([^,]+,\s*"(?:privateKeyBase64url|signingKeyBase64url|signedPrekeyPrivateKeyBase64url|oneTimePrekeyPrivateKeyBase64url|oneTimeMlKem1024PrekeySeedBase64url|pairingSecretBase64url)"\)/u,
-  );
-
-  const claimProofMac = rustFunctionBlock(
-    endpointPrimitives,
-    "mobile_relay_claim_proof_mac",
-  );
-  assert.match(claimProofMac, /secret_material:\s*&RuntimeSecretMaterial/u);
-  assert.match(
-    claimProofMac,
-    /e2ee_secret\s*\(\s*MobileRelayE2eeSecretField::PairingSecret\s*\)/u,
-  );
-  assert.match(claimProofMac, /secret\.expose_bytes\s*\(\)/u);
-
-  const ensureEndpoint = rustFunctionBlock(
-    endpointMutation,
-    "ensure_mobile_relay_endpoint_material",
-  );
-  assert.match(
-    ensureEndpoint,
-    /secret_material:\s*&mut RuntimeSecretMaterial/u,
-  );
-  assert.match(ensureEndpoint, /secret_material\.insert_e2ee_secret\s*\(/u);
-  for (const secretField of [
-    "privateKeyBase64url",
-    "signingKeyBase64url",
-    "signedPrekeyPrivateKeyBase64url",
-    "oneTimePrekeyPrivateKeyBase64url",
-    "oneTimeMlKem1024PrekeySeedBase64url",
-    "pairingSecretBase64url",
-  ]) {
-    const secretJsonAssignment = new RegExp(
-      String.raw`(?:insert\(${RUST_WHITESPACE}*"${secretField}"\.to_string\(\)${RUST_WHITESPACE}*,|\[${RUST_WHITESPACE}*"${secretField}"${RUST_WHITESPACE}*\]${RUST_WHITESPACE}*=)${RUST_WHITESPACE}*json!${RUST_WHITESPACE}*\(`,
-      "su",
-    );
-    assert.doesNotMatch(ensureEndpoint, secretJsonAssignment, secretField);
-  }
-  assert.doesNotMatch(
-    ensureEndpoint,
-    /fields\.private_key\.to_string\(\)\s*,\s*json!\s*\(/u,
-  );
-
-  const require_pairing_block = rustFunctionBlock(pairing, "require_pairing_secret");
-  assert.match(require_pairing_block, /material:\s*&RuntimeSecretMaterial/u);
-  assert.match(require_pairing_block, /secret\.expose_bytes\s*\(\)/u);
-  for (const pairingConsumer of ["pairing_create", "pairing_claim"]) {
-    const block = rustFunctionBlock(pairing, pairingConsumer);
-    assert.ok(block.includes("secret_context.material"), pairingConsumer);
-    assert.match(
-      block,
-      /(?:register_local_relay_endpoint|mobile_relay_claim_proof|one_time_pairing_invite)\s*\(/u,
-      pairingConsumer,
-    );
-  }
-
-  const requireRelayPrivateKey = rustFunctionBlock(
-    relayCreate,
-    "require_relay_private_key",
-  );
-  assert.match(requireRelayPrivateKey, /material:\s*&RuntimeSecretMaterial/u);
-  assert.match(requireRelayPrivateKey, /private_key\.expose_bytes\s*\(\)/u);
-  const secureCreate = rustFunctionBlock(relayCreate, "command_create_secure");
-  assert.ok(secureCreate.includes("&secret_context.material"));
-  assert.match(secureCreate, /secure_command_payload\s*\(/u);
-  assert.match(
-    secureCreate,
-    /seal_mobile_relay_payload_deferred\s*\(/u,
-  );
-  const secureResult = rustFunctionBlock(relayResult, "command_result_secure");
-  assert.ok(secureResult.includes("&secret_context.material"));
-  assert.match(
-    secureResult,
-    /open_mobile_relay_payload_deferred\s*\(/u,
-  );
-});
-
-test("E2EE secret bundle is typed bounded binary and the JSON codec is absent", async () => {
-  const secretMaterial = await read(`${custodyRoot}/secret_material.rs`);
-  const runtimeCarrier = await read(`${custodyRoot}/runtime_secret_material.rs`);
-  const joined = `${secretMaterial}\n${runtimeCarrier}`;
-
-  for (const required of [
-    "MobileRelayE2eeSecretBundle",
-    "MobileRelayE2eeSecretField",
-    "MOBILE_RELAY_SECRET_BUNDLE_MAGIC",
-    "MOBILE_RELAY_SECRET_BUNDLE_VERSION",
-    "MOBILE_RELAY_SECRET_FIELD_MAX_BYTES",
-    "MOBILE_RELAY_SECRET_BUNDLE_MAX_BYTES",
-    "encode_mobile_relay_e2ee_secret_bundle",
-    "decode_mobile_relay_e2ee_secret_bundle",
-  ]) {
-    assert.ok(joined.includes(required), required);
-  }
-  for (const legacy of [
-    "serialize_native_e2ee_secret_bundle",
-    "parse_native_e2ee_secret_bundle",
-    "MOBILE_RELAY_E2EE_NATIVE_SECRET_BUNDLE_SCHEMA_VERSION",
-    "serde_json::Map",
-    "serde_json::from_str::<Value>",
-    "serde_json::to_string",
-    "Vec<(&'static str, String)>",
-    "Vec<(&str, String)>",
-  ]) {
-    assert.equal(joined.includes(legacy), false, legacy);
-  }
+  assert.ok(platform.includes("SecretBytes"), "platform secret store must use SecretBytes");
+  assert.doesNotMatch(platform, /Option<String>\s*>\s*\{\s*[^}]*secret/isu);
+  assert.doesNotMatch(platform, /secret:\s*&str/u);
+  assert.doesNotMatch(platform, /Zeroizing<String>/u);
 });
 
 test("legacy keyring implementation and catalog residue are absent", async () => {
@@ -427,5 +145,5 @@ test("legacy keyring implementation and catalog residue are absent", async () =>
   ].join("\n");
 
   assert.equal(catalog.includes("platform_backends/keyring.rs"), false);
-  assert.equal(catalog.includes("secure_mesh_secret_store/keyring"), false);
+  assert.equal(catalog.includes("secret_store/keyring"), false);
 });

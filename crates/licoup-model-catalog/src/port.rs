@@ -18,7 +18,7 @@
 //! observation is ever reported, so no model is fabricated as available; no
 //! provider credential is claimed; and no source generation exists, so no
 //! observed snapshot is reused. Production composition names the real owners
-//! instead, from the `licoup-native` crate root.
+//! instead, from the `licoup` crate root.
 
 use crate::availability::ObservedModel;
 use serde_json::Value;
@@ -109,7 +109,7 @@ static INSTALLED: OnceLock<ModelCatalogPort> = OnceLock::new();
 
 /// Install this host's answers for the catalogue port, once per process.
 ///
-/// The composition that calls it lives at the `licoup-native` crate root,
+/// The composition that calls it lives at the `licoup` crate root,
 /// above both layers. One answer per port: a second installation is refused
 /// rather than silently replacing the first, and a process that never calls it
 /// keeps every member fail-closed.

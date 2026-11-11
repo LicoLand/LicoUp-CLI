@@ -1,35 +1,48 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  RELEASE_CLOSURE_CHALLENGE_ENV,
-  createReleaseClosureChallenge,
-} from "./lib/release-closure-challenge.mjs";
+import { requiredReleaseClosureChallenge } from "./lib/release-closure-challenge.mjs";
 import { verificationModelsMap } from "./lib/agent-conversation-verification-models.mjs";
 import { strictRoundCount } from "../../tests/product-e2e/cli/agent-conversations/support/parity/constants.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const inventoryPath = resolve(root, "crates/licoup-native/resources/agent-conversation-drivers.json");
-const readinessPath = resolve(root, "crates/licoup-native/resources/agent-conversation-readiness.json");
+const inventoryPath = resolve(root, "crates/licoup/resources/agent-conversation-drivers.json");
+const readinessPath = resolve(root, "crates/licoup/resources/agent-conversation-readiness.json");
 const defaultReport = resolve(root, "build/reports/agent-conversation-verification.json");
 const validationModels = verificationModelsMap();
 
+// `--release-ui` joins a release-UI product receipt that the Desktop repository
+// produced from its own release bundle: both paths, and the release closure
+// challenge the receipt was bound to, are supplied by that invocation.
 function parseArgs(argv) {
-  const options = { agents: [], live: false, releaseUi: false, selfTest: false, output: defaultReport };
+  const options = {
+    agents: [],
+    live: false,
+    releaseUi: false,
+    selfTest: false,
+    output: defaultReport,
+    productReceipt: "",
+    releaseApp: "",
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--live") options.live = true;
     else if (arg === "--release-ui") { options.live = true; options.releaseUi = true; }
     else if (arg === "--self-test") options.selfTest = true;
-    else if (arg === "--agent" || arg === "--output") {
+    else if (["--agent", "--output", "--product-receipt", "--release-app"].includes(arg)) {
       const value = argv[++index];
       if (!value) throw new Error("argument_missing");
       if (arg === "--agent") options.agents.push(value.trim().toLowerCase().replaceAll("_", "-"));
-      else options.output = resolve(root, value);
+      else if (arg === "--output") options.output = resolve(root, value);
+      else if (arg === "--product-receipt") options.productReceipt = resolve(value);
+      else options.releaseApp = resolve(value);
     } else throw new Error("argument_unsupported");
+  }
+  if (options.releaseUi && (!options.productReceipt || !options.releaseApp)) {
+    throw new Error("release_ui_inputs_required");
   }
   return options;
 }
@@ -222,40 +235,20 @@ async function main() {
   if (drivers.length === 0) throw new Error("agent_not_found");
 
   const checks = {
-    nativePlatform: run("cargo", ["test", "-p", "licoup-native", "--lib", "platform::", "--", "--test-threads=1"]),
+    nativePlatform: run("cargo", ["test", "-p", "licoup", "--lib", "platform::", "--", "--test-threads=1"]),
     reducerContract: run("node", ["tests/contract/client/agent-conversation-parity-reducer.test.mjs"]),
     readinessContract: run("node", ["tests/product-e2e/cli/agent-conversations/support/reducer-facade.mjs", "--check"]),
     harnessSelfTest: runJson("node", ["tests/product-e2e/cli/agent-conversations/support/parity-facade.mjs", "--self-test"]),
-    productHarnessSelfTest: runJson("node", ["tools/scripts/client-agent-conversation-product-e2e.mjs", "--self-test"]),
   };
 
   let productRelease = null;
-  const releaseInvocationEnvironment = options.releaseUi
-    ? {
-      ...process.env,
-      [RELEASE_CLOSURE_CHALLENGE_ENV]: createReleaseClosureChallenge(),
-    }
-    : process.env;
-  const productReceiptPath = resolve(root, "build/reports/agent-conversation-product-e2e.json");
   if (options.releaseUi) {
-    rmSync(productReceiptPath, { force: true });
-    const productArgs = [
-      "tools/scripts/client-agent-conversation-product-e2e.mjs",
-      "--output", "build/reports/agent-conversation-product-e2e.json",
-    ];
-    for (const driver of drivers) {
-      if (driver.driverMode !== "blocked") productArgs.push("--agent", driver.agentId);
+    requiredReleaseClosureChallenge(process.env);
+    try {
+      productRelease = JSON.parse(readFileSync(options.productReceipt, "utf8"));
+    } catch {
+      productRelease = { status: "failed", reasonCode: "release_ui_product_receipt_invalid" };
     }
-    const execution = runJson(
-      "node",
-      productArgs,
-      releaseInvocationEnvironment,
-      60 * 60 * 1000,
-    );
-    productRelease = execution.payload || {
-      status: "failed",
-      reasonCode: execution.reasonCode || "release_ui_product_harness_failed",
-    };
   }
 
   const rows = [];
@@ -283,9 +276,13 @@ async function main() {
           "--timeout-ms", "180000",
         ];
         if (options.releaseUi) {
-          args.push("--release-ui", "--product-receipt", productReceiptPath);
+          args.push(
+            "--release-ui",
+            "--product-receipt", options.productReceipt,
+            "--release-app", options.releaseApp,
+          );
         }
-        const execution = runJson("node", args, releaseInvocationEnvironment);
+        const execution = runJson("node", args);
         liveResult = {
           status: execution.status,
           reasonCode: execution.payload?.errorCode || execution.reasonCode,
@@ -311,19 +308,6 @@ async function main() {
       options.releaseUi,
       productRelease,
     ));
-  }
-
-  if (options.releaseUi) {
-    // The P-10 application is an acceptance-only Release artifact. Restore a
-    // normal Release build before handoff so it cannot be mistaken for the
-    // ordinary GitHub Release/package artifact.
-    checks.ordinaryReleaseRebuild = run("npm", [
-      "run",
-      "client:build",
-      "--",
-      "--platform",
-      "macos",
-    ]);
   }
 
   const staticPassed = Object.values(checks).every((check) => check.status === "passed");

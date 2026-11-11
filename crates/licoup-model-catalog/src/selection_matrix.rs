@@ -241,7 +241,7 @@ pub type ScopeAdmission =
 ///
 /// It is a separate port from [`ModelCatalogPort`] because the effective policy
 /// has a different owner from the probe, the credential claim and the source
-/// generation: `licoup-native` composes both, and a process that composes
+/// generation: `licoup` composes both, and a process that composes
 /// neither keeps every answer fail-closed. [`Self::unavailable`] states no
 /// outcome for any scope.
 #[derive(Clone, Copy)]

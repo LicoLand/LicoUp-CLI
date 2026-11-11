@@ -63,8 +63,8 @@ function resolveCodexBinary() {
 function resolveSidecarBinary() {
   const candidates = [
     process.env.LICO_CLIENT_PATH,
-    join(workspaceRoot, "target", "debug", "licoup-cli"),
-    join(workspaceRoot, "crates", "licoup-native", "target", "debug", "licoup-cli"),
+    join(workspaceRoot, "target", "debug", "licoup"),
+    join(workspaceRoot, "crates", "licoup", "target", "debug", "licoup"),
   ].filter(Boolean);
   const binary = candidates.find((candidate) => existsSync(candidate));
   if (!binary) {

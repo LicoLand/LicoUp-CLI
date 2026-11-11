@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "kind": "semantic-conversation",
+  "readOnly": true,
+  "privacyDefaults": {
+    "defaultView": "thread",
+    "hideRawInDefaultView": true,
+    "hideAuditInDefaultView": true,
+    "redactPaths": true,
+    "redactTokens": true,
+    "redactFullCommandPayloads": true
+  },
+  "thread": [
+    {
+      "id": "thread-user-1",
+      "layer": "thread",
+      "role": "user",
+      "eventKind": "user-message",
+      "text": "Please summarize the open checklist.",
+      "createdAt": "2026-01-15T10:00:00Z"
+    },
+    {
+      "id": "thread-assistant-1",
+      "layer": "thread",
+      "role": "assistant",
+      "eventKind": "assistant-message",
+      "text": "Three items remain open. I will inspect the tracker next.",
+      "createdAt": "2026-01-15T10:00:05Z"
+    }
+  ],
+  "execution": [
+    {
+      "id": "exec-tool-1",
+      "layer": "execution",
+      "eventKind": "tool-call",
+      "title": "Read tracker",
+      "summary": "Invocation details are hidden.",
+      "createdAt": "2026-01-15T10:00:06Z",
+      "collapsed": true,
+      "sourceItemType": "tool-use"
+    },
+    {
+      "id": "exec-tool-2",
+      "layer": "execution",
+      "eventKind": "tool-result",
+      "title": "Tracker result",
+      "summary": "The native tool result was recorded.",
+      "createdAt": "2026-01-15T10:00:07Z",
+      "collapsed": true,
+      "sourceItemType": "tool-result"
+    },
+    {
+      "id": "exec-terminal-1",
+      "layer": "execution",
+      "eventKind": "terminal",
+      "title": "Shell command",
+      "summary": "Command output is redacted.",
+      "createdAt": "2026-01-15T10:00:08Z",
+      "collapsed": true,
+      "sourceItemType": "run-command"
+    },
+    {
+      "id": "exec-plan-1",
+      "layer": "execution",
+      "eventKind": "plan",
+      "title": "Plan update",
+      "summary": "Next step: verify checklist status.",
+      "createdAt": "2026-01-15T10:00:09Z",
+      "collapsed": true,
+      "sourceItemType": "plan"
+    },
+    {
+      "id": "exec-progress-1",
+      "layer": "execution",
+      "eventKind": "progress",
+      "title": "Progress",
+      "summary": "Checking remaining items.",
+      "createdAt": "2026-01-15T10:00:10Z",
+      "collapsed": true,
+      "sourceItemType": "progress"
+    },
+    {
+      "id": "exec-error-1",
+      "layer": "execution",
+      "eventKind": "error",
+      "title": "Transient error",
+      "summary": "The native agent reported an error.",
+      "createdAt": "2026-01-15T10:00:11Z",
+      "collapsed": false,
+      "sourceItemType": "error"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "artifact-summary-1",
+      "layer": "artifacts",
+      "kind": "summary",
+      "label": "Archive summary",
+      "ref": "summary.md",
+      "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": "artifact-index-1",
+      "layer": "artifacts",
+      "kind": "index",
+      "label": "Conversation index",
+      "ref": "conversation-index.md",
+      "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ],
+  "audit": {
+    "adapterId": "codex",
+    "adapterLabel": "Codex",
+    "hostApp": "codex",
+    "hostAppLabel": "Codex",
+    "sourceClient": "codex",
+    "sourceKind": "jsonl",
+    "nativeSessionId": "fixture-session-001",
+    "importMode": "precise-adapter",
+    "sourceEvidence": {
+      "kind": "jsonl",
+      "pathRef": "fixture://codex/session-001.jsonl",
+      "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "byteLength": 2048
+    },
+    "parseWarnings": [],
+    "redactionStatus": "applied",
+    "validationStatus": "ok",
+    "createdAt": "2026-01-15T10:00:00Z",
+    "updatedAt": "2026-01-15T10:00:11Z"
+  },
+  "raw": {
+    "evidenceRefs": [
+      {
+        "kind": "jsonl",
+        "pathRef": "fixture://codex/session-001.jsonl",
+        "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "byteLength": 2048
+      }
+    ]
+  }
+}

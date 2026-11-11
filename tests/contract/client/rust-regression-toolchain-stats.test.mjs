@@ -14,7 +14,7 @@ const focusedCargoTest = Object.freeze({
   args: Object.freeze([
     "test",
     "--manifest-path",
-    "crates/licoup-native/Cargo.toml",
+    "crates/licoup/Cargo.toml",
     "--lib",
     "state::tests::keeps_focus",
     "--",
@@ -36,7 +36,7 @@ test("Cargo timings are inserted before the preserved libtest suffix", () => {
   assert.deepEqual(decorated.command.args, [
     "test",
     "--manifest-path",
-    "crates/licoup-native/Cargo.toml",
+    "crates/licoup/Cargo.toml",
     "--lib",
     "state::tests::keeps_focus",
     "--timings",

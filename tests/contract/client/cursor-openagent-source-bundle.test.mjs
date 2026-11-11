@@ -9,15 +9,13 @@ const repoRoot = path.resolve(
   "../../..",
 );
 const parserRoot =
-  "crates/licoup-native/src/domain/conversation/history/cursor_openagent";
+  "crates/licoup/src/domain/conversation/history/cursor_openagent";
 const productionLeaves = Object.freeze([
   "codec.rs",
   "composition.rs",
   "cursor.rs",
-  "cursor_cli.rs",
   "cursor_projection.rs",
   "fallback.rs",
-  "openagent.rs",
 ]);
 
 async function read(relativePath) {
@@ -31,7 +29,7 @@ async function sources() {
   ])));
 }
 
-test("Cursor and OpenAgent facade is thin and owns exactly seven production leaves", async () => {
+test("Cursor history facade is thin and owns exactly five production leaves", async () => {
   const facade = await read(`${parserRoot}.rs`);
   assert.deepEqual(
     [...facade.matchAll(/^(?:pub\(super\)\s+)?mod ([a-z_]+);$/gmu)]
@@ -44,10 +42,9 @@ test("Cursor and OpenAgent facade is thin and owns exactly seven production leav
   assert.equal(facade.includes("use super::*"), false);
   for (const implementation of [
     "Connection::open_with_flags",
-    "fn parse_cursor_sqlite_sessions(",
-    "fn parse_openagent_sqlite_sessions(",
     "fn parse_generic_sqlite_sessions(",
     "fn sqlite_value_text(",
+    "fn cursor_composer_rows(",
   ]) {
     assert.equal(facade.includes(implementation), false);
   }
@@ -62,12 +59,9 @@ test("parser leaves are bounded and use an explicit acyclic dependency direction
   assert.equal(source["codec.rs"].includes("use super::"), false);
   assert.ok(source["cursor.rs"].includes("super::codec"));
   assert.ok(source["cursor.rs"].includes("super::cursor_projection"));
-  assert.ok(source["cursor_cli.rs"].includes("super::codec"));
-  assert.ok(source["cursor_cli.rs"].includes("super::cursor_projection"));
   assert.equal(source["cursor_projection.rs"].includes("super::cursor"), false);
-  assert.ok(source["openagent.rs"].includes("super::codec"));
   assert.ok(source["fallback.rs"].includes("super::codec"));
-  for (const dependency of ["codec", "cursor", "cursor_cli", "fallback", "openagent"]) {
+  for (const dependency of ["codec", "fallback"]) {
     assert.ok(source["composition.rs"].includes(`super::${dependency}`));
   }
 });
@@ -94,40 +88,25 @@ test("SQLite codec owns read-only access and complete field, value, and row proj
   assert.equal(source.includes("SQLITE_OPEN_CREATE"), false);
 });
 
-test("Cursor SQL parsing and model/usage projection remain separate", async () => {
+test("Cursor composer catalog parsing and model projection remain separate", async () => {
   const source = await sources();
   for (const token of [
-    "parse_cursor_sqlite_sessions",
+    "cursor_composer_catalog",
     "cursor_composer_rows",
-    "cursor_bubble_ids_for_composer",
-    "cursor_disk_kv_json",
-    "TransactionBehavior::Deferred",
   ]) {
-    assert.ok(source["cursor.rs"].includes(token), `missing Cursor parser boundary: ${token}`);
+    assert.ok(source["cursor.rs"].includes(token), `missing Cursor catalog boundary: ${token}`);
   }
   for (const token of [
-    "cursor_message_from_bubble",
     "cursor_composer_model_from_config",
     "selectedModels",
-    "cursor_bubble_usage",
     "normalize_cursor_model_name",
   ]) {
     assert.ok(source["cursor_projection.rs"].includes(token), `missing Cursor projection boundary: ${token}`);
   }
 });
 
-test("OpenAgent precise parsing and generic fallback retain independent row policies", async () => {
+test("generic SQLite fallback retains its independent row policy", async () => {
   const source = await sources();
-  for (const token of [
-    "parse_openagent_sqlite_sessions",
-    "openagent_session_rows",
-    "openagent_messages_for_session",
-    "openagent_parts_by_message",
-    "openagent_usage_from_columns",
-    "TransactionBehavior::Deferred",
-  ]) {
-    assert.ok(source["openagent.rs"].includes(token), `missing OpenAgent boundary: ${token}`);
-  }
   for (const token of [
     "parse_generic_sqlite_sessions",
     'SELECT * FROM',
@@ -148,13 +127,11 @@ test("OpenAgent precise parsing and generic fallback retain independent row poli
 
 test("every parser and codec leaf retains dedicated regression coverage", async () => {
   const testFacade = await read(`${parserRoot}/tests/mod.rs`);
-  const externalTestLeaves = productionLeaves.filter((leaf) => leaf !== "cursor_cli.rs");
   assert.deepEqual(
     [...testFacade.matchAll(/^mod ([a-z_]+);$/gmu)].map((match) => match[1]).sort(),
-    externalTestLeaves.map((leaf) => leaf.replace(".rs", "")).sort(),
+    ["codec", "fallback"],
   );
-  for (const leaf of externalTestLeaves) {
+  for (const leaf of ["codec.rs", "fallback.rs"]) {
     await fs.access(path.join(repoRoot, `${parserRoot}/tests/${leaf}`));
   }
-  assert.match((await sources())["cursor_cli.rs"], /#\[cfg\(test\)\]\s+mod tests \{/u);
 });

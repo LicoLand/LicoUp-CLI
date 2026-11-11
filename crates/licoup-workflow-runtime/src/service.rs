@@ -338,14 +338,13 @@ impl StrategyService {
                 let message = error.to_string();
                 let settled_start = message.contains("strategy_run_start_failed")
                     || message.contains("strategy_actor_dispatch_failed");
-                if matches!(
+                if (matches!(
                     action.as_str(),
                     "strategy.package.prepare-import" | "strategy.package.commit-import"
-                ) || (action == "strategy.run.start" && !settled_start)
+                ) || (action == "strategy.run.start" && !settled_start))
+                    && let Some(conversation_id) = conversation_id.as_deref()
                 {
-                    if let Some(conversation_id) = conversation_id.as_deref() {
-                        let _ = self.report_imported_lifecycle_failure(conversation_id, &projected);
-                    }
+                    let _ = self.report_imported_lifecycle_failure(conversation_id, &projected);
                 }
                 Ok(json!({"ok": false, "error": projected}))
             }
@@ -1842,12 +1841,12 @@ impl StrategyService {
             })
             .ok_or_else(|| anyhow!("binding_incomplete"))?;
         let mut facts = current.input.clone();
-        if let Some(session) = current.resume_session_id.as_deref() {
-            if let Value::Object(ref mut object) = facts {
-                object
-                    .entry("nativeSessionId")
-                    .or_insert_with(|| Value::String(session.to_owned()));
-            }
+        if let Some(session) = current.resume_session_id.as_deref()
+            && let Value::Object(ref mut object) = facts
+        {
+            object
+                .entry("nativeSessionId")
+                .or_insert_with(|| Value::String(session.to_owned()));
         }
         self.apply_run_event(
             run_id,
@@ -4135,7 +4134,7 @@ mod tests {
             membership_id.as_str()
         );
 
-        let snapshot = wait_for_terminal(&service.store(), &run_id);
+        let snapshot = wait_for_terminal(service.store(), &run_id);
         assert_eq!(snapshot.status, StrategyRunStatus::Completed);
         {
             let recorded = calls.lock().unwrap();

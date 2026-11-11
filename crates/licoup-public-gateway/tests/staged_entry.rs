@@ -1,19 +1,17 @@
 //! The committed staged entry is a release-stage placeholder, never a silently
 //! shipped program.
 //!
-//! `crates/licoup-mcp/package` is packaged exactly as committed, so a checkout
-//! builds a deterministic payload and the payload contract can be tested without
-//! a compiler. The native entry the manifest declares is filled by the release
-//! stage (`tools/distribution/client-release-package-stage.mjs`) before a real
-//! build, and the committed bytes therefore have to stay recognisable as that
+//! `crates/licoup-public-gateway/package` is packaged exactly as committed, so a
+//! checkout builds a deterministic payload and the payload contract can be
+//! tested without a compiler. A release stage fills the native entry the
+//! manifest declares before a real build is packaged; that stage is not part of
+//! this repository, so the committed bytes have to stay recognisable as the
 //! placeholder: an executable, non-script text file that names the build it
 //! stands in for, with no compiled-program header.
 //!
 //! This is the artifact half of the optional composition. The client ships no
-//! copy of this payload at all, so a program appearing here without the release
-//! stage having run would be exactly the mandatory payload the composition
-//! removes — and the release stage refuses an entry that is not a program for
-//! the target platform, which is why both halves have to agree on these bytes.
+//! copy of this payload at all, so a program committed here would be exactly
+//! the mandatory payload the composition removes.
 //!
 //! Nothing here executes the entry, resolves a path outside the committed
 //! package or reaches the network.
@@ -100,9 +98,8 @@ fn the_committed_entry_is_the_release_stage_placeholder_and_not_a_program() {
     }
 
     let text = std::str::from_utf8(&bytes).expect("the placeholder is text");
-    // The placeholder has to say which build it stands in for: that is the
-    // command the release stage runs, and it has to name the target the crate
-    // actually builds.
+    // The placeholder has to say which build it stands in for, and it has to
+    // name the target the crate actually builds.
     assert!(
         text.contains(&format!("cargo build --bin {BINARY_TARGET}")),
         "the placeholder must name the build that fills it"
@@ -141,29 +138,5 @@ fn the_staged_entry_name_is_a_binary_target_this_crate_builds() {
             .expect("the entry has a name"),
         declared,
         "the staged entry file is the binary target itself, not a copy under another name"
-    );
-}
-
-/// The named staging tool is the one that fills this entry, and it refuses a
-/// placeholder. Named here so the artifact and the release step cannot drift
-/// apart silently.
-#[test]
-fn the_release_stage_that_fills_this_entry_refuses_a_placeholder() {
-    let tool = fs::read_to_string(
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tools/distribution/client-release-package-stage.mjs"),
-    )
-    .expect("the release staging tool is committed");
-    assert!(
-        tool.contains("package_stage_entry_not_compiled"),
-        "the release stage must refuse the placeholder this entry is"
-    );
-    assert!(
-        tool.contains("chmodSync(entry.stagedPath, 0o755)"),
-        "the release stage must publish the entry executable"
-    );
-    assert!(
-        tool.contains("buildNativeSidecars"),
-        "the release stage must build through the client's own native build owner"
     );
 }

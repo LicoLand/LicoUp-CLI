@@ -40,10 +40,10 @@ fn read_http_request(stream: &mut TcpStream) -> Option<(String, Vec<u8>)> {
             request_line = Some(line.to_owned());
             continue;
         }
-        if let Some((name, value)) = line.split_once(':') {
-            if name.eq_ignore_ascii_case("content-length") {
-                content_length = value.trim().parse().unwrap_or(0);
-            }
+        if let Some((name, value)) = line.split_once(':')
+            && name.eq_ignore_ascii_case("content-length")
+        {
+            content_length = value.trim().parse().unwrap_or(0);
         }
     }
     let mut body = vec![0u8; content_length];

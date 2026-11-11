@@ -48,7 +48,7 @@ const replay = spawnSync(
     resolve(repositoryRoot, "tools/scripts/cargo-client.mjs"),
     "test",
     "--manifest-path",
-    "crates/licoup-native/Cargo.toml",
+    "crates/licoup/Cargo.toml",
     "--lib",
     "--",
     "platform::native_agent_parser::replay::",

@@ -5,11 +5,11 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(fileURLToPath(new URL("../../..", import.meta.url)));
-// `licoup-client-state` owns the store and its journal owners; `licoup-native`
+// `licoup-client-state` owns the store and its journal owners; `licoup`
 // keeps only the facade and the command surface that depends on the generated
 // wire contract.
-const facadePath = "crates/licoup-native/src/platform/client_state.rs";
-const facadeRoot = "crates/licoup-native/src/platform/client_state";
+const facadePath = "crates/licoup/src/platform/client_state.rs";
+const facadeRoot = "crates/licoup/src/platform/client_state";
 const root = "crates/licoup-client-state/src";
 const productionLeaves = Object.freeze([
   "accessors.rs",
@@ -149,7 +149,7 @@ test("serialization and path helpers own all bounded filesystem details", async 
 test("all external consumers use only the restricted client state facade", async () => {
   const internalModules = "accessors|activity|collections|migration|operations|paths|policy|redaction|resource_policy|serialization|snapshots";
   const internalPath = new RegExp(`(?:client_state|licoup_client_state)::(?:${internalModules})::`, "u");
-  const consumers = (await sourceFiles("crates/licoup-native/src"))
+  const consumers = (await sourceFiles("crates/licoup/src"))
     .filter((relativePath) => relativePath !== facadePath && !relativePath.startsWith(`${facadeRoot}/`));
   for (const relativePath of consumers) {
     const source = await read(relativePath);

@@ -5,7 +5,7 @@ Status: implemented and verified (2026-08-07) · Authority: this record links to
 ## Context
 
 LicoUp converses with agent CLIs through per-agent drivers that all share one
-shape (`execute` in `crates/licoup-native/src/platform/*_driver/`). Two lanes
+shape (`execute` in `crates/licoup/src/platform/*_driver/`). Two lanes
 relied on argv-passed prompts and pipes:
 
 - **Antigravity** (`antigravity_driver/`) launched `agy --print=<prompt>` with
@@ -117,7 +117,7 @@ fallback keeps the change bounded and reviewable.
 
 ## Implementation evidence
 
-- New module `crates/licoup-native/src/platform/pty_transport.rs` with 11 unit
+- New module `crates/licoup/src/platform/pty_transport.rs` with 11 unit
   tests (stripper state machine, incremental streaming, byte-cap truncation,
   EOF/EIO semantics, terminate unblock, stdin write, winsize default).
 - `antigravity_driver/` — 12 tests, including

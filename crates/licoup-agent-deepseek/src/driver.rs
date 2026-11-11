@@ -341,7 +341,7 @@ fn transport_for_session(
         }
         return Ok(transport);
     }
-    let harness_session_id = process_scoped_session_id(&session_id);
+    let harness_session_id = process_scoped_session_id(session_id);
     let transport = Arc::new(spawn_transport(config, deadline, harness_session_id)?);
     let inserted = registry_insert_if_absent(
         REGISTRY_NAMESPACE,

@@ -11,15 +11,14 @@
 
 use std::path::{Path, PathBuf};
 
-/// Crates this one must never depend on. `licoup-native` owns business
+/// Crates this one must never depend on. `licoup` owns business
 /// implementations and platform access; the others are concrete business crates
 /// whose internals a protocol-neutral layer cannot know about.
 const FORBIDDEN: &[&str] = &[
-    "licoup-native",
+    "licoup",
     "licoup-client-state",
-    "licoup-endpoint-core",
+    "licoarc-client",
     "licoup-platform-bridges",
-    "licoup-protocol-bindings",
     "lico-catalog-convergence",
 ];
 

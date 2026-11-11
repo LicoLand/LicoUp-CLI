@@ -24,8 +24,8 @@
 use std::path::Path;
 use std::time::Duration;
 
-use licoup_native::platform::extension_host::ExtensionCarrier;
-use licoup_native::platform::extension_host::isolation::{
+use licoup::platform::extension_host::ExtensionCarrier;
+use licoup::platform::extension_host::isolation::{
     EnforcedLimits, IsolationLedger, IsolationMode, IsolationRecord, LimitScope, NetworkGrant,
     ObservedExit, PlatformConfinement, ReleaseScope, ResolvedProgram, ResourceDeclaration,
     ResourceLimits, RevocationReason, Support,
@@ -528,10 +528,9 @@ fn the_reference_runtime_runs_confined_without_descendants() {
             ..Default::default()
         }),
     );
-    let journal =
-        licoup_native::platform::extension_host::RuntimeCatalogJournal::open(sandbox.root())
-            .expect("catalogue record");
-    let host = licoup_native::platform::extension_host::ExtensionHost::with_journal(
+    let journal = licoup::platform::extension_host::RuntimeCatalogJournal::open(sandbox.root())
+        .expect("catalogue record");
+    let host = licoup::platform::extension_host::ExtensionHost::with_journal(
         carrier.clone(),
         crate::support::contract_range(),
         std::sync::Arc::new(journal),
@@ -579,10 +578,9 @@ fn the_reference_runtime_runs_confined_without_descendants() {
     // A verified release clears the durable pointer; the trusted local scope
     // keeps it as an unconfirmed predecessor (the journal test covers that side).
     drop(host);
-    let journal =
-        licoup_native::platform::extension_host::RuntimeCatalogJournal::open(sandbox.root())
-            .expect("reopen");
-    use licoup_native::platform::extension_host::CatalogJournal;
+    let journal = licoup::platform::extension_host::RuntimeCatalogJournal::open(sandbox.root())
+        .expect("reopen");
+    use licoup::platform::extension_host::CatalogJournal;
     let watermark = journal.watermark().expect("watermark");
     assert!(
         watermark.active.is_empty(),

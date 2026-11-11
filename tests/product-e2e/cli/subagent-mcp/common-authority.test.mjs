@@ -15,15 +15,15 @@ const schema = readFileSync(
   "utf8",
 );
 const application = readFileSync(
-  "crates/licoup-native/src/domain/subagents/mod.rs",
+  "crates/licoup/src/domain/subagents/mod.rs",
   "utf8",
 );
 const production = readFileSync(
-  "crates/licoup-native/src/domain/subagents/production.rs",
+  "crates/licoup/src/domain/subagents/production.rs",
   "utf8",
 );
 const conversationHost = readFileSync(
-  "crates/licoup-native/src/bin/licoup/conversation_host.rs",
+  "crates/licoup/src/bin/licoup/conversation_host.rs",
   "utf8",
 );
 

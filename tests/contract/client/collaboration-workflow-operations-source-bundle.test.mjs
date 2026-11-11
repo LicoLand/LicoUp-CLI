@@ -9,7 +9,7 @@ const repoRoot = path.resolve(
   "../../..",
 );
 const operationsRoot =
-  "crates/licoup-native/src/domain/collaboration_plugin/workflow/operations";
+  "crates/licoup/src/domain/collaboration_plugin/workflow/operations";
 const productionLeaves = Object.freeze([
   "apply_local.rs",
   "apply_mcp.rs",

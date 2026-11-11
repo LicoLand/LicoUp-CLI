@@ -41,7 +41,7 @@ export const RUST_CATALOG_CONVERGENCE_MODULES = Object.freeze([
     summary: "Standalone migration binary and its released-root conversion, archive and cross-container suites",
     targetEvidenceHosts: ["darwin", "linux", "win32"],
     inputs: [
-      "crates/licoup-migrate/**",
+      "crates/licoup/src/migrate/**",
       "tools/scripts/migration-crate-tests.mjs",
       "tests/fixtures/client_state_migration/released_source.rs",
     ],
@@ -55,7 +55,7 @@ export const RUST_CATALOG_CONVERGENCE_MODULES = Object.freeze([
     kind: "rust-domain",
     summary: "Native domain boundary re-exporting the portable catalog convergence contract",
     inputs: [
-      "crates/licoup-native/src/domain/catalog_convergence.rs",
+      "crates/licoup/src/domain/catalog_convergence.rs",
     ],
     command: nativeLibraryCheck(),
   }),
@@ -64,7 +64,7 @@ export const RUST_CATALOG_CONVERGENCE_MODULES = Object.freeze([
     kind: "rust-platform",
     summary: "Private local catalog-cache path and portable store composition",
     inputs: [
-      "crates/licoup-native/src/platform/catalog_cache_store.rs",
+      "crates/licoup/src/platform/catalog_cache_store.rs",
     ],
     command: nativeLibraryCheck(),
   }),
@@ -73,7 +73,7 @@ export const RUST_CATALOG_CONVERGENCE_MODULES = Object.freeze([
     kind: "rust-ffi",
     summary: "Native catalog command registration and bounded domain dispatch bridge",
     inputs: [
-      "crates/licoup-native/src/bin/licoup/stdio_rpc/server.rs",
+      "crates/licoup/src/bin/licoup/stdio_rpc/server.rs",
     ],
     command: nativeLibraryCheck(),
   }),

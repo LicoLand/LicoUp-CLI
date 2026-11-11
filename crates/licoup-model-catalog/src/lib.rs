@@ -38,7 +38,7 @@
 //! and source generations arrive through [`port::ModelCatalogPort`], and the
 //! effective per-scope admission through
 //! [`selection_matrix::SelectionMatrixPort`]; this crate declares both and the
-//! `licoup-native` crate root composes them. The crate's own fail-closed answer
+//! `licoup` crate root composes them. The crate's own fail-closed answer
 //! is [`port::ModelCatalogPort::unavailable`] together with
 //! [`selection_matrix::SelectionMatrixPort::unavailable`], and a process that
 //! composes nothing keeps them.

@@ -8,15 +8,13 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 // Surfaces that dispatch, admit, translate or settle a native Agent turn.
 const guardedSurfaces = [
-  "crates/licoup-native/src/domain/assistant_continuity",
-  "crates/licoup-native/src/domain/client_conversation",
-  "crates/licoup-native/src/platform",
+  "crates/licoup/src/domain/assistant_continuity",
+  "crates/licoup/src/domain/client_conversation",
+  "crates/licoup/src/platform",
   "crates/licoup-conversation/src/continuity",
-  "apps/desktop/lib/src/platform",
-  "apps/desktop/lib/src/protocol",
 ];
 
-const scanExtensions = [".rs", ".dart", ".mjs", ".ts"];
+const scanExtensions = [".rs", ".mjs", ".ts"];
 
 // A reply-format imposition names one of these keys on a native Agent turn.
 // Quoted matches only: reading an embedded object stays allowed.

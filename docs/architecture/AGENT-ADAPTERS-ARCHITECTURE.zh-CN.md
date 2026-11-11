@@ -64,7 +64,7 @@ flowchart TB
 无论底层是标准 ACP、命令行 PTY，还是 Codex / OpenCode 的私有协议，LicoUp 均通过以下四层机制实现架构解耦与归一：
 
 ### ① 报文边界单点解析（ADR 0008）
-- **每个智能体都拥有独立解析器**：内核仍持有的智能体把解析器放在 `crates/licoup-native/src/platform/native_agent_parser/adapters/<agent>/`；协议已迁入适配器包的智能体把解析器放在该包内（`crates/licoup-agent-<agent>/src/parser.rs`），组合处只引用该包，不保留第二份拷贝；
+- **每个智能体都拥有独立解析器**：内核仍持有的智能体把解析器放在 `crates/licoup/src/platform/native_agent_parser/adapters/<agent>/`；协议已迁入适配器包的智能体把解析器放在该包内（`crates/licoup-agent-<agent>/src/parser.rs`），组合处只引用该包，不保留第二份拷贝；
 - 原始返回帧（无论 JSON-RPC、NDJSON、SSE 还是 ANSI 字符串）**只进入一次**该解析器；
 - 解析器输出且仅输出封闭的 `Typed Transition`：
   - `ThinkingDelta` / `Reasoning`（思考推理步骤）；

@@ -19,8 +19,8 @@ test("the catalogue is part of the optional package and not a second boundary", 
   assert.match(lib, /pub const CAPABILITY_ID: &str = "endpoint\.collaboration\.v1";/u);
   assert.doesNotMatch(catalogue, /PACKAGE_ID|CAPABILITY_ID|OutboundRefusal|Availability/u);
   // The package reaches the kernel only through the consumer-owned ports.
-  assert.match(manifest, /licoup-endpoint-core = \{ path = "\.\.\/\.\.\/crates\/licoup-endpoint-core" \}/u);
-  assert.doesNotMatch(manifest, /licoarc|licoup-native|keyring|security-framework/u);
+  assert.match(manifest, /^licoarc-client = "=0\.2\.0"$/mu);
+  assert.doesNotMatch(manifest, /licoup(?![\w-])|keyring|security-framework/u);
 });
 
 test("an announcement records what a peer offers and grants no execution authority", () => {
@@ -114,7 +114,7 @@ test("the catalogue performs no cryptographic, store or transport operation", ()
     catalogue,
     /KeyCustody|CustodyHandle|KeyMutation|Transport|compare_and_swap|submit\(/u,
   );
-  assert.doesNotMatch(catalogue, /licoup_endpoint_core/u);
+  assert.doesNotMatch(catalogue, /licoarc_client/u);
   assert.doesNotMatch(catalogue, /fs::|File::|std::net|reqwest|serde/u);
   // The durable protocol store is the only place a delivery unit is committed
   // or settled, and only an accepted attempt settles one.

@@ -8,7 +8,7 @@
 // build-metadata owner: the native build script injects `LICO_CLIENT_PRODUCT_VERSION`,
 // and this runner passes the workspace product version (the planned release) to it.
 //
-// The runner also builds the real `licoup-cli` binary and hands its path to the
+// The runner also builds the real `licoup` binary and hands its path to the
 // cross-container interoperability suite, which restores archives produced by the client
 // CLI through the tool and archives produced by the tool through the client CLI. `cargo
 // test` only exports `CARGO_BIN_EXE_*` for the package's own binaries, so the path is
@@ -79,8 +79,8 @@ export function migrationCrateTestArgs(forwarded = []) {
   const nativeRecovery = args[0] === "--native-recovery";
   if (nativeRecovery) args.shift();
   const selection = nativeRecovery
-    ? ["-p", "licoup-native", "--test", "local_recovery", "--test", "data_home_process"]
-    : ["-p", "licoup-migrate"];
+    ? ["-p", "licoup", "--test", "local_recovery", "--test", "data_home_process"]
+    : ["-p", "licoup", "--test", "migrate"];
   return ["test", "--offline", "--locked", "--no-fail-fast", ...selection, ...args];
 }
 
@@ -114,11 +114,11 @@ function main() {
     const cliBinary = path.join(
       targetDirectory,
       "debug",
-      process.platform === "win32" ? "licoup-cli.exe" : "licoup-cli"
+      process.platform === "win32" ? "licoup.exe" : "licoup"
     );
     const buildStatus = run(
       "cargo",
-      ["build", "--offline", "--locked", "-j", jobs, "-p", "licoup-native", "--bin", "licoup-cli"],
+      ["build", "--offline", "--locked", "-j", jobs, "-p", "licoup", "--bin", "licoup"],
       environment
     );
     if (buildStatus !== 0) {

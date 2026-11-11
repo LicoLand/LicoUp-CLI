@@ -22,6 +22,7 @@ import {
   capabilityMatrixDigestFor,
   driverInventoryDigestFor,
   packagedAgentIds,
+  packagingRegistryFromInventory,
   reduceConversationParity,
   registryDigestFor,
   runCli,
@@ -29,23 +30,21 @@ import {
 
 const TEST_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_ROOT = resolve(TEST_DIRECTORY, "../../..");
-const packagingRegistry = JSON.parse(
-  readFileSync(resolve(REPOSITORY_ROOT, "apps/desktop/packaging.modules.json"), "utf8"),
-);
 const inventory = JSON.parse(
   readFileSync(
     resolve(
       REPOSITORY_ROOT,
-      "crates/licoup-native/resources/agent-conversation-drivers.json",
+      "crates/licoup/resources/agent-conversation-drivers.json",
     ),
     "utf8",
   ),
 );
+const packagingRegistry = packagingRegistryFromInventory(inventory);
 const readinessResource = JSON.parse(
   readFileSync(
     resolve(
       REPOSITORY_ROOT,
-      "crates/licoup-native/resources/agent-conversation-readiness.json",
+      "crates/licoup/resources/agent-conversation-readiness.json",
     ),
     "utf8",
   ),
@@ -54,7 +53,7 @@ const canonicalEvidence = JSON.parse(
   readFileSync(
     resolve(
       REPOSITORY_ROOT,
-      "crates/licoup-native/resources/agent-conversation-evidence.json",
+      "crates/licoup/resources/agent-conversation-evidence.json",
     ),
     "utf8",
   ),

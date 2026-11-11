@@ -40,17 +40,17 @@ test("archive-job modules retain complete leaf ownership and exact command filte
     assert.equal(module.command.args.at(-1), filter);
     if (!id.endsWith(".composition")) {
       assert.equal(module.inputs.includes(
-        "crates/licoup-native/src/domain/conversation_archive_jobs.rs"), false);
+        "crates/licoup/src/domain/conversation_archive_jobs.rs"), false);
     }
   }
 
   const ownedInputs = new Set(archiveModules.flatMap((module) => module.inputs));
   const splitSources = await sourceFiles(
-    "crates/licoup-native/src/domain/conversation_archive_jobs",
+    "crates/licoup/src/domain/conversation_archive_jobs",
     ".rs",
   );
   for (const relativePath of [
-    "crates/licoup-native/src/domain/conversation_archive_jobs.rs",
+    "crates/licoup/src/domain/conversation_archive_jobs.rs",
     ...splitSources,
   ]) {
     assert.equal(ownedInputs.has(relativePath), true,
@@ -82,7 +82,7 @@ test("message projection leaves retain exact tests and complete source ownership
     const module = CLIENT_MODULE_CATALOG.find((candidate) => candidate.id === id);
     assert.equal(module.command.args.at(-1), filter);
     assert.equal(module.inputs.includes(
-      "crates/licoup-native/src/domain/conversation/history/message_projection_legacy.rs"),
+      "crates/licoup/src/domain/conversation/history/message_projection_legacy.rs"),
     false);
   }
   const sourceCheck = CLIENT_MODULE_CATALOG.find((candidate) =>
@@ -92,11 +92,11 @@ test("message projection leaves retain exact tests and complete source ownership
     ...sourceCheck.inputs,
   ]);
   const splitSources = await sourceFiles(
-    "crates/licoup-native/src/domain/conversation/history/message_projection",
+    "crates/licoup/src/domain/conversation/history/message_projection",
     ".rs",
   );
   for (const relativePath of [
-    "crates/licoup-native/src/domain/conversation/history/message_projection.rs",
+    "crates/licoup/src/domain/conversation/history/message_projection.rs",
     ...splitSources,
   ]) {
     assert.equal(ownedInputs.has(relativePath), true,
@@ -140,100 +140,16 @@ test("session merge leaves retain exact tests and complete source ownership", as
     ...sourceCheck.inputs,
   ]);
   const splitSources = await sourceFiles(
-    "crates/licoup-native/src/domain/conversation/history/session_merge",
+    "crates/licoup/src/domain/conversation/history/session_merge",
     ".rs",
   );
   for (const relativePath of [
-    "crates/licoup-native/src/domain/conversation/history/session_merge.rs",
+    "crates/licoup/src/domain/conversation/history/session_merge.rs",
     ...splitSources,
   ]) {
     assert.equal(ownedInputs.has(relativePath), true,
       `session merge source must have a focused regression owner: ${relativePath}`);
   }
-});
-
-test("agent conversation pane leaves retain exact widget tests and bounded catalog ownership", () => {
-  const filters = new Map([
-    ["flutter.feature.agent-conversations.pane-composition",
-      "test/agent_conversation_pane/composition_test.dart"],
-    ["flutter.feature.agent-conversations.pane-actions",
-      "test/agent_conversation_pane/actions_test.dart"],
-    ["flutter.feature.agent-conversations.pane-resize",
-      "test/agent_conversation_pane/resize_test.dart"],
-    ["flutter.feature.agent-conversations.pane-header",
-      "test/agent_conversation_pane/header_test.dart"],
-  ]);
-  const modules = CLIENT_MODULE_CATALOG.filter((candidate) =>
-    candidate.id.startsWith("flutter.feature.agent-conversations.pane-"));
-  assert.equal(modules.length, filters.size);
-  for (const [id, testPath] of filters) {
-    const module = CLIENT_MODULE_CATALOG.find((candidate) => candidate.id === id);
-    assert.equal(module.command.args.at(-1), testPath);
-  }
-
-  const sourceCheck = CLIENT_MODULE_CATALOG.find((candidate) =>
-    candidate.id === "regression.agent-conversation-pane-source-bundle");
-  const ownedInputs = new Set([
-    ...modules.flatMap((module) => module.inputs),
-    ...sourceCheck.inputs,
-  ]);
-  for (const relativePath of [
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_pane.dart",
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_pane/actions.dart",
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_pane/composition.dart",
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_pane/header.dart",
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_pane/resize.dart",
-  ]) {
-    assert.equal(ownedInputs.has(relativePath), true,
-      `agent conversation pane source must have a focused regression owner: ${relativePath}`);
-  }
-
-  const conversationFoundation = CLIENT_MODULE_CATALOG.find((candidate) =>
-    candidate.id === "flutter.feature.agent-conversations");
-  assert.equal(conversationFoundation.inputs.includes(
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_pane.dart"), false);
-});
-
-test("message block leaves retain exact widget tests and bounded catalog ownership", () => {
-  const filters = new Map([
-    ["flutter.feature.agent-conversations.message-blocks-dispatcher",
-      "test/agent_conversation_message_blocks/dispatcher_test.dart"],
-    ["flutter.feature.agent-conversations.message-blocks-disclosures",
-      "test/agent_conversation_message_blocks/disclosures_test.dart"],
-    ["flutter.feature.agent-conversations.message-blocks-roles",
-      "test/agent_conversation_message_blocks/role_blocks_test.dart"],
-    ["flutter.feature.agent-conversations.message-blocks-subagent",
-      "test/agent_conversation_message_blocks/subagent_test.dart"],
-  ]);
-  const modules = CLIENT_MODULE_CATALOG.filter((candidate) =>
-    candidate.id.startsWith("flutter.feature.agent-conversations.message-blocks-"));
-  assert.equal(modules.length, filters.size);
-  for (const [id, testPath] of filters) {
-    const module = CLIENT_MODULE_CATALOG.find((candidate) => candidate.id === id);
-    assert.equal(module.command.args.at(-1), testPath);
-  }
-
-  const sourceCheck = CLIENT_MODULE_CATALOG.find((candidate) =>
-    candidate.id === "regression.agent-conversation-message-blocks-source-bundle");
-  const ownedInputs = new Set([
-    ...modules.flatMap((module) => module.inputs),
-    ...sourceCheck.inputs,
-  ]);
-  for (const relativePath of [
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_message_blocks.dart",
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_message_blocks/disclosures.dart",
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_message_blocks/dispatcher.dart",
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_message_blocks/role_blocks.dart",
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_message_blocks/subagent.dart",
-  ]) {
-    assert.equal(ownedInputs.has(relativePath), true,
-      `message block source must have a focused regression owner: ${relativePath}`);
-  }
-
-  const conversationFoundation = CLIENT_MODULE_CATALOG.find((candidate) =>
-    candidate.id === "flutter.feature.agent-conversations");
-  assert.equal(conversationFoundation.inputs.includes(
-    "apps/desktop/lib/src/frontend/features/agents/ui/agent_conversation_message_blocks.dart"), false);
 });
 
 test("conversation semantic leaves retain exact tests and complete source ownership", async () => {
@@ -276,11 +192,11 @@ test("conversation semantic leaves retain exact tests and complete source owners
     ...sourceCheck.inputs,
   ]);
   const splitSources = await sourceFiles(
-    "crates/licoup-native/src/domain/conversation_semantic",
+    "crates/licoup/src/domain/conversation_semantic",
     ".rs",
   );
   for (const relativePath of [
-    "crates/licoup-native/src/domain/conversation_semantic.rs",
+    "crates/licoup/src/domain/conversation_semantic.rs",
     ...splitSources,
   ]) {
     assert.equal(ownedInputs.has(relativePath), true,

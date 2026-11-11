@@ -11,7 +11,7 @@ running work and its history.
 | `package/package-release.json` | The release declaration the package set reads |
 | `package/contributions/control-surface.json` | The declarative mapping onto the kernel's existing command routes |
 | `src/lib.rs` | The boundary vocabulary: availability, outbound refusal, recovery report |
-| `crates/licoup-native/src/platform/extension_packages/endpoint_collaboration.rs` | The kernel resolution of the installed package and the process-wide outbound gate |
+| `crates/licoup/src/platform/extension_packages/endpoint_collaboration.rs` | The kernel resolution of the installed package and the process-wide outbound gate |
 
 ## Boundary rules
 
@@ -34,16 +34,16 @@ running work and its history.
 
 ```sh
 cargo test --manifest-path components/endpoint-collaboration/Cargo.toml
-cargo test --manifest-path crates/licoup-native/Cargo.toml --lib -j 2 -- \
+cargo test --manifest-path crates/licoup/Cargo.toml --lib -j 2 -- \
   platform::extension_packages::endpoint_collaboration
 ```
 
 ## Current state
 
 The package identity, its resolution, the outbound gate and the boundary
-vocabulary are implemented and tested. The relay, pairing and secure mesh
-implementation still links from the kernel's `domain::mobile_relay` module, and
-the kernel declares the package as an off-by-default cargo edge
+vocabulary are implemented and tested. Device pairing and the paired-device command
+path live in the kernel's `domain::devices` module over LicoArc, and the kernel
+declares the package as an off-by-default cargo edge
 (`endpoint-collaboration`). Moving that implementation behind the package payload
 belongs to the endpoint package milestone's remaining work; until then a default
 build reports the pre-package path as `LegacyInKernel` rather than claiming the

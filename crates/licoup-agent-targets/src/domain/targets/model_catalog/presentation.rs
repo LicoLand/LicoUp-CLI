@@ -10,12 +10,13 @@ pub(super) fn ordered_model_entries(
     let mut rows = entries
         .into_values()
         .map(|mut entry| {
-            if entry.provider_id.is_none() && entry.provider.is_none() {
-                if let Some(provider) = inferred_model_provider(&entry.name) {
-                    entry.provider_id = Some(provider.clone());
-                    entry.provider = provider_label_from_provider_id(&provider);
-                    entry.provider_inferred = true;
-                }
+            if entry.provider_id.is_none()
+                && entry.provider.is_none()
+                && let Some(provider) = inferred_model_provider(&entry.name)
+            {
+                entry.provider_id = Some(provider.clone());
+                entry.provider = provider_label_from_provider_id(&provider);
+                entry.provider_inferred = true;
             }
             entry
                 .reasoning_efforts

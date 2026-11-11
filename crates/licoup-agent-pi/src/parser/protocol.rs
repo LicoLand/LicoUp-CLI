@@ -653,10 +653,10 @@ impl PiProtocol {
                     // Pi returns {"text": null} when the last assistant turn has
                     // no text (for example a provider error). Never wipe streamed
                     // deltas with an empty/null snapshot.
-                    if let Some(text) = message.pointer("/data/text").and_then(Value::as_str) {
-                        if !text.trim().is_empty() {
-                            self.output = text.to_string();
-                        }
+                    if let Some(text) = message.pointer("/data/text").and_then(Value::as_str)
+                        && !text.trim().is_empty()
+                    {
+                        self.output = text.to_string();
                     }
                 }
                 self.pending_request = Some("get_state");
@@ -765,12 +765,11 @@ impl PiProtocol {
             }
             "text_end" => {
                 // Authoritative block text when deltas were missed.
-                if self.output.trim().is_empty() {
-                    if let Some(content) = event.get("content").and_then(Value::as_str) {
-                        if !content.trim().is_empty() {
-                            self.output = content.to_owned();
-                        }
-                    }
+                if self.output.trim().is_empty()
+                    && let Some(content) = event.get("content").and_then(Value::as_str)
+                    && !content.trim().is_empty()
+                {
+                    self.output = content.to_owned();
                 }
             }
             _ => {}
@@ -804,16 +803,15 @@ impl PiProtocol {
                 }
             }
             "auto_retry_end" => {
-                if message.get("success").and_then(Value::as_bool) == Some(false) {
-                    if let Some(error) = message
+                if message.get("success").and_then(Value::as_bool) == Some(false)
+                    && let Some(error) = message
                         .get("finalError")
                         .or_else(|| message.get("errorMessage"))
                         .and_then(Value::as_str)
                         .map(str::trim)
                         .filter(|value| !value.is_empty())
-                    {
-                        self.turn_error = Some(error.to_owned());
-                    }
+                {
+                    self.turn_error = Some(error.to_owned());
                 }
             }
             "extension_error" => {

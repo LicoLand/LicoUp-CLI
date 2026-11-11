@@ -52,7 +52,7 @@ fn rust_sources(root: &str) -> Vec<(String, String)> {
 
 #[test]
 fn kernel_links_only_the_gateway_contracts_and_declares_no_gateway_binary() {
-    let manifest = read("crates/licoup-native/Cargo.toml");
+    let manifest = read("crates/licoup/Cargo.toml");
     // The kernel links the merged gateway crates for their contracts and
     // custody surface; it declares no gateway program of its own — the
     // programs belong to the entry crates the optional packages ship.
@@ -62,7 +62,8 @@ fn kernel_links_only_the_gateway_contracts_and_declares_no_gateway_binary() {
         "credential-lease",
     ] {
         assert!(
-            manifest.contains(&format!("{contract} = {{")),
+            manifest.contains(&format!("{contract}.workspace = true"))
+                || manifest.contains(&format!("{contract} = {{")),
             "the kernel links {contract} for its contract surface"
         );
     }
@@ -73,13 +74,6 @@ fn kernel_links_only_the_gateway_contracts_and_declares_no_gateway_binary() {
         );
     }
 
-    let private_entry = read("crates/licoup-private-gateway/entry/Cargo.toml");
-    for binary in ["lico-gateway", "lico-llm-gateway"] {
-        assert!(
-            private_entry.contains(&format!("name = \"{binary}\"")),
-            "the private gateway package declares its own {binary}"
-        );
-    }
     let public_entry = read("crates/licoup-public-gateway/entry/Cargo.toml");
     assert!(
         public_entry.contains("name = \"lico-telegram-channel\""),
@@ -89,17 +83,14 @@ fn kernel_links_only_the_gateway_contracts_and_declares_no_gateway_binary() {
 
 #[test]
 fn only_the_gateway_sidecars_start_the_runtime_listeners() {
-    let entry_points = [
-        "crates/licoup-private-gateway/entry/src/bin/lico-gateway.rs",
-        "crates/licoup-private-gateway/entry/src/bin/lico-llm-gateway.rs",
-    ];
+    let entry_points = ["crates/licoup/src/bin/licoup/llm_gateway_service.rs"];
     let listener_symbols = [
         "serve_gateway_runtime",
         "serve_loopback",
         "serve_credentials_control",
         "serve_inventory_control",
     ];
-    for (relative, source) in rust_sources("crates/licoup-native/src") {
+    for (relative, source) in rust_sources("crates/licoup/src") {
         for symbol in listener_symbols {
             assert!(
                 !source.contains(symbol) || entry_points.contains(&relative.as_str()),
@@ -115,11 +106,11 @@ fn kernel_conversation_and_execution_owners_have_no_gateway_dependency() {
     // was extracted; it is still a conversation and execution owner this test
     // holds to the same rule, so it is named at the path that owns it now.
     let kernel_owners = [
-        "crates/licoup-native/src/domain/conversations.rs",
-        "crates/licoup-native/src/platform/conversation_lane.rs",
+        "crates/licoup/src/domain/conversations.rs",
+        "crates/licoup/src/platform/conversation_lane.rs",
         "crates/licoup-agent-drivers/src/runtime_adapters/dispatch.rs",
-        "crates/licoup-native/src/bin/licoup/stdio_rpc/server/conversation.rs",
-        "crates/licoup-native/src/bin/licoup/conversation_host.rs",
+        "crates/licoup/src/bin/licoup/stdio_rpc/server/conversation.rs",
+        "crates/licoup/src/bin/licoup/conversation_host.rs",
     ];
     // The merged crate is kernel-linked for its contract (model, control
     // channels, state); the runtime surface is what kernel owners must never
@@ -140,7 +131,7 @@ fn kernel_conversation_and_execution_owners_have_no_gateway_dependency() {
         }
     }
 
-    for (relative, source) in rust_sources("crates/licoup-native/src/domain") {
+    for (relative, source) in rust_sources("crates/licoup/src/domain") {
         for surface in runtime_surfaces {
             assert!(
                 !source.contains(surface),
@@ -154,7 +145,7 @@ fn kernel_conversation_and_execution_owners_have_no_gateway_dependency() {
 fn the_runtime_reaches_host_capabilities_only_through_ports() {
     let gateway_manifest = read("crates/licoup-private-gateway/Cargo.toml");
     for forbidden in [
-        "licoup-native",
+        "licoup",
         "licoup-conversation",
         "licoup-application",
         "licoup-workflow",
@@ -173,7 +164,7 @@ fn the_runtime_reaches_host_capabilities_only_through_ports() {
 
     for (relative, source) in rust_sources("crates/licoup-private-gateway/src") {
         assert!(
-            !source.contains("licoup_native"),
+            !source.contains("use licoup::") && !source.contains("licoup::"),
             "{relative} must reach the host through the gateway ports"
         );
     }
@@ -182,14 +173,16 @@ fn the_runtime_reaches_host_capabilities_only_through_ports() {
     // conversations only through the lane port and links no kernel crate.
     let public_manifest = read("crates/licoup-public-gateway/Cargo.toml");
     assert!(
-        !public_manifest.contains("licoup-native")
+        !public_manifest.contains("licoup.workspace = true")
+            && !public_manifest.contains("licoup = {")
             && !public_manifest.contains("licoup-private-gateway"),
         "the public gateway must not depend on the kernel or private gateway crates"
     );
 
-    let bridge = read("crates/licoup-public-gateway/src/telegram/bridge.rs");
+    let lane = read("crates/licoup-public-gateway/src/lane.rs");
+    let bridge = read("crates/licoup-public-gateway/src/telegram/mod.rs");
     assert!(
-        bridge.contains("crate::lane") && !bridge.contains("dispatch_lane_operation("),
+        lane.contains("a4mc::lane") && bridge.contains("a4mc::lane"),
         "the Telegram bridge reaches conversations only through the lane port"
     );
 
@@ -202,7 +195,7 @@ fn the_runtime_reaches_host_capabilities_only_through_ports() {
 
 #[test]
 fn the_login_item_is_registered_only_by_the_installed_gateway_package() {
-    let autostart = read("crates/licoup-native/src/platform/llm_gateway_autostart.rs");
+    let autostart = read("crates/licoup/src/platform/llm_gateway_autostart.rs");
     // One owner writes the definition, and it reads the package identity and the
     // entry each generation declares rather than a path this file invents.
     assert!(
@@ -218,15 +211,15 @@ fn the_login_item_is_registered_only_by_the_installed_gateway_package() {
     // A base client build carries no gateway process to start, so the login item
     // cannot be registered by a bundled neighbour: the sidecar lookup resolves
     // from the packaged binary directory and never from the package store.
-    let service = read("crates/licoup-native/src/platform/llm_gateway_service.rs");
+    let service = read("crates/licoup/src/platform/llm_gateway_service.rs");
     let lookup = service
         .split("fn sidecar_path()")
         .nth(1)
         .and_then(|rest| rest.split("\n}\n").next())
         .expect("the sidecar lookup is a bounded function");
     assert!(
-        lookup.contains("packaged_binary_directory(&current)"),
-        "the sidecar is the packaged neighbour, not a package-store lookup"
+        lookup.contains("current_exe"),
+        "the gateway process re-execs this same binary, not a package-store lookup"
     );
     assert!(
         !lookup.contains("extension-packages"),
@@ -238,16 +231,16 @@ fn the_login_item_is_registered_only_by_the_installed_gateway_package() {
     let manifest = read("crates/licoup-private-gateway/package/manifest.json");
     assert!(
         manifest.contains("\"id\": \"org.licoland.feature.gateway\"")
-            && manifest.contains("\"entry\": \"bin/lico-gateway\""),
+            && manifest.contains("\"entry\": \"bin/licoup\""),
         "the package declares its own identity and runtime entry"
     );
     assert!(
         read("crates/licoup-private-gateway/package/package-release.json")
-            .contains("\"entry\": \"bin/lico-gateway\""),
+            .contains("\"entry\": \"bin/licoup\""),
         "the release declaration names the same entry the manifest declares"
     );
     assert!(
-        !read("crates/licoup-native/Cargo.toml").contains("org.licoland.feature.gateway"),
+        !read("crates/licoup/Cargo.toml").contains("org.licoland.feature.gateway"),
         "the kernel must not hard-depend on the optional gateway package"
     );
 }

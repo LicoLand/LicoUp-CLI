@@ -44,17 +44,17 @@ pub fn run_turn(
             .unwrap_or("assistant")
             .to_string();
         on_event(AgentEvent::MessageStart { role: role.clone() });
-        if let Some(content) = choice.get("content").and_then(Value::as_str) {
-            if !content.is_empty() {
-                on_event(AgentEvent::MessageUpdate {
-                    role: role.clone(),
-                    delta: content.to_string(),
-                });
-                on_event(AgentEvent::MessageEnd {
-                    role: role.clone(),
-                    content: content.to_string(),
-                });
-            }
+        if let Some(content) = choice.get("content").and_then(Value::as_str)
+            && !content.is_empty()
+        {
+            on_event(AgentEvent::MessageUpdate {
+                role: role.clone(),
+                delta: content.to_string(),
+            });
+            on_event(AgentEvent::MessageEnd {
+                role: role.clone(),
+                content: content.to_string(),
+            });
         }
         messages.push(choice.clone());
         history.push(choice.clone());

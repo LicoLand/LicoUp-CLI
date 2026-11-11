@@ -14,6 +14,4 @@ LicoUp schemas and implementations named inside each document are authoritative
 only for client-internal contracts and current implementation facts. Lico Arc
 Protocol owns stable wire-observable Pairwise Protection, Generic Message,
 Reliable Exchange, negotiation, Transport Profile, and station-facing
-semantics. The
-[current retiring endpoint-protection Preview](../STATUS.md) remains a LicoUp
-implementation, not a Lico Arc Profile or future compatibility contract.
+semantics.

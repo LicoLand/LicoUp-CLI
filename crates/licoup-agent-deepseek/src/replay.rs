@@ -87,14 +87,14 @@ impl Replay {
                 .pointer("/result/messageId")
                 .and_then(Value::as_str)
                 .is_some();
-            if self.request_id.is_none() && admits_turn {
-                if let Some(request_id) = value
+            if self.request_id.is_none()
+                && admits_turn
+                && let Some(request_id) = value
                     .get("id")
                     .and_then(Value::as_str)
                     .filter(|id| !id.is_empty())
-                {
-                    self.request_id = Some(request_id.to_owned());
-                }
+            {
+                self.request_id = Some(request_id.to_owned());
             }
             if let Some(session_id) = value
                 .pointer("/params/sessionId")

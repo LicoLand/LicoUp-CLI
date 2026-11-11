@@ -8,7 +8,7 @@ Updated: 2026-10-03
 | **Deployment and ownership** | [DEPLOYMENT-PROFILES.md](DEPLOYMENT-PROFILES.md) | Profiles, install closure, the kernel table and the first-party package rule |
 | **Schemas** | [`schemas/extensions/`](../../schemas/extensions) | Machine-readable form of every shape below |
 | **Contract crate** | [`crates/licoup-extension-contracts/`](../../crates/licoup-extension-contracts) | The rules, catalogs and refusals in executable form |
-| **Package lifecycle** | [`crates/licoup-native/src/platform/extension_packages/`](../../crates/licoup-native/src/platform/extension_packages) | Install, journal, state machines, storage accounting and uninstall |
+| **Package lifecycle** | [`crates/licoup/src/platform/extension_packages/`](../../crates/licoup/src/platform/extension_packages) | Install, journal, state machines, storage accounting and uninstall |
 | **Agent adapters** | [AGENT-ADAPTERS-ARCHITECTURE.md](AGENT-ADAPTERS-ARCHITECTURE.md) | Current adapter and runtime layering |
 | **Assistant and workflow** | [CONTINUOUS-ASSISTANT.md](CONTINUOUS-ASSISTANT.md) · [ASSISTANT-WORKFLOW-CONTROL.md](ASSISTANT-WORKFLOW-CONTROL.md) | Kernel capabilities, not packages |
 | **Security and data boundaries** | [SECURITY-AND-DATA-BOUNDARY.md](SECURITY-AND-DATA-BOUNDARY.md) | Trust, isolation and data-handling rules |

@@ -9,7 +9,7 @@ const repoRoot = path.resolve(
   "../../..",
 );
 const projectionRoot =
-  "crates/licoup-native/src/domain/conversation/history/message_projection";
+  "crates/licoup/src/domain/conversation/history/message_projection";
 const productionLeaves = Object.freeze([
   "antigravity.rs",
   "generated_context.rs",
@@ -111,7 +111,7 @@ test("Antigravity and generated-context policies remain separate and fail closed
     assert.ok(generated.includes(token), `missing generated-context policy: ${token}`);
   }
   const sessionMetadata = await read(
-    "crates/licoup-native/src/domain/conversation/history/session_metadata.rs",
+    "crates/licoup/src/domain/conversation/history/session_metadata.rs",
   );
   assert.equal(sessionMetadata.includes("fn generated_control_text"), false);
 });
@@ -143,7 +143,7 @@ test("semantic classification, title policy, and layer projection retain dedicat
   }
   assert.equal(source["semantic.rs"].includes("delegated_subagent_prompt_title"), false);
   const queryFilter = await read(
-    "crates/licoup-native/src/domain/conversation/history/query_filter.rs",
+    "crates/licoup/src/domain/conversation/history/query_filter.rs",
   );
   assert.ok(queryFilter.includes("fn title_from_text"));
   assert.ok(source["projection.rs"].includes("SemanticLayer::Thread"));

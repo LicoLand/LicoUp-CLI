@@ -9,7 +9,7 @@ import { record } from "./record-projections.mjs";
 const repositoryRoot = resolve(import.meta.dirname, "../../..");
 const corpusArgument = process.argv.slice(2).find((argument) => !argument.startsWith("--"));
 const corpusRoot = resolve(corpusArgument || join(repositoryRoot, "tests/replay-corpus"));
-const nativeBin = resolve(process.env.LICO_NATIVE_BIN || join(repositoryRoot, "build/crates/licoup-native/target/debug/licoup-cli"));
+const nativeBin = resolve(process.env.LICO_NATIVE_BIN || join(repositoryRoot, "build/crates/licoup/target/debug/licoup"));
 const refresh = process.argv.includes("--refresh");
 const privateRoot = mkdtempSync(join(tmpdir(), "lico-history-ingest-"));
 const run = (script, args) => {

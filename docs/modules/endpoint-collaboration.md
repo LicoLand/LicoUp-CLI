@@ -22,8 +22,6 @@ restates them.
 | `components/endpoint-collaboration/cleanup/` | The file half of a staged erase: close the data root's writer admission, settle the frozen file inventory entry by entry with durable, replay-safe progress, and report a partial file-stage result to the replacement endpoint. It deletes no credential and reads no protected key. |
 | `components/endpoint-collaboration/control/` | Remote work control and settlement: the typed inspect/stop/owned-child/force intents, the local grant and verified-ingress decision, the durable request ledger that admits before any effect, the consumer-owned port the kernel's own work owners implement, and the rules for what the local update gate may wait for. It performs no effect itself. |
 | `components/endpoint-collaboration/transfer/` | Device-transfer ownership inventory: classify one full-data-root archive into managed payloads, external references and nonportable credential requirements. |
-| `crates/licoup-native/src/domain/mobile_relay/secret_custody/cleanup_authority.rs` | The cleanup-specific authorization: derive the custody subject from persisted identity, accept a replacement endpoint only against a locally signed device trust record that verifies, enumerate the bounded custody inventory, and require an explicit informed confirmation naming that subject, that replacement endpoint, the inventory digest and every scope entry. |
-| `crates/licoup-native/src/domain/mobile_relay/secret_custody/cleanup.rs` | The custody consumer: delete exactly the authorized credentials through the platform secret store's own authorized session, remove exactly the authorized durable-store files, and report observed settlement. |
 
 ## Capability synchronisation
 
@@ -140,7 +138,7 @@ document promises forensic or backup erasure.
 ```sh
 cargo test --manifest-path components/endpoint-collaboration/Cargo.toml
 cargo test --manifest-path components/endpoint-collaboration/cleanup/Cargo.toml
-cargo test -p licoup-native --lib secret_custody
+cargo test -p licoup --lib secret_custody
 ```
 
 The component's fixtures are synthetic: an in-memory file owner, a recording

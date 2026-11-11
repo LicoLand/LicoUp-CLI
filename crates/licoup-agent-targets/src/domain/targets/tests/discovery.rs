@@ -133,7 +133,7 @@ fn target_ids_are_unique_and_the_projection_reports_the_supplied_port() {
     // agreement between the declaration set and
     // `PACKAGED_RUNTIME_ADAPTER_IDS` needs both halves in view, so it is
     // asserted at composition:
-    // `licoup-native/src/target_port.rs::tests::agreement_with_the_declarations`.
+    // `licoup/src/target_port.rs::tests::agreement_with_the_declarations`.
     let port = port();
     let projected = definitions
         .iter()

@@ -2,7 +2,7 @@
 
 English (normative) · [简体中文](gateway-runtime.zh-CN.md)
 
-The Private Gateway Runtime is one local process (`lico-gateway`) owning one
+The Private Gateway Runtime is one local process (`licoup gateway run`) owning one
 layer:
 
 1. **LLM Gateway** — loopback HTTP model-protocol routing and credential
@@ -14,10 +14,10 @@ Telegram channel is the `org.licoland.channel.telegram` package's own process
 
 ## Process
 
-- Binary: `lico-gateway` (legacy name `lico-llm-gateway` still runs the same
-  runtime). Both are the optional gateway package's own programs
-  (`crates/licoup-private-gateway/entry`), declared by the package manifest as
-  `runtime.entry = "bin/lico-gateway"`; the kernel declares no gateway target.
+- Binary: `licoup` — the gateway service is a process entry of the single
+  client binary (`licoup gateway run`). The optional gateway
+  package declares its staged copy of the same binary as
+  `runtime.entry = "bin/licoup"`; the kernel declares no gateway target.
 - Start: the program itself. It accepts `--port`, `--config`, `--usage`,
   `--state-root`, `--credentials-fd`, `--credentials-control`,
   `--client-token-file` and `--check`, resolves its own
@@ -25,10 +25,10 @@ Telegram channel is the `org.licoland.channel.telegram` package's own process
   configuration when it has none, and mints the client token its authenticated
   endpoint needs. This is what the per-user login item starts, with `--port`
   alone; there is no CLI indirection at login.
-- Lifecycle CLI: `gateway service {status,start,stop,initialize}` and the alias
-  `llm-gateway service …`. These manage the same program: the client's service
-  manager resolves the binary and spawns it with the explicit paths of the same
-  layout.
+- Lifecycle CLI: `gateway service {status,start,stop,initialize,usage}` and
+  `gateway service autostart {enable,disable,status}`. These manage the same
+  program: the client's service manager resolves the binary and spawns it with
+  the explicit paths of the same layout.
 - Inventory CLI: `gateway inventory reload --stdin-json true` performs a
   **partial** hot-reload of verified conversation readiness only (private
   `inventory.sock` under the LLM gateway state directory, plus a persisted

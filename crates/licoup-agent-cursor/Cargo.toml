@@ -1,10 +1,10 @@
 [package]
 name = "licoup-agent-cursor"
-version = "0.14.0"
-edition = "2024"
-rust-version = "1.95.0"
-license = "AGPL-3.0-or-later"
-repository = "https://github.com/LicoLand/LicoUp-CLI.git"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "Cursor adapter package: the Cursor Agent CLI turn dialect and its wire vocabulary"
 
 # The crate is one package's program. `parser` is this Agent's vendor protocol
@@ -25,21 +25,21 @@ description = "Cursor adapter package: the Cursor Agent CLI turn dialect and its
 default = []
 
 [dependencies]
-licoup-agent-adapter-sdk = { path = "../licoup-agent-adapter-sdk" }
+licoup-agent-adapter-sdk.workspace = true
 # The Subagent MCP mesh's own caller-context binding. A delegated Cursor turn
 # binds the caller its client was registered with, and the mesh owns that
 # binding, so the package calls it rather than keeping a second copy of the
 # caller vocabulary.
-licoup-agent-drivers = { path = "../licoup-agent-drivers" }
+licoup-agent-drivers.workspace = true
 # The user login-shell environment snapshot every Agent CLI launch is cleared to
 # (ADR 0007). The snapshot belongs to the Agent declarations that observe it, so
 # the package reads the same single capture the host's other drivers do.
-licoup-agent-targets = { path = "../licoup-agent-targets" }
+licoup-agent-targets.workspace = true
 # The bounded process owner, the raw-execution observer, the bounded-workspace
 # resolution and the turn-event bus every Agent CLI lane is built from. They are
 # the host's own machinery below every Agent, so the package reaches the one
 # implementation instead of keeping a second one.
-licoup-foundation = { path = "../licoup-foundation" }
+licoup-foundation.workspace = true
 serde_json.workspace = true
 # Retiring a native Cursor chat moves it to the system trash rather than
 # unlinking it, because the same local storage is the user's own chat history.
@@ -63,8 +63,8 @@ path = "src/bin/lico-agent-cursor.rs"
 # reading of it. Nothing here enters the package binary, which links no kernel
 # crate and reads its own package documents as data.
 [dev-dependencies]
-licoup-extension-contracts = { path = "../licoup-extension-contracts" }
+licoup-extension-contracts.workspace = true
 # The driver's own suite steers its fake Cursor CLI through the inherited
 # environment, which the production snapshot deliberately replaces, so the
 # snapshot's test-only pin is on for this crate's tests.
-licoup-agent-targets = { path = "../licoup-agent-targets", features = ["test-support"] }
+licoup-agent-targets = { workspace = true, features = ["test-support"] }
