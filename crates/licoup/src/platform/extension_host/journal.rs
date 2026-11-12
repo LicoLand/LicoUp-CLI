@@ -495,9 +495,11 @@ enum RuntimeRecord {
 /// The root's single-writer lease.
 ///
 /// The lock file is opened once and locked exclusively for as long as the
-/// journal lives; the kernel drops the lock when the holder exits, so a crashed
-/// writer does not leave a lease nobody can take. A second opener — another
-/// object in this process or another process — gets
+/// journal lives, and the lock is explicitly released when the owning journal
+/// drops: an inherited or duplicated descriptor must not prolong the lease
+/// past its owner's lifetime, and kernel cleanup on exit still covers the
+/// crashed-writer case once the remaining handles close. A second opener —
+/// another object in this process or another process — gets
 /// `runtime_catalog_writer_busy`.
 #[derive(Debug)]
 struct WriterLease {
@@ -525,6 +527,12 @@ impl WriterLease {
             }
             Err(std::fs::TryLockError::Error(_)) => Err(unavailable("lock")),
         }
+    }
+}
+
+impl Drop for WriterLease {
+    fn drop(&mut self) {
+        let _ = self._file.unlock();
     }
 }
 
@@ -802,4 +810,62 @@ fn corrupt_line(line: usize) -> ApplicationFailure {
     refusal("runtime_catalog_corrupt", JOURNAL_STAGE)
         .with_field("line")
         .with_presentation_arg("line", &line.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RuntimeCatalogJournal;
+    use std::path::PathBuf;
+
+    struct TempRoot(PathBuf);
+
+    impl TempRoot {
+        fn new() -> Self {
+            let root =
+                std::env::temp_dir().join(format!("licoup-journal-test-{}", uuid::Uuid::new_v4()));
+            std::fs::create_dir(&root).expect("create journal test root");
+            Self(root)
+        }
+    }
+
+    impl Drop for TempRoot {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn journal_drop_releases_the_writer_lease_with_a_duplicated_handle() {
+        let root = TempRoot::new();
+        let journal = RuntimeCatalogJournal::open(&root.0).expect("first journal");
+        let duplicate = journal
+            ._lease
+            ._file
+            .try_clone()
+            .expect("duplicate lease handle");
+        assert_eq!(
+            RuntimeCatalogJournal::open(&root.0)
+                .expect_err("live journal excludes another writer")
+                .code,
+            "runtime_catalog_writer_busy"
+        );
+        drop(journal);
+        let successor = RuntimeCatalogJournal::open(&root.0)
+            .expect("journal drop releases its lease even while a duplicate survives");
+        assert_eq!(
+            RuntimeCatalogJournal::open(&root.0)
+                .expect_err("successor owns the lease")
+                .code,
+            "runtime_catalog_writer_busy"
+        );
+        drop(duplicate);
+        assert_eq!(
+            RuntimeCatalogJournal::open(&root.0)
+                .expect_err("closing an old duplicate cannot release the successor's lease")
+                .code,
+            "runtime_catalog_writer_busy"
+        );
+        drop(successor);
+        drop(RuntimeCatalogJournal::open(&root.0).expect("successor releases its lease"));
+    }
 }
