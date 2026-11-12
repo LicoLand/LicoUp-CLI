@@ -29,6 +29,16 @@ pub fn serve_credentials_control(
     credentials: Arc<GatewayCredentialSlot>,
     stop: Arc<AtomicBool>,
 ) -> Result<()> {
+    serve_credentials_control_with_ready(socket_path, credentials, stop, || {})
+}
+
+#[cfg(unix)]
+fn serve_credentials_control_with_ready(
+    socket_path: PathBuf,
+    credentials: Arc<GatewayCredentialSlot>,
+    stop: Arc<AtomicBool>,
+    ready: impl FnOnce(),
+) -> Result<()> {
     use std::os::unix::net::UnixListener;
 
     let _ = std::fs::remove_file(&socket_path);
@@ -45,6 +55,7 @@ pub fn serve_credentials_control(
     listener
         .set_nonblocking(true)
         .map_err(|_| anyhow!("llm_gateway_credentials_control_bind_failed"))?;
+    ready();
 
     while !stop.load(Ordering::Acquire) {
         match listener.accept() {
@@ -240,21 +251,37 @@ mod tests {
         let server_credentials = Arc::clone(&credentials);
         let server_stop = Arc::clone(&stop);
         let server_socket = socket.clone();
+        let (ready_sender, ready_receiver) = std::sync::mpsc::channel();
         let server = thread::spawn(move || {
-            serve_credentials_control(server_socket, server_credentials, server_stop).unwrap();
+            serve_credentials_control_with_ready(
+                server_socket,
+                server_credentials,
+                server_stop,
+                move || {
+                    ready_sender
+                        .send(())
+                        .expect("test waits for listener readiness")
+                },
+            )
         });
-        for _ in 0..40 {
-            if socket.exists() {
-                break;
-            }
-            thread::sleep(Duration::from_millis(25));
+        if ready_receiver.recv().is_err() {
+            server
+                .join()
+                .expect("control server panicked before readiness")
+                .expect("control server failed before readiness");
+            panic!("control server exited without announcing readiness");
         }
         assert!(socket.exists());
-        let loaded = apply_credentials_hot(&socket, None).unwrap();
+        let result = apply_credentials_hot(&socket, None);
+        stop.store(true, Ordering::SeqCst);
+        let server_result = server.join();
+        let cleanup_result = std::fs::remove_dir_all(&root);
+        let loaded = result.expect("ready control listener accepts a clear request");
+        server_result
+            .expect("control server panicked")
+            .expect("control server failed");
+        cleanup_result.expect("remove control socket fixture");
         assert!(!loaded);
         assert!(!credentials.connected());
-        stop.store(true, Ordering::SeqCst);
-        let _ = server.join();
-        let _ = std::fs::remove_dir_all(&root);
     }
 }
