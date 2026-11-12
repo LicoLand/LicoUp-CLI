@@ -34,14 +34,10 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --all-targets --locked --features licoup/test-support -- -D warnings -A clippy::style -A clippy::complexity
       - name: Tests
-<<<<<<< HEAD
-        run: cargo test --workspace --locked --features licoup/test-support
+        run: node tools/scripts/cargo-client.mjs test --workspace --locked --no-fail-fast --features licoup/test-support
       - name: Package the tagged crate
         if: startsWith(github.ref, 'refs/tags/')
         run: cargo package --locked -p licoup
-=======
-        run: node tools/scripts/cargo-client.mjs test --workspace --locked --no-fail-fast --features licoup/test-support
->>>>>>> origin/nightly
 
   node:
     name: Node contract tests
@@ -86,6 +82,3 @@ jobs:
             -H "Content-Type: application/json" \
             --data "$payload" \
             "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/workflows/publish.yml/dispatches"
-=======
-        run: node --test 'tests/contract/**/*.test.mjs' tools/scripts/lib/test-artifact-lifecycle.test.mjs
->>>>>>> origin/nightly
