@@ -355,11 +355,16 @@ fn every_diagnostic_of_one_document_is_reported_together() {
     item["estimate"] = json!(5);
     let diagnostics =
         PlanDocument::from_value(document(vec![item])).expect_err("the document is ambiguous");
+    let mut actual: Vec<_> = diagnostics
+        .iter()
+        .map(|diagnostic| (diagnostic.code, diagnostic.path.as_str()))
+        .collect();
+    actual.sort_unstable();
     assert_eq!(
-        codes(&diagnostics),
+        actual,
         vec![
-            "project_plan_unsupported_field",
-            "project_plan_progress_not_admitted"
+            ("project_plan_progress_not_admitted", "workItems[0].status"),
+            ("project_plan_unsupported_field", "workItems[0].estimate"),
         ]
     );
 }

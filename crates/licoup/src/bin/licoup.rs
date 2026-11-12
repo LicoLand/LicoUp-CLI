@@ -37,6 +37,16 @@ const STDIO_RPC_MAX_REQUEST_BYTES: usize = 16 * 1024 * 1024;
 const STDIO_RPC_MAX_RESPONSE_BYTES: usize = 16 * 1024 * 1024;
 const STDIO_RPC_MAX_ID_BYTES: usize = 128;
 const STDIO_RPC_MAX_ARGS: usize = 4_097;
+/// Unit tests share this binary's one set of process-wide host ports.
+#[cfg(test)]
+fn install_test_environment_ports() {
+    static PORTS: std::sync::OnceLock<std::result::Result<(), &'static str>> =
+        std::sync::OnceLock::new();
+    PORTS
+        .get_or_init(licoup::install_environment_ports)
+        .expect("test process environment ports must be fully installed");
+}
+
 fn main() -> Result<()> {
     env_logger::Builder::from_default_env()
         .target(env_logger::Target::Stderr)

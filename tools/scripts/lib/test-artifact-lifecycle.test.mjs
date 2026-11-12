@@ -260,6 +260,63 @@ test("concurrent processes reclaim a stale lock once and serialize output owners
   assert.equal(existsSync(lock), false);
 });
 
+test("concurrent processes reclaim an ownerless lock that is still younger than the grace period", { timeout: 10_000 }, async (t) => {
+  const repoRoot = temporaryRepository(t);
+  const targetPath = "build/crates/licoup/target";
+  const artifactId = testArtifactId(targetPath);
+  const record = path.join(repoRoot, "build", ".test-artifacts", artifactId);
+  const lock = path.join(record, ".lock");
+  // An ownerless lock whose mtime is fresh: the owner died between creating
+  // the lock and writing owner.json. Contenders must spin until the lock
+  // ages past the grace period, then reclaim it exactly once — previously the
+  // reclaim claim lived inside the lock and refreshed its mtime on every
+  // attempt, so this case livelocked forever.
+  mkdirSync(lock, { recursive: true });
+
+  const source = String.raw`
+    import { existsSync, readFileSync, writeFileSync } from "node:fs";
+    import path from "node:path";
+    import { pathToFileURL } from "node:url";
+    const root = process.argv[1];
+    const id = process.argv[2];
+    const sourceRoot = process.argv[3];
+    const deadLeaseGraceMs = Number(process.argv[4]);
+    const { artifactRecordPaths, withArtifactLock } = await import(
+      pathToFileURL(path.join(sourceRoot, "tools/scripts/lib/test-artifact-lifecycle/registry.mjs"))
+    );
+    const state = path.join(root, "build", "critical-section.json");
+    withArtifactLock(artifactRecordPaths(root, id), () => {
+      const active = existsSync(state) ? JSON.parse(readFileSync(state, "utf8")).active : 0;
+      if (active !== 0) process.exitCode = 4;
+      writeFileSync(state, JSON.stringify({ active: active + 1 }));
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 30);
+      writeFileSync(state, JSON.stringify({ active: 0 }));
+    }, { deadLeaseGraceMs });
+  `;
+
+  const children = [0, 1].map(() => spawn(process.execPath, [
+    "--input-type=module",
+    "-e",
+    source,
+    repoRoot,
+    artifactId,
+    projectRoot,
+    "2000",
+  ], { stdio: "ignore" }));
+  t.after(() => {
+    for (const child of children) if (child.exitCode === null) child.kill("SIGKILL");
+  });
+  const exitCodes = await Promise.all(children.map((child) => new Promise((resolve) => {
+    child.once("close", resolve);
+  })));
+
+  assert.deepEqual(exitCodes, [0, 0]);
+  assert.deepEqual(JSON.parse(readFileSync(path.join(repoRoot, "build", "critical-section.json"), "utf8")), {
+    active: 0,
+  });
+  assert.equal(existsSync(lock), false);
+});
+
 test("tampered descriptors and unmanaged targets fail closed", {
   skip: !cargoPruneSupported,
 }, (t) => {

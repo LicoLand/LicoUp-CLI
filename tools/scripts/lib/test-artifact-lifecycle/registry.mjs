@@ -80,7 +80,10 @@ function reclaimStaleLock(paths, options) {
   } catch {
     return false;
   }
-  const claim = path.join(paths.lock, ".recovery");
+  // The claim must live outside the lock: a marker inside the lock directory
+  // refreshes the lock's mtime on every attempt, so an ownerless lock could
+  // never age past deadLeaseGraceMs and every contender would spin forever.
+  const claim = `${paths.lock}.recovery`;
   try {
     mkdirSync(claim);
   } catch (error) {
@@ -103,7 +106,7 @@ function reclaimStaleLock(paths, options) {
     try {
       rmSync(claim, { force: true, recursive: true });
     } catch {
-      // The containing lock may already have moved to the recovery path.
+      // Another reclaimer may already have removed the claim.
     }
   }
 }
