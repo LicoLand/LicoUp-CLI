@@ -86,7 +86,8 @@ export const REGRESSION_MODULES = Object.freeze([
     summary: "Rust workspace lint and type analysis",
     inputs: ["Cargo.toml", "Cargo.lock", "crates/**", "components/**"],
     command: command("cargo", [
-      "clippy", "--workspace", "--all-targets", "--", "-D", "warnings",
+      "clippy", "--workspace", "--all-targets", "--locked",
+      "--features", "licoup/test-support", "--", "-D", "warnings",
       "-A", "clippy::style", "-A", "clippy::complexity",
     ], 15 * 60_000),
   }),
@@ -101,7 +102,7 @@ export const REGRESSION_MODULES = Object.freeze([
   }),
   nodeTestModule(
     "regression.client-state-contracts",
-    "Client-state migration, diagnostic, and native-owner parity contracts",
+    "Client-state migration, diagnostic, privacy-fixture, and native-owner parity contracts",
     [
       "tests/contract/client/privacy-test-fixtures.test.mjs",
       "tests/contract/client/client-state-migration.test.mjs",
@@ -128,6 +129,8 @@ export const REGRESSION_MODULES = Object.freeze([
       "crates/licoup-workflow-store/**",
       "crates/licoup/src/platform/client_state/**",
       "crates/licoup/resources/state-machines/update-handoff.json",
+      "crates/licoup/src/domain/collaboration_plugin/runner_signature.rs",
+      "crates/licoup/src/domain/history_backup/tests.rs",
     ],
   ),
   nodeTestModule(
