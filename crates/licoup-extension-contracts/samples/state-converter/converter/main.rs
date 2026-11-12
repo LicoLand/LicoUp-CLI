@@ -229,15 +229,19 @@ fn append(path: &Path, text: &str) -> Result<(), String> {
         .map_err(|error| format!("target is not writable: {error}"))
 }
 
-/// Write one marker only when the target does not already carry it.
+/// Write one marker only when the target does not already carry it. The
+/// content lands atomically: an observer polling `exists` must never see the
+/// empty half of a create-then-write pair.
 fn mark(path: &Path, text: &str) -> Result<(), String> {
-    match fs::OpenOptions::new().create_new(true).write(true).open(path) {
-        Ok(mut file) => file
-            .write_all(text.as_bytes())
-            .map_err(|error| format!("target is not writable: {error}")),
-        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
-        Err(error) => Err(format!("target is not writable: {error}")),
+    let staging = path.with_extension("staging");
+    fs::write(&staging, text).map_err(|error| format!("target is not writable: {error}"))?;
+    match fs::hard_link(&staging, path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+        Err(error) => return Err(format!("target is not writable: {error}")),
     }
+    let _ = fs::remove_file(&staging);
+    Ok(())
 }
 
 /// Wait for as long as the operator's control document states.
