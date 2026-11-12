@@ -49,5 +49,7 @@ jobs:
           node-version: "24"
       - name: Install the pinned toolchain
         run: rustup show active-toolchain || rustup toolchain install
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --locked
       - name: Contract tests
         run: node --test 'tests/contract/**/*.test.mjs' tools/scripts/lib/test-artifact-lifecycle.test.mjs
