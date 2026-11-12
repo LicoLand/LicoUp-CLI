@@ -4236,6 +4236,7 @@ mod tests {
         use std::process::Command;
         use std::time::{SystemTime, UNIX_EPOCH};
 
+        crate::install_test_environment_ports();
         let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("tests")
             .join("fixtures")
@@ -4920,10 +4921,6 @@ mod tests {
 
     #[test]
     fn persistent_turn_child_work_steers_live_codex_turn_and_rejects_stale_handles() {
-        static ENVIRONMENT_PORTS: std::sync::OnceLock<()> = std::sync::OnceLock::new();
-        ENVIRONMENT_PORTS.get_or_init(|| {
-            let _ = licoup::install_environment_ports();
-        });
         let _guard = FAKE_CODEX_LOCK
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());

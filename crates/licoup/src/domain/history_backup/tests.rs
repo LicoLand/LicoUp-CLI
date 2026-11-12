@@ -22,6 +22,13 @@ use super::{
     },
 };
 
+fn random_test_key() -> [u8; 32] {
+    use rand_core::{OsRng, RngCore};
+    let mut key = [0u8; 32];
+    OsRng.fill_bytes(&mut key);
+    key
+}
+
 #[derive(Default)]
 struct TestKeys(BTreeMap<u64, [u8; 32]>);
 
@@ -356,7 +363,7 @@ where
 
 #[test]
 fn append_rejects_mismatched_object_metadata_before_publishing_a_manifest() {
-    let keys = TestKeys(BTreeMap::from([(3, [33; 32])]));
+    let keys = TestKeys(BTreeMap::from([(3, random_test_key())]));
     let (provider_entry, provider_bytes) = fixture_entry(
         "conversation/c1/revision/e1",
         json!({"id":"c1","revision":"e1"}),
@@ -450,7 +457,10 @@ fn provider_managed_is_default_and_reads_exact_content_without_any_key_operation
 
 #[test]
 fn encrypted_local_reads_and_recovery_restore_every_generation_and_retained_version() {
-    let keys = TestKeys(BTreeMap::from([(1, [11; 32]), (2, [22; 32])]));
+    let keys = TestKeys(BTreeMap::from([
+        (1, random_test_key()),
+        (2, random_test_key()),
+    ]));
     let (first, first_bytes) = fixture_entry(
         "conversation/c1/revision/e1",
         json!({"id":"c1","revision":"e1","parts":["first"]}),
@@ -499,7 +509,7 @@ fn encrypted_local_reads_and_recovery_restore_every_generation_and_retained_vers
         ]
     );
 
-    let secret = RecoverySecret::from_bytes([7; 32]);
+    let secret = RecoverySecret::from_bytes(random_test_key());
     let package = RecoveryPackage::wrap(&secret, b"synthetic-authority", &keys.0).unwrap();
     let package_bytes = serde_json::to_vec(&package).unwrap();
     for plaintext in [
@@ -565,14 +575,14 @@ fn encrypted_local_reads_and_recovery_restore_every_generation_and_retained_vers
 
 #[test]
 fn invalid_provider_views_and_objects_never_publish_partial_state() {
-    let keys = TestKeys(BTreeMap::from([(1, [11; 32])]));
+    let keys = TestKeys(BTreeMap::from([(1, random_test_key())]));
     let (entry, bytes) = fixture_entry(
         "conversation/c1/revision/e1",
         json!({"id":"c1","revision":"e1"}),
         StorageMode::ClientEncrypted { key_generation: 1 },
     );
     let object = seal_history_object(&entry, &bytes, &keys).unwrap();
-    let secret = RecoverySecret::from_bytes([7; 32]);
+    let secret = RecoverySecret::from_bytes(random_test_key());
     let package = RecoveryPackage::wrap(&secret, b"synthetic-authority", &keys.0).unwrap();
 
     let mut cases = Vec::<(TestStore, RecoveryError)>::new();
@@ -634,9 +644,9 @@ fn conflicting_manifest_unknown_key_and_missing_identity_fail_without_commit() {
         json!({"id":"c1","revision":"e1"}),
         StorageMode::ClientEncrypted { key_generation: 4 },
     );
-    let available_keys = TestKeys(BTreeMap::from([(4, [44; 32])]));
+    let available_keys = TestKeys(BTreeMap::from([(4, random_test_key())]));
     let object = seal_history_object(&entry, &bytes, &available_keys).unwrap();
-    let secret = RecoverySecret::from_bytes([7; 32]);
+    let secret = RecoverySecret::from_bytes(random_test_key());
 
     let missing_generation_package =
         RecoveryPackage::wrap(&secret, b"synthetic-authority", &BTreeMap::new()).unwrap();
@@ -719,7 +729,7 @@ fn wrong_secret_identity_rejection_and_commit_failure_leave_zero_published_state
         vec![segment("device-a", "segment-1", vec![entry])],
         vec![object],
     );
-    let secret = RecoverySecret::from_bytes([7; 32]);
+    let secret = RecoverySecret::from_bytes(random_test_key());
     let package = RecoveryPackage::wrap(&secret, b"synthetic-authority", &keys.0).unwrap();
 
     let mut wrong_secret_target = TestTarget::default();
@@ -727,7 +737,7 @@ fn wrong_secret_identity_rejection_and_commit_failure_leave_zero_published_state
         recover_replacement_endpoint(
             &store,
             &package,
-            &RecoverySecret::from_bytes([8; 32]),
+            &RecoverySecret::from_bytes(random_test_key()),
             &JsonDecoder,
             page_limit(),
             &mut wrong_secret_target,
@@ -809,7 +819,7 @@ fn provider_access_and_identity_authority_are_independent_prerequisites() {
 
     let mut inaccessible = TestStore::default();
     inaccessible.list_error = Some(HistoryStoreError::AccessRequired);
-    let secret = RecoverySecret::from_bytes([7; 32]);
+    let secret = RecoverySecret::from_bytes(random_test_key());
     let package = RecoveryPackage::wrap(&secret, b"synthetic-authority", &BTreeMap::new()).unwrap();
     let mut target = TestTarget::default();
     assert_eq!(
@@ -851,7 +861,7 @@ fn history_is_delivered_in_bounded_pages_and_never_as_one_buffer() {
     // A history many times the page bound: the run never needs it in one buffer.
     const OBJECTS: usize = 23;
     const PAGE: usize = 4;
-    let keys = TestKeys(BTreeMap::from([(1, [11; 32])]));
+    let keys = TestKeys(BTreeMap::from([(1, random_test_key())]));
     let mut entries = Vec::new();
     let mut objects = Vec::new();
     for index in 0..OBJECTS {
@@ -867,7 +877,7 @@ fn history_is_delivered_in_bounded_pages_and_never_as_one_buffer() {
         vec![segment("device-a", "segment-1", entries.clone())],
         objects,
     );
-    let secret = RecoverySecret::from_bytes([7; 32]);
+    let secret = RecoverySecret::from_bytes(random_test_key());
     let package = RecoveryPackage::wrap(&secret, b"synthetic-authority", &keys.0).unwrap();
 
     let mut target = TestTarget::default();
@@ -903,7 +913,7 @@ fn history_is_delivered_in_bounded_pages_and_never_as_one_buffer() {
 
 #[test]
 fn an_interruption_between_owners_resumes_at_the_recorded_owner() {
-    let keys = TestKeys(BTreeMap::from([(1, [11; 32])]));
+    let keys = TestKeys(BTreeMap::from([(1, random_test_key())]));
     let (entry, bytes) = fixture_entry(
         "conversation/c1/revision/e1",
         json!({"id":"c1","revision":"e1"}),
@@ -913,7 +923,7 @@ fn an_interruption_between_owners_resumes_at_the_recorded_owner() {
         vec![segment("device-a", "segment-1", vec![entry.clone()])],
         vec![seal_history_object(&entry, &bytes, &keys).unwrap()],
     );
-    let secret = RecoverySecret::from_bytes([7; 32]);
+    let secret = RecoverySecret::from_bytes(random_test_key());
     let package = RecoveryPackage::wrap(&secret, b"synthetic-authority", &keys.0).unwrap();
 
     // The database owner is interrupted after the filesystem owner verified.
@@ -992,7 +1002,7 @@ fn an_interruption_between_owners_resumes_at_the_recorded_owner() {
 
 #[test]
 fn a_progress_record_that_cannot_be_resumed_from_is_refused_before_staging() {
-    let keys = TestKeys(BTreeMap::from([(1, [11; 32])]));
+    let keys = TestKeys(BTreeMap::from([(1, random_test_key())]));
     let (entry, bytes) = fixture_entry(
         "conversation/c1/revision/e1",
         json!({"id":"c1","revision":"e1"}),
@@ -1002,7 +1012,7 @@ fn a_progress_record_that_cannot_be_resumed_from_is_refused_before_staging() {
         vec![segment("device-a", "segment-1", vec![entry.clone()])],
         vec![seal_history_object(&entry, &bytes, &keys).unwrap()],
     );
-    let secret = RecoverySecret::from_bytes([7; 32]);
+    let secret = RecoverySecret::from_bytes(random_test_key());
     let package = RecoveryPackage::wrap(&secret, b"synthetic-authority", &keys.0).unwrap();
 
     // A gap: the database owner is recorded but the filesystem owner is not.
@@ -1040,7 +1050,7 @@ fn an_active_destination_is_refused_before_the_provider_is_consulted() {
         }
     }
 
-    let keys = TestKeys(BTreeMap::from([(1, [11; 32])]));
+    let keys = TestKeys(BTreeMap::from([(1, random_test_key())]));
     let (entry, bytes) = fixture_entry(
         "conversation/c1/revision/e1",
         json!({"id":"c1","revision":"e1"}),
@@ -1050,7 +1060,7 @@ fn an_active_destination_is_refused_before_the_provider_is_consulted() {
         vec![segment("device-a", "segment-1", vec![entry.clone()])],
         vec![seal_history_object(&entry, &bytes, &keys).unwrap()],
     );
-    let secret = RecoverySecret::from_bytes([7; 32]);
+    let secret = RecoverySecret::from_bytes(random_test_key());
     let package = RecoveryPackage::wrap(&secret, b"synthetic-authority", &keys.0).unwrap();
 
     for (target, expected) in [
@@ -1114,7 +1124,7 @@ fn an_active_destination_is_refused_before_the_provider_is_consulted() {
 
 #[test]
 fn a_credential_owner_that_refuses_leaves_the_destination_discarded_and_inactive() {
-    let keys = TestKeys(BTreeMap::from([(1, [11; 32])]));
+    let keys = TestKeys(BTreeMap::from([(1, random_test_key())]));
     let (entry, bytes) = fixture_entry(
         "conversation/c1/revision/e1",
         json!({"id":"c1","revision":"e1"}),
@@ -1124,7 +1134,7 @@ fn a_credential_owner_that_refuses_leaves_the_destination_discarded_and_inactive
         vec![segment("device-a", "segment-1", vec![entry.clone()])],
         vec![seal_history_object(&entry, &bytes, &keys).unwrap()],
     );
-    let secret = RecoverySecret::from_bytes([7; 32]);
+    let secret = RecoverySecret::from_bytes(random_test_key());
     let package = RecoveryPackage::wrap(&secret, b"synthetic-authority", &keys.0).unwrap();
 
     let mut target = TestTarget {

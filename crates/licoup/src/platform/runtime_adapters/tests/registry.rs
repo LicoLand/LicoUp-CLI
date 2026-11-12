@@ -33,6 +33,9 @@ fn expected_kinds(channels: &[&'static str]) -> Vec<&'static str> {
 #[test]
 fn participant_projection_reports_declared_unknown_and_not_declared() {
     super::compose();
+    let expected_cli_state = CapabilityFactState::from_declaration(
+        licoup_agent_targets::domain::targets::agent_cli_executable("codex").is_some(),
+    );
     // One participant whose owner declares image input.
     let declared = native_capabilities_for_agent("codex");
     let image_input = fact(&declared, "image-input");
@@ -71,7 +74,9 @@ fn participant_projection_reports_declared_unknown_and_not_declared() {
     }
     // Channel facts keep their owner too.
     let channel = fact(&declared, "app-server");
-    assert_eq!(channel.state, CapabilityFactState::Declared);
+    // Channel presence follows the target owner on this host; CI need not
+    // have an installed Codex executable.
+    assert_eq!(channel.state, expected_cli_state);
     assert_eq!(channel.source, "agent-cli-presence");
     let desktop = fact(&declared, "desktop");
     assert_eq!(desktop.source, "agent-desktop-presence");

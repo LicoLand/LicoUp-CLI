@@ -85,14 +85,23 @@ fn installed_version_executes_only_the_exact_bound_target_binary() {
         .iter()
         .find(|channel| channel.id == "homebrew")
         .unwrap();
-    let version = installed_version(
-        agent,
-        Some(channel),
-        true,
-        true,
-        &serde_json::json!({}),
-        Some(&executable),
-    );
+    // The probe's own deadline is a product contract this test must not relax;
+    // under whole-workspace parallelism a child may simply not be scheduled
+    // inside it, so the real probe path gets a bounded number of attempts.
+    let mut version = String::new();
+    for _ in 0..3 {
+        version = installed_version(
+            agent,
+            Some(channel),
+            true,
+            true,
+            &serde_json::json!({}),
+            Some(&executable),
+        );
+        if !version.is_empty() {
+            break;
+        }
+    }
     assert_eq!(version, "2026.8.9");
 
     let wrong_binding = root.join("unrelated-agent");

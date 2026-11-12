@@ -648,8 +648,7 @@ mod tests {
             ]
         );
 
-        licoup::domain::agent_usage::host::install()
-            .expect("statistics host installs once per process");
+        crate::install_test_environment_ports();
         let params = json!({
             "agent": "lico-agent",
             "root": sessions,

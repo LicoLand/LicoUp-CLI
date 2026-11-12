@@ -22,7 +22,7 @@ use serde_json::Value;
 use std::path::{Path, PathBuf};
 
 const PACKAGE_ID: &str = "org.licoland.adapter.claude-code";
-const PACKAGE_VERSION: &str = "0.3.0";
+const PACKAGE_VERSION: &str = env!("CARGO_PKG_VERSION");
 const CAPABILITY: &str = "agent-execution.v1";
 const ADAPTER_ID: &str = "claude-code";
 const NATIVE_ENTRY: &str = "bin/lico-agent-claude-code";

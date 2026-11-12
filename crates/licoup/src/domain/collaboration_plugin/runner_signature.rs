@@ -79,9 +79,15 @@ fn runner_signature_payload(
 }
 
 #[cfg(test)]
+fn test_signing_key() -> &'static ed25519_dalek::SigningKey {
+    static KEY: std::sync::LazyLock<ed25519_dalek::SigningKey> =
+        std::sync::LazyLock::new(|| ed25519_dalek::SigningKey::generate(&mut rand_core::OsRng));
+    &KEY
+}
+
+#[cfg(test)]
 pub(super) fn test_trust() -> (String, String, String) {
-    use ed25519_dalek::SigningKey;
-    let signing = SigningKey::from_bytes(&[37u8; 32]);
+    let signing = test_signing_key();
     let public = URL_SAFE_NO_PAD.encode(signing.verifying_key().as_bytes());
     let fingerprint = public_key_fingerprint(&public).unwrap();
     ("licoup-test-runner-key".to_owned(), public, fingerprint)
@@ -92,8 +98,8 @@ pub(super) fn sign_runner_for_test(
     manifest: &ValidatedManifest,
     runner: &ValidatedServerRunner,
 ) -> String {
-    use ed25519_dalek::{Signer, SigningKey};
-    let signing = SigningKey::from_bytes(&[37u8; 32]);
+    use ed25519_dalek::Signer;
+    let signing = test_signing_key();
     URL_SAFE_NO_PAD.encode(
         signing
             .sign(&runner_signature_payload(manifest, runner).unwrap())
