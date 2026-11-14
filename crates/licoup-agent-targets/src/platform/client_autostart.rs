@@ -14,6 +14,7 @@ use licoup_foundation::platform::paths;
 use serde_json::{Value, json};
 use std::fs;
 use std::path::{Path, PathBuf};
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use std::process::Command;
 
 pub const SCHEMA: &str = "licoup.client-autostart.v1";
@@ -48,6 +49,7 @@ fn mcp_marker_path() -> Result<PathBuf> {
     Ok(state_dir()?.join("mcp.json"))
 }
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn user_home() -> Result<PathBuf> {
     paths::user_home_from_env().ok_or_else(|| anyhow!("client_autostart_home_missing"))
 }

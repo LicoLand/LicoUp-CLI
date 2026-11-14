@@ -1469,6 +1469,7 @@ fn display_paths(paths: &[PathBuf]) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use std::process::Command;
 
     fn facts() -> InstanceFacts {
@@ -1512,6 +1513,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn a_wait_result_is_recorded_as_the_exit() {
         let status = Command::new("/bin/sh")
             .args(["-c", "exit 0"])
@@ -1550,6 +1552,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn an_observed_cleanup_keeps_the_record_failure_and_the_exit() {
         let facts = facts();
         let status = Command::new("/bin/sh")

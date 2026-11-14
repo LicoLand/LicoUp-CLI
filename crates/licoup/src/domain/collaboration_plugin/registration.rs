@@ -375,16 +375,20 @@ fn build_registration(
         .collect::<Vec<_>>();
     let payload_files = payload
         .iter()
-        .map(|file| RegistrationPayloadFile {
-            plugin_id: file.selection_id.clone(),
-            relative_path: file
-                .destination_relative_path
-                .to_string_lossy()
-                .into_owned(),
-            digest_sha256: file.digest_sha256.clone(),
-            bytes: file.bytes.len(),
+        .map(|file| {
+            Ok(RegistrationPayloadFile {
+                plugin_id: file.selection_id.clone(),
+                // Record the canonical `/` protocol form: `collect_payload_files`
+                // renders on-disk keys the same way on every host, so the sealed
+                // record must not carry host-native separators.
+                relative_path: super::manifest::normalized_relative_protocol_path(
+                    &file.destination_relative_path,
+                )?,
+                digest_sha256: file.digest_sha256.clone(),
+                bytes: file.bytes.len(),
+            })
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>>>()?;
     let servers = selected_ids
         .iter()
         .map(|plugin_id| {

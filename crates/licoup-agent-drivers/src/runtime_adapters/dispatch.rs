@@ -247,6 +247,9 @@ pub fn send_message(
         runtime_connection: runtime_connection.as_ref(),
     });
 
+    // The lane was engaged and returned a verdict: a real turn is itself the
+    // verification a lane can carry, so the outcome is recorded as evidence.
+    super::operational::record_turn_verdict(&agent_id, execution.ok);
     Ok(execution_response(adapter, execution))
 }
 
@@ -300,6 +303,7 @@ fn send_generic_cli(
         timeout_ms,
         max_stdout,
     )?;
+    super::operational::record_turn_verdict(agent_id, execution.ok);
     Ok(execution_response_named(
         agent_id,
         &registration.label,

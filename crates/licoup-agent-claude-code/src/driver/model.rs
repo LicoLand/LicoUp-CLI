@@ -2,7 +2,7 @@ use crate::protocol::{EffectiveSettings, ProtocolFailure};
 use serde_json::Value;
 use serde_json::json;
 use std::sync::atomic::{AtomicU8, Ordering};
-#[cfg(test)]
+#[cfg(all(test, unix))]
 use std::sync::{Condvar, Mutex};
 use std::time::Duration;
 
@@ -22,9 +22,9 @@ enum TransportState {
 #[derive(Debug)]
 pub(crate) struct TransportLifecycle {
     state: AtomicU8,
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     changed: Mutex<()>,
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     notification: Condvar,
 }
 
@@ -32,9 +32,9 @@ impl Default for TransportLifecycle {
     fn default() -> Self {
         Self {
             state: AtomicU8::new(TransportState::Live as u8),
-            #[cfg(test)]
+            #[cfg(all(test, unix))]
             changed: Mutex::new(()),
-            #[cfg(test)]
+            #[cfg(all(test, unix))]
             notification: Condvar::new(),
         }
     }
@@ -66,7 +66,7 @@ impl TransportLifecycle {
             )
             .is_ok();
         if claimed {
-            #[cfg(test)]
+            #[cfg(all(test, unix))]
             self.notification.notify_all();
         }
         claimed
@@ -83,13 +83,13 @@ impl TransportLifecycle {
             )
             .is_ok();
         if closed {
-            #[cfg(test)]
+            #[cfg(all(test, unix))]
             self.notification.notify_all();
         }
         closed
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn wait_until_closing(&self, timeout: Duration) -> bool {
         if !self.is_live() {
             return true;
@@ -103,7 +103,7 @@ impl TransportLifecycle {
         !self.is_live()
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn wait_until_closed(&self, timeout: Duration) -> bool {
         if self.is_closed() {
             return true;

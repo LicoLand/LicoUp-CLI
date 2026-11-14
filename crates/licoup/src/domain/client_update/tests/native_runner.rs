@@ -219,6 +219,7 @@ fn client_update_native_runner_rejects_injected_argv_values() {
 }
 
 #[test]
+#[cfg(unix)]
 fn client_update_native_runner_target_guard_rejects_filesystem_roots() {
     use super::super::native_runner::plan::ensure_guarded_target_for_test;
     for target in [Path::new("/"), Path::new("C:\\"), Path::new("/tmp")] {

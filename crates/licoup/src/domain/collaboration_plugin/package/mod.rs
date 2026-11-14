@@ -52,9 +52,8 @@ pub(super) use runner::{
     SelectedServerRunner, select_current_server_runner, sha256 as runner_sha256,
 };
 pub(super) use secure_file::read_file_no_follow;
-#[cfg(test)]
+#[cfg(unix)]
+pub(super) use writer::open_directory_path_no_follow;
+#[cfg(all(test, unix))]
 pub(super) use writer::write_inspected_package_with_hook;
-pub(super) use writer::{
-    SecureNewTree, open_directory_path_no_follow, write_inspected_package,
-    write_selected_payload_tree,
-};
+pub(super) use writer::{SecureNewTree, write_inspected_package, write_selected_payload_tree};

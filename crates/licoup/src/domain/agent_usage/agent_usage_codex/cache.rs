@@ -2,6 +2,7 @@ use super::constants::{CACHE_REFRESH_INTERVAL, CACHE_SCHEMA_VERSION};
 use anyhow::{Context, Result, bail};
 use rusqlite::{Connection, ErrorCode, OptionalExtension, Transaction, TransactionBehavior};
 use std::collections::BTreeSet;
+#[cfg(unix)]
 use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;

@@ -2,7 +2,8 @@
 
 use crate::domain::integration_state::IntegrationState;
 use crate::platform::{
-    antigravity_subagent_mcp_manager, claude_code_subagent_mcp_manager, cursor_subagent_mcp_manager,
+    antigravity_subagent_mcp_manager, claude_code_subagent_mcp_manager,
+    cursor_subagent_mcp_manager, provider_mcp_registration,
 };
 use std::path::Path;
 
@@ -75,11 +76,33 @@ pub fn status(
     config_path: Option<&Path>,
 ) -> SubagentMcpEnsureState {
     match agent_id {
-        // This client installs no caller integration into Codex: the plugin
-        // that carries it belongs to Codex's own marketplace, and the adapter
-        // package owns the Codex side of that registration. An unsupported
-        // answer is the truthful one, not a status this client cannot observe.
-        "codex" => SubagentMcpEnsureState::Unsupported,
+        "codex" => {
+            if binary_path.is_none() {
+                return SubagentMcpEnsureState::Unavailable;
+            }
+            let owned = mcp_binary_path
+                .map(Path::to_path_buf)
+                .or_else(antigravity_subagent_mcp_manager::default_mcp_binary_path);
+            let Some(path) = owned else {
+                return SubagentMcpEnsureState::Unavailable;
+            };
+            let result = match config_path {
+                Some(explicit) => provider_mcp_registration::status_with_config_path(
+                    provider_mcp_registration::ProviderConfigKind::Codex,
+                    &path,
+                    explicit,
+                ),
+                None => provider_mcp_registration::status(
+                    provider_mcp_registration::ProviderConfigKind::Codex,
+                    &path,
+                ),
+            };
+            match result {
+                Ok(true) => SubagentMcpEnsureState::Ready,
+                Ok(false) => SubagentMcpEnsureState::Missing,
+                Err(_) => SubagentMcpEnsureState::Unavailable,
+            }
+        }
         "antigravity" => {
             if binary_path.is_none() {
                 return SubagentMcpEnsureState::Unavailable;
@@ -139,7 +162,37 @@ pub fn plan(
     config_path: Option<&Path>,
 ) -> Result<SubagentMcpEnsurePlan, SubagentMcpEnsureError> {
     match agent_id {
-        "codex" => Err(SubagentMcpEnsureError::Unsupported),
+        "codex" => {
+            if binary_path.is_none_or(|path| !path.is_file()) {
+                return Err(SubagentMcpEnsureError::InvalidBinary);
+            }
+            let path = mcp_binary_path
+                .map(Path::to_path_buf)
+                .or_else(antigravity_subagent_mcp_manager::default_mcp_binary_path)
+                .ok_or(SubagentMcpEnsureError::InvalidBinary)?;
+            let plan = match config_path {
+                Some(explicit) => {
+                    provider_mcp_registration::RegistrationPlan::prepare_with_config_path(
+                        provider_mcp_registration::ProviderConfigKind::Codex,
+                        &path,
+                        explicit,
+                    )
+                }
+                None => provider_mcp_registration::RegistrationPlan::prepare(
+                    provider_mcp_registration::ProviderConfigKind::Codex,
+                    &path,
+                ),
+            }
+            .map_err(map_registration_error)?;
+            Ok(SubagentMcpEnsurePlan {
+                agent_id: agent_id.to_owned(),
+                digest: plan.digest().to_owned(),
+                plugin_version: "0.2.0".to_owned(),
+                source: "LicoUp managed user MCP registration".to_owned(),
+                release: "packaged".to_owned(),
+                requires_confirmation: true,
+            })
+        }
         "antigravity" => {
             if binary_path.is_none_or(|path| !path.is_file()) {
                 return Err(SubagentMcpEnsureError::InvalidBinary);
@@ -216,8 +269,33 @@ pub fn install(
 ) -> Result<(bool, bool), SubagentMcpEnsureError> {
     match agent_id {
         "codex" => {
-            let _ = (binary_path, confirmation, confirmed);
-            Err(SubagentMcpEnsureError::Unsupported)
+            if binary_path.is_none_or(|path| !path.is_file()) {
+                return Err(SubagentMcpEnsureError::InvalidBinary);
+            }
+            let path = mcp_binary_path
+                .map(Path::to_path_buf)
+                .or_else(antigravity_subagent_mcp_manager::default_mcp_binary_path)
+                .ok_or(SubagentMcpEnsureError::InvalidBinary)?;
+            let plan = match config_path {
+                Some(explicit) => {
+                    provider_mcp_registration::RegistrationPlan::prepare_with_config_path(
+                        provider_mcp_registration::ProviderConfigKind::Codex,
+                        &path,
+                        explicit,
+                    )
+                }
+                None => provider_mcp_registration::RegistrationPlan::prepare(
+                    provider_mcp_registration::ProviderConfigKind::Codex,
+                    &path,
+                ),
+            }
+            .map_err(map_registration_error)?;
+            let mut permit = plan
+                .approve(confirmed, confirmation)
+                .map_err(map_registration_error)?;
+            provider_mcp_registration::install(&plan, &mut permit)
+                .map_err(map_registration_error)?;
+            Ok((true, true))
         }
         "antigravity" => {
             if binary_path.is_none_or(|path| !path.is_file()) {
@@ -326,5 +404,26 @@ fn map_registration_error(
         ConfigUnavailable | OwnedEntryAmbiguous | WriteFailed => {
             SubagentMcpEnsureError::InstallFailed
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn codex_subagent_mcp_is_supported_rather_than_refused() {
+        assert_eq!(
+            status("codex", None, None, None),
+            SubagentMcpEnsureState::Unavailable
+        );
+        assert_eq!(
+            plan("codex", None, None, None).unwrap_err(),
+            SubagentMcpEnsureError::InvalidBinary
+        );
+        assert_eq!(
+            install("codex", None, None, "", false, None).unwrap_err(),
+            SubagentMcpEnsureError::InvalidBinary
+        );
     }
 }

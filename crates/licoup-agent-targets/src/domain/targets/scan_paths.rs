@@ -120,7 +120,11 @@ pub const PATH_TEMPLATE_ROOTS: &[&str] = &[
 /// destination that must be a location discovery looks in — expands it here
 /// rather than inventing a second path vocabulary.
 pub fn expand_path_template(template: &str, roots: &HostRoots) -> Option<PathBuf> {
-    a4aa::discovery::expand_template(template, &engine_roots(roots))
+    a4aa::discovery::expand_template(template, &engine_roots(roots)).map(|path| {
+        // Manifest templates spell separators portably (`{home}/.local/bin`);
+        // componentizing gives the expanded path the host's own separator form.
+        path.components().collect()
+    })
 }
 
 /// Whether discovery admits `path` on `os`: a location whose own scan prefixes

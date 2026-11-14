@@ -36,7 +36,7 @@ pub const RUNTIME_PROTOCOL: &str = "hermes-acp-stdio-jsonrpc";
 pub(crate) const HERMES_SESSION_DRIVER: AcpSessionDriverSpec =
     AcpSessionDriverSpec::new("hermes-acp", &["acp"]).with_runtime_id("hermes");
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub(crate) use execution::execute;
 pub use execution::{cancel, cleanup_session, execute_with_connection};
 pub use probe::probe;

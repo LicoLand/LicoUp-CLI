@@ -82,6 +82,7 @@ impl Sandbox {
         self.fixtures.join("agent.sh")
     }
 
+    #[cfg(target_os = "macos")]
     pub fn net_probe(&self) -> PathBuf {
         self.fixtures.join("net_probe.py")
     }
@@ -90,6 +91,7 @@ impl Sandbox {
         self.fixtures.join("group_escape.py")
     }
 
+    #[cfg(target_os = "macos")]
     pub fn root_probe_script(&self) -> PathBuf {
         self.fixtures.join("root_probe.py")
     }
@@ -106,6 +108,7 @@ impl Sandbox {
     }
 
     /// A synthetic file outside the managed root and every declared read root.
+    #[cfg(target_os = "macos")]
     pub fn outside_file(&self, name: &str, contents: &str) -> PathBuf {
         let path = self.outside.join(name);
         std::fs::write(&path, contents).expect("outside file");
@@ -418,9 +421,14 @@ pub fn python_program(
         .with_read_root(sandbox.fixture_dir())
         .with_read_root(&python.runtime_root)
         .with_read_root("/usr/lib")
-        .with_read_root("/System")
         .with_write_root(instance_root)
         .with_env("PYTHONDONTWRITEBYTECODE", "1");
+    // `/System` exists only on Darwin; declaring it elsewhere fails the host's
+    // real-path validation before the program ever runs.
+    #[cfg(target_os = "macos")]
+    {
+        program = program.with_read_root("/System");
+    }
     if let Some(app) = &python.framework_app {
         program = program.with_exec_path(app);
     }

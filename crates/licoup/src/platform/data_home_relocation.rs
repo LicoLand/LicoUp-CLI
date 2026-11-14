@@ -543,8 +543,11 @@ fn rename_directory_without_replacing(source: &Path, destination: &Path) -> io::
         .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
     let destination = std::ffi::CString::new(destination.as_os_str().as_bytes())
         .map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    // `renameat2` is a raw Linux syscall; musl has no libc wrapper for it, so
+    // invoke it through `syscall` the way the workflow commit path does.
     let result = unsafe {
-        libc::renameat2(
+        libc::syscall(
+            libc::SYS_renameat2,
             libc::AT_FDCWD,
             source.as_ptr(),
             libc::AT_FDCWD,
@@ -652,6 +655,7 @@ fn restore_autostart_settings(status: &Value) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use rusqlite::Connection;
     #[cfg(unix)]
     use std::os::unix::fs::symlink;

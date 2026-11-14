@@ -493,7 +493,12 @@ fn a_declared_destination_derives_the_install_reference_and_places_the_result() 
     let staging_dir = recorded[0].1[3].clone();
     assert!(staged_archive.ends_with(ARCHIVE_NAME), "{staged_archive}");
     assert!(staged_archive.contains("agent-hub"), "{staged_archive}");
-    assert_eq!(recorded[1].1[2], staged_archive);
+    // Both argv entries name the same staged file; recipe templates may spell
+    // separators portably (`{staging}/file`), so compare them as paths.
+    assert_eq!(
+        std::path::Path::new(&recorded[1].1[2]),
+        std::path::Path::new(&staged_archive)
+    );
     assert!(staged_archive.starts_with(&staging_dir), "{recorded:?}");
     // Verification runs the executable at the declared destination, so an
     // unrelated binary that happens to answer to the same name cannot pass it.

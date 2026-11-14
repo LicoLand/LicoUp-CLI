@@ -234,6 +234,7 @@ fn exact_json_document_reads_only_the_requested_session_item() {
 }
 
 #[test]
+#[cfg(unix)]
 fn claude_code_adapter_projects_launch_directory_for_project_grouping() {
     let dir = temp_dir("claude-working-directory");
     fs::write(

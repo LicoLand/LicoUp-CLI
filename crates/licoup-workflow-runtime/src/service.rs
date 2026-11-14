@@ -4343,7 +4343,7 @@ mod tests {
                 "bindings": [{
                     "slotId": "subagent-a",
                     "ordinal": 0,
-                    "valueId": membership_id,
+                    "valueId": "membership:missing",
                     "model": "model-a",
                     "reasoningEffort": "",
                     "revision": 1
@@ -4358,10 +4358,18 @@ mod tests {
             response["result"]["error"]["code"],
             "graph_preflight_rejected"
         );
+        let diagnostics = response["result"]["error"]["diagnostics"]
+            .as_array()
+            .unwrap();
         assert!(
-            response["result"]["error"]["diagnostics"]
-                .as_array()
-                .unwrap()
+            diagnostics
+                .iter()
+                .any(|check| check["code"] == "graph_membership_rejected")
+        );
+        // A member whose evidence is not yet `ready` is admitted to the
+        // attempt; readiness reports what was proven, it is not a gate.
+        assert!(
+            !diagnostics
                 .iter()
                 .any(|check| check["code"] == "graph_readiness_rejected")
         );
@@ -4428,7 +4436,6 @@ mod tests {
             "workflow_actor_binding_invalid",
             "workflow_transition_state_unknown",
             "graph_identity_not_assistant_temporary",
-            "graph_readiness_rejected",
             "graph_binding_incomplete",
         ] {
             assert!(

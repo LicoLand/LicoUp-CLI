@@ -1,15 +1,37 @@
+#[cfg(unix)]
 use super::super::endpoint::{ServeModel, ServeModelCatalog, ServeReadiness};
-use super::super::process::{self, ServeRunner, SpawnFailure};
+#[cfg(unix)]
+use super::super::process::SpawnFailure;
+#[cfg(unix)]
+use super::super::process::{self, ServeRunner};
+#[cfg(unix)]
 use super::super::state::{self, ServicePaths};
-use super::super::{executable::ResolvedExecutable, serve, turn_control};
+#[cfg(unix)]
+use super::super::turn_control;
+use super::super::{executable::ResolvedExecutable, serve};
+#[cfg(unix)]
+#[cfg(unix)]
 use anyhow::Result;
-use serde_json::{Value, json};
-use std::io::{Read, Write};
+#[cfg(unix)]
+use serde_json::Value;
+use serde_json::json;
+#[cfg(unix)]
+use std::io::Read;
+#[cfg(unix)]
+use std::io::Write;
+#[cfg(unix)]
 use std::net::{TcpListener, TcpStream};
-use std::process::{Child, Command, Stdio};
+#[cfg(unix)]
+use std::process::Stdio;
+#[cfg(unix)]
+use std::process::{Child, Command};
+#[cfg(unix)]
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+#[cfg(unix)]
 use std::sync::{Arc, Mutex};
+#[cfg(unix)]
 use std::thread;
+#[cfg(unix)]
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 #[test]
@@ -36,8 +58,10 @@ fn owned_generation_identity_requires_the_same_file_and_health_version() {
     ));
 }
 
+#[cfg(unix)]
 const READY_PROVIDERS: &str = r#"{"default":{"synthetic-provider":"current-model"}}"#;
 
+#[cfg(unix)]
 fn synthetic_spec(default_port: u16) -> serve::ServeSpec {
     serve::ServeSpec {
         identity: "synthetic-local-service",
@@ -71,8 +95,10 @@ fn synthetic_spec(default_port: u16) -> serve::ServeSpec {
     }
 }
 
+#[cfg(unix)]
 fn noop_configure(_command: &mut Command, _host: &str, _port: u16) {}
 
+#[cfg(unix)]
 fn synthetic_readiness(
     health: &Value,
     sessions: &Value,
@@ -107,6 +133,7 @@ fn synthetic_readiness(
     })
 }
 
+#[cfg(unix)]
 enum ProviderPlan {
     Fixed(String),
     FlipAfter {
@@ -115,6 +142,7 @@ enum ProviderPlan {
     },
 }
 
+#[cfg(unix)]
 impl ProviderPlan {
     fn body(&self) -> String {
         match self {
@@ -132,6 +160,7 @@ impl ProviderPlan {
     }
 }
 
+#[cfg(unix)]
 fn read_request_head(stream: &mut TcpStream) -> Option<String> {
     let mut head = Vec::new();
     let mut byte = [0u8; 1];
@@ -150,6 +179,7 @@ fn read_request_head(stream: &mut TcpStream) -> Option<String> {
         .map(str::to_owned)
 }
 
+#[cfg(unix)]
 fn write_response(
     stream: &mut TcpStream,
     request_line: &str,
@@ -175,6 +205,7 @@ fn write_response(
     let _ = stream.flush();
 }
 
+#[cfg(unix)]
 struct FakeService {
     port: u16,
     attach_url: String,
@@ -183,6 +214,7 @@ struct FakeService {
     join: Option<thread::JoinHandle<()>>,
 }
 
+#[cfg(unix)]
 impl FakeService {
     fn start(port: u16, version: &str, providers: ProviderPlan) -> Self {
         Self::try_start(port, version, providers).expect("ephemeral synthetic service must bind")
@@ -251,6 +283,7 @@ impl FakeService {
     }
 }
 
+#[cfg(unix)]
 impl Drop for FakeService {
     fn drop(&mut self) {
         self.stop.store(true, Ordering::SeqCst);
@@ -266,6 +299,7 @@ impl Drop for FakeService {
 /// A real child process standing in for an owned service generation. A reaper
 /// thread waits on it immediately so an externally terminated child never
 /// lingers as a zombie (which `kill -0` would still report as alive).
+#[cfg(unix)]
 struct ChildGuard {
     pid: u32,
     child: Arc<Mutex<Option<Child>>>,
@@ -273,6 +307,7 @@ struct ChildGuard {
     reaper: Option<thread::JoinHandle<()>>,
 }
 
+#[cfg(unix)]
 impl ChildGuard {
     fn spawn() -> Self {
         #[cfg(unix)]
@@ -329,6 +364,7 @@ impl ChildGuard {
     }
 }
 
+#[cfg(unix)]
 impl Drop for ChildGuard {
     fn drop(&mut self) {
         {
@@ -345,6 +381,7 @@ impl Drop for ChildGuard {
     }
 }
 
+#[cfg(unix)]
 struct FakeRunner {
     service_version: String,
     provider_failures_before_ready: usize,
@@ -354,6 +391,7 @@ struct FakeRunner {
     children: Mutex<Vec<ChildGuard>>,
 }
 
+#[cfg(unix)]
 impl FakeRunner {
     fn new(service_version: &str, provider_failures_before_ready: usize) -> Self {
         Self {
@@ -385,6 +423,7 @@ impl FakeRunner {
     }
 }
 
+#[cfg(unix)]
 impl ServeRunner for FakeRunner {
     fn spawn(
         &self,
@@ -417,6 +456,7 @@ impl ServeRunner for FakeRunner {
     }
 }
 
+#[cfg(unix)]
 fn temp_paths(label: &str) -> (std::path::PathBuf, ServicePaths) {
     let root = std::env::temp_dir().join(format!(
         "lico-local-service-serve-{label}-{}-{}",
@@ -431,6 +471,7 @@ fn temp_paths(label: &str) -> (std::path::PathBuf, ServicePaths) {
     (root, paths)
 }
 
+#[cfg(unix)]
 fn current_executable() -> String {
     std::env::current_exe()
         .unwrap()
@@ -438,6 +479,7 @@ fn current_executable() -> String {
         .into_owned()
 }
 
+#[cfg(unix)]
 fn seed_owned_generation(paths: &ServicePaths, pid: u32, attach_url: &str, port: u16) {
     state::write_json(
         &paths.state_path,
@@ -463,6 +505,7 @@ fn seed_owned_generation(paths: &ServicePaths, pid: u32, attach_url: &str, port:
     .unwrap();
 }
 
+#[cfg(unix)]
 fn persisted_state(paths: &ServicePaths) -> Value {
     let text = std::fs::read_to_string(&paths.state_path).unwrap();
     serde_json::from_str(&text).unwrap()
@@ -470,6 +513,7 @@ fn persisted_state(paths: &ServicePaths) -> Value {
 
 /// Returns false only when the synthetic runner lost an OS port-allocation
 /// race; the test then retries the whole scenario once on fresh fixtures.
+#[cfg(unix)]
 fn draining_scenario_attempt() -> bool {
     let (root, paths) = temp_paths("draining");
     let old_service =
@@ -599,6 +643,7 @@ fn readiness_waits_for_session_and_model_binding_and_posts_no_message() {
 
 /// Returns false only when the synthetic runner lost an OS port-allocation
 /// race; the test then retries the whole scenario once on fresh fixtures.
+#[cfg(unix)]
 fn quiescent_scenario_attempt() -> bool {
     let (root, paths) = temp_paths("quiescent");
     let old_service =

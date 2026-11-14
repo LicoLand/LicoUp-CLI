@@ -1,6 +1,7 @@
 pub mod agent_workspace;
 pub mod ansi_stripper;
 pub mod data_home_access;
+pub mod debug;
 pub mod file_security;
 pub mod native_agent_interaction;
 pub mod paths;

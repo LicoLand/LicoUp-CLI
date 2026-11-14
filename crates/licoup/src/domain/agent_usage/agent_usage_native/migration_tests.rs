@@ -1,5 +1,6 @@
 use super::*;
 use agent_statistics::contract::{MessageUsage, UsageVariant};
+#[cfg(unix)]
 use std::io::Write;
 
 fn calendar() -> UsageWindow {
@@ -25,6 +26,7 @@ fn usage(prompt: u64, effort: Option<&str>) -> HistoryUsageSummary {
     summary
 }
 
+#[cfg(unix)]
 fn event(prompt: u64) -> String {
     format!(
         "{}\n",
@@ -34,6 +36,7 @@ fn event(prompt: u64) -> String {
     )
 }
 
+#[cfg(unix)]
 fn migration_append_case(sealed: bool, replaced: bool) {
     let root = std::env::temp_dir().join(format!("lico-native-migration-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();

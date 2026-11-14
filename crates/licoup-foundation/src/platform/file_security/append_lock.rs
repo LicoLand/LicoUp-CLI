@@ -36,6 +36,16 @@ pub fn open_private_lock_file(path: &Path) -> Result<fs::File> {
     Ok(file)
 }
 
+/// Whether a failed read observed a held byte-range lock: Windows reports
+/// ERROR_SHARING_VIOLATION (32) or ERROR_LOCK_VIOLATION (33) while another
+/// handle holds an exclusive lock on the file. Advisory locking never produces
+/// either code, so the check is inert on Unix.
+fn lock_file_held_exclusively(error: &anyhow::Error) -> bool {
+    error
+        .downcast_ref::<std::io::Error>()
+        .is_some_and(|io| matches!(io.raw_os_error(), Some(32) | Some(33)))
+}
+
 fn wait_for_private_lock_marker(path: &Path) -> Result<()> {
     const INITIALIZATION_WAIT: Duration = Duration::from_millis(250);
     const INITIALIZATION_POLL: Duration = Duration::from_millis(5);
@@ -44,7 +54,17 @@ fn wait_for_private_lock_marker(path: &Path) -> Result<()> {
         if validation::state_marker_metadata(path)?.is_none() {
             let _ = marker::create_private_state_marker(path, policy::PRIVATE_LOCK_MARKER);
         }
-        match marker::read_private_state_marker(path)? {
+        let marker_read = match marker::read_private_state_marker(path) {
+            Ok(content) => Ok(content),
+            Err(error) if lock_file_held_exclusively(&error) => {
+                // A held byte-range lock (Windows LockFileEx is mandatory)
+                // proves another initializer already validated this file, so
+                // its marker cannot still be pending.
+                return Ok(());
+            }
+            Err(error) => Err(error),
+        };
+        match marker_read? {
             Some(content) if content.as_slice() == policy::PRIVATE_LOCK_MARKER => return Ok(()),
             Some(content)
                 if policy::PRIVATE_LOCK_MARKER.starts_with(&content)

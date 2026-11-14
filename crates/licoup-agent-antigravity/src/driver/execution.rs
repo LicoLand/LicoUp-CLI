@@ -1,8 +1,12 @@
-use super::control::{cancel_claimed, clear_active_turn, register_active_turn, take_cancelled};
+#[cfg(unix)]
+use super::control::cancel_claimed;
+use super::control::{clear_active_turn, register_active_turn, take_cancelled};
 use super::errors::ProtocolFailure;
 use super::hooks::{ensure_hook_bridge, read_conversation_id, receipt_path_for_turn};
 use super::model::{EffectiveSettings, PROCESS_POLL_INTERVAL, RECEIPT_ENV, RunResult};
-use crate::parser::{PtyOutputParser, TerminalFacts, classify_terminal, valid_session_id};
+#[cfg(unix)]
+use crate::parser::PtyOutputParser;
+use crate::parser::{TerminalFacts, classify_terminal, valid_session_id};
 #[cfg(unix)]
 use crate::port::turn_event::{
     emit_agent_message_chunk, emit_agent_message_completed, emit_agent_processing, emit_turn_event,
@@ -20,7 +24,9 @@ use licoup_foundation::platform::pty_transport::PtyEvent;
 use licoup_foundation::platform::raw_execution::{
     RawExecutionDirection, RawExecutionObserver, RawExecutionScope,
 };
-use serde_json::{Value, json};
+use serde_json::Value;
+#[cfg(unix)]
+use serde_json::json;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};

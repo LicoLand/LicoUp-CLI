@@ -2626,6 +2626,7 @@ dependencies = [
  "licoup-agent-runtime",
  "licoup-agent-targets",
  "licoup-application",
+ "licoup-client-state",
  "licoup-conversation",
  "licoup-foundation",
  "licoup-state-machine-codegen",

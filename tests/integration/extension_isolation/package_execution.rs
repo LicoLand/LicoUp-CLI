@@ -220,7 +220,13 @@ fn an_installed_package_program_is_started_and_settled_by_the_host() {
             &AgentExecutionCall::new(json!({"input": "one turn"}))
                 .with_wait(Duration::from_secs(20)),
         )
-        .expect("the composed runtime serves one agent-execution call");
+        .unwrap_or_else(|failure| {
+            let diag = runtime
+                .carrier()
+                .facts("instance-1")
+                .map(|f| (f.fault(), f.stderr_tail()));
+            panic!("composed runtime failed: {failure:?} diag={diag:?}");
+        });
     assert_eq!(report["capability"], CAPABILITY);
     assert_eq!(report["outcome"]["state"], "completed");
     assert_eq!(

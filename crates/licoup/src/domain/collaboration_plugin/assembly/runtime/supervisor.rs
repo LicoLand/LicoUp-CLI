@@ -121,7 +121,7 @@ fn binding_matches(process: &SupervisedProcess, record: &LocalAssemblyRecord) ->
         && record.runtime_process_identity.as_deref() == Some(process.process_identity.as_str())
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::{liveness, register, terminate_and_reap};
     use crate::domain::collaboration_plugin::assembly::model::LocalServerLifecycle;

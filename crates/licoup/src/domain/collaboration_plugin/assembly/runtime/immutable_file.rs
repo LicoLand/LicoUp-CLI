@@ -1,11 +1,14 @@
 use anyhow::{Result, anyhow, ensure};
+#[cfg(unix)]
 use std::fs::File;
+#[cfg(unix)]
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::PathBuf;
 
 use crate::platform::client_state::ClientStateStore;
 
 pub(super) struct ImmutableRuntimeFile {
+    #[cfg(unix)]
     file: File,
     execution_path: PathBuf,
     #[cfg(target_os = "macos")]
@@ -44,6 +47,7 @@ impl ImmutableRuntimeFile {
         &self.execution_path
     }
 
+    #[cfg(unix)]
     pub(super) fn validate(&mut self, expected: &[u8]) -> Result<()> {
         self.file
             .seek(SeekFrom::Start(0))
@@ -255,6 +259,7 @@ fn clear_close_on_exec(file: &File) -> Result<()> {
 mod tests {
     use super::ImmutableRuntimeFile;
     use crate::platform::client_state::ClientStateStore;
+    #[cfg(unix)]
     use std::process::Command;
     use uuid::Uuid;
 
@@ -264,7 +269,12 @@ mod tests {
         let root =
             std::env::temp_dir().join(format!("licoup-immutable-runtime-test-{}", Uuid::new_v4()));
         let store = ClientStateStore::new(root.clone()).unwrap();
-        let mut source = std::fs::read("/usr/bin/true").unwrap();
+        let true_path = ["/usr/bin/true", "/bin/true"]
+            .iter()
+            .map(std::path::Path::new)
+            .find(|candidate| candidate.is_file())
+            .expect("a true binary exists on this host");
+        let mut source = std::fs::read(true_path).unwrap();
         let expected = source.clone();
         let mut image = ImmutableRuntimeFile::from_verified_bytes(&store, &source, true).unwrap();
         source.fill(0);
@@ -277,7 +287,11 @@ mod tests {
             assert!(std::fs::rename(&replacement, image.path()).is_err());
             std::fs::remove_file(replacement).unwrap();
         }
-        let status = Command::new(image.path()).status().unwrap();
+        // On BusyBox hosts the resolved `true` path is a symlink to the
+        // multi-call binary: the copied bytes then dispatch on argv[0], so the
+        // program must keep its canonical name to exit successfully.
+        use std::os::unix::process::CommandExt;
+        let status = Command::new(image.path()).arg0("true").status().unwrap();
         assert!(status.success());
         let _ = std::fs::remove_dir_all(root);
     }

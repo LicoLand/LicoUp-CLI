@@ -43,6 +43,7 @@ pub enum ProviderConfigKind {
     Cursor,
     Antigravity,
     ClaudeCode,
+    Codex,
 }
 
 impl ProviderConfigKind {
@@ -51,6 +52,7 @@ impl ProviderConfigKind {
             Self::Cursor => "cursor",
             Self::Antigravity => "antigravity",
             Self::ClaudeCode => "claude-code",
+            Self::Codex => "codex",
         }
     }
 }
@@ -113,8 +115,8 @@ impl RegistrationPlan {
         let skill_path = resolve_skill_path(kind)?;
         let shared_skill_path = shared_skill_path()?;
         let raw = read_optional_config(&config_path)?;
-        let config = parse_config(raw.as_deref())?;
-        ensure_owned_entry_unambiguous(&config, kind, &connector)?;
+        let config = parse_config_for(kind, raw.as_deref())?;
+        ensure_owned_entry_unambiguous_doc(&config, kind, &connector)?;
         let config_digest = digest_bytes(raw.as_deref().unwrap_or(b"<absent>"));
         let skill = read_optional_skill(&skill_path)?;
         if skill
@@ -196,12 +198,12 @@ fn status_at(
     path: &Path,
 ) -> Result<bool, RegistrationError> {
     let raw = read_optional_config(path)?;
-    let config = parse_config(raw.as_deref())?;
-    ensure_owned_entry_unambiguous(&config, kind, connector)?;
+    let config = parse_config_for(kind, raw.as_deref())?;
+    ensure_owned_entry_unambiguous_doc(&config, kind, connector)?;
     let skill_path = resolve_skill_path(kind)?;
     let skill_ready =
         read_optional_skill(&skill_path)?.is_some_and(|skill| skill == SKILL_SOURCE.as_bytes());
-    Ok(skill_ready && entry(&config).is_some_and(|entry| entry_is_exact(entry, kind, connector)))
+    Ok(skill_ready && config_entry_is_exact(&config, kind, connector))
 }
 
 pub fn install(
@@ -221,26 +223,12 @@ pub fn install(
     {
         return Err(RegistrationError::ConfigChanged);
     }
-    let mut config = parse_config(raw.as_deref())?;
-    ensure_owned_entry_unambiguous(&config, plan.kind, &plan.connector)?;
-    let mut owned_entry = json!({
-        "command": plan.connector.to_string_lossy(),
-        "args": ["--caller", plan.kind.provider_id()],
-        "disabled": false,
-        "managedBy": MANAGED_BY,
-        "schemaVersion": ENTRY_SCHEMA,
-        "provider": plan.kind.provider_id(),
-    });
-    owned_entry["env"] = match plan.kind {
-        ProviderConfigKind::Cursor => cursor_context_environment(),
-        ProviderConfigKind::Antigravity | ProviderConfigKind::ClaudeCode => {
-            antigravity_context_environment()
-        }
-    };
-    servers_mut(&mut config)?.insert(SERVER_ID.to_owned(), owned_entry);
+    let mut config = parse_config_for(plan.kind, raw.as_deref())?;
+    ensure_owned_entry_unambiguous_doc(&config, plan.kind, &plan.connector)?;
+    insert_owned_entry(&mut config, plan.kind, &plan.connector)?;
     write_skill(&plan.skill_path)?;
     let published_shared = publish_shared_skill(&plan.shared_skill_path);
-    if let Err(error) = write_config(&plan.config_path, &config) {
+    if let Err(error) = write_config_doc(&plan.config_path, &config) {
         if plan.skill_was_absent {
             let _ = fs::remove_file(&plan.skill_path);
         }
@@ -249,7 +237,7 @@ pub fn install(
         }
         return Err(error);
     }
-    if !entry(&config).is_some_and(|entry| entry_is_exact(entry, plan.kind, &plan.connector)) {
+    if !config_entry_is_exact(&config, plan.kind, &plan.connector) {
         return Err(RegistrationError::WriteFailed);
     }
     Ok(())
@@ -272,13 +260,12 @@ pub fn remove(
     {
         return Err(RegistrationError::ConfigChanged);
     }
-    let mut config = parse_config(raw.as_deref())?;
-    ensure_owned_entry_unambiguous(&config, plan.kind, &plan.connector)?;
-    if entry(&config).is_none() {
+    let mut config = parse_config_for(plan.kind, raw.as_deref())?;
+    ensure_owned_entry_unambiguous_doc(&config, plan.kind, &plan.connector)?;
+    if !remove_owned_entry(&mut config)? {
         return Ok(());
     }
-    servers_mut(&mut config)?.remove(SERVER_ID);
-    write_config(&plan.config_path, &config)?;
+    write_config_doc(&plan.config_path, &config)?;
     if read_optional_skill(&plan.skill_path)?.is_some_and(|skill| skill == SKILL_SOURCE.as_bytes())
     {
         fs::remove_file(&plan.skill_path).map_err(|_| RegistrationError::WriteFailed)?;
@@ -324,6 +311,7 @@ fn reviewed_config_candidates(kind: ProviderConfigKind) -> Result<Vec<PathBuf>, 
                 .join("mcp_config.json"),
         ],
         ProviderConfigKind::ClaudeCode => vec![home.join(".claude.json")],
+        ProviderConfigKind::Codex => vec![home.join(".codex").join("config.toml")],
     })
 }
 
@@ -368,6 +356,7 @@ fn resolve_skill_path(kind: ProviderConfigKind) -> Result<PathBuf, RegistrationE
         ProviderConfigKind::Cursor => home.join(".cursor").join("skills"),
         ProviderConfigKind::Antigravity => home.join(".gemini").join("config").join("skills"),
         ProviderConfigKind::ClaudeCode => home.join(".claude").join("skills"),
+        ProviderConfigKind::Codex => home.join(".codex").join("skills"),
     };
     Ok(root
         .join(crate::domain::client_conversation::LICOUP_GUIDE_SKILL_ID)
@@ -392,7 +381,9 @@ fn shared_skill_path_in(home: &Path) -> PathBuf {
 fn resolve_config_path(kind: ProviderConfigKind) -> Result<PathBuf, RegistrationError> {
     let candidates = reviewed_config_candidates(kind)?;
     match kind {
-        ProviderConfigKind::Cursor | ProviderConfigKind::ClaudeCode => Ok(candidates[0].clone()),
+        ProviderConfigKind::Cursor
+        | ProviderConfigKind::ClaudeCode
+        | ProviderConfigKind::Codex => Ok(candidates[0].clone()),
         ProviderConfigKind::Antigravity => {
             let official = &candidates[0];
             let legacy = &candidates[1];
@@ -442,6 +433,87 @@ fn read_optional_skill(path: &Path) -> Result<Option<Vec<u8>>, RegistrationError
     read_optional_config(path)
 }
 
+enum ProviderConfig {
+    Json(Value),
+    Toml(toml::Table),
+}
+
+fn is_licoup_cli_connector(connector: &Path) -> bool {
+    connector
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .is_some_and(|stem| stem.eq_ignore_ascii_case("licoup"))
+}
+
+fn is_known_mcp_connector_name(command: &Path) -> bool {
+    command
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .is_some_and(|stem| {
+            stem.eq_ignore_ascii_case("lico-subagent-mcp") || stem.eq_ignore_ascii_case("licoup")
+        })
+}
+
+fn mcp_args(kind: ProviderConfigKind, connector: &Path) -> Vec<String> {
+    if is_licoup_cli_connector(connector) {
+        vec![
+            "mcp".to_owned(),
+            "stdio".to_owned(),
+            "--caller".to_owned(),
+            kind.provider_id().to_owned(),
+        ]
+    } else {
+        vec!["--caller".to_owned(), kind.provider_id().to_owned()]
+    }
+}
+
+fn codex_context_env_vars() -> toml::Value {
+    toml::Value::Array(
+        [
+            "LICOUP_HOME",
+            "LICOUP_MCP_CONVERSATION_ID",
+            "LICOUP_MCP_MEMBERSHIP_ID",
+            "LICOUP_MCP_PARENT_DISPATCH_ID",
+        ]
+        .into_iter()
+        .map(|name| toml::Value::String(name.to_owned()))
+        .collect(),
+    )
+}
+
+fn parse_config_for(
+    kind: ProviderConfigKind,
+    raw: Option<&[u8]>,
+) -> Result<ProviderConfig, RegistrationError> {
+    match kind {
+        ProviderConfigKind::Codex => parse_codex_config(raw).map(ProviderConfig::Toml),
+        ProviderConfigKind::Cursor
+        | ProviderConfigKind::Antigravity
+        | ProviderConfigKind::ClaudeCode => parse_config(raw).map(ProviderConfig::Json),
+    }
+}
+
+fn parse_codex_config(raw: Option<&[u8]>) -> Result<toml::Table, RegistrationError> {
+    let mut table = match raw {
+        Some(raw) => {
+            let text = std::str::from_utf8(raw).map_err(|_| RegistrationError::ConfigUnavailable)?;
+            toml::from_str::<toml::Table>(text).map_err(|_| RegistrationError::ConfigUnavailable)?
+        }
+        None => toml::Table::new(),
+    };
+    match table.get("mcp_servers") {
+        None => {
+            table.insert(
+                "mcp_servers".to_owned(),
+                toml::Value::Table(toml::Table::new()),
+            );
+        }
+        Some(toml::Value::Table(_)) => {}
+        Some(_) => return Err(RegistrationError::ConfigUnavailable),
+    }
+    Ok(table)
+}
+
 fn parse_config(raw: Option<&[u8]>) -> Result<Value, RegistrationError> {
     let mut config = match raw {
         Some(raw) => {
@@ -469,12 +541,181 @@ fn servers_mut(config: &mut Value) -> Result<&mut Map<String, Value>, Registrati
         .ok_or(RegistrationError::ConfigUnavailable)
 }
 
+fn codex_servers_mut(config: &mut toml::Table) -> Result<&mut toml::Table, RegistrationError> {
+    config
+        .get_mut("mcp_servers")
+        .and_then(toml::Value::as_table_mut)
+        .ok_or(RegistrationError::ConfigUnavailable)
+}
+
 fn entry(config: &Value) -> Option<&Map<String, Value>> {
     config
         .get("mcpServers")?
         .as_object()?
         .get(SERVER_ID)?
         .as_object()
+}
+
+fn codex_entry(config: &toml::Table) -> Option<&toml::Table> {
+    config.get("mcp_servers")?.as_table()?.get(SERVER_ID)?.as_table()
+}
+
+fn ensure_owned_entry_unambiguous_doc(
+    config: &ProviderConfig,
+    kind: ProviderConfigKind,
+    connector: &Path,
+) -> Result<(), RegistrationError> {
+    match config {
+        ProviderConfig::Json(json) => ensure_owned_entry_unambiguous(json, kind, connector),
+        ProviderConfig::Toml(table) => ensure_owned_codex_entry_unambiguous(table, kind, connector),
+    }
+}
+
+fn config_entry_is_exact(
+    config: &ProviderConfig,
+    kind: ProviderConfigKind,
+    connector: &Path,
+) -> bool {
+    match config {
+        ProviderConfig::Json(json) => {
+            entry(json).is_some_and(|entry| entry_is_exact(entry, kind, connector))
+        }
+        ProviderConfig::Toml(table) => {
+            codex_entry(table).is_some_and(|entry| codex_entry_is_exact(entry, kind, connector))
+        }
+    }
+}
+
+fn insert_owned_entry(
+    config: &mut ProviderConfig,
+    kind: ProviderConfigKind,
+    connector: &Path,
+) -> Result<(), RegistrationError> {
+    let args = mcp_args(kind, connector);
+    match config {
+        ProviderConfig::Json(json) => {
+            let mut owned_entry = json!({
+                "command": connector.to_string_lossy(),
+                "args": args,
+                "disabled": false,
+                "managedBy": MANAGED_BY,
+                "schemaVersion": ENTRY_SCHEMA,
+                "provider": kind.provider_id(),
+            });
+            owned_entry["env"] = match kind {
+                ProviderConfigKind::Cursor => cursor_context_environment(),
+                ProviderConfigKind::Antigravity
+                | ProviderConfigKind::ClaudeCode
+                | ProviderConfigKind::Codex => antigravity_context_environment(),
+            };
+            servers_mut(json)?.insert(SERVER_ID.to_owned(), owned_entry);
+            Ok(())
+        }
+        ProviderConfig::Toml(table) => {
+            let mut owned_entry = toml::Table::new();
+            owned_entry.insert(
+                "command".to_owned(),
+                toml::Value::String(connector.to_string_lossy().into_owned()),
+            );
+            owned_entry.insert(
+                "args".to_owned(),
+                toml::Value::Array(args.into_iter().map(toml::Value::String).collect()),
+            );
+            owned_entry.insert("enabled".to_owned(), toml::Value::Boolean(true));
+            owned_entry.insert("env_vars".to_owned(), codex_context_env_vars());
+            codex_servers_mut(table)?.insert(SERVER_ID.to_owned(), toml::Value::Table(owned_entry));
+            Ok(())
+        }
+    }
+}
+
+fn remove_owned_entry(config: &mut ProviderConfig) -> Result<bool, RegistrationError> {
+    match config {
+        ProviderConfig::Json(json) => {
+            if entry(json).is_none() {
+                return Ok(false);
+            }
+            servers_mut(json)?.remove(SERVER_ID);
+            Ok(true)
+        }
+        ProviderConfig::Toml(table) => {
+            if codex_entry(table).is_none() {
+                return Ok(false);
+            }
+            codex_servers_mut(table)?.remove(SERVER_ID);
+            Ok(true)
+        }
+    }
+}
+
+fn ensure_owned_codex_entry_unambiguous(
+    config: &toml::Table,
+    kind: ProviderConfigKind,
+    connector: &Path,
+) -> Result<(), RegistrationError> {
+    if has_duplicate_codex_connector_entry(config, connector) {
+        return Err(RegistrationError::DuplicateConnectorEntry);
+    }
+    let Some(servers) = config.get("mcp_servers").and_then(toml::Value::as_table) else {
+        return Ok(());
+    };
+    let Some(raw_entry) = servers.get(SERVER_ID) else {
+        return Ok(());
+    };
+    let Some(entry) = raw_entry.as_table() else {
+        return Err(RegistrationError::OwnedEntryAmbiguous);
+    };
+    let Some(command) = entry.get("command").and_then(toml::Value::as_str) else {
+        return Err(RegistrationError::OwnedEntryAmbiguous);
+    };
+    let args: Vec<&str> = entry
+        .get("args")
+        .and_then(toml::Value::as_array)
+        .map(|items| items.iter().filter_map(toml::Value::as_str).collect())
+        .unwrap_or_default();
+    let owned_command = (command_is_connector(command, connector)
+        && (!is_licoup_cli_connector(Path::new(command)) || args.starts_with(&["mcp", "stdio"])))
+        || (is_known_mcp_connector_name(Path::new(command))
+            && args
+                .windows(2)
+                .any(|pair| pair == ["--caller", kind.provider_id()]));
+    if owned_command {
+        Ok(())
+    } else {
+        Err(RegistrationError::OwnedEntryAmbiguous)
+    }
+}
+
+fn has_duplicate_codex_connector_entry(config: &toml::Table, connector: &Path) -> bool {
+    let Some(servers) = config.get("mcp_servers").and_then(toml::Value::as_table) else {
+        return false;
+    };
+    servers.iter().any(|(key, value)| {
+        if key == SERVER_ID {
+            return false;
+        }
+        if key == "lico-up-subagents" {
+            return true;
+        }
+        let Some(table) = value.as_table() else {
+            return false;
+        };
+        let Some(command) = table.get("command").and_then(toml::Value::as_str) else {
+            return false;
+        };
+        if !command_is_connector(command, connector) {
+            return false;
+        }
+        if is_licoup_cli_connector(Path::new(command)) {
+            let args: Vec<&str> = table
+                .get("args")
+                .and_then(toml::Value::as_array)
+                .map(|items| items.iter().filter_map(toml::Value::as_str).collect())
+                .unwrap_or_default();
+            return args.starts_with(&["mcp", "stdio"]);
+        }
+        true
+    })
 }
 
 /// Fail closed unless the namespaced entry is LicoUp's own and no sibling entry
@@ -521,11 +762,24 @@ fn has_duplicate_connector_entry(config: &Value, connector: &Path) -> bool {
         if key == "lico-up-subagents" {
             return true;
         }
-        value
-            .as_object()
-            .and_then(|entry| entry.get("command"))
-            .and_then(Value::as_str)
-            .is_some_and(|command| command_is_connector(command, connector))
+        let Some(object) = value.as_object() else {
+            return false;
+        };
+        let Some(command) = object.get("command").and_then(Value::as_str) else {
+            return false;
+        };
+        if !command_is_connector(command, connector) {
+            return false;
+        }
+        if is_licoup_cli_connector(Path::new(command)) {
+            let args: Vec<&str> = object
+                .get("args")
+                .and_then(Value::as_array)
+                .map(|items| items.iter().filter_map(Value::as_str).collect())
+                .unwrap_or_default();
+            return args.starts_with(&["mcp", "stdio"]);
+        }
+        true
     })
 }
 
@@ -551,13 +805,16 @@ fn command_is_connector(command: &str, connector: &Path) -> bool {
 }
 
 fn entry_is_exact(entry: &Map<String, Value>, kind: ProviderConfigKind, connector: &Path) -> bool {
+    let expected_args: Vec<Value> = mcp_args(kind, connector).into_iter().map(Value::String).collect();
     let args_exact = entry
         .get("args")
         .and_then(Value::as_array)
-        .is_some_and(|args| args.as_slice() == [json!("--caller"), json!(kind.provider_id())]);
+        .is_some_and(|args| args == &expected_args);
     let environment_exact = match kind {
         ProviderConfigKind::Cursor => entry.get("env") == Some(&cursor_context_environment()),
-        ProviderConfigKind::Antigravity | ProviderConfigKind::ClaudeCode => {
+        ProviderConfigKind::Antigravity
+        | ProviderConfigKind::ClaudeCode
+        | ProviderConfigKind::Codex => {
             entry.get("env") == Some(&antigravity_context_environment())
         }
     };
@@ -578,14 +835,52 @@ fn entry_is_exact(entry: &Map<String, Value>, kind: ProviderConfigKind, connecto
         .is_some_and(|path| path == connector)
 }
 
-fn write_config(path: &Path, config: &Value) -> Result<(), RegistrationError> {
+fn codex_entry_is_exact(
+    entry: &toml::Table,
+    kind: ProviderConfigKind,
+    connector: &Path,
+) -> bool {
+    let expected_args: Vec<toml::Value> = mcp_args(kind, connector)
+        .into_iter()
+        .map(toml::Value::String)
+        .collect();
+    let args_exact = entry
+        .get("args")
+        .and_then(toml::Value::as_array)
+        .is_some_and(|args| args == &expected_args);
+    if entry.get("enabled").and_then(toml::Value::as_bool) != Some(true)
+        || !args_exact
+        || entry.get("env_vars") != Some(&codex_context_env_vars())
+    {
+        return false;
+    }
+    entry
+        .get("command")
+        .and_then(toml::Value::as_str)
+        .map(Path::new)
+        .and_then(|path| fs::canonicalize(path).ok())
+        .is_some_and(|path| path == connector)
+}
+
+fn write_config_doc(path: &Path, config: &ProviderConfig) -> Result<(), RegistrationError> {
+    let text = match config {
+        ProviderConfig::Json(json) => {
+            serde_json::to_string_pretty(json).map_err(|_| RegistrationError::WriteFailed)?
+        }
+        ProviderConfig::Toml(table) => {
+            toml::to_string_pretty(table).map_err(|_| RegistrationError::WriteFailed)?
+        }
+    };
+    write_config_text(path, &text)
+}
+
+fn write_config_text(path: &Path, text: &str) -> Result<(), RegistrationError> {
     let parent = path.parent().ok_or(RegistrationError::WriteFailed)?;
     file_security::ensure_private_dir(parent).map_err(|_| RegistrationError::WriteFailed)?;
     if path.exists() {
         file_security::harden_private_path(path).map_err(|_| RegistrationError::WriteFailed)?;
     }
-    let text = serde_json::to_string_pretty(config).map_err(|_| RegistrationError::WriteFailed)?;
-    file_security::atomic_write_private_text_bounded(path, &text, MAX_CONFIG_BYTES as usize)
+    file_security::atomic_write_private_text_bounded(path, text, MAX_CONFIG_BYTES as usize)
         .map_err(|_| RegistrationError::WriteFailed)
 }
 
@@ -1074,6 +1369,63 @@ mod tests {
         fs::write(&sibling, b"{}").unwrap();
         let sibling = fs::canonicalize(sibling).unwrap();
         assert!(!path_matches_reviewed_candidate(&sibling, &candidates));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn codex_toml_registration_preserves_existing_settings_and_supports_licoup_stdio() {
+        let root =
+            std::env::temp_dir().join(format!("licoup-codex-toml-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&root).unwrap();
+        let connector = root.join("licoup");
+        fs::write(&connector, b"synthetic licoup").unwrap();
+        let connector = fs::canonicalize(&connector).unwrap();
+        let config_path = root.join("config.toml");
+        let existing_toml = b"model = \"gpt-5\"\n\n[mcp_servers.other]\ncommand = \"other-mcp\"\n";
+        let mut config = parse_config_for(ProviderConfigKind::Codex, Some(existing_toml)).unwrap();
+        ensure_owned_entry_unambiguous_doc(&config, ProviderConfigKind::Codex, &connector).unwrap();
+        insert_owned_entry(&mut config, ProviderConfigKind::Codex, &connector).unwrap();
+        write_config_doc(&config_path, &config).unwrap();
+
+        let written = fs::read(&config_path).unwrap();
+        let reparsed = parse_config_for(ProviderConfigKind::Codex, Some(&written)).unwrap();
+        assert!(config_entry_is_exact(
+            &reparsed,
+            ProviderConfigKind::Codex,
+            &connector
+        ));
+        let text = String::from_utf8(written).unwrap();
+        assert!(text.contains("model = \"gpt-5\""));
+        assert!(text.contains("[mcp_servers.other]"));
+        assert!(text.contains("args = [\"mcp\", \"stdio\", \"--caller\", \"codex\"]")
+            || (text.contains("\"mcp\"") && text.contains("\"stdio\"") && text.contains("\"codex\"")));
+        let parsed_toml: toml::Table = toml::from_str(&text).unwrap();
+        let entry = codex_entry(&parsed_toml).expect("codex server entry");
+        assert_eq!(entry.get("enabled").and_then(toml::Value::as_bool), Some(true));
+        let args: Vec<&str> = entry["args"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(toml::Value::as_str)
+            .collect();
+        assert_eq!(args, ["mcp", "stdio", "--caller", "codex"]);
+
+        let mut mutable = reparsed;
+        assert!(remove_owned_entry(&mut mutable).unwrap());
+        write_config_doc(&config_path, &mutable).unwrap();
+        let after_remove = fs::read_to_string(&config_path).unwrap();
+        assert!(after_remove.contains("model = \"gpt-5\""));
+        assert!(!after_remove.contains(SERVER_ID));
+
+        let foreign = parse_config_for(
+            ProviderConfigKind::Codex,
+            Some(b"[mcp_servers.\"land.lico.licoup.subagents\"]\ncommand = \"foreign\"\n"),
+        )
+        .unwrap();
+        assert_eq!(
+            ensure_owned_entry_unambiguous_doc(&foreign, ProviderConfigKind::Codex, &connector),
+            Err(RegistrationError::OwnedEntryAmbiguous)
+        );
         let _ = fs::remove_dir_all(root);
     }
 }

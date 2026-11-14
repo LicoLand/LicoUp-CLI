@@ -81,6 +81,7 @@ pub fn cancel(session_id: &str) -> ControlDisposition {
 
 /// Peek whether cancel was accepted or is pending. Does not consume the claim,
 /// so the PTY loop can stop projecting new assistant text after interrupt.
+#[cfg(unix)]
 pub(super) fn cancel_claimed(session_id: &str) -> bool {
     if session_id.is_empty() {
         return false;

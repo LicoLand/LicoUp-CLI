@@ -836,6 +836,7 @@ pub(super) mod test_scopes {
     /// Install one synthetic owned-process scope list for the current test
     /// thread. Production resolution is never consulted while an override is
     /// set.
+    #[cfg(unix)]
     pub(super) fn set(scopes: Option<Vec<OwnedProcessScope>>) {
         SCOPES.with(|slot| *slot.borrow_mut() = scopes);
     }
@@ -844,6 +845,7 @@ pub(super) mod test_scopes {
         SCOPES.with(|slot| slot.borrow().clone())
     }
 
+    #[cfg(unix)]
     pub(super) fn scope(
         scope_id: &str,
         pid: u32,
@@ -868,6 +870,7 @@ mod tests {
     use super::*;
     use serde_json::json;
     use std::path::PathBuf;
+    #[cfg(unix)]
     use std::process::{Child, Command, Stdio};
 
     struct PortableRoot {
@@ -920,6 +923,7 @@ mod tests {
             .unwrap_or_default()
     }
 
+    #[cfg(unix)]
     fn cleanup_group(pid: u32) {
         use std::time::Duration;
         if let Some(group) = OwnedProcessGroup::verify(pid) {

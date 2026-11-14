@@ -30,6 +30,7 @@ pub(super) struct LedgerEntry {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(not(any(test, target_os = "macos")), allow(dead_code))]
 pub(super) enum LedgerHead {
     Missing,
     Active {
@@ -131,6 +132,7 @@ impl LedgerEntry {
         Ok(())
     }
 
+    #[cfg(any(all(test, unix), target_os = "macos"))]
     pub(super) fn from_json(locator: &SecureRecordLocator, value: &str) -> Result<Self> {
         let entry: Self = serde_json::from_str(value)
             .map_err(|_| anyhow!("authorized_secure_record_ledger_entry_invalid"))?;
@@ -138,10 +140,12 @@ impl LedgerEntry {
         Ok(entry)
     }
 
+    #[cfg(any(all(test, unix), target_os = "macos"))]
     pub(super) fn to_json(&self) -> Result<String> {
         Ok(serde_json::to_string(self)?)
     }
 
+    #[cfg(any(test, target_os = "macos"))]
     pub(super) fn generation(&self) -> u64 {
         self.generation
     }
@@ -150,14 +154,17 @@ impl LedgerEntry {
         &self.entry_digest_sha256
     }
 
+    #[cfg(any(test, target_os = "macos"))]
     pub(super) fn target_record_digest_sha256(&self) -> &str {
         &self.target_record_digest_sha256
     }
 
+    #[cfg(any(test, target_os = "macos"))]
     pub(super) fn kind(&self) -> LedgerEntryKind {
         self.kind
     }
 
+    #[cfg(any(test, target_os = "macos"))]
     pub(super) fn record_value(&self) -> Option<&VersionedSecureRecord> {
         self.record.as_ref()
     }
@@ -192,6 +199,7 @@ impl LedgerHead {
     }
 }
 
+#[cfg(any(test, target_os = "macos"))]
 pub(super) fn reduce(
     locator: &SecureRecordLocator,
     entries: impl IntoIterator<Item = LedgerEntry>,

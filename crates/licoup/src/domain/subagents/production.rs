@@ -478,16 +478,24 @@ fn project_target(target: &Value, adapters: &AdapterRegistry) -> Option<Value> {
     {
         return None;
     }
-    Some(json!({
+    let mut projected = json!({
         "agentId": agent_id,
         "status": target.get("status").and_then(Value::as_str).unwrap_or("unknown"),
         "conversationDriver": target.pointer("/adapterCapabilities/conversationDriver").and_then(Value::as_str).unwrap_or("unavailable"),
-        "conversationReadiness": target.pointer("/adapterCapabilities/conversationReadiness").and_then(Value::as_str).unwrap_or("unverified"),
         "intelligenceCatalog": crate::domain::agent_intelligence_catalog::project_harness_catalog(agent_id, 8),
         "timeoutPolicy": crate::domain::dispatch_timeout_policy::policy_envelope(
             &crate::domain::dispatch_timeout_policy::load_or_default(),
         ),
-    }))
+    });
+    // Readiness evidence travels only while the host exposes it; an absent
+    // projection never fabricates an `unverified` verdict.
+    if let Some(readiness) = target
+        .pointer("/adapterCapabilities/conversationReadiness")
+        .and_then(Value::as_str)
+    {
+        projected["conversationReadiness"] = json!(readiness);
+    }
+    Some(projected)
 }
 
 fn project_host_failure(error: anyhow::Error) -> SubagentError {

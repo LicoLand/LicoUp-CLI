@@ -33,10 +33,10 @@ jobs:
           version="$(node -p 'require("./tools/cli-version.json").productVersion')"
           test "v${version}" = "${GITHUB_REF_NAME}"
           echo "VERSION=${version}" >> "${GITHUB_ENV}"
-      - name: Build the released binary
+      - name: Build the released binaries
         run: |
           node tools/scripts/cargo-client.mjs build --release --locked --target "${TARGET}" \
-            -p licoup --bin licoup
+            -p licoup --bin licoup -p licoup-public-gateway --bin lico-subagent-mcp
       - name: Write the release contract
         run: |
           out="build/crates/licoup/target/${TARGET}/release"
@@ -47,8 +47,8 @@ jobs:
           out="build/crates/licoup/target/${TARGET}/release"
           stage="build/release/licoup-${VERSION}-${TARGET}"
           mkdir -p "${stage}"
-          cp "${out}/licoup" "build/release/contract.json" "${stage}/"
-          tar -C "${stage}" -czf "build/release/licoup-${VERSION}-${TARGET}.tar.gz" licoup contract.json
+          cp "${out}/licoup" "${out}/lico-subagent-mcp" "build/release/contract.json" "${stage}/"
+          tar -C "${stage}" -czf "build/release/licoup-${VERSION}-${TARGET}.tar.gz" licoup lico-subagent-mcp contract.json
           (cd build/release && shasum -a 256 licoup-*.tar.gz > SHA256SUMS)
       - name: Publish the GitHub Release
         env:

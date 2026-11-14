@@ -79,7 +79,7 @@ fn write_new_private_tree_with_hook<'a>(
     result
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub(in crate::domain::collaboration_plugin) fn write_inspected_package_with_hook(
     package: &InspectedPackage,
     destination: &Path,
@@ -110,6 +110,13 @@ pub(in crate::domain::collaboration_plugin) struct SecureNewTree {
     parent: fs::File,
     #[cfg(unix)]
     root: fs::File,
+    /// Windows has no live directory descriptor to bind against; the created
+    /// tree is pinned by (volume serial, file index) the way the Unix branch
+    /// pins (dev, ino), so a displaced destination cannot alias it.
+    #[cfg(windows)]
+    bound_volume: u32,
+    #[cfg(windows)]
+    bound_index: u64,
 }
 
 impl SecureNewTree {
@@ -117,12 +124,11 @@ impl SecureNewTree {
         let parent_path = path
             .parent()
             .ok_or_else(|| anyhow!("collaboration_plugin_destination_parent_missing"))?;
-        let leaf = path
-            .file_name()
-            .ok_or_else(|| anyhow!("collaboration_plugin_destination_invalid"))?;
-
         #[cfg(unix)]
         {
+            let leaf = path
+                .file_name()
+                .ok_or_else(|| anyhow!("collaboration_plugin_destination_invalid"))?;
             let parent = open_directory_path_no_follow(parent_path)?;
             let leaf = component_cstring(leaf)?;
             // SAFETY: `parent` owns a live directory descriptor and `leaf` is a
@@ -162,9 +168,15 @@ impl SecureNewTree {
             );
             fs::create_dir(path)
                 .map_err(|_| anyhow!("collaboration_plugin_destination_must_be_new"))?;
+            #[cfg(windows)]
+            let (bound_volume, bound_index) = tree_file_identity(path)?;
             licoup_foundation::platform::file_security::harden_private_path(path)?;
             return Ok(Self {
                 path: path.to_path_buf(),
+                #[cfg(windows)]
+                bound_volume,
+                #[cfg(windows)]
+                bound_index,
             });
         }
     }
@@ -388,6 +400,14 @@ impl SecureNewTree {
                 metadata.is_dir() && !metadata.file_type().is_symlink(),
                 "collaboration_plugin_destination_changed"
             );
+            #[cfg(windows)]
+            {
+                let (volume, index) = tree_file_identity(&self.path)?;
+                ensure!(
+                    volume == self.bound_volume && index == self.bound_index,
+                    "collaboration_plugin_destination_changed"
+                );
+            }
         }
         Ok(())
     }
@@ -443,6 +463,7 @@ pub(in crate::domain::collaboration_plugin) fn open_directory_path_no_follow(
 /// itself rather than its target. A redirected leaf is rejected by the
 /// attribute check on the opened handle.
 #[cfg(not(unix))]
+#[allow(dead_code)]
 pub(in crate::domain::collaboration_plugin) fn open_directory_path_no_follow(
     path: &Path,
 ) -> Result<fs::File> {
@@ -665,4 +686,42 @@ fn create_directory_path_no_follow(path: &Path) -> Result<()> {
 #[cfg(not(unix))]
 fn set_private_file_permissions(_path: &Path) -> Result<()> {
     Ok(())
+}
+
+/// Returns the `(volume serial, file index)` pair for `path`, the Windows
+/// equivalent of the Unix `(dev, ino)` binding. The directory is opened with
+/// `FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT`, so the queried
+/// object is the path entry itself rather than a reparse target.
+#[cfg(windows)]
+fn tree_file_identity(path: &Path) -> Result<(u32, u64)> {
+    use std::os::windows::fs::OpenOptionsExt;
+    use std::os::windows::io::AsRawHandle;
+
+    const FILE_FLAG_BACKUP_SEMANTICS: u32 = 0x0200_0000;
+    const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
+
+    let directory = fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)
+        .open(path)
+        .map_err(|_| anyhow!("collaboration_plugin_destination_changed"))?;
+    let mut info = std::mem::MaybeUninit::<
+        windows_sys::Win32::Storage::FileSystem::BY_HANDLE_FILE_INFORMATION,
+    >::uninit();
+    // SAFETY: `info` points to writable BY_HANDLE_FILE_INFORMATION storage and
+    // `directory` keeps the queried handle alive for the duration of the call.
+    let ok = unsafe {
+        windows_sys::Win32::Storage::FileSystem::GetFileInformationByHandle(
+            directory.as_raw_handle() as windows_sys::Win32::Foundation::HANDLE,
+            info.as_mut_ptr(),
+        )
+    };
+    ensure!(ok != 0, "collaboration_plugin_destination_changed");
+    // SAFETY: `GetFileInformationByHandle` returned success, so `info` is fully
+    // initialized.
+    let info = unsafe { info.assume_init() };
+    Ok((
+        info.dwVolumeSerialNumber,
+        (u64::from(info.nFileIndexHigh) << 32) | u64::from(info.nFileIndexLow),
+    ))
 }

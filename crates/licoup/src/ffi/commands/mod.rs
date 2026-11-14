@@ -1101,6 +1101,23 @@ fn build_command_table() -> CommandTable {
         help: "Read the independent local Subagents MCP process status.",
     });
     table.register_command(CommandSpec {
+        source_module: "subagents.rs",
+        handler_name: "handle_mcp_stdio",
+        path: &["mcp", "stdio"],
+        required_positionals: &[],
+        options: &[OptionSpec {
+            name: "caller",
+            arity: OptionArity::Value,
+            repeatable: false,
+            value_kind: RequiredArgumentKind::Text,
+            required: false,
+        }],
+        constraints: &[],
+        cardinality: CommandCardinality::Options,
+        handler: subagents::handle_mcp_stdio,
+        help: "Serve the local Subagent MCP server over stdio.",
+    });
+    table.register_command(CommandSpec {
         source_module: "adapter.rs",
         handler_name: "handle_catalog",
         path: &["adapter", "catalog"],

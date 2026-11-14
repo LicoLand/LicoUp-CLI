@@ -1771,6 +1771,7 @@ fn session_bound_delegate_accepts_agent_and_prompt() {
 }
 
 #[test]
+#[cfg(unix)]
 fn test_subagent_workspace_isolation_facts() {
     let isolation = SubagentWorkspaceIsolation::new("/abs/workspace/path").unwrap();
     assert_eq!(isolation.working_directory, "/abs/workspace/path");
@@ -1900,6 +1901,7 @@ fn create_test_conversation(
 }
 
 #[test]
+#[cfg(unix)]
 fn test_atomic_admission_binds_member_profile_and_cwd_together() {
     let store = ConversationStore::open_in_memory().unwrap();
     let (conversation, by_provider) = create_test_conversation(&store, &["codex"]);
@@ -1973,6 +1975,7 @@ fn test_atomic_admission_binds_member_profile_and_cwd_together() {
 }
 
 #[test]
+#[cfg(unix)]
 fn test_atomic_admission_failure_rolls_back_and_leaves_no_half_member() {
     let store = ConversationStore::open_in_memory().unwrap();
     let (conversation, by_provider) = create_test_conversation(&store, &["codex"]);
@@ -2069,6 +2072,7 @@ fn test_atomic_admission_failure_rolls_back_and_leaves_no_half_member() {
 }
 
 #[test]
+#[cfg(unix)]
 fn test_resume_rejects_conflicting_working_directory_end_to_end() {
     let store = ConversationStore::open_in_memory().unwrap();
     let (conversation, by_provider) = create_test_conversation(&store, &["codex", "cursor"]);
@@ -2302,6 +2306,7 @@ fn test_continue_to_unseated_agent_does_not_auto_admit() {
 }
 
 #[test]
+#[cfg(unix)]
 fn test_delegate_records_cwd_without_replacing_native_session_identity() {
     let store = ConversationStore::open_in_memory().unwrap();
     let (conversation, by_provider) = create_test_conversation(&store, &["codex", "cursor"]);

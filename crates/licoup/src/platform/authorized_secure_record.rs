@@ -20,6 +20,7 @@ use crate::core::authorized_secure_record::{
 use ledger::{LedgerEntry, LedgerEntryKind, LedgerHead};
 
 const BACKEND: &str = "platform-user-presence-append-only-ledger-v1";
+#[cfg(any(all(test, unix), target_os = "macos"))]
 const MAX_GENERATIONS: u64 = 4_096;
 
 pub fn store() -> Arc<dyn AuthorizedSecureRecordStore> {
@@ -49,6 +50,7 @@ impl PlatformAuthorizedSecureRecordStore {
         }
     }
 
+    #[cfg(target_os = "macos")]
     fn session<'a>(
         &self,
         grant: &'a AuthorizedSecureRecordGrant,

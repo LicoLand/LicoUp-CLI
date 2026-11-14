@@ -212,10 +212,9 @@ pub(super) fn expected_server_runner_path(platform: &str, architecture: &str) ->
     } else {
         "licomesh-server-runner"
     };
-    PathBuf::from("runners")
-        .join(platform)
-        .join(architecture)
-        .join(executable)
+    // The runner path is a package-internal protocol path: it spells `/`
+    // separators on every host, never the native separator.
+    PathBuf::from(format!("runners/{platform}/{architecture}/{executable}"))
 }
 
 fn is_sha256(value: &str) -> bool {
@@ -319,11 +318,10 @@ pub(super) fn validate_relative_path(value: &str, code: &'static str) -> Result<
 }
 
 pub(super) fn normalized_relative_protocol_path(path: &Path) -> Result<String> {
-    validate_relative_path(
-        path.to_str()
-            .ok_or_else(|| anyhow!("collaboration_plugin_package_path_encoding_invalid"))?,
-        "collaboration_plugin_package_path_invalid",
-    )?;
+    // Componentize first so host-native separators normalize; validation then
+    // runs on the canonical `/`-joined form, which a native path can never
+    // smuggle a backslash through (on Unix `\` is a legal filename char and
+    // still fails the component charset check after joining).
     let parts = path
         .components()
         .map(|component| match component {
@@ -338,7 +336,9 @@ pub(super) fn normalized_relative_protocol_path(path: &Path) -> Result<String> {
         !parts.is_empty(),
         "collaboration_plugin_package_path_invalid"
     );
-    Ok(parts.join("/"))
+    let joined = parts.join("/");
+    validate_relative_path(&joined, "collaboration_plugin_package_path_invalid")?;
+    Ok(joined)
 }
 
 #[cfg(test)]

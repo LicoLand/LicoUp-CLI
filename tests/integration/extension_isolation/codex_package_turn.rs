@@ -212,7 +212,11 @@ impl Drop for Fixture {
 
 fn archive(files: &[(&str, Vec<u8>)]) -> Vec<u8> {
     let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-    let options = zip::write::SimpleFileOptions::default();
+    // A published artifact travels deflated; an uncompressed Linux debug
+    // binary exceeds the 8 MiB archive ceiling while the same program
+    // compresses well under it.
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
     for (name, content) in files {
         writer.start_file(*name, options).expect("start file");
         writer.write_all(content).expect("write file");
@@ -254,15 +258,38 @@ fn manifest_json() -> Vec<u8> {
     .into_bytes()
 }
 
+/// The program bytes the way a published package carries them: a debug
+/// profile build embeds its debuginfo (37 MiB on Linux vs 3.4 MiB on macOS,
+/// where symbols live in the .dSYM), so it is stripped of debug sections first
+/// — the artifact stays inside the real archive ceiling on every host.
+fn packaged_program_bytes(program: &Path) -> Vec<u8> {
+    #[cfg(unix)]
+    {
+        let stripped = std::env::temp_dir()
+            .join(format!("lico-agent-codex-strip-{}", std::process::id()));
+        std::fs::copy(program, &stripped).expect("strip staging is writable");
+        let ok = std::process::Command::new("strip")
+            .arg(&stripped)
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false);
+        let bytes = std::fs::read(if ok { &stripped } else { program })
+            .expect("the compiled package program is readable");
+        let _ = std::fs::remove_file(&stripped);
+        bytes
+    }
+    #[cfg(not(unix))]
+    {
+        std::fs::read(program).expect("the compiled package program is readable")
+    }
+}
+
 /// Import the compiled package program as an installed package archive.
 fn install_package(fixture: &Fixture) -> PathBuf {
     let program = package_program();
     let bytes = archive(&[
         ("manifest.json", manifest_json()),
-        (
-            "bin/lico-agent-codex",
-            std::fs::read(&program).expect("the compiled package program is readable"),
-        ),
+        ("bin/lico-agent-codex", packaged_program_bytes(&program)),
     ]);
     let store = PackageStore::open(fixture.root()).expect("package store");
     store
