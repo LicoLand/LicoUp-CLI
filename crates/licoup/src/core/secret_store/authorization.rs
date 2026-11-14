@@ -14,13 +14,20 @@ use crate::core::security_capability::CapabilityEvaluationReport;
 
 pub const MAX_SECRET_STORE_PRESENCE_GRANT_TTL: Duration = Duration::from_secs(30);
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const MAX_REASON_BYTES: usize = 512;
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const MAX_NONCE_BYTES: usize = 256;
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const MAX_SCOPE_COMPONENT_BYTES: usize = 512;
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const MAX_BATCH_OPERATION_COUNT: usize = 4_096;
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const GRANT_AVAILABLE: u8 = 0;
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const GRANT_CONSUMED: u8 = 1;
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const GRANT_EXPIRED: u8 = 2;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -31,6 +38,7 @@ pub enum SecretStorePresenceProvider {
 }
 
 impl SecretStorePresenceProvider {
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     fn tag(self) -> &'static [u8] {
         match self {
             Self::MacosKeychain => b"macos-keychain",
@@ -88,6 +96,7 @@ pub enum SecretStoreOperation {
 }
 
 impl SecretStoreOperation {
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     fn tag(self) -> &'static [u8] {
         match self {
             Self::Read => b"read",
@@ -107,6 +116,7 @@ pub enum PresenceDecision {
 #[derive(Clone, Eq, PartialEq)]
 pub struct SecretStorePresenceNonce(String);
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 impl SecretStorePresenceNonce {
     pub(crate) fn new(value: impl Into<String>) -> Result<Self> {
         let value = value.into();
@@ -128,6 +138,7 @@ impl fmt::Debug for SecretStorePresenceNonce {
 #[derive(Clone, Eq, PartialEq)]
 pub struct SecretStorePresencePurpose(String);
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 impl SecretStorePresencePurpose {
     pub(crate) fn new(value: impl Into<String>) -> Result<Self> {
         let value = value.into();
@@ -147,6 +158,7 @@ impl fmt::Debug for SecretStorePresencePurpose {
 }
 
 #[derive(Clone)]
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub struct SecretStorePresenceBatchRequest {
     provider: SecretStorePresenceProvider,
     key_class: SecretStoreKeyClass,
@@ -157,6 +169,7 @@ pub struct SecretStorePresenceBatchRequest {
     canonical_digest: [u8; 32],
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 impl SecretStorePresenceBatchRequest {
     pub(crate) fn new(
         provider: SecretStorePresenceProvider,
@@ -247,6 +260,7 @@ impl fmt::Debug for SecretStorePresenceBatchRequest {
 }
 
 #[derive(Clone)]
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub struct SecretStorePresenceScope {
     operation: SecretStoreOperation,
     namespace: String,
@@ -254,6 +268,7 @@ pub struct SecretStorePresenceScope {
     canonical_digest: [u8; 32],
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 impl SecretStorePresenceScope {
     pub(crate) fn new(
         operation: SecretStoreOperation,
@@ -289,6 +304,7 @@ impl fmt::Debug for SecretStorePresenceScope {
     }
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub struct SecretStoreApprovedPresenceBatch {
     binding_digest: [u8; 32],
     expires_at: Option<Instant>,
@@ -296,6 +312,7 @@ pub struct SecretStoreApprovedPresenceBatch {
     issued_count: AtomicUsize,
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 impl SecretStoreApprovedPresenceBatch {
     pub(crate) fn approve(
         request: &SecretStorePresenceBatchRequest,
@@ -400,6 +417,7 @@ impl fmt::Debug for SecretStoreApprovedPresenceBatch {
     }
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 struct PresenceGrantInner {
     batch_binding_digest: [u8; 32],
     scope_digest: [u8; 32],
@@ -410,8 +428,10 @@ struct PresenceGrantInner {
     state: AtomicU8,
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub struct SecretStorePresenceGrant(PresenceGrantInner);
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 impl SecretStorePresenceGrant {
     pub(crate) fn consume(
         &self,
@@ -493,6 +513,7 @@ impl fmt::Debug for SecretStorePresenceGrant {
     }
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 struct ConsumedPresenceInner {
     batch_binding_digest: [u8; 32],
     scope_digest: [u8; 32],
@@ -502,8 +523,10 @@ struct ConsumedPresenceInner {
     expires_at: Option<Instant>,
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub struct SecretStoreConsumedPresence(ConsumedPresenceInner);
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 impl SecretStoreConsumedPresence {
     pub(crate) fn batch_binding_digest(&self) -> [u8; 32] {
         self.0.batch_binding_digest
@@ -708,6 +731,7 @@ impl SecretStoreAuthorizationSession {
         }
     }
 
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     pub(crate) fn with_presence_binding(
         mut self,
         binding_digest: [u8; 32],
@@ -721,10 +745,12 @@ impl SecretStoreAuthorizationSession {
         self
     }
 
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     pub(crate) fn presence_binding_digest(&self) -> Option<[u8; 32]> {
         self.presence_binding_digest
     }
 
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     pub(crate) fn request_digest(&self) -> [u8; 32] {
         self.request_digest
     }
@@ -881,6 +907,7 @@ impl PartialEq for SecretStoreAuthorizationSession {
 
 impl Eq for SecretStoreAuthorizationSession {}
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn validate_context_value(value: &str, max_bytes: usize) -> Result<()> {
     if value.trim().is_empty() || value.len() > max_bytes || value.contains('\0') {
         return Err(SecretStorePresenceError::new("secure_mesh_presence_context_invalid").into());
@@ -902,10 +929,12 @@ fn update_length_prefixed(hasher: &mut Sha256, value: &[u8]) {
     hasher.update(value);
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub(crate) fn digest_matches(left: &[u8; 32], right: &[u8; 32]) -> bool {
     bool::from(left.ct_eq(right))
 }
 
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub(crate) fn derive_presence_binding_digest(
     domain: &[u8],
     fields: impl IntoIterator<Item = impl AsRef<[u8]>>,

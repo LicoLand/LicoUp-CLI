@@ -172,27 +172,33 @@ fn map_error(error: RegistrationError) -> AntigravitySubagentMcpError {
     }
 }
 
-/// Resolve the packaged thin connector in the desktop's sidecar directory.
-///
-/// Registration must use the bundled sidecar in an app bundle
-/// (`Contents/MacOS/lico-subagent-mcp`), never a workspace
-/// `target/release` or `target/debug` cargo artifact.
+/// Resolve the packaged MCP connector binary, preferring `lico-subagent-mcp`
+/// and falling back to the bundled `licoup` CLI (`licoup mcp stdio`), never a
+/// workspace `target/release` or `target/debug` cargo artifact.
 pub fn default_mcp_binary_path() -> Option<PathBuf> {
-    let name = format!("lico-subagent-mcp{}", std::env::consts::EXE_SUFFIX);
+    let connector_name = format!("lico-subagent-mcp{}", std::env::consts::EXE_SUFFIX);
+    let cli_name = format!("licoup{}", std::env::consts::EXE_SUFFIX);
     if let Some(directory) = std::env::current_exe()
         .ok()
         .as_ref()
         .and_then(|exe| licoup_foundation::platform::paths::packaged_binary_directory(exe))
+        && (is_macos_bundle_macos_dir(&directory) || !is_cargo_target_artifact_dir(&directory))
     {
-        let connector = directory.join(&name);
-        if connector.is_file()
-            && (is_macos_bundle_macos_dir(&directory) || !is_cargo_target_artifact_dir(&directory))
-        {
-            return Some(connector);
+        for name in [&connector_name, &cli_name] {
+            let candidate = directory.join(name);
+            if candidate.is_file() {
+                return Some(candidate);
+            }
         }
     }
-    let bundled = PathBuf::from("/Applications/LicoUp.app/Contents/MacOS").join(name);
-    bundled.is_file().then_some(bundled)
+    let bundle_dir = Path::new("/Applications/LicoUp.app/Contents/MacOS");
+    for name in [connector_name, cli_name] {
+        let bundled = bundle_dir.join(name);
+        if bundled.is_file() {
+            return Some(bundled);
+        }
+    }
+    None
 }
 
 fn is_macos_bundle_macos_dir(directory: &Path) -> bool {

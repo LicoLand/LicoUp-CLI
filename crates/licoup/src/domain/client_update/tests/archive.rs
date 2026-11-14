@@ -80,6 +80,7 @@ fn client_update_zip_extraction_rejects_traversal_entries() {
 }
 
 #[test]
+#[cfg(unix)]
 fn client_update_zip_extraction_accepts_only_contained_relative_symbolic_links() {
     let root = temporary_root("licoup-update-zip-contained-link");
     let archive_path = root.join("client-update.zip");

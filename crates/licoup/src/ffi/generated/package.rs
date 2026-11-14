@@ -99,8 +99,8 @@ pub enum PackageRegistrationOwner {
     CursorMcp,
     #[serde(rename = "antigravity-mcp")]
     AntigravityMcp,
-    #[serde(rename = "codex-plugin")]
-    CodexPlugin,
+    #[serde(rename = "codex-mcp")]
+    CodexMcp,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]

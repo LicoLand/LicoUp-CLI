@@ -167,6 +167,7 @@ pub struct AuthorizedSecureRecordGrant {
     issued_for_process: u32,
     expires_at: Instant,
     consumed: Arc<AtomicUsize>,
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     platform_context: Arc<dyn Any + Send + Sync>,
 }
 
@@ -221,6 +222,7 @@ impl AuthorizedSecureRecordGrant {
         Ok(())
     }
 
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     pub(crate) fn platform_context<T>(&self) -> Result<&T>
     where
         T: Any + Send + Sync,

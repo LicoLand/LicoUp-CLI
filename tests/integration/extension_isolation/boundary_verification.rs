@@ -33,10 +33,11 @@ use licoup::platform::extension_host::isolation::{
 use serde_json::json;
 
 use crate::support::{
-    Sandbox, activate, carrier, carrier_spec, host_of, payload_of, pid_alive, policy, programs,
-    python_program, python_runtime, read_text, reference_sample, reference_sdk_dir, settle,
-    shell_program, wait_for,
+    Sandbox, activate, carrier, carrier_result, carrier_spec, host_of, pid_alive, policy, programs,
+    python_program, python_runtime, read_text, settle, shell_program, wait_for,
 };
+#[cfg(target_os = "macos")]
+use crate::support::{payload_of, reference_sample, reference_sdk_dir};
 
 /// A declaration for the record tests, without any process behind it.
 fn declaration(instance_id: &str) -> ResourceDeclaration {
@@ -82,6 +83,7 @@ fn descendant_outcome(instance: &Path) -> String {
     read_text(&path).expect("descendant outcome")
 }
 
+#[cfg(target_os = "macos")]
 fn root_outcome(instance: &Path) -> String {
     let path = instance.join("root.outcome");
     assert!(
@@ -469,22 +471,33 @@ fn a_restricted_program_that_needs_descendants_is_refused() {
     )
     .with_requires_descendants();
 
-    let restricted = carrier(
+    match carrier_result(
         programs("acme.needs.children/ext", "1.0.0", program.clone()),
         policy(IsolationMode::Restricted, sandbox.root()),
-    );
-    let restricted_host = host_of(restricted.clone());
-    let failure = activate(
-        &restricted_host,
-        "acme.needs.children/ext",
-        &["acme.needs.children/run"],
-    )
-    .expect_err("a restricted instance is one process");
-    assert_eq!(failure.code, "extension_isolation_descendants_unsupported");
-    assert!(
-        restricted.facts("instance-1").is_none(),
-        "nothing was created"
-    );
+    ) {
+        Ok(restricted) => {
+            // Seatbelt confinement exists, so the descendant requirement itself
+            // is the named refusal once activation reaches it.
+            let restricted_host = host_of(restricted.clone());
+            let failure = activate(
+                &restricted_host,
+                "acme.needs.children/ext",
+                &["acme.needs.children/run"],
+            )
+            .expect_err("a restricted instance is one process");
+            assert_eq!(failure.code, "extension_isolation_descendants_unsupported");
+            assert!(
+                restricted.facts("instance-1").is_none(),
+                "nothing was created"
+            );
+        }
+        Err(failure) => {
+            // Filesystem and network confinement are implemented for macOS
+            // seatbelt in this build; other hosts refuse the restricted mode at
+            // carrier construction rather than starting anything.
+            assert_eq!(failure.code, "extension_isolation_unavailable");
+        }
+    }
 
     // The same declaration is honest in trusted local mode, where descendants
     // are allowed and the release is scoped accordingly.

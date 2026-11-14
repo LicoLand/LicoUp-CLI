@@ -4,17 +4,27 @@
 //! The host CLI (same uid) pushes a handoff or clear message after authorize /
 //! clear. Secrets never land on disk; only the live socket carries them.
 
+use crate::credential::GatewayCredentialSlot;
 #[cfg(unix)]
-use crate::credential::{GatewayCredentialHandoff, GatewayCredentialSlot, LlmApiKeyProvider};
-use anyhow::{Result, anyhow, ensure};
+use crate::credential::{GatewayCredentialHandoff, LlmApiKeyProvider};
+#[cfg(unix)]
+use anyhow::ensure;
+use anyhow::{Result, anyhow};
+#[cfg(unix)]
 use serde_json::{Value, json};
+#[cfg(unix)]
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
+#[cfg(unix)]
+use std::sync::atomic::Ordering;
+#[cfg(unix)]
 use std::thread;
+#[cfg(unix)]
 use std::time::Duration;
 
+#[cfg(unix)]
 const MAX_CONTROL_BYTES: usize = 4 * 1024 * 1024;
 const CONTROL_SOCKET_NAME: &str = "credentials.sock";
 
@@ -190,11 +200,13 @@ fn peer_uid_allowed(stream: &std::os::unix::net::UnixStream) -> bool {
     rc == 0 && uid == unsafe { libc::getuid() }
 }
 
+#[cfg(unix)]
 fn write_framed(stream: &mut impl Write, value: &Value) -> Result<()> {
     let bytes = serde_json::to_vec(value)?;
     write_framed_bytes(stream, &bytes)
 }
 
+#[cfg(unix)]
 fn write_framed_bytes(stream: &mut impl Write, payload: &[u8]) -> Result<()> {
     ensure!(
         payload.len() <= MAX_CONTROL_BYTES,
@@ -208,6 +220,7 @@ fn write_framed_bytes(stream: &mut impl Write, payload: &[u8]) -> Result<()> {
     Ok(())
 }
 
+#[cfg(unix)]
 fn read_framed_bytes(stream: &mut impl Read) -> Result<Vec<u8>> {
     let mut header = [0u8; 4];
     stream.read_exact(&mut header)?;
@@ -223,6 +236,7 @@ fn read_framed_bytes(stream: &mut impl Read) -> Result<Vec<u8>> {
     Ok(payload)
 }
 
+#[cfg(unix)]
 fn read_framed_json(stream: &mut impl Read) -> Result<Value> {
     let payload = read_framed_bytes(stream)?;
     serde_json::from_slice(&payload)

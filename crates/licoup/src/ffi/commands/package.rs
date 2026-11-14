@@ -58,7 +58,7 @@ use crate::platform::extension_packages::{
     switched_on, write_drained_record,
 };
 use crate::platform::package_registration_release::{
-    CodexPluginRelease, PackageRegistrationOwners, ProviderMcpRelease, ReleaseInputs,
+    PackageRegistrationOwners, ProviderMcpRelease, ReleaseInputs,
 };
 
 /// The report every package route publishes.
@@ -1118,6 +1118,7 @@ fn release_inputs(value: &Value) -> Result<ReleaseInputs> {
             Some("claude-code") => {
                 crate::platform::provider_mcp_registration::ProviderConfigKind::ClaudeCode
             }
+            Some("codex") => crate::platform::provider_mcp_registration::ProviderConfigKind::Codex,
             _ => return Err(anyhow!("package_registration_provider_unknown")),
         };
         inputs = inputs.with_provider_mcp(ProviderMcpRelease {
@@ -1135,21 +1136,6 @@ fn release_inputs(value: &Value) -> Result<ReleaseInputs> {
                     .ok_or_else(|| anyhow!("package_registration_config_path_missing"))?,
             ),
             approved_digest: provider
-                .get("approvedDigest")
-                .and_then(Value::as_str)
-                .ok_or_else(|| anyhow!("package_registration_approval_missing"))?
-                .to_owned(),
-        });
-    }
-    if let Some(plugin) = value.get("codexPlugin").filter(|value| !value.is_null()) {
-        inputs = inputs.with_codex_plugin(CodexPluginRelease {
-            executable: PathBuf::from(
-                plugin
-                    .get("executable")
-                    .and_then(Value::as_str)
-                    .ok_or_else(|| anyhow!("package_registration_executable_missing"))?,
-            ),
-            approved_digest: plugin
                 .get("approvedDigest")
                 .and_then(Value::as_str)
                 .ok_or_else(|| anyhow!("package_registration_approval_missing"))?
@@ -1475,11 +1461,13 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn a_relative_data_root_or_archive_is_refused_before_any_store_is_opened() {
         assert!(data_home_for_test("relative/root").is_err());
         assert!(data_home_for_test("/absolute/root").is_ok());
     }
 
+    #[cfg(unix)]
     fn data_home_for_test(root: &str) -> Result<PathBuf> {
         let root = PathBuf::from(root);
         if !root.is_absolute() {
@@ -1501,7 +1489,7 @@ mod tests {
         .expect("provider inputs");
         let owners = PackageRegistrationOwners::new(inputs);
         assert!(owners.can_release(RegistrationOwner::CursorMcp));
-        assert!(!owners.can_release(RegistrationOwner::CodexPlugin));
+        assert!(!owners.can_release(RegistrationOwner::CodexMcp));
         assert!(release_inputs(&json!({"providerMcp": {"kind": "unknown"}})).is_err());
         let released = owners
             .release(&RecordedRegistration::new(

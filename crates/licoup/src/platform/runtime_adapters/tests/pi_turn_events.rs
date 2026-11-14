@@ -9,15 +9,20 @@
 //! package's port is fail-closed without that answer, so the observation cannot
 //! be made from the package's own suite.
 
+#[cfg(unix)]
 use super::super::super::native_agent_interaction;
 use super::super::super::turn_event_emit::{self, StreamSinkGuard};
 use crate::platform::pi_turn_event_port;
+#[cfg(unix)]
 use licoup_agent_pi::driver::params::ProtocolConfig;
 use licoup_agent_pi::driver::{ControlDisposition, execute, steer};
+#[cfg(unix)]
 use licoup_agent_pi::parser::{PiProtocol, ProtocolEffect};
 use serde_json::{Value, json};
 use std::fs;
-use std::path::{Path, PathBuf};
+#[cfg(unix)]
+use std::path::Path;
+use std::path::PathBuf;
 use std::time::Duration;
 
 /// The fake `pi --mode rpc --offline` program these suites run.
@@ -208,6 +213,7 @@ fn the_consumer_receives_the_bound_pi_turn_before_native_guidance() {
 }
 
 #[test]
+#[cfg(unix)]
 fn the_consumer_receives_one_parked_pi_interaction_and_resolves_it_once() {
     install_pi_turn_event_port();
     let captured = std::sync::Arc::new(std::sync::Mutex::new(Vec::<Value>::new()));

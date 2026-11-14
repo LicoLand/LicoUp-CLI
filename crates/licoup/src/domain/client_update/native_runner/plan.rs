@@ -228,7 +228,7 @@ fn parent_gui_pid() -> Result<u32> {
     found.ok_or_else(|| anyhow!("client update gui process is not resolvable"))
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub(in crate::domain::client_update) fn ensure_guarded_target_for_test(
     target: &Path,
 ) -> Result<()> {

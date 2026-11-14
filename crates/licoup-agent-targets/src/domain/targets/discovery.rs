@@ -317,17 +317,26 @@ fn read_only_target_projection(candidate: &TargetCandidate) -> Value {
         .and_then(|catalog| catalog.get("defaultModel"))
         .and_then(Value::as_str)
         .filter(|model| !model.is_empty());
+    let mut adapter_capabilities = json!({
+        "conversationDriver": candidate.adapter_capabilities.conversation_driver,
+        "conversationBlocker": candidate.adapter_capabilities.conversation_blocker,
+    });
+    // Evidence fields ride only with the diagnostic surface: they exist in a
+    // candidate exactly while the host exposes them.
+    if let Some(readiness) = &candidate.adapter_capabilities.conversation_readiness {
+        adapter_capabilities["conversationReadiness"] = json!(readiness);
+        adapter_capabilities["conversationConsecutivePasses"] = json!(
+            candidate
+                .adapter_capabilities
+                .conversation_consecutive_passes
+        );
+    }
     json!({
         "target": candidate.target,
         "status": candidate.status,
         "model": model,
         "location": candidate.location,
-        "adapterCapabilities": {
-            "conversationDriver": candidate.adapter_capabilities.conversation_driver,
-            "conversationReadiness": candidate.adapter_capabilities.conversation_readiness,
-            "conversationBlocker": candidate.adapter_capabilities.conversation_blocker,
-            "conversationConsecutivePasses": candidate.adapter_capabilities.conversation_consecutive_passes,
-        },
+        "adapterCapabilities": adapter_capabilities,
         "supportedActions": candidate.supported_actions,
     })
 }

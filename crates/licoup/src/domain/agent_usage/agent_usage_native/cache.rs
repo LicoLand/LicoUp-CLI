@@ -11,6 +11,7 @@ use rusqlite::{
     Connection, OptionalExtension, Statement, Transaction, TransactionBehavior, params,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[cfg(any(unix, test))]
 use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;

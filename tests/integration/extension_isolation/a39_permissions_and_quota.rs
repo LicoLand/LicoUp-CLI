@@ -7,23 +7,32 @@
 //! the record that keeps the granted envelope. Where this host has no control,
 //! the case asserts the refusal instead of a fabricated pass.
 
+#[cfg(target_os = "macos")]
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 
+#[cfg(target_os = "macos")]
 use licoup::platform::extension_host::ExtensionCarrier;
+#[cfg(unix)]
+use licoup::platform::extension_host::isolation::LimitScope;
+#[cfg(target_os = "macos")]
+use licoup::platform::extension_host::isolation::ReleaseScope;
 use licoup::platform::extension_host::isolation::{
-    IsolationMode, IsolationRecord, LimitScope, NetworkGrant, PlatformConfinement, ReleaseScope,
-    ResolvedProgram, ResourceLimits, RevocationReason, StaticPrograms,
+    IsolationMode, IsolationRecord, NetworkGrant, PlatformConfinement, ResolvedProgram,
+    ResourceLimits, RevocationReason, StaticPrograms,
 };
 use serde_json::json;
 
 use crate::support::{
-    Sandbox, activate, carrier, carrier_result, carrier_spec, failure_of, host_of, payload_of,
-    pid_alive, policy, programs, python_program, python_runtime, read_text, settle, shell_program,
-    wait_for,
+    Sandbox, activate, carrier, carrier_result, host_of, payload_of, policy, programs, settle,
+    shell_program,
 };
+#[cfg(target_os = "macos")]
+use crate::support::{carrier_spec, python_program, python_runtime, read_text, wait_for};
+#[cfg(unix)]
+use crate::support::{failure_of, pid_alive};
 
 #[test]
 fn the_capability_report_matches_what_this_host_can_enforce() {

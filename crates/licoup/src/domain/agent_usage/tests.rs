@@ -96,8 +96,8 @@ fn command_scan_keeps_schema_modes_dimensions_and_privacy_boundary() {
     assert!(!serialized.contains("private-local-response-canary"));
     assert!(!serialized.contains(&history_root.to_string_lossy().to_string()));
 
-    fs::remove_dir_all(history_root).unwrap();
-    fs::remove_dir_all(state_root).unwrap();
+    let _ = fs::remove_dir_all(history_root);
+    let _ = fs::remove_dir_all(state_root);
 }
 
 #[test]
@@ -133,8 +133,8 @@ fn command_custom_window_and_retained_report_close_independently() {
     let reports = listed["reports"].as_array().map(Vec::len).unwrap_or(0);
     assert_eq!(reports, 1);
 
-    fs::remove_dir_all(history_root).unwrap();
-    fs::remove_dir_all(state_root).unwrap();
+    let _ = fs::remove_dir_all(history_root);
+    let _ = fs::remove_dir_all(state_root);
 }
 
 #[test]
@@ -186,8 +186,8 @@ fn command_kimi_code_keeps_exact_turn_and_session_usage_with_model_dimension() {
         history["dailyUsage"][0]["modelTokenUsage"]["moonshotai/kimi-k3"]["variants"]["Max"]["totalTokens"],
         65
     );
-    fs::remove_dir_all(history_root).unwrap();
-    fs::remove_dir_all(state_root).unwrap();
+    let _ = fs::remove_dir_all(history_root);
+    let _ = fs::remove_dir_all(state_root);
 }
 
 #[test]
@@ -293,8 +293,8 @@ fn command_hermes_uses_declared_stored_counters_without_text_estimates() {
     assert_eq!(history["dailyUsage"][0]["requestCount"], 3);
     assert_eq!(result["agents"][0]["confidence"], "high");
 
-    fs::remove_dir_all(history_root).unwrap();
-    fs::remove_dir_all(state_root).unwrap();
+    let _ = fs::remove_dir_all(history_root);
+    let _ = fs::remove_dir_all(state_root);
 }
 
 #[test]
@@ -355,7 +355,7 @@ fn catalog_agents_without_historical_usage_sources_report_explicit_unavailabilit
             "native_usage_source_unavailable"
         );
     }
-    fs::remove_dir_all(state_root).unwrap();
+    let _ = fs::remove_dir_all(state_root);
 }
 
 #[test]
@@ -376,8 +376,8 @@ fn lico_agent_native_transcript_preserves_exact_model_and_request_effort_without
             ["High"]["totalTokens"],
         15
     );
-    fs::remove_dir_all(history_root).unwrap();
-    fs::remove_dir_all(state_root).unwrap();
+    let _ = fs::remove_dir_all(history_root);
+    let _ = fs::remove_dir_all(state_root);
 }
 
 /// A store this client cannot open stays a reported refusal.
@@ -435,6 +435,6 @@ fn an_unopenable_metering_store_is_a_reported_refusal() {
         "the refusal surfaces through the verb's error channel: {error}"
     );
 
-    fs::remove_dir_all(broken).unwrap();
-    fs::remove_dir_all(healthy).unwrap();
+    let _ = fs::remove_dir_all(broken);
+    let _ = fs::remove_dir_all(healthy);
 }

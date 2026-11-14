@@ -5,6 +5,7 @@ use std::process::Command;
 pub const CAPABILITY_COLLABORATION_LOOPBACK: &str = "platform-loopback-isolated-runtime-v1";
 
 /// The platform's sandbox runner.
+#[cfg(target_os = "macos")]
 const SANDBOX_EXEC: &str = "/usr/bin/sandbox-exec";
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]

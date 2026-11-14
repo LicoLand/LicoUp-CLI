@@ -635,7 +635,7 @@ fn is_conversation_uuid_component(value: &str) -> bool {
         })
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
     use std::fs::File;
@@ -692,6 +692,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn messages_with_their_own_timestamps_are_left_alone() {
         let directory =
             std::env::temp_dir().join(format!("lico-transcript-keep-{}", std::process::id()));

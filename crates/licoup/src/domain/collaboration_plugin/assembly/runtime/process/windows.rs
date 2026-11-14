@@ -1,8 +1,8 @@
-use anyhow::{Result, anyhow, ensure};
+use anyhow::{Result, ensure};
 use sha2::{Digest, Sha256};
 use std::ffi::OsString;
 use std::os::windows::ffi::{OsStrExt, OsStringExt};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use windows_sys::Win32::Foundation::{
     CloseHandle, ERROR_INVALID_PARAMETER, FILETIME, GetLastError, HANDLE, STILL_ACTIVE,
 };

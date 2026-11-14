@@ -1046,18 +1046,32 @@ pub fn lane_capabilities(params: &Value) -> Result<Value> {
         .into_iter()
         .collect();
 
-    Ok(json!({
+    let mut payload = json!({
         "ok": true,
         "agentId": adapter.id(),
         "laneFamily": lane_family(adapter),
         "driverId": adapter.driver_id(),
         "runtimeProtocol": adapter.runtime_protocol(),
         "driverStatus": profile.as_ref().map(|p| p.driver_status.clone()).unwrap_or_default(),
-        "readiness": profile.as_ref().map(|p| p.readiness.clone()).unwrap_or_else(|| "unverified".to_string()),
         "blockerCodes": blocker_codes,
-        "summaryCodes": profile.as_ref().map(|p| p.summary_codes.clone()).unwrap_or_default(),
         "capabilities": matrix
-    }))
+    });
+    // Evidence states are a debug diagnostic surface, not lane capability.
+    if licoup_foundation::platform::debug::debug_enabled() {
+        payload["readiness"] = json!(
+            profile
+                .as_ref()
+                .map(|p| p.readiness.clone())
+                .unwrap_or_else(|| "unverified".to_string())
+        );
+        payload["summaryCodes"] = json!(
+            profile
+                .as_ref()
+                .map(|p| p.summary_codes.clone())
+                .unwrap_or_default()
+        );
+    }
+    Ok(payload)
 }
 
 /// Verified agent discovery for channel admission. Discovery is not admission:
@@ -1586,9 +1600,22 @@ mod tests {
         let capabilities = lane_capabilities(&json!({"agent": "deepseek-harness"})).unwrap();
         assert_eq!(capabilities["capabilities"]["streaming"], false);
         assert_eq!(capabilities["capabilities"]["cancel"], false);
-        assert_eq!(capabilities["readiness"], "unverified");
+        // Evidence stays off the normal surface; the capability matrix and
+        // the structural blocker slot remain.
+        assert!(capabilities.get("readiness").is_none());
+        assert!(capabilities.get("summaryCodes").is_none());
         assert_eq!(capabilities["blockerCodes"], json!([]));
+    }
+
+    #[test]
+    fn lane_capabilities_surface_evidence_only_under_debug() {
+        let previous =
+            licoup_foundation::platform::debug::set_debug_diagnostics_override(Some(true));
+        let capabilities = lane_capabilities(&json!({"agent": "deepseek-harness"})).unwrap();
+        licoup_foundation::platform::debug::set_debug_diagnostics_override(previous);
+        assert_eq!(capabilities["readiness"], "unverified");
         assert_eq!(capabilities["summaryCodes"], json!(["evidence_missing"]));
+        assert_eq!(capabilities["blockerCodes"], json!([]));
     }
 
     #[test]
@@ -1600,7 +1627,7 @@ mod tests {
         assert_eq!(caps["blockerCodes"], json!([]));
         let claude = lane_capabilities(&json!({"agent": "claude-code"})).unwrap();
         assert_eq!(claude["capabilities"]["exactResume"], true);
-        assert_eq!(claude["readiness"], "unverified");
+        assert!(claude.get("readiness").is_none());
         assert_eq!(claude["blockerCodes"], json!([]));
     }
 

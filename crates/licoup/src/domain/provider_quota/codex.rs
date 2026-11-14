@@ -28,6 +28,7 @@ const WHAM_USAGE_URL: &str = "https://chatgpt.com/backend-api/wham/usage";
 const APP_SERVER_CONNECT_TIMEOUT: Duration = Duration::from_secs(8);
 const APP_SERVER_READ_TIMEOUT: Duration = Duration::from_secs(3);
 const MAX_APP_SERVER_OUTPUT_BYTES: usize = 256 * 1024;
+#[cfg(unix)]
 const SHUTDOWN_GRACE: Duration = Duration::from_millis(800);
 const POLL_INTERVAL: Duration = Duration::from_millis(20);
 const LUNA_RESERVE_LABEL: &str = "Luna Reserve";

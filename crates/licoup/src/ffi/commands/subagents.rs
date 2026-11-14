@@ -18,7 +18,24 @@ use licoup_application::{
     ActorClaim, ApplicationCommand, ApplicationFailure, AssistantCommand, CallbackDecision,
     CancelRequest, CommandResolution, DispatchRequest, SubagentCommand, TaskType,
 };
+use licoup_public_gateway::{
+    McpApplication, McpApplicationError, McpServerDefinition, McpServerEngine, McpToolCallContext,
+    serve_stdio,
+};
 use serde_json::{Map, Value, json};
+use std::io::{self, BufRead, Write};
+
+const REMOTE_TOOL_NAMES: &[&str] = &[
+    "lico_subagents_list",
+    "lico_subagent_probe",
+    "lico_subagent_delegate",
+    "lico_subagent_continue",
+    "lico_subagent_cancel",
+];
+
+const MCP_PROTOCOL_REVISION: &str = "2025-06-18";
+const MCP_SERVER_NAME: &str = "lico-up-subagents";
+const MCP_MAX_FRAME_BYTES: usize = 64 * 1024;
 
 /// Stable identifier of the error envelope this surface publishes.
 const SUBAGENT_ERROR_SCHEMA: &str = "licoup.subagent.error.v1";
@@ -54,6 +71,158 @@ pub(super) fn handle_mcp_status(_: AdmittedCommand) -> Result<CliExecution> {
     lifecycle("status", None)
 }
 
+pub(super) fn handle_mcp_stdio(command: AdmittedCommand) -> Result<CliExecution> {
+    let caller_arg = command.option_text("caller");
+    let env_caller = std::env::var("LICOUP_MCP_CALLER_PROVIDER").ok();
+    let scope = CallerScopeEnv {
+        conversation_id: read_nonempty_env("LICOUP_MCP_CONVERSATION_ID"),
+        membership_id: read_nonempty_env("LICOUP_MCP_MEMBERSHIP_ID"),
+        parent_dispatch_id: read_nonempty_env("LICOUP_MCP_PARENT_DISPATCH_ID"),
+    };
+    let _ = serve_mcp_stdio(
+        caller_arg,
+        env_caller.as_deref(),
+        scope,
+        io::stdin().lock(),
+        io::stdout().lock(),
+    )?;
+    Ok(CliExecution::Streamed)
+}
+
+#[derive(Clone, Default)]
+struct CallerScopeEnv {
+    conversation_id: Option<String>,
+    membership_id: Option<String>,
+    parent_dispatch_id: Option<String>,
+}
+
+fn read_nonempty_env(name: &str) -> Option<String> {
+    std::env::var(name)
+        .ok()
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
+}
+
+fn resolve_mcp_caller_provider(
+    caller_arg: Option<&str>,
+    env_caller: Option<&str>,
+) -> Result<String> {
+    let arg = caller_arg.map(str::trim).filter(|value| !value.is_empty());
+    let env = env_caller.map(str::trim).filter(|value| !value.is_empty());
+    match (arg, env) {
+        (Some(a), Some(e)) if a != e => Err(anyhow!("mcp_caller_conflict")),
+        (Some(value), _) | (_, Some(value)) => Ok(value.to_owned()),
+        (None, None) => Err(anyhow!("mcp_caller_required")),
+    }
+}
+
+struct LocalMcpApplication {
+    catalog: Vec<Value>,
+}
+
+impl LocalMcpApplication {
+    fn from_catalog_value(catalog: &Value) -> Result<Self> {
+        let tools = catalog
+            .get("tools")
+            .and_then(Value::as_array)
+            .ok_or_else(|| anyhow!("mcp_cli_catalog_invalid"))?;
+        let filtered = REMOTE_TOOL_NAMES
+            .iter()
+            .map(|name| {
+                let mut matches = tools.iter().filter(|tool| tool["name"] == *name);
+                let tool = matches
+                    .next()
+                    .filter(|tool| tool["inputSchema"].is_object())
+                    .ok_or_else(|| anyhow!("mcp_cli_catalog_invalid"))?;
+                if matches.next().is_some() {
+                    return Err(anyhow!("mcp_cli_catalog_invalid"));
+                }
+                Ok(tool.clone())
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(Self { catalog: filtered })
+    }
+}
+
+impl McpApplication for LocalMcpApplication {
+    type CallerContext = CallerScope;
+
+    fn tool_catalog(&self) -> Vec<Value> {
+        self.catalog.clone()
+    }
+
+    fn validate_tool_arguments(&self, name: &str, arguments: &Map<String, Value>) -> bool {
+        REMOTE_TOOL_NAMES.contains(&name) && validate_tool_arguments(name, arguments)
+    }
+
+    fn call_tool(
+        &self,
+        context: McpToolCallContext<'_, CallerScope>,
+        name: &str,
+        arguments: &Map<String, Value>,
+    ) -> std::result::Result<Value, McpApplicationError> {
+        if !REMOTE_TOOL_NAMES.contains(&name) {
+            return Err(McpApplicationError::permanent(
+                "remote_operation_not_allowed",
+                "admission",
+            ));
+        }
+        let invocation = Invocation {
+            name: name.to_owned(),
+            arguments: arguments.clone(),
+            caller: context.caller.clone(),
+        };
+        let command = invocation
+            .command()
+            .ok_or_else(|| McpApplicationError::permanent("subagents_request_invalid", "decode"))?;
+        Ok(
+            match application_port::execute_as(&invocation.caller.claim(), &command) {
+                CommandResolution::Resolved(outcome) => outcome.payload,
+                CommandResolution::Failed(failure) => failure_envelope(&failure),
+            },
+        )
+    }
+}
+
+fn serve_mcp_stdio<R: BufRead, W: Write>(
+    caller_arg: Option<&str>,
+    env_caller: Option<&str>,
+    scope: CallerScopeEnv,
+    reader: R,
+    writer: W,
+) -> Result<W> {
+    let provider_id = resolve_mcp_caller_provider(caller_arg, env_caller)?;
+    let catalog =
+        application_port::subagent_catalog().map_err(|failure| anyhow!("{}", failure.code))?;
+    let admitted = catalog
+        .get("callers")
+        .and_then(Value::as_array)
+        .is_some_and(|callers| {
+            callers
+                .iter()
+                .any(|caller| caller.as_str() == Some(provider_id.as_str()))
+        });
+    if !admitted {
+        return Err(anyhow!("mcp_caller_not_supported"));
+    }
+    let application = LocalMcpApplication::from_catalog_value(&catalog)?;
+    let definition = McpServerDefinition {
+        protocol_revision: MCP_PROTOCOL_REVISION,
+        compatible_protocol_revisions: &["2025-11-25"],
+        server_name: MCP_SERVER_NAME,
+        server_version: env!("CARGO_PKG_VERSION"),
+        max_message_bytes: MCP_MAX_FRAME_BYTES,
+    };
+    let engine = McpServerEngine::new(definition, application)?;
+    let caller = CallerScope {
+        provider_id,
+        conversation_id: scope.conversation_id,
+        membership_id: scope.membership_id,
+        parent_dispatch_id: scope.parent_dispatch_id,
+    };
+    serve_stdio(&engine, &caller, reader, writer)
+}
+
 /// One admitted tool invocation, in the envelope both interfaces send.
 ///
 /// The manual decoder below preserves the former `rename_all = "camelCase"`
@@ -70,6 +239,7 @@ struct Invocation {
 /// A conversation and a membership are present only when the adapter has them:
 /// an inventory or a readiness probe carries neither. The domain owner decides
 /// what an incomplete scope may do, and refuses it before any effect.
+#[derive(Clone)]
 struct CallerScope {
     provider_id: String,
     conversation_id: Option<String>,
@@ -549,5 +719,104 @@ mod tests {
             "caller": caller,
         }))
         .expect("this surface's own envelope decodes")
+    }
+
+    #[test]
+    fn mcp_stdio_rejects_missing_conflicting_and_unsupported_callers() {
+        assert_eq!(
+            resolve_mcp_caller_provider(None, None)
+                .unwrap_err()
+                .to_string(),
+            "mcp_caller_required"
+        );
+        assert_eq!(
+            resolve_mcp_caller_provider(Some("codex"), Some("cursor"))
+                .unwrap_err()
+                .to_string(),
+            "mcp_caller_conflict"
+        );
+        assert_eq!(
+            resolve_mcp_caller_provider(Some("codex"), Some("codex")).unwrap(),
+            "codex"
+        );
+        let unsupported = serve_mcp_stdio(
+            Some("not-a-provider"),
+            None,
+            CallerScopeEnv::default(),
+            std::io::Cursor::new(Vec::<u8>::new()),
+            Vec::<u8>::new(),
+        )
+        .unwrap_err();
+        assert_eq!(unsupported.to_string(), "mcp_caller_not_supported");
+    }
+
+    #[test]
+    fn mcp_stdio_serves_initialize_tools_list_and_scoped_tool_call() {
+        let requests = [
+            json!({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "protocolVersion": MCP_PROTOCOL_REVISION,
+                    "capabilities": {},
+                    "clientInfo": {"name": "licoup-test", "version": "0.1.0"}
+                }
+            }),
+            json!({
+                "jsonrpc": "2.0",
+                "method": "notifications/initialized"
+            }),
+            json!({
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/list"
+            }),
+            json!({
+                "jsonrpc": "2.0",
+                "id": 3,
+                "method": "tools/call",
+                "params": {
+                    "name": "lico_subagent_delegate",
+                    "arguments": {"prompt": "work", "membershipId": "membership:worker"}
+                }
+            }),
+        ]
+        .into_iter()
+        .map(|frame| frame.to_string())
+        .collect::<Vec<_>>()
+        .join("\n")
+            + "\n";
+
+        let output = serve_mcp_stdio(
+            Some("codex"),
+            None,
+            CallerScopeEnv::default(),
+            std::io::Cursor::new(requests.into_bytes()),
+            Vec::<u8>::new(),
+        )
+        .expect("mcp stdio serves framed requests");
+        let lines = String::from_utf8(output)
+            .expect("valid UTF-8 MCP frames")
+            .lines()
+            .map(|line| serde_json::from_str::<Value>(line).expect("JSON-RPC frame"))
+            .collect::<Vec<_>>();
+        assert_eq!(lines.len(), 3);
+        assert_eq!(lines[0]["result"]["serverInfo"]["name"], MCP_SERVER_NAME);
+        assert_eq!(lines[0]["result"]["protocolVersion"], MCP_PROTOCOL_REVISION);
+
+        let tools = lines[1]["result"]["tools"]
+            .as_array()
+            .expect("tools/list array");
+        let names = tools
+            .iter()
+            .map(|tool| tool["name"].as_str().expect("tool name"))
+            .collect::<Vec<_>>();
+        assert_eq!(names, REMOTE_TOOL_NAMES);
+
+        // Caller lacks a bound conversation, so the domain facade refuses
+        // cleanly inside the MCP result envelope without spawning anything.
+        assert_eq!(lines[2]["id"], 3);
+        assert!(lines[2]["result"].is_object());
     }
 }

@@ -105,6 +105,12 @@ pub type AutostartDisable = fn() -> Result<Value>;
 /// the gateway, so a caller runs it unconditionally.
 pub type AutostartRefresh = fn() -> Result<()>;
 
+/// Whether the host exposes diagnostic evidence — readiness states, pass
+/// counts, summary codes and evidence ages — in its projections. Normal
+/// operation answers `false`: evidence is a debug diagnostic surface, never
+/// runtime admission fact and never a normal client-facing capability field.
+pub type DebugDiagnostics = fn() -> bool;
+
 /// Append one bounded activity event to a client-state journal. The journal
 /// owner sits above the inventory, which records exactly one event: the saved
 /// manual target. The store is passed in so the caller writes the event into
@@ -130,6 +136,7 @@ pub struct AgentTargetPort {
     pub autostart_enable: AutostartEnable,
     pub autostart_disable: AutostartDisable,
     pub autostart_refresh: AutostartRefresh,
+    pub debug_diagnostics: DebugDiagnostics,
 }
 
 impl AgentTargetPort {
@@ -156,6 +163,7 @@ impl AgentTargetPort {
             autostart_enable: |_| Ok(Value::Null),
             autostart_disable: || Ok(Value::Null),
             autostart_refresh: || Ok(()),
+            debug_diagnostics: || false,
         }
     }
 }
@@ -201,7 +209,9 @@ pub mod fixtures {
                 driver_status: "implemented".to_string(),
                 readiness: "unverified".to_string(),
                 protocol: (*protocol).to_string(),
-                blocker: Some("release_evidence_incomplete".to_string()),
+                // Blockers belong to structurally blocked drivers only; an
+                // implemented driver with missing evidence has no blocker.
+                blocker: None,
                 // Every packaged declaration carries a capability matrix, and a
                 // projection that reports a driver without one would be the
                 // defect this fixture exists to catch.

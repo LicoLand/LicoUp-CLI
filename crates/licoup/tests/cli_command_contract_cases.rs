@@ -26,7 +26,7 @@ const MAX_CLI_ARGUMENT_BYTES: usize = 2 * 1024 * 1024;
 // re-derived from `build_command_table` whenever a route lands. The
 // cross-device entry's five routes and the project family's routes are part of
 // the registry and were missing from this authority before them.
-const AUTHORITATIVE_ROUTE_COUNT: usize = 186;
+const AUTHORITATIVE_ROUTE_COUNT: usize = 187;
 /// The  catalog also carries the three process-mode lanes the binary
 /// serves before command admission (, ,
 /// ).
@@ -1925,6 +1925,7 @@ fn route_authorities() -> Vec<RouteAuthority> {
         add_authority_routes(&mut routes, module, handler, &[path], Exact);
     }
     for (module, handler, path) in [
+        ("subagents.rs", "handle_mcp_stdio", "mcp stdio"),
         ("licoup.rs", "handle_agent_run", "agent run"),
         ("licoup.rs", "handle_migrate", "migrate"),
         ("licoup.rs", "handle_gateway_run", "gateway run"),
@@ -3020,6 +3021,7 @@ fn options_for_route(path: &str) -> Vec<OptionAuthority> {
             value_option("confirmed", Text, true),
         ],
         "mcp start" | "mcp reload" => &[value_option("binary", Text, false)],
+        "mcp stdio" => &[value_option("caller", Text, false)],
         "gateway client-token" => &[value_option("agent", Text, true)],
         "gateway service status"
         | "gateway service start"

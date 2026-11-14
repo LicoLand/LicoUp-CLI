@@ -204,6 +204,7 @@ fn released_strategy_producer_variants_support_normal_owner_writes() {
 }
 
 #[test]
+#[cfg(unix)]
 fn structural_defects_refuse_before_any_durable_admission_write() {
     let cases: Vec<Value> = serde_json::from_str(include_str!(
         "../../../../../../tests/fixtures/client_state_migration/structural_cases.json"
@@ -266,6 +267,7 @@ fn structural_defects_refuse_before_any_durable_admission_write() {
 }
 
 #[test]
+#[cfg(unix)]
 fn strategy_retained_defaults_actions_and_auxiliary_tables_refuse_without_writes() {
     for (from, to, extra) in [
         ("model TEXT NOT NULL DEFAULT ''", "model TEXT NOT NULL", ""),

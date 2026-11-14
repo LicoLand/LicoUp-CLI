@@ -1,12 +1,18 @@
 use super::*;
-use serde_json::{Value, json};
+#[cfg(unix)]
+use serde_json::Value;
+use serde_json::json;
+#[cfg(unix)]
 use std::fs;
+use std::path::Path;
 #[cfg(unix)]
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use std::sync::OnceLock;
 #[cfg(unix)]
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 #[cfg(unix)]
 use std::time::Duration;
+#[cfg(unix)]
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[cfg(unix)]
@@ -30,7 +36,6 @@ fn environment_lock() -> std::sync::MutexGuard<'static, ()> {
 /// *closed* answer does to a turn is asserted in `tests/closed_admission.rs`,
 /// whose own process installs that answer. One installation per process, exactly
 /// as the host installs once.
-#[cfg(unix)]
 fn install_driver_ports() {
     static PORTS: OnceLock<()> = OnceLock::new();
     PORTS.get_or_init(|| {

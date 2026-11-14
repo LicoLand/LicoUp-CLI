@@ -4,7 +4,7 @@ use licoup_agent_targets::platform::virtual_machine::SshRuntimeConnection;
 use serde_json::Value;
 use std::path::Path;
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub(crate) fn execute(
     executable: &str,
     params: &Value,

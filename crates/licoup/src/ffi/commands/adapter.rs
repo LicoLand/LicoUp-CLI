@@ -221,30 +221,4 @@ mod tests {
             );
         }
     }
-
-    #[test]
-    fn the_retired_codex_plugin_route_is_refused_rather_than_answered() {
-        // The LicoUp Codex Plugin route is retired: that plugin belongs to
-        // Codex's own marketplace and is owned by the adapter package, so this
-        // client plans, approves, installs and probes none of it. The former CLI
-        // path is not admitted, and the absent local binary it named reaches no
-        // report rather than a second owner's answer.
-        let missing_binary =
-            std::env::temp_dir().join(format!("lico-missing-codex-{}", uuid::Uuid::new_v4()));
-        let error = crate::ffi::commands::admit_cli_command(vec![
-            "adapter".into(),
-            "codex".into(),
-            "plugin".into(),
-            "status".into(),
-            "--binary-path".into(),
-            missing_binary.to_string_lossy().into_owned(),
-        ])
-        .expect_err("the retired route is refused");
-        let refusal = error
-            .downcast_ref::<crate::ffi::commands::CliCommandError>()
-            .expect("an admission refusal is a typed CLI error");
-        assert_eq!(refusal.code(), "cli_operation_unsupported");
-        assert_eq!(refusal.recovery(), "use_cli_help");
-        assert!(!format!("{error:?}").contains("missing-codex"));
-    }
 }

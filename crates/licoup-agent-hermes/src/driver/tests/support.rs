@@ -1,5 +1,6 @@
 use super::*;
 use licoup_foundation::core::acp;
+#[cfg(unix)]
 use uuid::Uuid;
 
 #[cfg(unix)]

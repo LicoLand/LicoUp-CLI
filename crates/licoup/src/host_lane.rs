@@ -9,15 +9,15 @@
 //! halves do — the moved crate names no module above it.
 //!
 //! It is the crate root's composition rather than a `platform` module, because
-//! answering two of these lanes reads domain facts — the integration state the
-//! Codex plugin manager reports and the collaboration plugin's ACP server
-//! registration. The platform layer may not reach the domain layer, so the
+//! answering these lanes reads domain facts — the integration state the
+//! collaboration plugin's ACP server registration and caller configuration
+//! report. The platform layer may not reach the domain layer, so the
 //! composition that joins them lives above both, exactly as [`crate::target_port`]
 //! does for the Agent inventory.
 
 use crate::domain::integration_state::IntegrationState;
 use licoup_agent_drivers::runtime_adapters::port::{
-    CallerConfigPort, CallerManagerPort, CollaborationMcpPort, ConversationHostPort, GenericCliPort,
+    CallerConfigPort, CollaborationMcpPort, ConversationHostPort, GenericCliPort,
 };
 use licoup_agent_drivers::runtime_adapters::subagent_mesh::CallerManagerKind;
 use serde_json::Value;
@@ -86,6 +86,15 @@ pub(super) fn caller_config() -> CallerConfigPort {
         default_connector:
             crate::platform::antigravity_subagent_mcp_manager::default_mcp_binary_path,
         ready: |kind, connector| match kind {
+            CallerManagerKind::CodexUserConfig => {
+                matches!(
+                    crate::platform::provider_mcp_registration::status(
+                        crate::platform::provider_mcp_registration::ProviderConfigKind::Codex,
+                        connector,
+                    ),
+                    Ok(true)
+                )
+            }
             CallerManagerKind::CursorUserConfig => {
                 crate::platform::cursor_subagent_mcp_manager::status(connector)
                     == IntegrationState::Ready
@@ -98,11 +107,17 @@ pub(super) fn caller_config() -> CallerConfigPort {
                 crate::platform::claude_code_subagent_mcp_manager::status(connector)
                     == IntegrationState::Ready
             }
-            // The plugin-shipping Agent is answered by `caller_manager` above.
-            CallerManagerKind::CodexPlugin => false,
         },
         plan_digest: |kind, connector| {
             match kind {
+            CallerManagerKind::CodexUserConfig => {
+                crate::platform::provider_mcp_registration::RegistrationPlan::prepare(
+                    crate::platform::provider_mcp_registration::ProviderConfigKind::Codex,
+                    connector,
+                )
+                .map(|plan| plan.digest().to_owned())
+                .map_err(|_| ())
+            }
             CallerManagerKind::CursorUserConfig => {
                 crate::platform::cursor_subagent_mcp_manager::plan(connector)
                     .map(|plan| plan.digest().to_owned())
@@ -121,10 +136,23 @@ pub(super) fn caller_config() -> CallerConfigPort {
                     .map(|plan| plan.digest().to_owned())
                     .map_err(|_| ())
             }
-            CallerManagerKind::CodexPlugin => Err(()),
         }
         },
         apply: |kind, connector, digest, remove| match kind {
+            CallerManagerKind::CodexUserConfig => {
+                let plan = crate::platform::provider_mcp_registration::RegistrationPlan::prepare(
+                    crate::platform::provider_mcp_registration::ProviderConfigKind::Codex,
+                    connector,
+                )
+                .map_err(|_| ())?;
+                let mut permit = plan.approve(true, digest).map_err(|_| ())?;
+                if remove {
+                    crate::platform::provider_mcp_registration::remove(&plan, &mut permit)
+                } else {
+                    crate::platform::provider_mcp_registration::install(&plan, &mut permit)
+                }
+                .map_err(|_| ())
+            }
             CallerManagerKind::CursorUserConfig => {
                 let plan = crate::platform::cursor_subagent_mcp_manager::plan(connector)
                     .map_err(|_| ())?;
@@ -166,23 +194,7 @@ pub(super) fn caller_config() -> CallerConfigPort {
                 .map(|_| ())
                 .map_err(|_| ())
             }
-            CallerManagerKind::CodexPlugin => Err(()),
         },
-    }
-}
-
-/// The caller-integration manager for a plugin this client installs.
-///
-/// It installs none. The caller integration a Codex client needs is carried by
-/// a plugin that belongs to Codex's own marketplace, and the adapter package
-/// owns that side; this host refuses rather than cloning a plugin repository on
-/// the user's behalf. Every member fails closed, so a caller registration is
-/// reported as unapplied instead of being invented.
-pub(super) fn caller_manager() -> CallerManagerPort {
-    CallerManagerPort {
-        plan_digest: |_| Err(()),
-        ready: |_| false,
-        apply: |_, _, _| Err(()),
     }
 }
 

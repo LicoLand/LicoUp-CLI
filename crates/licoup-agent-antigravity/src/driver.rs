@@ -38,7 +38,7 @@ pub use execution::execute;
 // The hook bridge's installation entries belong to the adapter's lifecycle
 // commands; `ensure_hook_bridge` and `uninstall_hook_bridge` are the driver's own
 // two steps and the package suite's, so they stay crate-visible.
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub(crate) use hooks::{ensure_hook_bridge, uninstall_hook_bridge};
 pub use hooks::{hook_bridge_status, install_hook_bridge, uninstall_hook_bridge_report};
 pub use model::{CapabilityProbe, DRIVER_ID, EffectiveSettings, RUNTIME_PROTOCOL, RunResult};

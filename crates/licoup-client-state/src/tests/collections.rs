@@ -1,4 +1,5 @@
 use serde_json::json;
+#[cfg(unix)]
 use std::fs;
 
 use super::support::{PortableDataDirOverrideGuard, TestRoot};

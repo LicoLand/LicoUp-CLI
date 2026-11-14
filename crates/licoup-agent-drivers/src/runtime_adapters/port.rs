@@ -233,20 +233,6 @@ pub struct CollaborationMcpPort {
     pub acp_servers_for_runtime: fn(&str) -> Result<Vec<Value>, String>,
 }
 
-/// How the host manages one Agent's caller integration when that Agent ships a
-/// plugin LicoUp installs.
-///
-/// Only the Agent that ships such a plugin has one; the host names no plugin.
-#[derive(Clone, Copy)]
-pub struct CallerManagerPort {
-    /// The digest of the registration this manager would apply.
-    pub plan_digest: fn(&Path) -> Result<String, ()>,
-    /// Whether the registration is already applied and ready.
-    pub ready: fn(&Path) -> bool,
-    /// Apply or remove the registration, bound to the approved digest.
-    pub apply: fn(&Path, &str, bool) -> Result<(), ()>,
-}
-
 /// How the host manages one Agent's user-configuration caller registration.
 ///
 /// Some Agents reach the host's Subagent surface through a registration LicoUp
@@ -321,8 +307,6 @@ pub struct HostComposition {
     pub generic_cli: GenericCliPort,
     /// How this host resolves an ACP runtime's collaboration MCP servers.
     pub collaboration_mcp: CollaborationMcpPort,
-    /// How this host manages a plugin-shipping Agent's caller integration.
-    pub caller_manager: CallerManagerPort,
     /// How this host manages a user-configuration caller registration.
     pub caller_config: CallerConfigPort,
     /// How this host resolves the dispatch timeout one turn is bounded by. The

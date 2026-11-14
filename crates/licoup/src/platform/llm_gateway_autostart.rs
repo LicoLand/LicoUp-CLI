@@ -21,6 +21,7 @@ use serde_json::{Value, json};
 use std::cell::RefCell;
 use std::fs;
 use std::path::{Path, PathBuf};
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use std::process::Command;
 
 pub const AUTOSTART_SCHEMA: &str = "licoup.llm-gateway-autostart.v1";
@@ -139,6 +140,7 @@ impl LoginItemHost {
         Ok(self.state_directory.join("autostart.json"))
     }
 
+    #[cfg(target_os = "macos")]
     fn log_path(&self) -> Result<PathBuf> {
         ensure_private_dir(&self.state_directory)?;
         Ok(self.state_directory.join("autostart.log"))
@@ -898,8 +900,10 @@ mod tests {
 
     /// The login-item host every case below writes through, restored when the
     /// case ends so a later case never inherits it.
+    #[cfg(unix)]
     struct SyntheticHost;
 
+    #[cfg(unix)]
     impl SyntheticHost {
         fn install(host: LoginItemHost) -> Self {
             set_gateway_package_host_override(Some(host));
@@ -907,6 +911,7 @@ mod tests {
         }
     }
 
+    #[cfg(unix)]
     impl Drop for SyntheticHost {
         fn drop(&mut self) {
             set_gateway_package_host_override(None);
@@ -914,6 +919,7 @@ mod tests {
     }
 
     /// One synthetic login-item host over disposable paths inside `root`.
+    #[cfg(unix)]
     fn synthetic_host(root: &Path) -> LoginItemHost {
         LoginItemHost::synthetic(
             root.join("login-home"),
@@ -924,6 +930,7 @@ mod tests {
 
     /// A store root holding one installed version of the Gateway package whose
     /// own manifest declares `entry`, with that entry in the payload.
+    #[cfg(unix)]
     fn installed_gateway_store_root(label: &str, version: &str, entry: &str) -> PathBuf {
         use crate::platform::extension_packages::{
             PackageStore, TrustRecord, content_digest, running_client_version,
@@ -981,6 +988,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn a_lifecycle_transition_speaks_only_for_the_package_it_was_about() {
         let store_root = installed_gateway_store_root("lifecycle", "0.3.1", "bin/licoup");
         let host = synthetic_host(&store_root);
@@ -1077,6 +1085,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn an_activation_over_a_store_that_holds_nothing_registers_nothing() {
         let empty = std::env::temp_dir().join(format!(
             "licoup-gateway-package-empty-{}",

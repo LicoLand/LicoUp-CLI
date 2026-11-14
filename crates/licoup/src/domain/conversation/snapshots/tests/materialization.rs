@@ -237,6 +237,7 @@ fn collect_refresh_preserves_previous_unseen_snapshots() {
 }
 
 #[test]
+#[cfg(unix)]
 fn large_rollout_streams_completely_in_browse_and_archive_modes() {
     let state = temp_dir("archive-large-state");
     let home = temp_dir("archive-large-home");

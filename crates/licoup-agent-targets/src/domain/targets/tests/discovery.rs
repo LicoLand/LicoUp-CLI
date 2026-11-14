@@ -177,11 +177,12 @@ fn scan_candidate_has_adapter_capabilities_and_supported_actions() {
             .unwrap()
             .protocol
     );
-    assert_eq!(
-        opencode["adapterCapabilities"]["conversationReadiness"],
-        (port().runtime_driver_profile)("opencode")
-            .unwrap()
-            .readiness
+    // Evidence states stay off the normal projection — a structurally
+    // available lane reports capability facts, not a verdict.
+    assert!(
+        opencode["adapterCapabilities"]
+            .get("conversationReadiness")
+            .is_none()
     );
     assert_eq!(
         opencode["adapterCapabilities"]["conversationDriver"],
@@ -195,10 +196,12 @@ fn scan_candidate_has_adapter_capabilities_and_supported_actions() {
         .unwrap();
     assert_eq!(codex["adapterStatus"], "implemented");
     assert_eq!(codex["adapterCapabilities"]["configApply"], "unsupported");
-    // Parity evidence stays informational; a detected binary unlocks relay.
-    assert_eq!(
-        codex["adapterCapabilities"]["conversationReadiness"],
-        (port().runtime_driver_profile)("codex").unwrap().readiness
+    // Parity evidence stays informational and debug-surface only; a detected
+    // binary unlocks relay regardless of evidence state.
+    assert!(
+        codex["adapterCapabilities"]
+            .get("conversationReadiness")
+            .is_none()
     );
     assert_eq!(
         codex["supportedActions"]
@@ -215,11 +218,10 @@ fn scan_candidate_has_adapter_capabilities_and_supported_actions() {
         .iter()
         .find(|item| item["target"] == "copilot")
         .unwrap();
-    assert_eq!(
-        copilot["adapterCapabilities"]["conversationReadiness"],
-        (port().runtime_driver_profile)("copilot")
-            .unwrap()
-            .readiness
+    assert!(
+        copilot["adapterCapabilities"]
+            .get("conversationReadiness")
+            .is_none()
     );
     assert_eq!(
         copilot["supportedActions"]

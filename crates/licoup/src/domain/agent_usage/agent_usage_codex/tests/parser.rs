@@ -61,8 +61,8 @@ fn placeholder_models_use_actual_same_turn_evidence_without_leaking_next_turn() 
         models["Others"]["unattributedVariantUsage"]["totalTokens"],
         10
     );
-    fs::remove_dir_all(history_root).unwrap();
-    fs::remove_dir_all(state_root).unwrap();
+    let _ = fs::remove_dir_all(history_root);
+    let _ = fs::remove_dir_all(state_root);
 }
 
 #[test]

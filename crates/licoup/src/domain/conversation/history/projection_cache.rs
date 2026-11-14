@@ -363,6 +363,7 @@ fn projection_cache_file_path(params: &Value) -> Option<PathBuf> {
 mod tests {
     use super::*;
     use serde_json::json;
+    #[cfg(unix)]
     use std::time::Duration;
 
     fn temp_dir(label: &str) -> PathBuf {
@@ -465,6 +466,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn changed_source_stat_invalidates_the_entry() {
         let root = temp_dir("invalidate");
         let source = root.join("rollout.jsonl");

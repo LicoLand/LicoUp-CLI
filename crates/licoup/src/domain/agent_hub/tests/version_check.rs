@@ -1,5 +1,8 @@
+#[cfg(unix)]
 use crate::domain::agent_hub::recipes::{agent_recipe, registry};
-use crate::domain::agent_hub::version_check::{installed_version, parse_output};
+#[cfg(unix)]
+use crate::domain::agent_hub::version_check::installed_version;
+use crate::domain::agent_hub::version_check::parse_output;
 
 #[test]
 fn each_agent_has_a_dedicated_parser() {

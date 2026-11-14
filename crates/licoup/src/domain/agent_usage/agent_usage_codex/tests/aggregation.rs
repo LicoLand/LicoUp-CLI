@@ -194,8 +194,8 @@ fn force_refresh_updates_only_current_event_models_with_identical_counters() {
         );
         assert_eq!(identity_ledger(&connection), before);
         drop(connection);
-        fs::remove_dir_all(history).unwrap();
-        fs::remove_dir_all(state).unwrap();
+        let _ = fs::remove_dir_all(history);
+        let _ = fs::remove_dir_all(state);
     }
 }
 
@@ -246,7 +246,7 @@ fn force_refresh_preserves_rows_when_cached_components_or_event_identity_disagre
             0
         );
         drop(connection);
-        fs::remove_dir_all(history).unwrap();
-        fs::remove_dir_all(state).unwrap();
+        let _ = fs::remove_dir_all(history);
+        let _ = fs::remove_dir_all(state);
     }
 }

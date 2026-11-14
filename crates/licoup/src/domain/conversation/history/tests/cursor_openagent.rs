@@ -20,6 +20,7 @@ fn normalized_openagent_tokens_keep_additive_cache_and_reasoning() {
 }
 
 #[test]
+#[cfg(unix)]
 fn opencode_adapter_imports_sqlite_message_parts() {
     let dir = temp_dir("opencode-sqlite-history");
     let database = dir.join("opencode.db");
@@ -1136,6 +1137,7 @@ fn cursor_conversation_recorded_in_several_stores_collapses_to_one_session() {
 }
 
 #[test]
+#[cfg(unix)]
 fn openagent_store_without_agent_or_token_columns_still_yields_its_conversations() {
     let dir = temp_dir("openagent-narrow-schema");
     let database = dir.join("kilo.db");

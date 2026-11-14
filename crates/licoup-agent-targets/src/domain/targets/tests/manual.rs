@@ -225,12 +225,7 @@ fn read_only_target_inspection_skips_model_stores_and_discovery_cache_writes() {
             .keys()
             .map(String::as_str)
             .collect::<std::collections::BTreeSet<_>>(),
-        std::collections::BTreeSet::from([
-            "conversationBlocker",
-            "conversationConsecutivePasses",
-            "conversationDriver",
-            "conversationReadiness",
-        ])
+        std::collections::BTreeSet::from(["conversationBlocker", "conversationDriver"])
     );
     for private in [
         "binaryPath",

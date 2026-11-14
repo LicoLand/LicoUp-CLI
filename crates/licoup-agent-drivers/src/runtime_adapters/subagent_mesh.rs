@@ -53,13 +53,6 @@ fn host_call(read_only: bool, method: &str, params: &Value) -> Result<Value, Str
     }
 }
 
-/// The caller-integration manager of the Agent this host manages one for.
-fn caller_manager() -> Result<super::port::CallerManagerPort, AdapterFailure> {
-    super::port::composition()
-        .map(|composition| composition.caller_manager)
-        .ok_or_else(|| registration_failure("caller_registration_plan_failed"))
-}
-
 /// The user-configuration caller manager this host composed, or a fail-closed
 /// registration failure when it composed none.
 fn caller_config() -> Result<super::port::CallerConfigPort, AdapterFailure> {
@@ -158,7 +151,7 @@ fn production_caller_integrations() -> Vec<Arc<dyn McpCallerIntegration>> {
     vec![
         Arc::new(ManagedCallerIntegration::new(
             "codex",
-            CallerManagerKind::CodexPlugin,
+            CallerManagerKind::CodexUserConfig,
             licoup_agent_targets::domain::targets::agent_cli_executable("codex"),
             connector.clone(),
         )),
@@ -190,7 +183,7 @@ fn production_caller_integrations() -> Vec<Arc<dyn McpCallerIntegration>> {
 /// carries the kind rather than the registration file.
 #[derive(Clone, Copy)]
 pub enum CallerManagerKind {
-    CodexPlugin,
+    CodexUserConfig,
     CursorUserConfig,
     AntigravityUserConfig,
     ClaudeCodeUserConfig,
@@ -218,127 +211,36 @@ impl ManagedCallerIntegration {
         }
     }
 
-    fn prepare_digest(&self) -> Result<String, AdapterFailure> {
-        match self.kind {
-            CallerManagerKind::CodexPlugin => {
-                let binary = self.provider_binary.as_deref().ok_or_else(|| {
-                    AdapterFailure::permanent("provider_binary_unavailable", "registration/plan")
-                })?;
-                (caller_manager()?.plan_digest)(binary)
-                    .map_err(|_| registration_failure("caller_registration_plan_failed"))
-            }
-            CallerManagerKind::CursorUserConfig => {
-                if self.provider_binary.is_none() {
-                    return Err(AdapterFailure::permanent(
-                        "provider_binary_unavailable",
-                        "registration/plan",
-                    ));
-                }
-                let connector = self.connector.as_deref().ok_or_else(|| {
-                    AdapterFailure::permanent("mcp_connector_unavailable", "registration/plan")
-                })?;
-                (caller_config()?.plan_digest)(self.kind, connector)
-                    .map_err(|_| registration_failure("caller_registration_plan_failed"))
-            }
-            CallerManagerKind::AntigravityUserConfig => {
-                if self.provider_binary.is_none() {
-                    return Err(AdapterFailure::permanent(
-                        "provider_binary_unavailable",
-                        "registration/plan",
-                    ));
-                }
-                let connector = self.connector.as_deref().ok_or_else(|| {
-                    AdapterFailure::permanent("mcp_connector_unavailable", "registration/plan")
-                })?;
-                (caller_config()?.plan_digest)(self.kind, connector)
-                    .map_err(|_| registration_failure("caller_registration_plan_failed"))
-            }
-            CallerManagerKind::ClaudeCodeUserConfig => {
-                if self.provider_binary.is_none() {
-                    return Err(AdapterFailure::permanent(
-                        "provider_binary_unavailable",
-                        "registration/plan",
-                    ));
-                }
-                let connector = self.connector.as_deref().ok_or_else(|| {
-                    AdapterFailure::permanent("mcp_connector_unavailable", "registration/plan")
-                })?;
-                (caller_config()?.plan_digest)(self.kind, connector)
-                    .map_err(|_| registration_failure("caller_registration_plan_failed"))
-            }
+    fn require_connector(&self, stage: &'static str) -> Result<&std::path::Path, AdapterFailure> {
+        if self.provider_binary.is_none() {
+            return Err(AdapterFailure::permanent(
+                "provider_binary_unavailable",
+                stage,
+            ));
         }
+        self.connector
+            .as_deref()
+            .ok_or_else(|| AdapterFailure::permanent("mcp_connector_unavailable", stage))
+    }
+
+    fn prepare_digest(&self) -> Result<String, AdapterFailure> {
+        let connector = self.require_connector("registration/plan")?;
+        (caller_config()?.plan_digest)(self.kind, connector)
+            .map_err(|_| registration_failure("caller_registration_plan_failed"))
     }
 
     fn ready(&self) -> bool {
-        match self.kind {
-            CallerManagerKind::CodexPlugin => {
-                self.provider_binary.as_deref().is_some_and(|binary| {
-                    caller_manager()
-                        .map(|port| (port.ready)(binary))
-                        .unwrap_or(false)
-                })
-            }
-            CallerManagerKind::CursorUserConfig
-            | CallerManagerKind::AntigravityUserConfig
-            | CallerManagerKind::ClaudeCodeUserConfig => {
-                self.provider_binary.is_some()
-                    && self.connector.as_deref().is_some_and(|connector| {
-                        super::port::caller_config()
-                            .is_some_and(|config| (config.ready)(self.kind, connector))
-                    })
-            }
-        }
+        self.provider_binary.is_some()
+            && self.connector.as_deref().is_some_and(|connector| {
+                super::port::caller_config()
+                    .is_some_and(|config| (config.ready)(self.kind, connector))
+            })
     }
 
     fn apply(&self, digest: &str, remove: bool) -> Result<(), AdapterFailure> {
-        match self.kind {
-            CallerManagerKind::CodexPlugin => {
-                let binary = self.provider_binary.as_deref().ok_or_else(|| {
-                    AdapterFailure::permanent("provider_binary_unavailable", "registration/apply")
-                })?;
-                (caller_manager()?.apply)(binary, digest, remove)
-                    .map_err(|_| registration_failure("caller_registration_apply_failed"))
-            }
-            CallerManagerKind::CursorUserConfig => {
-                if self.provider_binary.is_none() {
-                    return Err(AdapterFailure::permanent(
-                        "provider_binary_unavailable",
-                        "registration/apply",
-                    ));
-                }
-                let connector = self.connector.as_deref().ok_or_else(|| {
-                    AdapterFailure::permanent("mcp_connector_unavailable", "registration/apply")
-                })?;
-                (caller_config()?.apply)(self.kind, connector, digest, remove)
-                    .map_err(|_| registration_failure("caller_registration_apply_failed"))
-            }
-            CallerManagerKind::AntigravityUserConfig => {
-                if self.provider_binary.is_none() {
-                    return Err(AdapterFailure::permanent(
-                        "provider_binary_unavailable",
-                        "registration/apply",
-                    ));
-                }
-                let connector = self.connector.as_deref().ok_or_else(|| {
-                    AdapterFailure::permanent("mcp_connector_unavailable", "registration/apply")
-                })?;
-                (caller_config()?.apply)(self.kind, connector, digest, remove)
-                    .map_err(|_| registration_failure("caller_registration_apply_failed"))
-            }
-            CallerManagerKind::ClaudeCodeUserConfig => {
-                if self.provider_binary.is_none() {
-                    return Err(AdapterFailure::permanent(
-                        "provider_binary_unavailable",
-                        "registration/apply",
-                    ));
-                }
-                let connector = self.connector.as_deref().ok_or_else(|| {
-                    AdapterFailure::permanent("mcp_connector_unavailable", "registration/apply")
-                })?;
-                (caller_config()?.apply)(self.kind, connector, digest, remove)
-                    .map_err(|_| registration_failure("caller_registration_apply_failed"))
-            }
-        }
+        let connector = self.require_connector("registration/apply")?;
+        (caller_config()?.apply)(self.kind, connector, digest, remove)
+            .map_err(|_| registration_failure("caller_registration_apply_failed"))
     }
 }
 
