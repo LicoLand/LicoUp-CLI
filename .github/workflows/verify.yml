@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: ["nightly", "stable", "release"]
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -23,9 +24,6 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
-        with:
-          node-version: "24"
       - name: Install the pinned toolchain
         run: rustup show active-toolchain || rustup toolchain install
       - name: Format
@@ -33,7 +31,10 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --all-targets --locked --features licoup/test-support -- -D warnings -A clippy::style -A clippy::complexity
       - name: Tests
-        run: node tools/scripts/cargo-client.mjs test --workspace --locked --no-fail-fast --features licoup/test-support
+        run: cargo test --workspace --locked --features licoup/test-support
+      - name: Package the tagged crate
+        if: startsWith(github.ref, 'refs/tags/')
+        run: cargo package --locked -p licoup
 
   node:
     name: Node contract tests
@@ -49,7 +50,30 @@ jobs:
           node-version: "24"
       - name: Install the pinned toolchain
         run: rustup show active-toolchain || rustup toolchain install
-      - name: Fetch locked Rust dependencies
-        run: cargo fetch --locked
       - name: Contract tests
-        run: node --test 'tests/contract/**/*.test.mjs' tools/scripts/lib/test-artifact-lifecycle.test.mjs
+        run: node --test tests/contract/
+
+  dispatch-publish:
+    needs: [rust, node]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Request publication from the default branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERIFY_RUN: ${{ github.run_id }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          payload="$(jq -n --arg ref "$DEFAULT_BRANCH" --arg tag "$TAG" --arg run "$VERIFY_RUN" \
+            '{ref: $ref, inputs: {tag: $tag, verify_run: $run}}')"
+          curl --fail --silent --show-error --output /dev/null \
+            -X POST -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Content-Type: application/json" \
+            --data "$payload" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/workflows/publish.yml/dispatches"
