@@ -55,7 +55,7 @@ live_pid() {
   [ -f "$marker" ] || return 1
   pid="$(cat "$marker" 2>/dev/null)"
   [ -n "$pid" ] || return 1
-  if ps -p "$pid" >/dev/null 2>&1; then
+  if kill -0 "$pid" 2>/dev/null; then
     printf '%s' "$pid"
     return 0
   fi
@@ -206,8 +206,9 @@ fn live_pid(data_home: &Path) -> Option<u32> {
 }
 
 fn alive(pid: u32) -> bool {
-    Command::new("ps")
-        .args(["-p", &pid.to_string()])
+    // `kill -0` is the portable liveness probe: BusyBox's `ps` has no `-p`.
+    Command::new("kill")
+        .args(["-0", &pid.to_string()])
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .status()

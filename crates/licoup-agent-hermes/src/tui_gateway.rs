@@ -140,7 +140,7 @@ impl GatewayClient {
         })
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(crate) fn connect_test_command(
         command: Command,
         max_stdout_bytes: Option<usize>,

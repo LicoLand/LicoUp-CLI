@@ -95,10 +95,10 @@ pub(super) fn apply_private_directory_permissions(path: &Path) -> Result<()> {
 pub(super) fn apply_private_file_permissions(file: &fs::File, path: &Path) -> Result<()> {
     #[cfg(unix)]
     super::unix_hardening::apply_file_permissions(file)?;
+    #[cfg(not(unix))]
+    let _ = file;
     #[cfg(windows)]
     super::windows_acl::apply_owner_only(path)?;
-    #[cfg(not(any(unix, windows)))]
-    let _ = (file, path);
     #[cfg(not(windows))]
     let _ = path;
     Ok(())

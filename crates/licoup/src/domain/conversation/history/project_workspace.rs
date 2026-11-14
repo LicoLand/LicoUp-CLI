@@ -51,6 +51,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn a_concrete_project_directory_survives_trimming() {
         assert_eq!(
             bounded_project_workspace("  /fixture-root/projects/alpha  "),

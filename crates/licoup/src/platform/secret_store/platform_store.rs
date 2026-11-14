@@ -24,6 +24,7 @@ pub struct SecretClassPersistenceProof {
 
 #[derive(Clone)]
 pub struct PlatformSecretStore {
+    #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
     pub(super) service: &'static str,
     pub(super) account_prefix: &'static str,
     #[cfg(target_os = "macos")]

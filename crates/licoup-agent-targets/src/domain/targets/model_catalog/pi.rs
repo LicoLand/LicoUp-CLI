@@ -84,6 +84,7 @@ fn collect_pi_models_from_output(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use crate::domain::targets::support::display_path;
     #[cfg(unix)]
     use std::fs;

@@ -620,6 +620,7 @@ fn post_claim_cleanup_failure_never_authorizes_rollback() {
 }
 
 #[test]
+#[cfg(unix)]
 fn valid_claim_is_consumed_only_after_successful_admission() {
     let root = std::env::temp_dir().join(format!("licoup-migration-{}", uuid::Uuid::new_v4()));
     let handoff = root.join("client-state/migrations/update-handoff.json");

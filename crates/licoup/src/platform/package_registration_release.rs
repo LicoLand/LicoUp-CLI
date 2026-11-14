@@ -52,40 +52,19 @@ pub struct ProviderMcpRelease {
 }
 
 /// What releasing the Codex plugin surface would need.
-///
-/// The caller's description of the plugin is still part of the request
-/// vocabulary, so a route can report which surface a record names. This build
-/// owns no such surface: the Codex caller plugin belongs to Codex's own
-/// marketplace, so `release` refuses the owner instead of acting on these
-/// inputs.
-#[derive(Clone, Debug)]
-pub struct CodexPluginRelease {
-    pub executable: PathBuf,
-    pub approved_digest: String,
-}
-
 /// One owner's release inputs.
 #[derive(Clone, Debug, Default)]
 pub struct ReleaseInputs {
     pub provider_mcp: Option<ProviderMcpRelease>,
-    pub codex_plugin: Option<CodexPluginRelease>,
 }
 
 impl ReleaseInputs {
     pub const fn none() -> Self {
-        Self {
-            provider_mcp: None,
-            codex_plugin: None,
-        }
+        Self { provider_mcp: None }
     }
 
     pub fn with_provider_mcp(mut self, release: ProviderMcpRelease) -> Self {
         self.provider_mcp = Some(release);
-        self
-    }
-
-    pub fn with_codex_plugin(mut self, release: CodexPluginRelease) -> Self {
-        self.codex_plugin = Some(release);
         self
     }
 }
@@ -124,7 +103,7 @@ impl PackageRegistrationOwners {
             RegistrationOwner::AntigravityMcp => {
                 self.provider_inputs(ProviderConfigKind::Antigravity)
             }
-            RegistrationOwner::CodexPlugin => false,
+            RegistrationOwner::CodexMcp => self.provider_inputs(ProviderConfigKind::Codex),
         }
     }
 
@@ -186,13 +165,9 @@ impl RegistrationOwners for PackageRegistrationOwners {
             RegistrationOwner::AntigravityMcp => {
                 self.release_provider_mcp(registration, ProviderConfigKind::Antigravity)
             }
-            // The Codex caller plugin belongs to Codex's own marketplace: this
-            // client neither installs nor removes one, so a record naming that
-            // surface is a fact this build cannot act on. The refusal names the
-            // owner module that would have to grow it back, exactly as the
-            // login-item arm does, and a caller that still describes a plugin
-            // gets the same answer rather than a silent success.
-            RegistrationOwner::CodexPlugin => Err(owner_unavailable(registration)),
+            RegistrationOwner::CodexMcp => {
+                self.release_provider_mcp(registration, ProviderConfigKind::Codex)
+            }
         }
     }
 }
@@ -278,7 +253,7 @@ mod tests {
         ));
         assert!(owners.can_release(RegistrationOwner::CursorMcp));
         assert!(!owners.can_release(RegistrationOwner::ClaudeCodeMcp));
-        assert!(!owners.can_release(RegistrationOwner::CodexPlugin));
+        assert!(!owners.can_release(RegistrationOwner::CodexMcp));
         let failure = owners
             .release(&RecordedRegistration::new(
                 RegistrationOwner::ClaudeCodeMcp,

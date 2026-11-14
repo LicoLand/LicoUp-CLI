@@ -137,6 +137,14 @@ pub(crate) fn reserved_env_refusal(key: &str, mode: IsolationMode) -> Applicatio
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct ValidatedProgram {
     pub executable: PathBuf,
+    /// The executable path as it was declared, kept for `argv[0]`.
+    ///
+    /// The `executable` path itself is canonical — that is the file identity
+    /// the launch is authorized for. Canonicalizing a BusyBox-style symlink
+    /// (`/bin/sh -> /bin/busybox`) yields the multi-call binary, which then
+    /// dispatches on `argv[0]`'s basename; passing the declared path keeps
+    /// that dispatch identical to an ordinary `Command::new(path)` spawn.
+    pub argv0: PathBuf,
     pub args: Vec<String>,
     pub exec_paths: Vec<PathBuf>,
     pub env: Vec<(String, String)>,
@@ -218,6 +226,11 @@ pub(crate) fn validate_program(
     }
     let root = canonical(managed_root, "managedRoot", Expect::Directory)?;
 
+    // `argv[0]` stays the declared executable path — what `Command::new(path)`
+    // would pass — while the executed file is the canonical one. Multi-call
+    // binaries (BusyBox symlinks, e.g. `/bin/sh -> /bin/busybox`) dispatch on
+    // `argv[0]`'s basename, and self-re-execing programs resolve through it.
+    let argv0 = program.executable.clone();
     let executable = canonical(&program.executable, "executable", Expect::File)?;
     let mut exec_paths = vec![executable.clone()];
     for declared in &program.exec_paths {
@@ -285,6 +298,7 @@ pub(crate) fn validate_program(
 
     Ok(ValidatedProgram {
         executable,
+        argv0,
         args: program.args.clone(),
         exec_paths,
         env: program.env.clone(),
@@ -305,6 +319,12 @@ pub(crate) fn build_command(
         IsolationMode::TrustedLocal => {
             let mut command = Command::new(&program.executable);
             command.args(&program.args);
+            // The canonical executable is executed, but `argv[0]` keeps the
+            // declared path — identical to an ordinary `Command::new(path)`
+            // spawn, and required for programs that dispatch on or re-exec
+            // through `argv[0]` (multi-call binaries such as BusyBox).
+            #[cfg(unix)]
+            std::os::unix::process::CommandExt::arg0(&mut command, &program.argv0);
             Ok((
                 command,
                 Support::unavailable("trusted local program runs without OS confinement"),

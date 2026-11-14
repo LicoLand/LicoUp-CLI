@@ -14,8 +14,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 struct AttachmentFixture {
     directory: PathBuf,
     png: PathBuf,
+    #[allow(dead_code)]
     jpeg: PathBuf,
+    #[allow(dead_code)]
     gif: PathBuf,
+    #[allow(dead_code)]
     webp: PathBuf,
 }
 
@@ -442,6 +445,7 @@ fn message_body_is_not_normalized() {
 }
 
 #[test]
+#[cfg(unix)]
 fn message_beyond_the_removed_shared_cap_reaches_native_admission() {
     let oversized = "x".repeat(1024 * 1024 + 1);
     let error = send_message(
@@ -607,6 +611,7 @@ fn an_unsatisfied_capability_requirement_is_refused_before_any_launch() {
 /// A requirement only a declared fact satisfies; the identity of the Agent is
 /// irrelevant, the fact is not.
 #[test]
+#[cfg(unix)]
 fn declared_capability_requirements_pass_admission() {
     // Codex declares image input, so the requirement is satisfied and the turn
     // reaches executable resolution instead of being refused.

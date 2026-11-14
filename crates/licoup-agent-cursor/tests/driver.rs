@@ -13,7 +13,9 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+#[cfg(unix)]
+use std::time::Instant;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// The fake agent reads process-global env vars, so the tests that steer it
 /// must not run concurrently: one test's env mutation would leak into another
@@ -27,6 +29,7 @@ fn env_lock() -> std::sync::MutexGuard<'static, ()> {
     ENV_LOCK.lock().unwrap_or_else(|poison| poison.into_inner())
 }
 
+#[cfg(unix)]
 fn wait_for_captured_event(
     events: &Arc<Mutex<Vec<serde_json::Value>>>,
     deadline: Instant,

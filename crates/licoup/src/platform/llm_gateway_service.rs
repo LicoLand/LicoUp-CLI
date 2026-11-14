@@ -11,6 +11,7 @@
 #[cfg(unix)]
 use crate::core::secret_store::SecretStoreAuthorizationSession;
 use anyhow::{Result, anyhow, ensure};
+#[cfg(unix)]
 use credential_lease::HandoffDocument;
 use licoup_foundation::platform::file_security::{
     atomic_write_private_text, ensure_private_dir, read_private_text_bounded,
@@ -72,6 +73,7 @@ fn gateway_enabled_credential_ids() -> &'static Mutex<BTreeSet<String>> {
     GATEWAY_ENABLED_CREDENTIAL_IDS.get_or_init(|| Mutex::new(BTreeSet::new()))
 }
 
+#[cfg(unix)]
 fn validate_credential_id(credential_id: &str) -> Result<()> {
     ensure!(
         uuid::Uuid::parse_str(credential_id).is_ok_and(|value| value.to_string() == credential_id),
@@ -80,6 +82,7 @@ fn validate_credential_id(credential_id: &str) -> Result<()> {
     Ok(())
 }
 
+#[cfg(any(unix, test))]
 fn authorization_report(
     authorized: bool,
     providers: Vec<String>,
@@ -102,7 +105,9 @@ fn authorization_report(
     value
 }
 
+#[cfg(any(unix, test))]
 const INCONSISTENT_INVENTORY: &str = "llm_api_key_inventory_inconsistent";
+#[cfg(any(unix, test))]
 fn authorization_failure_report(error: &anyhow::Error) -> Option<Value> {
     let reason = match error.to_string().as_str() {
         "secure_mesh_keychain_classic_access_requires_user_action" => {
@@ -167,6 +172,7 @@ pub(crate) fn reconcile_gateway_session_credentials(
     Ok(())
 }
 
+#[cfg(any(unix, test))]
 fn reconcile_enabled_credential_ids(
     enabled: &BTreeSet<String>,
     inventory: &licoup_private_gateway::credential::LlmApiKeyInventory,
@@ -835,11 +841,6 @@ fn apply_session_credentials_to_managed_sidecar() -> Result<Option<bool>> {
 
 #[cfg(not(unix))]
 fn hot_apply_session_credentials(_port: u16) -> Result<Option<bool>> {
-    Ok(None)
-}
-
-#[cfg(not(unix))]
-fn apply_session_credentials_to_managed_sidecar() -> Result<Option<bool>> {
     Ok(None)
 }
 
@@ -1540,7 +1541,7 @@ mod tests {
         let root = temp_state_root();
         let _guard = PortableDataDirOverrideGuard::set(root.clone());
         let paths = ServicePaths::resolve().unwrap();
-        let mut child = Command::new("/usr/bin/true").spawn().unwrap();
+        let mut child = Command::new("true").spawn().unwrap();
         let dead_pid = child.id();
         child.wait().unwrap();
         assert!(!pid_alive(dead_pid));
@@ -1564,7 +1565,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn unreaped_zombie_child_is_not_alive() {
-        let mut child = Command::new("/usr/bin/true").spawn().unwrap();
+        let mut child = Command::new("true").spawn().unwrap();
         let zombie_pid = child.id();
         // Never wait before the assertion: the exited child stays a zombie
         // and still answers kill(pid, 0), so only the zombie check rejects it.

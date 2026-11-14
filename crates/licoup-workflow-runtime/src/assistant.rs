@@ -150,13 +150,6 @@ pub fn preflight_assistant_graph(
             Some(assistant_membership_id),
         ));
     }
-    if assistant.is_some_and(|assistant| assistant.readiness.as_deref() != Some("ready")) {
-        checks.push(check_at(
-            "graph_readiness_rejected",
-            Some("/assistantMembershipId"),
-            Some(assistant_membership_id),
-        ));
-    }
     if assistant.is_some_and(|assistant| assistant.environment.is_none()) {
         checks.push(check_at(
             "graph_environment_unavailable",
@@ -260,15 +253,6 @@ pub fn preflight_assistant_graph(
             checks.push(check_at(
                 "graph_model_rejected",
                 Some(format!("{binding_pointer}/model").as_str()),
-                Some(member.membership_id.as_str()),
-            ));
-        }
-        if member.membership_id != assistant_membership_id
-            && member.readiness.as_deref() != Some("ready")
-        {
-            checks.push(check_at(
-                "graph_readiness_rejected",
-                Some(format!("{binding_pointer}/valueId").as_str()),
                 Some(member.membership_id.as_str()),
             ));
         }

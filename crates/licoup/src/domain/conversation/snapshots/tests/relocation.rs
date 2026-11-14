@@ -1,11 +1,13 @@
 use super::*;
 
 #[test]
+#[cfg(unix)]
 fn relocating_copied_data_home_rebases_only_owned_snapshot_references() {
     exercise_relocation(false);
 }
 
 #[test]
+#[cfg(unix)]
 fn staged_relocation_verifies_physical_content_but_records_only_final_logical_paths() {
     exercise_relocation(true);
 }

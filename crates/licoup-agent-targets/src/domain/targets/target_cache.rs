@@ -297,7 +297,7 @@ mod tests {
                 official_cli: "unknown".to_string(),
                 conversation_driver: "implemented".to_string(),
                 conversation_protocol: "acp".to_string(),
-                conversation_readiness: "ready".to_string(),
+                conversation_readiness: Some("ready".to_string()),
                 conversation_blocker: None,
                 conversation_probe: json!({}),
                 conversation_capability_matrix: Value::Null,

@@ -194,6 +194,7 @@ mod tests {
     use uuid::Uuid;
 
     #[test]
+    #[cfg(unix)]
     fn exact_confirmation_moves_catalog_skill_to_recoverable_trash() {
         let store = test_store("recoverable");
         let catalog_root = catalog_root("recoverable");
@@ -260,6 +261,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn confirmation_is_invalidated_when_skill_contents_change() {
         let store = test_store("changed");
         let catalog_root = catalog_root("changed");
@@ -276,6 +278,7 @@ mod tests {
         assert!(skill_dir.exists());
     }
 
+    #[cfg(unix)]
     fn catalog_root(name: &str) -> PathBuf {
         let root = temp_dir(name).join(".agents").join("skills");
         fs::create_dir_all(&root).unwrap();
@@ -307,6 +310,7 @@ mod tests {
         path.canonicalize().unwrap()
     }
 
+    #[cfg(unix)]
     fn system_temp_dir(name: &str) -> PathBuf {
         let path = env::temp_dir().join(format!("lico-skill-trash-{name}-{}", Uuid::new_v4()));
         fs::create_dir_all(&path).unwrap();

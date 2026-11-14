@@ -15,7 +15,9 @@
 
 use std::collections::BTreeSet;
 use std::fs;
-use std::path::{Path, PathBuf};
+#[cfg(unix)]
+use std::path::Path;
+use std::path::PathBuf;
 #[cfg(unix)]
 use std::process::Command;
 #[cfg(unix)]
@@ -102,6 +104,7 @@ fn capture_open_rollout_paths() -> BTreeSet<PathBuf> {
     BTreeSet::new()
 }
 
+#[cfg(unix)]
 fn parse_open_rollout_paths(output: &str) -> BTreeSet<PathBuf> {
     output
         .lines()
@@ -121,10 +124,11 @@ fn parse_open_rollout_paths(output: &str) -> BTreeSet<PathBuf> {
         .collect()
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
     #[test]
     fn lsof_field_output_keeps_only_absolute_codex_rollouts() {
         let parsed = parse_open_rollout_paths(

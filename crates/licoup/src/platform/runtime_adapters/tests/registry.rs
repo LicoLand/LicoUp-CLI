@@ -451,3 +451,45 @@ fn protocol_drift_and_incomplete_ready_claims_fail_closed() {
         .and_then(|registry| registry.profile("claude-code"));
     assert!(profile.is_none());
 }
+
+/// A completed real turn is itself the verification a lane can carry: the
+/// verdict of the last engaged turn wins over the packaged release-evidence
+/// record in both directions, and only the verdict promotes the
+/// conversation-driver-ready fact.
+#[test]
+fn the_last_real_turn_verdict_is_the_effective_readiness() {
+    super::compose();
+    let root = std::env::temp_dir().join(format!(
+        "licoup-ops-verdict-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    ));
+    std::fs::create_dir_all(&root).unwrap();
+    let previous =
+        licoup_foundation::platform::paths::set_portable_data_dir_override(Some(root.clone()));
+
+    let registry = parse_runtime_driver_registry(DRIVER_INVENTORY_JSON, READINESS_JSON).unwrap();
+    assert_eq!(registry.profile("codex").unwrap().readiness, "unverified");
+    let undeclared = super::super::registry::projected_capability_fact(
+        "codex",
+        CapabilityFactName::DriverState(NativeDriverStateKind::ConversationDriverReady),
+    );
+    assert_eq!(undeclared.state, CapabilityFactState::NotDeclared);
+
+    super::super::operational::record_turn_verdict("codex", true);
+    assert_eq!(registry.profile("codex").unwrap().readiness, "ready");
+    let ready = super::super::registry::projected_capability_fact(
+        "codex",
+        CapabilityFactName::DriverState(NativeDriverStateKind::ConversationDriverReady),
+    );
+    assert_eq!(ready.state, CapabilityFactState::Declared);
+
+    super::super::operational::record_turn_verdict("codex", false);
+    assert_eq!(registry.profile("codex").unwrap().readiness, "failed");
+
+    licoup_foundation::platform::paths::set_portable_data_dir_override(previous);
+    let _ = std::fs::remove_dir_all(&root);
+}

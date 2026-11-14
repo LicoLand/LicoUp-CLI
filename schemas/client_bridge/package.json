@@ -54,7 +54,7 @@
     "claude-code-mcp",
     "cursor-mcp",
     "antigravity-mcp",
-    "codex-plugin"
+    "codex-mcp"
   ],
   "maintenanceOperations": [
     "update-apply",

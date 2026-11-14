@@ -66,6 +66,7 @@ fn session_ids(listed: &Value) -> Vec<String> {
 }
 
 #[test]
+#[cfg(unix)]
 fn codex_catalog_uses_state_threads_and_supplements_fresh_rollouts() {
     let home = temp_dir("codex-catalog-tiered");
     let sessions_dir = home.join(".codex/sessions/2026/08/01");
@@ -576,6 +577,7 @@ fn create_openagent_catalog_db(path: &Path) {
 }
 
 #[test]
+#[cfg(unix)]
 fn opencode_catalog_filters_sub_sessions_and_archived_but_keeps_old() {
     let home = temp_dir("opencode-catalog");
     let data_dir = home.join(".local/share/opencode");
@@ -1121,6 +1123,7 @@ fn browse_cache_serves_warm_pages_identically_and_counts_work() {
 }
 
 #[test]
+#[cfg(unix)]
 fn browse_cache_invalidates_when_the_source_changes() {
     let home = temp_dir("browse-cache-invalidate");
     let sessions_dir = home.join(".codex/sessions/2026/08/01");
@@ -1226,6 +1229,7 @@ fn browse_cache_discards_whole_cache_on_schema_mismatch() {
 }
 
 #[test]
+#[cfg(unix)]
 fn codex_large_rollout_keeps_opening_turn_exact_count_and_stable_ids() {
     let home = temp_dir("codex-complete-browse");
     let sessions_dir = home.join(".codex/sessions/2026/08/01");
@@ -1316,6 +1320,7 @@ fn codex_large_rollout_keeps_opening_turn_exact_count_and_stable_ids() {
 }
 
 #[test]
+#[cfg(unix)]
 fn cursor_catalog_reads_chat_meta_and_skips_empty_chats() {
     let home = temp_dir("cursor-catalog");
     let chat_dir = home.join(".cursor/chats/ab12cd34/chat-one");
@@ -1358,6 +1363,7 @@ fn cursor_catalog_reads_chat_meta_and_skips_empty_chats() {
 }
 
 #[test]
+#[cfg(unix)]
 fn cursor_catalog_reads_project_workspace_path_for_agent_transcripts() {
     let home = temp_dir("cursor-project-cwd");
     let project_dir = home.join(".cursor/projects/Users-fixture-LicoUp");
@@ -1455,6 +1461,7 @@ fn claude_catalog_probes_head_titles_and_keeps_old_sessions() {
 }
 
 #[test]
+#[cfg(unix)]
 fn pi_catalog_reads_the_session_header_line() {
     let home = temp_dir("pi-catalog");
     let session_dir = home.join(".pi/agent/sessions/--workspace-project");
@@ -1547,6 +1554,7 @@ fn claude_code_sidechain_transcripts_fold_into_the_conversation() {
 }
 
 #[test]
+#[cfg(unix)]
 fn codex_delegated_threads_fold_into_the_conversation_that_spawned_them() {
     let home = temp_dir("codex-spawn-edges");
     let sessions_dir = home.join(".codex/sessions/2026/08/01");
@@ -1670,6 +1678,7 @@ fn codex_exact_lineage_reaches_every_explicit_child_without_a_total_cap() {
 }
 
 #[test]
+#[cfg(unix)]
 fn codex_rollouts_outside_the_thread_index_still_carry_their_project_directory() {
     let home = temp_dir("codex-rollout-cwd");
     let sessions_dir = home.join(".codex/sessions/2026/08/01");
@@ -1696,6 +1705,7 @@ fn codex_rollouts_outside_the_thread_index_still_carry_their_project_directory()
 }
 
 #[test]
+#[cfg(unix)]
 fn antigravity_catalog_lists_brain_conversations_and_skips_cli_logs() {
     let home = temp_dir("antigravity-catalog");
     let bridge = home.join(".gemini/antigravity");
@@ -1802,6 +1812,7 @@ fn antigravity_catalog_lists_brain_conversations_and_skips_cli_logs() {
 }
 
 #[test]
+#[cfg(unix)]
 fn codex_lazy_nested_cards_keep_browse_exact_and_older_pages_complete() {
     let home = temp_dir("codex-lazy-nested-pages");
     let store = home.join(".codex/sessions/2026/08/01");

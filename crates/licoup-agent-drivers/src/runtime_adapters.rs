@@ -5,6 +5,7 @@ pub mod error;
 pub mod live_status;
 pub mod model;
 pub mod normalization;
+pub mod operational;
 pub mod params;
 pub mod port;
 pub mod probe;

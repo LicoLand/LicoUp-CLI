@@ -186,22 +186,24 @@ pub(crate) fn apply(
     confirmation: &PlatformConfinement,
 ) -> Result<EnforcedLimits, ApplicationFailure> {
     check_supported(limits, confirmation)?;
+    // `RLIMIT_*` is `c_int` on macOS/musl but `__rlimit_resource_t` (`c_uint`)
+    // on glibc; the values are small, so `c_int` is the portable common type.
     let mut rules: Vec<(libc::c_int, u64)> = Vec::new();
     if let Some(seconds) = limits.cpu_seconds {
-        rules.push((libc::RLIMIT_CPU, seconds));
+        rules.push((libc::RLIMIT_CPU as libc::c_int, seconds));
     }
     if let Some(bytes) = limits.file_bytes {
-        rules.push((libc::RLIMIT_FSIZE, bytes));
+        rules.push((libc::RLIMIT_FSIZE as libc::c_int, bytes));
     }
     if let Some(files) = limits.open_files {
-        rules.push((libc::RLIMIT_NOFILE, files));
+        rules.push((libc::RLIMIT_NOFILE as libc::c_int, files));
     }
     if let Some(bytes) = limits.address_space_bytes {
-        rules.push((libc::RLIMIT_AS, bytes));
+        rules.push((libc::RLIMIT_AS as libc::c_int, bytes));
     }
     let core_dumps_disabled = confirmation.core_dumps.is_enforced();
     if core_dumps_disabled {
-        rules.push((libc::RLIMIT_CORE, 0));
+        rules.push((libc::RLIMIT_CORE as libc::c_int, 0));
     }
     if !rules.is_empty() {
         // SAFETY: `pre_exec` runs in the forked child before exec. The closure

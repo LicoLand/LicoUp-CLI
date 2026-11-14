@@ -31,6 +31,7 @@ licoup-agent-runtime.workspace = true
 # reads that port's type and the composition supplies its value; the inventory
 # never names this crate.
 licoup-agent-targets.workspace = true
+licoup-client-state.workspace = true
 # The host's own Agent adapter registry: the record of which adapter reaches
 # which Agent, which is host vocabulary and not any Agent's protocol.
 licoup-agent-adapters.workspace = true

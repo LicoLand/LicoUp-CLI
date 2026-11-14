@@ -47,6 +47,7 @@ pub fn agent_target_port() -> AgentTargetPort {
         autostart_enable: crate::platform::llm_gateway_autostart::autostart_enable,
         autostart_disable: crate::platform::llm_gateway_autostart::autostart_disable,
         autostart_refresh: crate::platform::llm_gateway_autostart::refresh_after_data_home_recovery,
+        debug_diagnostics: licoup_foundation::platform::debug::debug_enabled,
     }
 }
 
@@ -145,8 +146,8 @@ mod tests {
     }
 
     /// The projection the scan reports is the driver declaration, not a second
-    /// derivation: a scan of one target carries the profile's own protocol,
-    /// readiness and driver status.
+    /// derivation: a scan of one target carries the profile's own protocol and
+    /// driver status. Evidence fields stay off the normal surface.
     #[test]
     fn scan_projection_reports_the_driver_declaration() {
         let port = agent_target_port();
@@ -162,8 +163,14 @@ mod tests {
             serde_json::json!(profile.protocol)
         );
         assert_eq!(
-            candidate["adapterCapabilities"]["conversationReadiness"],
-            serde_json::json!(profile.readiness)
+            candidate["adapterCapabilities"]["conversationDriver"],
+            serde_json::json!(profile.driver_status)
+        );
+        assert!(
+            candidate["adapterCapabilities"]
+                .get("conversationReadiness")
+                .is_none(),
+            "readiness evidence stays off the normal projection"
         );
     }
 }

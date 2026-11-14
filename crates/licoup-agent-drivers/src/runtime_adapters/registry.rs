@@ -259,10 +259,9 @@ fn conversation_driver_state(
             .drivers
             .get(adapter.id())
             .map(|driver| driver_status_for_mode(&driver.driver_mode) == Some("implemented")),
-        NativeDriverStateKind::ConversationDriverReady => registry
-            .readiness
-            .get(adapter.id())
-            .map(|readiness| readiness.status == "ready"),
+        NativeDriverStateKind::ConversationDriverReady => {
+            Some(registry.effective_status(adapter.id()) == "ready")
+        }
     })
     .flatten();
     match declared {
@@ -591,10 +590,30 @@ fn driver_status_for_mode(mode: &str) -> Option<&'static str> {
 }
 
 impl RuntimeDriverRegistry {
+    /// The effective conversation status for one Agent. The verdict of the
+    /// last real turn this host ran wins over the packaged release-evidence
+    /// record: a genuine end-to-end success is itself the verification a lane
+    /// can carry, and a genuine failure is fresher evidence still. With no
+    /// recorded verdict the packaged status stands as the only evidence.
+    fn effective_status(&self, agent_id: &str) -> String {
+        match super::operational::last_turn_verdict(agent_id) {
+            Some(true) => "ready".to_owned(),
+            Some(false) => "failed".to_owned(),
+            None => self
+                .readiness
+                .get(agent_id)
+                .map(|entry| entry.status.clone())
+                .unwrap_or_else(|| "unverified".to_owned()),
+        }
+    }
+
     pub fn profile(&self, agent_id: &str) -> Option<RuntimeDriverProfile> {
         let driver = self.drivers.get(agent_id)?;
         let readiness = self.readiness.get(agent_id)?;
-        let blocker = if readiness.status != "ready" {
+        let driver_status = driver_status_for_mode(&driver.driver_mode)?;
+        // Blockers describe a structurally blocked driver. An unverified lane
+        // is not blocked — missing evidence never pretends a route is closed.
+        let blocker = if driver_status == "blocked" {
             driver.blocker_codes.first().cloned()
         } else {
             None
@@ -617,8 +636,8 @@ impl RuntimeDriverRegistry {
             "absent".to_string()
         };
         Some(RuntimeDriverProfile {
-            driver_status: driver_status_for_mode(&driver.driver_mode)?.to_string(),
-            readiness: readiness.status.clone(),
+            driver_status: driver_status.to_string(),
+            readiness: self.effective_status(agent_id),
             protocol: driver.runtime_protocol.clone(),
             blocker,
             capability_matrix: driver.capability_matrix.clone(),
@@ -675,7 +694,7 @@ pub fn adapter_management_catalog(antigravity_bridge_installed: bool) -> Value {
             .filter_map(|agent_id| {
                 let adapter = adapter_for_agent(agent_id)?;
                 let driver = registry.drivers.get(*agent_id)?;
-                let readiness = registry.readiness.get(*agent_id)?;
+                let _ = registry.readiness.get(*agent_id)?;
                 let lane_family = driver
                     .capability_matrix
                     .as_ref()
@@ -718,7 +737,7 @@ pub fn adapter_management_catalog(antigravity_bridge_installed: bool) -> Value {
                     installation_state,
                     &lifecycle_actions,
                 );
-                Some(json!({
+                let mut entry = json!({
                     "agentId": adapter.id(),
                     "label": adapter.label(),
                     "driverId": driver.driver_id,
@@ -726,12 +745,17 @@ pub fn adapter_management_catalog(antigravity_bridge_installed: bool) -> Value {
                     "laneFamily": lane_family,
                     "managementKind": management_kind,
                     "installationState": installation_state,
-                    "readiness": readiness.status,
                     "lifecycleActions": lifecycle_actions,
                     "nativeCapabilities": native_capabilities,
                     "adapterPlugins": adapter_plugins,
                     "nativePreferred": true,
-                }))
+                });
+                // Readiness evidence is a debug diagnostic surface, not a
+                // management fact normal operation reports.
+                if licoup_foundation::platform::debug::debug_enabled() {
+                    entry["readiness"] = json!(registry.effective_status(adapter.id()));
+                }
+                Some(entry)
             })
             .collect::<Vec<_>>()
     }) else {

@@ -121,6 +121,7 @@ impl TestTempDir {
         }
     }
 
+    #[cfg(unix)]
     pub(super) fn close(mut self) -> std::io::Result<()> {
         let result = self.cleanup();
         if result.is_ok() {

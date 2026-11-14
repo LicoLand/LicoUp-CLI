@@ -40,6 +40,19 @@ fn set_record_read_only(path: &std::path::Path, read_only: bool) {
     fs::set_permissions(path, permissions).expect("record permissions");
 }
 
+/// Whether a read-only bit actually blocks this process from writing. An
+/// elevated run (root / `CAP_DAC_OVERRIDE`) writes through it, in which case
+/// the staged journal failure cannot be produced and the scenario is skipped.
+fn read_only_bit_is_enforced(root: &std::path::Path) -> bool {
+    let probe = root.join("write-probe");
+    fs::write(&probe, b"x").expect("probe file");
+    set_record_read_only(&probe, true);
+    let enforced = fs::OpenOptions::new().append(true).open(&probe).is_err();
+    set_record_read_only(&probe, false);
+    fs::remove_file(&probe).expect("probe cleanup");
+    enforced
+}
+
 #[test]
 fn a_real_record_survives_reopen_and_keeps_an_unconfirmed_owner_visible() {
     let root = temp_root("reopen");
@@ -254,6 +267,9 @@ fn a_prepare_only_crash_burns_the_generation() {
 #[test]
 fn a_real_write_failure_does_not_commit_and_stays_visible() {
     let root = temp_root("write-failure");
+    if !read_only_bit_is_enforced(&root) {
+        return;
+    }
     let journal = Arc::new(RuntimeCatalogJournal::open(&root).expect("open"));
     let carrier = ControlledCarrier::new("write-failure");
     let host = host_with_catalog_journal(carrier.clone(), journal.clone());

@@ -607,6 +607,7 @@ mod tests {
     }
 
     /// An archive whose members carry the unix modes a real payload declares.
+    #[cfg(unix)]
     fn archive_with_modes(files: &[(&str, &[u8], u32)]) -> Vec<u8> {
         let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
         for (name, content, mode) in files {

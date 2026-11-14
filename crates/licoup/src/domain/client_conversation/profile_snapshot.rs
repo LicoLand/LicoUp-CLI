@@ -52,27 +52,15 @@ impl ProfileSnapshotAuthority for ProductionSnapshotAuthority {
             .and_then(serde_json::Value::as_str)
             .filter(|value| !value.is_empty())
             .map(str::to_owned);
-        let mut capabilities = ["conversationDriver", "conversationReadiness"]
-            .into_iter()
-            .filter_map(|pointer| {
-                target
-                    .pointer(&format!("/adapterCapabilities/{pointer}"))
-                    .and_then(serde_json::Value::as_str)
-                    .filter(|value| *value == "supported" || *value == "ready")
-                    .map(|value| format!("{pointer}:{value}"))
-            })
-            .collect::<Vec<_>>();
-        // Every capability fact is projected by its own owner; the channel
-        // facts are the ones this list carried before the projection moved, and
-        // the driver-inventory and readiness facts are published under their
-        // own names above.
+        let mut capabilities: Vec<String> = Vec::new();
+        // Every capability fact is projected by its own owner; only a declared
+        // fact is a capability. A not-declared or unreadable answer is evidence
+        // about the fact, never an ability the member can be asked to use.
         capabilities.extend(
             crate::platform::runtime_adapters::native_capabilities_for_agent(agent_id)
                 .into_iter()
                 .filter(|fact| {
-                    fact.source == licoup_agent_drivers::runtime_adapters::registry::SOURCE_AGENT_CLI_PRESENCE
-                        || fact.source
-                            == licoup_agent_drivers::runtime_adapters::registry::SOURCE_AGENT_DESKTOP_PRESENCE
+                    fact.state == licoup_agent_drivers::runtime_adapters::adapter::CapabilityFactState::Declared
                 })
                 .map(|fact| fact.name.to_owned()),
         );

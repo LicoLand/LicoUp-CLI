@@ -5,6 +5,7 @@
 //! configurable byte / entry / depth limits.
 
 use std::cell::Cell;
+#[cfg(unix)]
 use std::ffi::CString;
 use std::fs::{self, OpenOptions};
 use std::io::{BufReader, Read, Write};
@@ -739,11 +740,11 @@ impl ExtractionRoot {
     }
 
     fn create_file(&self, relative: &Path) -> Result<fs::File> {
-        let leaf = relative
-            .file_name()
-            .ok_or_else(|| anyhow!("archive file entry has no file name"))?;
         #[cfg(unix)]
         {
+            let leaf = relative
+                .file_name()
+                .ok_or_else(|| anyhow!("archive file entry has no file name"))?;
             let parent = self.open_parent(relative, false)?;
             create_file_at(&parent, leaf)
         }

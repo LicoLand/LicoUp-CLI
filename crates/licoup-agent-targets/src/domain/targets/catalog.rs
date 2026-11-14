@@ -25,7 +25,8 @@ pub struct AdapterCapabilities {
     pub official_cli: String,
     pub conversation_driver: String,
     pub conversation_protocol: String,
-    pub conversation_readiness: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conversation_readiness: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub conversation_blocker: Option<String>,
     pub conversation_probe: Value,
@@ -110,7 +111,11 @@ pub(super) fn adapter_capabilities_for(
         official_cli: "unknown".to_string(),
         conversation_driver: "unsupported".to_string(),
         conversation_protocol: String::new(),
-        conversation_readiness: "history-only".to_string(),
+        conversation_readiness: if (port.debug_diagnostics)() {
+            Some("history-only".to_string())
+        } else {
+            None
+        },
         conversation_blocker: None,
         conversation_probe: json!({}),
         conversation_capability_matrix: Value::Null,
@@ -131,12 +136,17 @@ pub(super) fn adapter_capabilities_for(
     {
         capabilities.conversation_driver = driver_status;
         capabilities.conversation_protocol = protocol;
-        capabilities.conversation_readiness = readiness;
         capabilities.conversation_blocker = blocker;
         capabilities.conversation_capability_matrix = capability_matrix.unwrap_or(Value::Null);
-        capabilities.conversation_summary_codes = summary_codes;
-        capabilities.conversation_consecutive_passes = consecutive_passes;
-        capabilities.conversation_evidence_age = evidence_age_class;
+        // Readiness evidence is a debug diagnostic surface. Normal operation
+        // projects only structural capability facts; it never reports
+        // evidence states, and missing evidence never reads as a closed lane.
+        if (port.debug_diagnostics)() {
+            capabilities.conversation_readiness = Some(readiness);
+            capabilities.conversation_summary_codes = summary_codes;
+            capabilities.conversation_consecutive_passes = consecutive_passes;
+            capabilities.conversation_evidence_age = evidence_age_class;
+        }
     }
     capabilities
 }
@@ -390,7 +400,27 @@ mod tests {
             None,
         ));
         assert_eq!(capabilities.conversation_blocker, None);
-        assert_eq!(capabilities.conversation_readiness, "unverified");
+        // Evidence fields stay off the normal projection entirely: an
+        // unverified lane reports no readiness state, not a pessimistic one.
+        assert_eq!(capabilities.conversation_readiness, None);
+        assert!(capabilities.conversation_summary_codes.is_empty());
+    }
+
+    #[test]
+    fn evidence_fields_surface_only_under_debug_diagnostics() {
+        let fixture = crate::port::fixtures::packaged();
+        let capabilities = adapter_capabilities_for(&fixture, "deepseek-harness");
+        assert_eq!(capabilities.conversation_readiness, None);
+
+        let debug_fixture = crate::port::AgentTargetPort {
+            debug_diagnostics: || true,
+            ..crate::port::fixtures::packaged()
+        };
+        let capabilities = adapter_capabilities_for(&debug_fixture, "deepseek-harness");
+        assert_eq!(
+            capabilities.conversation_readiness.as_deref(),
+            Some("unverified")
+        );
         assert_eq!(
             capabilities.conversation_summary_codes,
             vec!["evidence_missing"]

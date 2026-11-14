@@ -121,10 +121,6 @@ fn millis_option(raw: Option<&str>, name: &str) -> Result<Option<u64>> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{CliExecution, execute_cli};
-    use serde_json::Value;
-    use std::path::Path;
-
     /// An unknown isolation mode is refused before any root is opened, so a
     /// typo cannot silently become the unconfined run.
     #[test]
@@ -156,8 +152,16 @@ mod tests {
 
     /// A package that was never installed is refused by the store's own record
     /// before anything is derived from the request.
+    // The refusal ordering asserted here is macOS-specific: hosts where the
+    // extension isolation carrier is unavailable refuse earlier with
+    // `extension_isolation_unavailable` instead.
     #[test]
+    #[cfg(target_os = "macos")]
     fn a_package_that_is_not_installed_is_refused_without_starting_anything() {
+        use super::super::{CliExecution, execute_cli};
+        use serde_json::Value;
+        use std::path::Path;
+
         let root =
             std::env::temp_dir().join(format!("licoup-extension-host-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
