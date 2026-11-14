@@ -7,9 +7,11 @@ collaboration cores, and the publishable crate family.
 
 The Flutter desktop application lives in the sibling repository
 [LicoUp](https://github.com/LicoLand/LicoUp) ("LicoUp Desktop"), which consumes
-this repository's binaries and crate releases. The bridge contract between the
-two is documented there; this repository publishes the Rust side of it
-(`crates/licoup` FFI surface).
+this repository's binaries and crate releases. This repository owns the
+canonical wire and bridge schemas under `schemas/` (`client_bridge`,
+`conversation_protocol`, `extensions`, `subagent_mcp`) and generates the Rust
+FFI and CLI contracts from them (`crates/licoup` FFI surface); the Desktop
+repository syncs those schema definitions for Dart-side code generation.
 
 ## Status
 
@@ -27,7 +29,7 @@ on LicoArc through the `licoarc-client` crate (`licoup devices …`).
 | `components/` | Optional feature packages (`analytics`, `appearance`, `endpoint-collaboration`), each a standalone workspace with its own lockfile. |
 | `tests/` | Integration, contract, smoke and product-e2e suites for the CLI and its binaries. |
 | `tools/` | Rust-facing tooling: cargo runners, dependency audit, codegen, agent-adapter standards checks. |
-| `schemas/` | Rust-side protocol schemas (conversation protocol, extensions, subagent MCP). The `client_bridge` schema lives in the Desktop repository. |
+| `schemas/` | Canonical wire and bridge contract schemas owned by this repository (`client_bridge`, `conversation_protocol`, `extensions`, `subagent_mcp`). |
 | `docs/` | CLI documentation. |
 
 ## Binaries

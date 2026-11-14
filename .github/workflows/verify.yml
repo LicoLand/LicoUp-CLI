@@ -24,6 +24,9 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "24"
       - name: Install the pinned toolchain
         run: rustup show active-toolchain || rustup toolchain install
       - name: Format
@@ -31,7 +34,7 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --all-targets --locked --features licoup/test-support -- -D warnings -A clippy::style -A clippy::complexity
       - name: Tests
-        run: cargo test --workspace --locked --features licoup/test-support
+        run: node tools/scripts/cargo-client.mjs test --workspace --locked --no-fail-fast --features licoup/test-support
       - name: Package the tagged crate
         if: startsWith(github.ref, 'refs/tags/')
         run: cargo package --locked -p licoup
@@ -50,8 +53,10 @@ jobs:
           node-version: "24"
       - name: Install the pinned toolchain
         run: rustup show active-toolchain || rustup toolchain install
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --locked
       - name: Contract tests
-        run: node --test tests/contract/
+        run: node --test 'tests/contract/**/*.test.mjs' tools/scripts/lib/test-artifact-lifecycle.test.mjs
 
   dispatch-publish:
     needs: [rust, node]
