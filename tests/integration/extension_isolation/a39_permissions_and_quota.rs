@@ -15,24 +15,24 @@ use std::time::Duration;
 
 #[cfg(target_os = "macos")]
 use licoup::platform::extension_host::ExtensionCarrier;
-use licoup::platform::extension_host::isolation::{
-    IsolationMode, IsolationRecord, NetworkGrant, PlatformConfinement, ResolvedProgram,
-    ResourceLimits, RevocationReason, StaticPrograms,
-};
 #[cfg(unix)]
 use licoup::platform::extension_host::isolation::LimitScope;
 #[cfg(target_os = "macos")]
 use licoup::platform::extension_host::isolation::ReleaseScope;
+use licoup::platform::extension_host::isolation::{
+    IsolationMode, IsolationRecord, NetworkGrant, PlatformConfinement, ResolvedProgram,
+    ResourceLimits, RevocationReason, StaticPrograms,
+};
 use serde_json::json;
 
 use crate::support::{
     Sandbox, activate, carrier, carrier_result, host_of, payload_of, policy, programs, settle,
     shell_program,
 };
-#[cfg(unix)]
-use crate::support::{failure_of, pid_alive};
 #[cfg(target_os = "macos")]
 use crate::support::{carrier_spec, python_program, python_runtime, read_text, wait_for};
+#[cfg(unix)]
+use crate::support::{failure_of, pid_alive};
 
 #[test]
 fn the_capability_report_matches_what_this_host_can_enforce() {

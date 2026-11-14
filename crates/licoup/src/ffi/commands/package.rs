@@ -1118,9 +1118,7 @@ fn release_inputs(value: &Value) -> Result<ReleaseInputs> {
             Some("claude-code") => {
                 crate::platform::provider_mcp_registration::ProviderConfigKind::ClaudeCode
             }
-            Some("codex") => {
-                crate::platform::provider_mcp_registration::ProviderConfigKind::Codex
-            }
+            Some("codex") => crate::platform::provider_mcp_registration::ProviderConfigKind::Codex,
             _ => return Err(anyhow!("package_registration_provider_unknown")),
         };
         inputs = inputs.with_provider_mcp(ProviderMcpRelease {

@@ -215,8 +215,8 @@ fn archive(files: &[(&str, Vec<u8>)]) -> Vec<u8> {
     // A published artifact travels deflated; an uncompressed Linux debug
     // binary exceeds the 8 MiB archive ceiling while the same program
     // compresses well under it.
-    let options =
-        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
     for (name, content) in files {
         writer.start_file(*name, options).expect("start file");
         writer.write_all(content).expect("write file");
@@ -265,8 +265,8 @@ fn manifest_json() -> Vec<u8> {
 fn packaged_program_bytes(program: &Path) -> Vec<u8> {
     #[cfg(unix)]
     {
-        let stripped = std::env::temp_dir()
-            .join(format!("lico-agent-codex-strip-{}", std::process::id()));
+        let stripped =
+            std::env::temp_dir().join(format!("lico-agent-codex-strip-{}", std::process::id()));
         std::fs::copy(program, &stripped).expect("strip staging is writable");
         let ok = std::process::Command::new("strip")
             .arg(&stripped)

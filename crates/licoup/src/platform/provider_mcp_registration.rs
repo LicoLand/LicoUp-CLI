@@ -381,9 +381,9 @@ fn shared_skill_path_in(home: &Path) -> PathBuf {
 fn resolve_config_path(kind: ProviderConfigKind) -> Result<PathBuf, RegistrationError> {
     let candidates = reviewed_config_candidates(kind)?;
     match kind {
-        ProviderConfigKind::Cursor
-        | ProviderConfigKind::ClaudeCode
-        | ProviderConfigKind::Codex => Ok(candidates[0].clone()),
+        ProviderConfigKind::Cursor | ProviderConfigKind::ClaudeCode | ProviderConfigKind::Codex => {
+            Ok(candidates[0].clone())
+        }
         ProviderConfigKind::Antigravity => {
             let official = &candidates[0];
             let legacy = &candidates[1];
@@ -496,7 +496,8 @@ fn parse_config_for(
 fn parse_codex_config(raw: Option<&[u8]>) -> Result<toml::Table, RegistrationError> {
     let mut table = match raw {
         Some(raw) => {
-            let text = std::str::from_utf8(raw).map_err(|_| RegistrationError::ConfigUnavailable)?;
+            let text =
+                std::str::from_utf8(raw).map_err(|_| RegistrationError::ConfigUnavailable)?;
             toml::from_str::<toml::Table>(text).map_err(|_| RegistrationError::ConfigUnavailable)?
         }
         None => toml::Table::new(),
@@ -557,7 +558,11 @@ fn entry(config: &Value) -> Option<&Map<String, Value>> {
 }
 
 fn codex_entry(config: &toml::Table) -> Option<&toml::Table> {
-    config.get("mcp_servers")?.as_table()?.get(SERVER_ID)?.as_table()
+    config
+        .get("mcp_servers")?
+        .as_table()?
+        .get(SERVER_ID)?
+        .as_table()
 }
 
 fn ensure_owned_entry_unambiguous_doc(
@@ -805,7 +810,10 @@ fn command_is_connector(command: &str, connector: &Path) -> bool {
 }
 
 fn entry_is_exact(entry: &Map<String, Value>, kind: ProviderConfigKind, connector: &Path) -> bool {
-    let expected_args: Vec<Value> = mcp_args(kind, connector).into_iter().map(Value::String).collect();
+    let expected_args: Vec<Value> = mcp_args(kind, connector)
+        .into_iter()
+        .map(Value::String)
+        .collect();
     let args_exact = entry
         .get("args")
         .and_then(Value::as_array)
@@ -814,9 +822,7 @@ fn entry_is_exact(entry: &Map<String, Value>, kind: ProviderConfigKind, connecto
         ProviderConfigKind::Cursor => entry.get("env") == Some(&cursor_context_environment()),
         ProviderConfigKind::Antigravity
         | ProviderConfigKind::ClaudeCode
-        | ProviderConfigKind::Codex => {
-            entry.get("env") == Some(&antigravity_context_environment())
-        }
+        | ProviderConfigKind::Codex => entry.get("env") == Some(&antigravity_context_environment()),
     };
     if entry.get("managedBy").and_then(Value::as_str) != Some(MANAGED_BY)
         || entry.get("schemaVersion").and_then(Value::as_str) != Some(ENTRY_SCHEMA)
@@ -835,11 +841,7 @@ fn entry_is_exact(entry: &Map<String, Value>, kind: ProviderConfigKind, connecto
         .is_some_and(|path| path == connector)
 }
 
-fn codex_entry_is_exact(
-    entry: &toml::Table,
-    kind: ProviderConfigKind,
-    connector: &Path,
-) -> bool {
+fn codex_entry_is_exact(entry: &toml::Table, kind: ProviderConfigKind, connector: &Path) -> bool {
     let expected_args: Vec<toml::Value> = mcp_args(kind, connector)
         .into_iter()
         .map(toml::Value::String)
@@ -1374,8 +1376,7 @@ mod tests {
 
     #[test]
     fn codex_toml_registration_preserves_existing_settings_and_supports_licoup_stdio() {
-        let root =
-            std::env::temp_dir().join(format!("licoup-codex-toml-{}", uuid::Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!("licoup-codex-toml-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&root).unwrap();
         let connector = root.join("licoup");
         fs::write(&connector, b"synthetic licoup").unwrap();
@@ -1397,11 +1398,18 @@ mod tests {
         let text = String::from_utf8(written).unwrap();
         assert!(text.contains("model = \"gpt-5\""));
         assert!(text.contains("[mcp_servers.other]"));
-        assert!(text.contains("args = [\"mcp\", \"stdio\", \"--caller\", \"codex\"]")
-            || (text.contains("\"mcp\"") && text.contains("\"stdio\"") && text.contains("\"codex\"")));
+        assert!(
+            text.contains("args = [\"mcp\", \"stdio\", \"--caller\", \"codex\"]")
+                || (text.contains("\"mcp\"")
+                    && text.contains("\"stdio\"")
+                    && text.contains("\"codex\""))
+        );
         let parsed_toml: toml::Table = toml::from_str(&text).unwrap();
         let entry = codex_entry(&parsed_toml).expect("codex server entry");
-        assert_eq!(entry.get("enabled").and_then(toml::Value::as_bool), Some(true));
+        assert_eq!(
+            entry.get("enabled").and_then(toml::Value::as_bool),
+            Some(true)
+        );
         let args: Vec<&str> = entry["args"]
             .as_array()
             .unwrap()

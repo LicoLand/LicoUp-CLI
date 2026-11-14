@@ -108,7 +108,8 @@ pub(super) fn caller_config() -> CallerConfigPort {
                     == IntegrationState::Ready
             }
         },
-        plan_digest: |kind, connector| match kind {
+        plan_digest: |kind, connector| {
+            match kind {
             CallerManagerKind::CodexUserConfig => {
                 crate::platform::provider_mcp_registration::RegistrationPlan::prepare(
                     crate::platform::provider_mcp_registration::ProviderConfigKind::Codex,
@@ -135,6 +136,7 @@ pub(super) fn caller_config() -> CallerConfigPort {
                     .map(|plan| plan.digest().to_owned())
                     .map_err(|_| ())
             }
+        }
         },
         apply: |kind, connector, digest, remove| match kind {
             CallerManagerKind::CodexUserConfig => {

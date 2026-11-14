@@ -107,12 +107,8 @@ fn resolve_mcp_caller_provider(
     caller_arg: Option<&str>,
     env_caller: Option<&str>,
 ) -> Result<String> {
-    let arg = caller_arg
-        .map(str::trim)
-        .filter(|value| !value.is_empty());
-    let env = env_caller
-        .map(str::trim)
-        .filter(|value| !value.is_empty());
+    let arg = caller_arg.map(str::trim).filter(|value| !value.is_empty());
+    let env = env_caller.map(str::trim).filter(|value| !value.is_empty());
     match (arg, env) {
         (Some(a), Some(e)) if a != e => Err(anyhow!("mcp_caller_conflict")),
         (Some(value), _) | (_, Some(value)) => Ok(value.to_owned()),
@@ -196,8 +192,8 @@ fn serve_mcp_stdio<R: BufRead, W: Write>(
     writer: W,
 ) -> Result<W> {
     let provider_id = resolve_mcp_caller_provider(caller_arg, env_caller)?;
-    let catalog = application_port::subagent_catalog()
-        .map_err(|failure| anyhow!("{}", failure.code))?;
+    let catalog =
+        application_port::subagent_catalog().map_err(|failure| anyhow!("{}", failure.code))?;
     let admitted = catalog
         .get("callers")
         .and_then(Value::as_array)
@@ -807,10 +803,7 @@ mod tests {
             .collect::<Vec<_>>();
         assert_eq!(lines.len(), 3);
         assert_eq!(lines[0]["result"]["serverInfo"]["name"], MCP_SERVER_NAME);
-        assert_eq!(
-            lines[0]["result"]["protocolVersion"],
-            MCP_PROTOCOL_REVISION
-        );
+        assert_eq!(lines[0]["result"]["protocolVersion"], MCP_PROTOCOL_REVISION);
 
         let tools = lines[1]["result"]["tools"]
             .as_array()
