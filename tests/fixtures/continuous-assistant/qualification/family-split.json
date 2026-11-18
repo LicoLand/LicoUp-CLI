@@ -1,0 +1,10 @@
+{
+  "schema": "licoup.continuity.qualification-family-split-draft/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "developmentPrefix": "family:dev",
+  "heldoutPrefix": "family:heldout",
+  "calibrationPrefix": "family:calibration",
+  "disjoint": true,
+  "note": "Complete conversation families stay in one split. Adjacent turns are not randomly split."
+}

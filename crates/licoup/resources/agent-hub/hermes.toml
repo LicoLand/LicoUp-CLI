@@ -1,0 +1,81 @@
+id = "hermes"
+binary_names = ["hermes"]
+official_docs = "https://github.com/NousResearch/hermes-agent"
+
+[[channels]]
+id = "homebrew"
+kind = "homebrew"
+oses = ["macos", "linux"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = false
+licoup_verified = false
+requires_manager = "homebrew"
+elevation = "none"
+scope = "user"
+selectable = false
+unsupported_reason = "no-official-package-coordinate"
+package_coordinate = "hermes-agent"
+official_source = "https://hermes-agent.nousresearch.com"
+version_policy = "latest-stable"
+
+[[channels]]
+id = "npm"
+kind = "npm"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = false
+licoup_verified = false
+requires_manager = "npm"
+elevation = "none"
+scope = "user"
+selectable = false
+unsupported_reason = "no-official-package-coordinate"
+package_coordinate = "hermes-agent"
+official_source = "https://hermes-agent.nousresearch.com"
+version_policy = "latest-stable"
+
+[[channels]]
+id = "winget"
+kind = "winget"
+oses = ["windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = false
+licoup_verified = false
+requires_manager = "winget"
+elevation = "none"
+scope = "user"
+selectable = false
+unsupported_reason = "no-official-package-coordinate"
+package_coordinate = "hermes-agent"
+official_source = "https://hermes-agent.nousresearch.com"
+version_policy = "latest-stable"
+
+[[channels]]
+id = "official-artifact"
+kind = "official-artifact"
+oses = ["macos", "linux"]
+architectures = ["aarch64", "x86_64"]
+priority = 10
+official_recommended = true
+licoup_verified = true
+requires_manager = "none"
+elevation = "none"
+scope = "user"
+package_coordinate = "hermes-installer"
+official_source = "https://hermes-agent.nousresearch.com"
+version_policy = "vendor-latest"
+install_argv = ["bash", "{script}"]
+update_argv = ["hermes", "update"]
+uninstall_argv = ["rm", "{install}"]
+verify_argv = ["hermes", "--version"]
+
+[channels.artifact]
+origin_host = "hermes-agent.nousresearch.com"
+url_template = "https://hermes-agent.nousresearch.com/install.sh"
+
+[[unsupported]]
+oses = ["windows"]
+reason = "native-windows-installer-unavailable"

@@ -1,0 +1,7 @@
+{
+  "schema": "licoup.ui-contribution.v1",
+  "id": "org.licoland.adapter.lico-agent/adapter-status",
+  "kind": "command",
+  "title": "Lico Agent adapter status",
+  "actionRef": "org.licoland.adapter.lico-agent/adapter/status"
+}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "kind": "semantic-conversation",
+  "readOnly": true,
+  "privacyDefaults": {
+    "defaultView": "thread",
+    "hideRawInDefaultView": true,
+    "hideAuditInDefaultView": true,
+    "redactPaths": true,
+    "redactTokens": true,
+    "redactFullCommandPayloads": true
+  },
+  "thread": [
+    {
+      "id": "thread-user-meta-filtered",
+      "layer": "thread",
+      "role": "user",
+      "eventKind": "user-message",
+      "text": "Continue from the last checkpoint.",
+      "createdAt": "2026-02-01T08:00:00Z"
+    }
+  ],
+  "execution": [],
+  "artifacts": [],
+  "audit": {
+    "adapterId": "claude-code",
+    "adapterLabel": "Claude Code",
+    "hostApp": "claude-code",
+    "hostAppLabel": "Claude Code",
+    "sourceClient": "claude-code",
+    "sourceKind": "jsonl",
+    "nativeSessionId": "fixture-session-meta",
+    "importMode": "precise-adapter",
+    "sourceEvidence": {
+      "kind": "jsonl",
+      "pathRef": "fixture://claude-code/session-meta.jsonl",
+      "contentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "byteLength": 512
+    },
+    "parseWarnings": [
+      "metadata-only record excluded from thread",
+      "generated environment context stripped"
+    ],
+    "redactionStatus": "applied",
+    "validationStatus": "ok",
+    "createdAt": "2026-02-01T08:00:00Z",
+    "updatedAt": "2026-02-01T08:00:00Z"
+  },
+  "raw": {
+    "evidenceRefs": [
+      {
+        "kind": "jsonl",
+        "pathRef": "fixture://claude-code/session-meta.jsonl",
+        "contentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "byteLength": 512
+      }
+    ]
+  }
+}

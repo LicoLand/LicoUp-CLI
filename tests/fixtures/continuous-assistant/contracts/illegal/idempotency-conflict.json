@@ -1,0 +1,11 @@
+{
+  "expect": { "status": "reject", "reason": "idempotency_conflict", "check": "idempotency" },
+  "previous": {
+    "requestId": "request:interpret-1",
+    "speechAct": "delegation"
+  },
+  "payload": {
+    "requestId": "request:interpret-1",
+    "speechAct": "exploration"
+  }
+}

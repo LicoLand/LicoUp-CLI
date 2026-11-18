@@ -1,0 +1,144 @@
+{
+  "adapterId": "codex",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "stdio-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"id\":1,\"result\":{\"userAgent\":\"codex-test\",\"platformFamily\":\"test\",\"platformOs\":\"test\",\"codexHome\":\"/redacted\"}}",
+      "projection": [
+        {
+          "effect": "protocol",
+          "send": {
+            "method": "initialized"
+          }
+        },
+        {
+          "effect": "protocol",
+          "send": {
+            "id": 4,
+            "method": "account/rateLimits/read",
+            "params": {
+              "supportsLunaReserve": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "stdio-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"id\":4,\"result\":{\"rateLimits\":{\"primary\":{\"usedPercent\":0}}}}",
+      "projection": [
+        {
+          "effect": "protocol",
+          "send": {
+            "id": 2,
+            "method": "thread/start",
+            "params": {
+              "cwd": "/workspace/project"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "stdio-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"id\":2,\"result\":{\"thread\":{\"id\":\"synthetic-session\",\"cwd\":\"/workspace/project\"},\"cwd\":\"/workspace/project\",\"sandbox\":{\"type\":\"workspaceWrite\",\"writableRoots\":[]},\"approvalPolicy\":\"on-request\"}}",
+      "projection": [
+        {
+          "effect": "protocol",
+          "send": {
+            "id": 3,
+            "method": "turn/start",
+            "params": {
+              "input": [
+                {
+                  "text": "synthetic-user-prompt",
+                  "type": "text"
+                }
+              ],
+              "threadId": "synthetic-session"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "stdio-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{\"id\":3,\"result\":{\"turn\":{\"id\":\"synthetic-turn\",\"status\":\"inProgress\",\"items\":[]}}}",
+      "projection": []
+    },
+    {
+      "channel": "stdio-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 4,
+      "payload": "{\"method\":\"item/agentMessage/delta\",\"params\":{\"threadId\":\"synthetic-session\",\"turnId\":\"synthetic-turn\",\"delta\":\"synthetic reply\"}}",
+      "projection": []
+    },
+    {
+      "channel": "stdio-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 5,
+      "payload": "{\"method\":\"turn/completed\",\"params\":{\"threadId\":\"synthetic-session\",\"turn\":{\"id\":\"synthetic-turn\",\"status\":\"completed\",\"items\":[{\"id\":\"agent-1\",\"type\":\"agentMessage\",\"text\":\"synthetic reply\"}]}}}",
+      "projection": [
+        {
+          "complete": {
+            "effective": {
+              "approvalPolicy": "on-request",
+              "cwd": "/workspace/project",
+              "model": null,
+              "reasoningEffort": null,
+              "sandbox": {
+                "type": "workspaceWrite",
+                "writableRoots": []
+              }
+            },
+            "output": "synthetic reply",
+            "sessionId": "synthetic-session",
+            "threadId": "synthetic-session",
+            "turnId": "synthetic-turn",
+            "turnStatus": "completed"
+          },
+          "effect": "protocol"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "native-resume",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:d87df52e9fdd805c6bbcf713fcbc98185aacc5811a597dcaef1fe6fbe8fa730c"
+  }
+}

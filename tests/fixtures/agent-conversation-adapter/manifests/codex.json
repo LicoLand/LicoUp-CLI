@@ -1,0 +1,212 @@
+{
+  "schemaVersion": "lico.agent-conversation-adapter.v1",
+  "identity": {
+    "agentId": "codex",
+    "driverId": "codex-app-server",
+    "runtimeProtocol": "codex-app-server-stdio-jsonrpc",
+    "packagingTargetId": "codex"
+  },
+  "officialCapabilityAssessment": {
+    "completedBeforeImplementation": true,
+    "sourceAuthority": "official",
+    "versionSupport": {
+      "kind": "unknown",
+      "source": "unverified",
+      "reason": "no_verified_vendor_bound"
+    },
+    "interfaceName": "official Codex app-server stdio interface",
+    "assessedVersion": "version reported by fixed Codex probe",
+    "versionProbe": "fixed --version probe",
+    "capabilityProbe": "app-server initialize response",
+    "newSessionMethod": "thread/start",
+    "exactResumeMethod": "thread/resume with caller-supplied thread id",
+    "streamingMethod": "turn event notifications before terminal result",
+    "historyMethod": "thread/list and exact thread/read",
+    "cleanupMethod": "isolated test thread cleanup with absence verification",
+    "officialReferences": [
+      "https://github.com/openai/codex"
+    ]
+  },
+  "transport": {
+    "family": "app-server",
+    "origin": "official",
+    "promptChannel": "json-rpc",
+    "continuityChannel": "protocol-field",
+    "workingDirectoryChannel": "protocol-field",
+    "framing": "json-rpc",
+    "sessionScope": "persistent",
+    "fixedLaunchArguments": [
+      "app-server",
+      "--stdio"
+    ]
+  },
+  "configuration": {
+    "binaryEnvironmentKeys": [
+      "CODEX_PATH",
+      "CODEX_BIN"
+    ],
+    "authentication": "runtime-owned",
+    "modelSelection": "request-field",
+    "reasoningSelection": "request-field",
+    "permissionSelection": "runtime-owned"
+  },
+  "operations": {
+    "discover": {
+      "status": "supported",
+      "method": "fixed version and capability probes"
+    },
+    "openNew": {
+      "status": "supported",
+      "method": "thread/start"
+    },
+    "exactResume": {
+      "status": "supported",
+      "method": "thread/resume with caller-supplied thread id"
+    },
+    "send": {
+      "status": "supported",
+      "method": "official structured prompt operation"
+    },
+    "stream": {
+      "status": "supported",
+      "method": "turn event notifications before terminal result"
+    },
+    "cancel": {
+      "status": "supported",
+      "method": "App Server turn/interrupt with exact threadId and bound active turnId"
+    },
+    "interruptSteer": {
+      "status": "supported",
+      "method": "App Server turn/steer with exact threadId and expectedTurnId"
+    },
+    "cleanup": {
+      "status": "supported",
+      "method": "isolated test thread cleanup with absence verification"
+    },
+    "history": {
+      "status": "supported",
+      "method": "thread/list and exact thread/read"
+    },
+    "approvals": {
+      "status": "unsupported",
+      "method": "client approval response bridge is not enabled"
+    },
+    "usage": {
+      "status": "unsupported",
+      "method": "official lane usage projection is not enabled"
+    },
+    "multimodal": {
+      "status": "supported",
+      "method": "ordered app-server localImage items from bounded local desktop attachments"
+    }
+  },
+  "events": {
+    "framing": "json-rpc",
+    "realtimeKinds": [
+      "agent.message.chunk",
+      "agent.tool.started",
+      "agent.tool.completed"
+    ],
+    "terminalKinds": [
+      "dispatch.turn.completed",
+      "dispatch.turn.failed"
+    ],
+    "sessionOwned": true,
+    "turnOwned": true
+  },
+  "lifecycle": {
+    "supervision": "process-tree",
+    "cleanupScope": "disposable-root",
+    "cancelHandleScope": "active-turn",
+    "maxConcurrentTransports": 8,
+    "maxTrackedSessions": 1024,
+    "survivesGuiDisconnect": true,
+    "reattachScope": "activeTurn",
+    "replayMode": "orderedCursor"
+  },
+  "privacy": {
+    "promptInArguments": false,
+    "continuityIdInArguments": false,
+    "boundedInput": true,
+    "boundedOutput": true,
+    "structuredEventProjection": true,
+    "safeCleanup": true,
+    "redactedEvidence": true
+  },
+  "routedContext": {
+    "contractVersion": "lico.routing.distillation-package.v1",
+    "deliveryChannel": "prompt-envelope",
+    "maxPackageBytes": 65536,
+    "requiredSections": [
+      "objective",
+      "currentState",
+      "decisions",
+      "constraints",
+      "openItems"
+    ],
+    "sourceReferences": "opaque-digest-only",
+    "rawConversationAllowed": false,
+    "contextDigestRequired": true,
+    "fidelityFailure": "fail-closed",
+    "finalReplyFeedsNextDistillation": true
+  },
+  "productIntegration": {
+    "dispatchLane": "AgentDispatchLane",
+    "cliUsesCanonicalReadiness": true,
+    "guiUsesCanonicalReadiness": true,
+    "routingUsesCanonicalReadiness": true,
+    "sharedNativeHistoryAuthority": true,
+    "finalReplyFeedsThreadAndDistillation": true
+  },
+  "acceptance": {
+    "coreChecks": [
+      "P-01",
+      "P-02",
+      "P-03",
+      "P-04",
+      "P-05",
+      "P-06",
+      "P-07",
+      "P-08",
+      "P-09",
+      "P-10"
+    ],
+    "conditionalChecks": [
+      "C-01",
+      "C-02",
+      "C-03",
+      "C-04",
+      "C-05",
+      "C-06"
+    ],
+    "checkSemantics": {
+      "P-01": "baseline-binding",
+      "P-02": "native-session-creation",
+      "P-03": "bidirectional-exact-resume",
+      "P-04": "deterministic-final-result",
+      "P-05": "effective-settings-parity",
+      "P-06": "history-readback-and-rendering",
+      "P-07": "error-cancel-timeout-parity",
+      "P-08": "privacy-and-process-boundary",
+      "P-09": "isolation-and-cleanup",
+      "P-10": "arc-local-service-consecutive-rounds",
+      "C-01": "streaming-delta",
+      "C-02": "reasoning-and-tool-trace",
+      "C-03": "approval-lifecycle",
+      "C-04": "attachments-and-multimodal",
+      "C-05": "interrupt-and-steer",
+      "C-06": "usage-and-status"
+    },
+    "minimumConsecutivePasses": 1,
+    "minimumConsecutiveReleaseUiPasses": 0,
+    "productUiRequired": false,
+    "releaseP10Required": false,
+    "liveLocalForwardingRequired": true,
+    "realtimeOutputRequired": true,
+    "sameNativeSessionRequired": true,
+    "canonicalReadinessRequired": true,
+    "nativeToArcRequired": true,
+    "arcToNativeRequired": true,
+    "exactArtifactRequired": false
+  }
+}

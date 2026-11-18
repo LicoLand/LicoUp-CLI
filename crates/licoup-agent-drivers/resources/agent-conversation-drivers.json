@@ -1,0 +1,489 @@
+{
+  "schemaVersion": "v0.0.1:client-agent-conversation-drivers-1",
+  "contractVersion": "CL-06",
+  "evidenceContract": {
+    "minimumConsecutivePasses": 1,
+    "coreChecks": [
+      "P-01",
+      "P-02",
+      "P-03",
+      "P-04",
+      "P-05",
+      "P-06",
+      "P-07",
+      "P-08",
+      "P-09",
+      "P-10"
+    ],
+    "conditionalChecks": [
+      "C-01",
+      "C-02",
+      "C-03",
+      "C-04",
+      "C-05",
+      "C-06"
+    ],
+    "requiredBooleans": [
+      "officialNativeLane",
+      "conversationGatePassed",
+      "cleanupPassed",
+      "privacyPassed"
+    ],
+    "requiredCounts": [
+      "consecutivePasses"
+    ],
+    "requiredDigests": [
+      "runtimeVersionDigest",
+      "capabilitySnapshotDigest",
+      "adapterManifestDigest",
+      "releaseArtifactDigest",
+      "releaseSidecarDigest",
+      "productContinuityBindingDigest",
+      "registryDigest",
+      "driverInventoryDigest",
+      "evidenceDigest"
+    ],
+    "requiredBindings": [
+      "agentId",
+      "driverId",
+      "runtimeProtocol",
+      "harnessVersion",
+      "runtimeVersionClass",
+      "runtimeSourceClass"
+    ]
+  },
+  "drivers": [
+    {
+      "agentId": "openclaw",
+      "driverId": "openclaw-acp",
+      "runtimeProtocol": "openclaw-acp-stdio-jsonrpc",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "acp",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": false,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": []
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": true,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "claude-code",
+      "driverId": "claude-code-stream-json",
+      "runtimeProtocol": "claude-code-cli-stream-json",
+      "officialNativeLaneKind": "public-cli-streaming-input",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "stream-json",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "processLocalContinuation": true,
+        "interruptSteer": true,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": [
+          "default",
+          "plan",
+          "acceptEdits",
+          "bypassPermissions"
+        ]
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": true,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "codex",
+      "driverId": "codex-app-server",
+      "runtimeProtocol": "codex-app-server-stdio-jsonrpc",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "app-server",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": true,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": true,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": [
+          "read-only",
+          "workspace-write",
+          "danger-full-access"
+        ]
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": true,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "antigravity",
+      "driverId": "antigravity-cli",
+      "runtimeProtocol": "antigravity-cli-argv-hook-v1",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "cli",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": false,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": [
+          "dangerously-skip-permissions"
+        ]
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": false,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "opencode",
+      "driverId": "opencode-serve",
+      "runtimeProtocol": "opencode-serve-http-v1",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "serve-http",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": false,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": []
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": false,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "copilot",
+      "driverId": "copilot-acp",
+      "runtimeProtocol": "copilot-acp-v1-stdio-ndjson",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "acp",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": false,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": []
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": true,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "kilo-code",
+      "driverId": "kilo-code-serve",
+      "runtimeProtocol": "kilo-code-serve-http-v1",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "serve-http",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": false,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": []
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": false,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "cursor",
+      "driverId": "cursor-cli",
+      "runtimeProtocol": "cursor-agent-cli-v1",
+      "officialNativeLaneKind": "public-cli-resume",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "cli",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": false,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": []
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": false,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "hermes",
+      "driverId": "hermes-acp",
+      "runtimeProtocol": "hermes-acp-stdio-jsonrpc",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "acp",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": false,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": []
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": true,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "kimi-code",
+      "driverId": "kimi-code-acp",
+      "runtimeProtocol": "kimi-code-acp-v1-stdio-ndjson",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "acp",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": false,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": []
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": true,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "pi",
+      "driverId": "pi-rpc",
+      "runtimeProtocol": "pi-rpc-stdio-jsonl",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "rpc",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": false,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": true,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": []
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": true,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "deepseek-harness",
+      "driverId": "deepseek-harness-sdk-jsonrpc",
+      "runtimeProtocol": "deepseek-harness-sdk-stdio-jsonrpc",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": false,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "rpc",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": false,
+        "cancel": false,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": false,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": [
+          "read-only",
+          "workspace-write",
+          "danger-full-access"
+        ]
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": true,
+        "responding": true,
+        "completed": true
+      }
+    },
+    {
+      "agentId": "lico-agent",
+      "driverId": "lico-agent-rpc",
+      "runtimeProtocol": "lico-agent-rpc-stdio-jsonl",
+      "officialNativeLaneKind": "public-local-protocol",
+      "historyReadable": true,
+      "driverMode": "conversation",
+      "blockerCodes": [],
+      "capabilityMatrix": {
+        "laneFamily": "rpc",
+        "openNew": true,
+        "exactResume": true,
+        "streaming": true,
+        "cancel": true,
+        "structuredEvents": true,
+        "approvals": false,
+        "multimodal": false,
+        "usageStatus": false,
+        "officialLane": true,
+        "interruptSteer": true,
+        "hostSurvivesGuiDisconnect": true,
+        "activeTurnReattach": true,
+        "orderedCursorReplay": true,
+        "permissionModes": []
+      },
+      "lifecycleEvidence": {
+        "accepted": true,
+        "processing": true,
+        "responding": true,
+        "completed": true
+      }
+    }
+  ]
+}

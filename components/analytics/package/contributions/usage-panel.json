@@ -1,0 +1,29 @@
+{
+  "schema": "licoup.ui-contribution.v1",
+  "id": "org.licoland.feature.analytics/usage-panel",
+  "kind": "metric-panel",
+  "title": "Usage",
+  "requiredProfile": "usage-metric",
+  "series": [
+    {
+      "metric": "licoup.tokens.input",
+      "label": "Input tokens",
+      "unit": "tokens"
+    },
+    {
+      "metric": "licoup.tokens.output",
+      "label": "Output tokens",
+      "unit": "tokens"
+    },
+    {
+      "metric": "licoup.requests",
+      "label": "Requests",
+      "unit": "requests"
+    },
+    {
+      "metric": "licoup.cost",
+      "label": "Cost",
+      "unit": "currency"
+    }
+  ]
+}

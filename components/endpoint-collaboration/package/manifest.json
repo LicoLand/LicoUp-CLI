@@ -1,0 +1,53 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.feature.endpoint-collaboration",
+  "version": "0.3.0",
+  "displayName": "LicoUp endpoint collaboration",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "endpoint-control",
+      "major": 1,
+      "capabilities": [
+        "endpoint.collaboration.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "declarative",
+    "descriptor": "contributions/control-surface.json"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.feature.endpoint-collaboration/custody-handles",
+      "scope": "kernel-adopted"
+    },
+    {
+      "capability": "org.licoland.feature.endpoint-collaboration/conversation-admission",
+      "scope": "verified-units"
+    },
+    {
+      "capability": "org.licoland.feature.endpoint-collaboration/relay-transport",
+      "scope": "configured-station"
+    }
+  ],
+  "contributions": [],
+  "extensions": {
+    "org.licoland.feature.endpoint-collaboration/purpose": "The optional endpoint collaboration capability: paired-device pairing, secure mesh relay delivery and remote work control. The kernel owns custody, durable state, the Canonical Conversation and authority, and reaches this capability only through those ports; a client without the package keeps its local conversations, its local work and its history, and its outbound endpoint capability is cut rather than hidden.",
+    "org.licoland.feature.endpoint-collaboration/outboundAuthority": "Outbound endpoint traffic is permitted only while this package resolves active. Absent, disabled or capability-undeclared packages refuse the send at the transport entry instead of leaving an outbound path that a user interface merely stops showing.",
+    "org.licoland.feature.endpoint-collaboration/payloadOwnership": "This declaration owns the package identity, its compatibility range, its capability profile and its control surface. The native implementation is linked from components/endpoint-collaboration behind the kernel's off-by-default endpoint-collaboration cargo feature, so a default client build carries the kernel's own pre-package path until ENDPOINT-PROTOCOL-RETIREMENT removes it.",
+    "org.licoland.feature.endpoint-collaboration/persistentData": "none",
+    "org.licoland.feature.endpoint-collaboration/persistentDataReason": "This package writes and keeps no persistent data of its own, and it declares no conversion because it owns no persisted format. The protected material it handles is committed through the kernel's own durable protocol store, and its paired-device records stay in the kernel data home, so disabling or uninstalling the package removes no user data and needs no conversion step."
+  }
+}

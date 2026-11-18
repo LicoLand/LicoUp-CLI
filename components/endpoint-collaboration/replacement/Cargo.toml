@@ -1,0 +1,14 @@
+[workspace]
+
+[package]
+name = "licoup-endpoint-collaboration-replacement"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+publish = false
+description = "Replacement and source-retirement authority (org.licoland.feature.collaboration): admits source retirement only from settled verified-target evidence, and keeps lost-device activation independent of transfer availability."
+
+[dependencies]
+# The transfer owner that produces the verified-target evidence this consumes.
+licoup-endpoint-collaboration-transfer = { path = "../transfer" }

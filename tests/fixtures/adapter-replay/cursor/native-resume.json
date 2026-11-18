@@ -1,0 +1,106 @@
+{
+  "adapterId": "cursor",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "strict-lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"type\":\"system\",\"subtype\":\"init\",\"apiKeySource\":\"synthetic\",\"cwd\":\"/workspace/project\",\"session_id\":\"synthetic-session\",\"model\":\"synthetic-model\",\"permissionMode\":\"default\"}",
+      "projection": []
+    },
+    {
+      "channel": "strict-lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"type\":\"user\",\"session_id\":\"synthetic-session\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"synthetic-user-prompt\"}]}}",
+      "projection": [
+        {
+          "effect": "accepted",
+          "sessionId": "synthetic-session",
+          "turnId": "cursor-turn"
+        }
+      ]
+    },
+    {
+      "channel": "strict-lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"type\":\"assistant\",\"session_id\":\"synthetic-session\",\"timestamp_ms\":1,\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"synthetic \"}]}}",
+      "projection": [
+        {
+          "effect": "text",
+          "sessionId": "synthetic-session",
+          "text": "synthetic ",
+          "turnId": "cursor-turn"
+        }
+      ]
+    },
+    {
+      "channel": "strict-lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{\"type\":\"assistant\",\"session_id\":\"synthetic-session\",\"timestamp_ms\":2,\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"reply\"}]}}",
+      "projection": [
+        {
+          "effect": "text",
+          "sessionId": "synthetic-session",
+          "text": "reply",
+          "turnId": "cursor-turn"
+        }
+      ]
+    },
+    {
+      "channel": "strict-lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 4,
+      "payload": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"request_id\":\"req-2\",\"result\":\"synthetic reply\",\"session_id\":\"synthetic-session\"}",
+      "projection": [
+        {
+          "effect": "complete",
+          "effective": {
+            "approvalPolicy": null,
+            "cwd": null,
+            "model": "synthetic-model",
+            "permissionMode": "default",
+            "reasoningEffort": null,
+            "sandbox": null
+          },
+          "output": "synthetic reply",
+          "sessionId": "synthetic-session",
+          "turnId": "req-2"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "native-resume",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:f9991cee18c437dccfce2977a89e3a70acc6fbc2a35436872709c02050d53515"
+  }
+}

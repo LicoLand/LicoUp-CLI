@@ -1,0 +1,148 @@
+{
+  "adapterId": "openclaw",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "gateway-jsonrpc-acp",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":1,\"agentCapabilities\":{\"loadSession\":true,\"sessionCapabilities\":{\"resume\":{}}},\"agentInfo\":{\"name\":\"openclaw-acp\",\"version\":\"synthetic\"}}}",
+      "projection": [
+        {
+          "effect": "send",
+          "message": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "session/load",
+            "params": {
+              "_meta": {
+                "requireExisting": true,
+                "sessionKey": "agent:main:acp:native-session"
+              },
+              "cwd": "/workspace/synthetic-project",
+              "mcpServers": [],
+              "sessionId": "agent:main:acp:native-session"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "gateway-jsonrpc-acp",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"agent:main:acp:native-session\",\"update\":{\"sessionUpdate\":\"session_info_update\",\"_meta\":{\"sessionKey\":\"agent:main:acp:native-session\"}}}}",
+      "projection": []
+    },
+    {
+      "channel": "gateway-jsonrpc-acp",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"sessionId\":\"agent:main:acp:native-session\",\"modes\":{\"currentModeId\":\"medium\",\"availableModes\":[]}}}",
+      "projection": [
+        {
+          "effect": "send",
+          "message": {
+            "id": 4,
+            "jsonrpc": "2.0",
+            "method": "session/prompt",
+            "params": {
+              "prompt": [
+                {
+                  "text": "<REDACTED_CONTENT>",
+                  "type": "text"
+                }
+              ],
+              "sessionId": "agent:main:acp:native-session"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "gateway-jsonrpc-acp",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"agent:main:acp:native-session\",\"update\":{\"sessionUpdate\":\"agent_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"synthetic resumed openclaw reply\"}}}}",
+      "projection": []
+    },
+    {
+      "channel": "gateway-jsonrpc-acp",
+      "direction": "agent-to-client",
+      "index": 4,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":{\"stopReason\":\"end_turn\"}}",
+      "projection": [
+        {
+          "effect": "complete",
+          "effective": {
+            "approvalPolicy": null,
+            "cwd": "/workspace/synthetic-project",
+            "model": null,
+            "reasoningEffort": "medium",
+            "sandbox": null
+          },
+          "output": "synthetic resumed openclaw reply",
+          "sessionId": "agent:main:acp:native-session",
+          "transitions": [
+            {
+              "kind": "lifecycle",
+              "stage": "submitted"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "accepted"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "processing"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "responding"
+            },
+            {
+              "kind": "text",
+              "text": "synthetic resumed openclaw reply",
+              "unitId": "openclaw:reply"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "completed"
+            }
+          ],
+          "turnStatus": "end_turn"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "native-resume",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:a3e9d39f6a862a0093e84578295f80a59e68d85a71ed63615d538adb022920f0"
+  }
+}

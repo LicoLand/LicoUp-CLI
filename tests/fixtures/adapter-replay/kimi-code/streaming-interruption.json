@@ -1,0 +1,103 @@
+{
+  "adapterId": "kimi-code",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "lf-ndjson-acp",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":1,\"agentCapabilities\":{\"loadSession\":true,\"sessionCapabilities\":{\"resume\":{}}},\"agentInfo\":{\"name\":\"kimi-code\",\"version\":\"synthetic\"}}}",
+      "projection": [
+        {
+          "effect": "send",
+          "message": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "session/load",
+            "params": {
+              "cwd": "/workspace/synthetic-project",
+              "mcpServers": [],
+              "sessionId": "native-session"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "lf-ndjson-acp",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"sessionId\":\"native-session\",\"configOptions\":[]}}",
+      "projection": [
+        {
+          "effect": "send",
+          "message": {
+            "id": 3,
+            "jsonrpc": "2.0",
+            "method": "session/prompt",
+            "params": {
+              "prompt": [
+                {
+                  "text": "<REDACTED_CONTENT>",
+                  "type": "text"
+                }
+              ],
+              "sessionId": "native-session"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "lf-ndjson-acp",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"native-session\",\"update\":{\"sessionUpdate\":\"agent_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"synthetic kimi-code reply\"}}}}",
+      "projection": []
+    },
+    {
+      "channel": "lf-ndjson-acp",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{",
+      "projection": [
+        {
+          "error": "acp_json_line_invalid",
+          "message": "The ACP protocol message could not be processed safely.",
+          "stage": "protocol/read",
+          "userInteractionRequired": false
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "streaming-interruption",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:905bb2aec4a7ab6f73ae5eaf651175bee92bc8edb9fac9a1235ec2860401dca7"
+  }
+}

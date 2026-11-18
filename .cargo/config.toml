@@ -1,0 +1,8 @@
+# An untracked `.cargo/local.toml` may carry developer-only overrides (for
+# example a `[patch.crates-io]` table resolving a crate under parallel
+# development from a sibling checkout). A fresh clone has no such file and
+# resolves every dependency from crates.io.
+include = [{ path = "local.toml", optional = true }]
+
+[build]
+target-dir = "build/crates/licoup/target"

@@ -1,0 +1,22 @@
+{
+  "expect": { "status": "accept", "type": "QualificationRecord" },
+  "payload": {
+    "responsibilityId": "responsibility:delegation",
+    "candidateIdentity": {
+      "modelDigest": "model:digest-a",
+      "reasoningDigest": "reasoning:digest-a",
+      "promptDigest": "prompt:digest-a",
+      "skillDigest": "skill:digest-a",
+      "contextPolicyDigest": "context:digest-a",
+      "toolContractDigest": "tools:digest-a",
+      "adapterRuntimeDigest": "adapter:digest-a",
+      "datasetVersion": "dataset:family-a",
+      "policyRevision": "policy:1"
+    },
+    "datasetFamilySplit": "heldout",
+    "observationCount": 0,
+    "policyRevision": "policy:1",
+    "result": "unknown",
+    "revoked": false
+  }
+}

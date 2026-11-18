@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            os: macos-15
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-24.04
+          - target: x86_64-pc-windows-msvc
+            os: windows-2025
+    uses: ./.github/workflows/cli-release-build.yml
+    with:
+      target: ${{ matrix.target }}
+      os: ${{ matrix.os }}
+    permissions:
+      contents: read
+
+  publish:
+    name: Publish ${{ github.ref_name }}
+    needs: [build]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Collect the native build artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: licoup-*
+          path: build/release
+          merge-multiple: true
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "24"
+      - name: Verify the tag names the released version
+        run: |
+          set -euo pipefail
+          version="$(node -p 'require("./tools/cli-version.json").productVersion')"
+          test "v${version}" = "${GITHUB_REF_NAME}"
+          echo "VERSION=${version}" >> "${GITHUB_ENV}"
+      - name: Collect every archive into one SHA256SUMS
+        run: |
+          set -euo pipefail
+          cd build/release
+          shopt -s nullglob
+          archives=(*.tar.gz *.zip)
+          checksums=(*.sha256)
+          test "${#archives[@]}" -eq 3
+          test "${#checksums[@]}" -eq 3
+          if command -v sha256sum >/dev/null 2>&1; then
+            check=(sha256sum -c)
+            sum=(sha256sum)
+          else
+            check=(shasum -a 256 -c)
+            sum=(shasum -a 256)
+          fi
+          for checksum in "${checksums[@]}"; do
+            normalized="${checksum}.lf"
+            tr -d '\r' < "${checksum}" > "${normalized}"
+            "${check[@]}" "${normalized}"
+            rm -f "${normalized}"
+          done
+          "${sum[@]}" "${archives[@]}" > SHA256SUMS
+          cat SHA256SUMS
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --verify-tag \
+            --title "LicoUp CLI ${VERSION}" \
+            --notes "LicoUp CLI ${VERSION} (macOS arm64, Linux x64, Windows x64)" \
+            build/release/*.tar.gz build/release/*.zip build/release/SHA256SUMS

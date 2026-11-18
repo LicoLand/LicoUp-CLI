@@ -1,0 +1,20 @@
+{
+  "schema": "licoup.continuity.qualification-observations-draft/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "responsibilityId": "responsibility:delegation",
+  "datasetFamilySplit": "heldout",
+  "recipe": {
+    "negativeFamilies": 300,
+    "positiveFamilies": 300,
+    "falseTakeovers": 0,
+    "missedCommitments": 0,
+    "abstentions": 0,
+    "familyPrefix": "family:heldout-pass"
+  },
+  "expect": {
+    "policyPass": true,
+    "result": "unknown",
+    "liveQualified": false
+  }
+}

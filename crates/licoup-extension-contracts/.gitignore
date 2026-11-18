@@ -1,0 +1,5 @@
+# Standalone-workspace artefacts. This crate is a member of the root workspace,
+# so the lockfile that matters is the repository root `Cargo.lock`; a lock written
+# into this directory by a checkout-local build is never read and is never
+# committed.
+/Cargo.lock

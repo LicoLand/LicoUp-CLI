@@ -1,0 +1,57 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.feature.analytics",
+  "version": "0.1.0",
+  "displayName": "LicoUp analytics and usage sources",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "usage-metric",
+      "major": 1,
+      "capabilities": [
+        "analytics.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/licoup-analytics"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.feature.analytics/usage-facts",
+      "scope": "core-ledger"
+    },
+    {
+      "capability": "org.licoland.feature.analytics/usage-sources",
+      "scope": "host-configured"
+    },
+    {
+      "capability": "org.licoland.feature.analytics/panel-surface",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "metric-panel",
+      "id": "org.licoland.feature.analytics/usage-panel",
+      "definition": "contributions/usage-panel.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.feature.analytics/purpose": "The optional analytics package: usage sources, the observation index and the metric panels over the core's retained metering facts. The kernel owns the ledger and depends on no part of this package, so a client without it keeps its usage, its running work and its history.",
+    "org.licoland.feature.analytics/persistentData": "none",
+    "org.licoland.feature.analytics/persistentDataReason": "This package declares no conversion because it owns no persisted package data of its own: it writes no data home, no cache and no store. Its observation index, source bindings, panels and prepared values live for the activation only and are released on uninstall, and the metering facts it reads are the kernel's retained ledger, which stays exactly where it was."
+  }
+}

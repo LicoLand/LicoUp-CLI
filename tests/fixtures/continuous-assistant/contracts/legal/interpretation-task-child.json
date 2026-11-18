@@ -1,0 +1,42 @@
+{
+  "expect": { "status": "accept", "type": "InterpretationProposal" },
+  "payload": {
+    "envelope": {
+      "conversationId": "conversation:parent",
+      "sourceEventRefs": [
+        {
+          "ownerKind": "event",
+          "opaqueId": "event:fixture-one",
+          "sourceRevision": 1,
+          "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "visibilityScope": "conversation",
+          "validity": "current"
+        }
+      ],
+      "observedRevision": 4,
+      "designationEpoch": 0,
+      "requestId": "request:interpret-child-1"
+    },
+    "matterAssociations": [],
+    "speechAct": "delegation",
+    "commitmentProposals": [
+      {
+        "subject": "new",
+        "expectedResult": "Draft the notes",
+        "criteria": [],
+        "createGoal": true
+      }
+    ],
+    "agreementProposals": [],
+    "capabilityNeeds": ["writing"],
+    "uncertaintyReasons": [],
+    "requestedReads": [],
+    "taskChildAdmission": {
+      "goalId": "goal:notes",
+      "parentConversationId": "conversation:parent",
+      "speechAct": "delegation",
+      "followThroughKind": "durable",
+      "requestId": "request:admit-child-1"
+    }
+  }
+}

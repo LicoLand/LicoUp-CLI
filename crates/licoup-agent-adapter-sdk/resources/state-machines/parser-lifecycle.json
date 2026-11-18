@@ -1,0 +1,24 @@
+{
+  "machines": [
+    {
+      "id": "native-parser-lifecycle",
+      "rust_module": "parser_lifecycle",
+      "states": [
+        { "id": "submitted", "rust_name": "Submitted" },
+        { "id": "accepted", "rust_name": "Accepted" },
+        { "id": "processing", "rust_name": "Processing" },
+        { "id": "responding", "rust_name": "Responding" },
+        { "id": "completed", "rust_name": "Completed" }
+      ],
+      "events": ["advance"],
+      "initial": "submitted",
+      "terminal": ["completed"],
+      "transitions": [
+        { "from_state": "submitted", "event": "advance", "to_state": "accepted" },
+        { "from_state": "accepted", "event": "advance", "to_state": "processing" },
+        { "from_state": "processing", "event": "advance", "to_state": "responding" },
+        { "from_state": "responding", "event": "advance", "to_state": "completed" }
+      ]
+    }
+  ]
+}

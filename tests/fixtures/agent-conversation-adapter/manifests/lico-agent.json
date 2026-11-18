@@ -1,0 +1,211 @@
+{
+  "schemaVersion": "lico.agent-conversation-adapter.v1",
+  "identity": {
+    "agentId": "lico-agent",
+    "driverId": "lico-agent-rpc",
+    "runtimeProtocol": "lico-agent-rpc-stdio-jsonl",
+    "packagingTargetId": "lico-agent"
+  },
+  "officialCapabilityAssessment": {
+    "completedBeforeImplementation": true,
+    "sourceAuthority": "official",
+    "versionSupport": {
+      "kind": "unknown",
+      "source": "unverified",
+      "reason": "no_verified_vendor_bound"
+    },
+    "interfaceName": "LicoUp-owned Lico Agent RPC stdio interface",
+    "assessedVersion": "version reported by fixed Lico Agent probe",
+    "versionProbe": "fixed --help probe",
+    "capabilityProbe": "RPC get_state and prompt handshake",
+    "newSessionMethod": "RPC prompt on a fresh supervised process",
+    "exactResumeMethod": "parent-owned transcript reinjected by the driver",
+    "streamingMethod": "RPC message_update text_delta events",
+    "historyMethod": "parent-owned exact session transcript read",
+    "cleanupMethod": "supervised process termination and parent-owned session removal",
+    "officialReferences": [
+      "https://github.com/LicoLand/LicoUp/blob/main/docs/protocols/lico-agent.md"
+    ]
+  },
+  "transport": {
+    "family": "rpc",
+    "origin": "official",
+    "promptChannel": "json-rpc",
+    "continuityChannel": "protocol-field",
+    "workingDirectoryChannel": "process-cwd",
+    "framing": "jsonl",
+    "sessionScope": "persistent",
+    "fixedLaunchArguments": [
+      "--mode",
+      "rpc"
+    ]
+  },
+  "configuration": {
+    "binaryEnvironmentKeys": [
+      "LICO_AGENT_PATH"
+    ],
+    "authentication": "runtime-owned",
+    "modelSelection": "request-field",
+    "reasoningSelection": "request-field",
+    "permissionSelection": "request-field"
+  },
+  "operations": {
+    "discover": {
+      "status": "supported",
+      "method": "fixed help and RPC state probes"
+    },
+    "openNew": {
+      "status": "supported",
+      "method": "RPC prompt on a fresh supervised process"
+    },
+    "exactResume": {
+      "status": "supported",
+      "method": "parent-owned transcript reinjected by the driver"
+    },
+    "send": {
+      "status": "supported",
+      "method": "RPC prompt"
+    },
+    "stream": {
+      "status": "supported",
+      "method": "RPC message_update text_delta events"
+    },
+    "cancel": {
+      "status": "supported",
+      "method": "RPC abort against the active supervised turn"
+    },
+    "interruptSteer": {
+      "status": "supported",
+      "method": "RPC steer against the active session and turn"
+    },
+    "cleanup": {
+      "status": "supported",
+      "method": "supervised process termination and parent-owned session removal"
+    },
+    "history": {
+      "status": "supported",
+      "method": "parent-owned exact session transcript read"
+    },
+    "approvals": {
+      "status": "unsupported",
+      "method": "client approval response bridge is not enabled"
+    },
+    "usage": {
+      "status": "unsupported",
+      "method": "runtime usage projection is not enabled"
+    },
+    "multimodal": {
+      "status": "unsupported",
+      "method": "current adapter contribution is text-only"
+    }
+  },
+  "events": {
+    "framing": "jsonl",
+    "realtimeKinds": [
+      "agent.message.chunk",
+      "agent.tool.started",
+      "agent.tool.completed"
+    ],
+    "terminalKinds": [
+      "dispatch.turn.completed",
+      "dispatch.turn.failed"
+    ],
+    "sessionOwned": true,
+    "turnOwned": true
+  },
+  "lifecycle": {
+    "supervision": "process-tree",
+    "cleanupScope": "process-session",
+    "cancelHandleScope": "active-turn",
+    "maxConcurrentTransports": 8,
+    "maxTrackedSessions": 1024,
+    "survivesGuiDisconnect": true,
+    "reattachScope": "activeTurn",
+    "replayMode": "orderedCursor"
+  },
+  "privacy": {
+    "promptInArguments": false,
+    "continuityIdInArguments": false,
+    "boundedInput": true,
+    "boundedOutput": true,
+    "structuredEventProjection": true,
+    "safeCleanup": true,
+    "redactedEvidence": true
+  },
+  "routedContext": {
+    "contractVersion": "lico.routing.distillation-package.v1",
+    "deliveryChannel": "prompt-envelope",
+    "maxPackageBytes": 65536,
+    "requiredSections": [
+      "objective",
+      "currentState",
+      "decisions",
+      "constraints",
+      "openItems"
+    ],
+    "sourceReferences": "opaque-digest-only",
+    "rawConversationAllowed": false,
+    "contextDigestRequired": true,
+    "fidelityFailure": "fail-closed",
+    "finalReplyFeedsNextDistillation": true
+  },
+  "productIntegration": {
+    "dispatchLane": "AgentDispatchLane",
+    "cliUsesCanonicalReadiness": true,
+    "guiUsesCanonicalReadiness": true,
+    "routingUsesCanonicalReadiness": true,
+    "sharedNativeHistoryAuthority": true,
+    "finalReplyFeedsThreadAndDistillation": true
+  },
+  "acceptance": {
+    "coreChecks": [
+      "P-01",
+      "P-02",
+      "P-03",
+      "P-04",
+      "P-05",
+      "P-06",
+      "P-07",
+      "P-08",
+      "P-09",
+      "P-10"
+    ],
+    "conditionalChecks": [
+      "C-01",
+      "C-02",
+      "C-03",
+      "C-04",
+      "C-05",
+      "C-06"
+    ],
+    "checkSemantics": {
+      "P-01": "baseline-binding",
+      "P-02": "native-session-creation",
+      "P-03": "bidirectional-exact-resume",
+      "P-04": "deterministic-final-result",
+      "P-05": "effective-settings-parity",
+      "P-06": "history-readback-and-rendering",
+      "P-07": "error-cancel-timeout-parity",
+      "P-08": "privacy-and-process-boundary",
+      "P-09": "isolation-and-cleanup",
+      "P-10": "exact-release-product-ui",
+      "C-01": "streaming-delta",
+      "C-02": "reasoning-and-tool-trace",
+      "C-03": "approval-lifecycle",
+      "C-04": "attachments-and-multimodal",
+      "C-05": "interrupt-and-steer",
+      "C-06": "usage-and-status"
+    },
+    "minimumConsecutivePasses": 1,
+    "minimumConsecutiveReleaseUiPasses": 1,
+    "productUiRequired": true,
+    "releaseP10Required": true,
+    "liveLocalForwardingRequired": true,
+    "realtimeOutputRequired": true,
+    "sameNativeSessionRequired": true,
+    "canonicalReadinessRequired": true,
+    "nativeToArcRequired": true,
+    "arcToNativeRequired": true,
+    "exactArtifactRequired": true
+  }
+}

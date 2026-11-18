@@ -1,0 +1,51 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.channel.telegram",
+  "version": "0.1.0",
+  "displayName": "LicoUp Telegram channel",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "telegram-channel",
+      "major": 1,
+      "capabilities": [
+        "communication-channel.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-telegram-channel"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.channel.telegram/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.channel.telegram/client-data-home",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.channel.telegram/network-egress",
+      "scope": "api.telegram.org"
+    }
+  ],
+  "contributions": [],
+  "extensions": {
+    "org.licoland.channel.telegram/purpose": "The optional Telegram communication channel: one independent process that long-polls the Telegram Bot API with the configured bot token and bridges approved chats to local Agent work through the host's lane port. The kernel owns no part of it and depends on none of it.",
+    "org.licoland.channel.telegram/persistentData": "self-owned",
+    "org.licoland.channel.telegram/persistentDataReason": "This package declares no conversion because the only persisted data it owns is the channel's own state under the private gateway state directory: the bot-token custody file, the binding store and the readiness marker, whose formats are private to this package and are not among the published client-state formats a migration converts."
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.adapter.openclaw",
+  "version": "0.14.0",
+  "displayName": "OpenClaw adapter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.3.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "agent-execution",
+      "major": 1,
+      "capabilities": [
+        "agent-execution.v1"
+      ]
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/lico-agent-openclaw"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.adapter.openclaw/agent-process",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.openclaw/agent-sessions",
+      "scope": "self"
+    },
+    {
+      "capability": "org.licoland.adapter.openclaw/client-data-home",
+      "scope": "self"
+    }
+  ],
+  "contributions": [
+    {
+      "kind": "command",
+      "id": "org.licoland.adapter.openclaw/adapter-status",
+      "definition": "contributions/adapter-status.json"
+    }
+  ],
+  "extensions": {
+    "org.licoland.adapter.openclaw/purpose": "The OpenClaw adapter: the Gateway ACP driver vocabulary and the vendor protocol that classifies one Gateway frame exactly once below the adapter port, plus the recorded-transcript replay arm an installed OpenClaw client resumes. The kernel owns no part of OpenClaw and depends on none of it.",
+    "org.licoland.adapter.openclaw/persistentData": "none",
+    "org.licoland.adapter.openclaw/persistentDataReason": "This package declares no conversion because it owns no persisted package data of its own: it writes no data home, no cache and no store. The Gateway conversation keys it binds belong to the installed OpenClaw Gateway, and the client's own conversation store remains the kernel's."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "expect": { "status": "accept", "type": "WorkContext" },
+  "payload": {
+    "conversationId": "conversation:group",
+    "membershipId": "membership:assistant",
+    "matterId": "matter:docs",
+    "generation": 1,
+    "privateBindingRef": "binding:opaque",
+    "capabilitySnapshotRef": "capability:opaque",
+    "sourceManifestRef": "manifest:1",
+    "status": "bound",
+    "lastReconciled": 10
+  }
+}

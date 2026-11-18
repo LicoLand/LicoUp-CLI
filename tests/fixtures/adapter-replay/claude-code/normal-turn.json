@@ -1,0 +1,83 @@
+{
+  "adapterId": "claude-code",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"fresh-synthetic-session\",\"model\":\"synthetic-model\",\"permissionMode\":\"plan\"}",
+      "projection": [
+        {
+          "effect": "progress",
+          "sessionId": "fresh-synthetic-session"
+        }
+      ]
+    },
+    {
+      "channel": "lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"type\":\"assistant\",\"session_id\":\"fresh-synthetic-session\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"synthetic reply\"}]}}",
+      "projection": [
+        {
+          "effect": "progress",
+          "sessionId": "fresh-synthetic-session"
+        }
+      ]
+    },
+    {
+      "channel": "lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"synthetic reply\",\"session_id\":\"fresh-synthetic-session\",\"permission_denials\":[]}",
+      "projection": [
+        {
+          "effect": "protocol_finished",
+          "effective": {
+            "approvalPolicy": "plan",
+            "cwd": null,
+            "model": "synthetic-model",
+            "permissionMode": "plan",
+            "reasoningEffort": null,
+            "sandbox": null
+          },
+          "events": [],
+          "output": "synthetic reply",
+          "sessionId": "fresh-synthetic-session",
+          "turnId": "synthetic-turn"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "normal-turn",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:213a2994e845df89930340a8e74ea438ef76c28b195af3f811af3b178c7f0b46"
+  }
+}

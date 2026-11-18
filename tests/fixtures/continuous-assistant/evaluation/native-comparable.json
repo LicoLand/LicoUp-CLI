@@ -1,0 +1,68 @@
+{
+  "schema": "licoup.continuity.evaluation-native/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "note": "Full-chain and direct native compare only on matching task/version/resource. Unmatched and version-mismatched native samples are excluded.",
+  "expect": {
+    "nativeSuccessDifference": 1.0,
+    "pairedSuccessDifference": 0.0,
+    "candidateFullCost": 11.0,
+    "baselineFullCost": 3.0
+  },
+  "rows": [
+    {
+      "role": "candidate",
+      "measuredFullCost": 2.0,
+      "acceptedOutcome": true,
+      "serialLatencyMs": 20,
+      "taskIdentity": "task:matched",
+      "versionIdentity": "v1",
+      "resourceIdentity": "res:1"
+    },
+    {
+      "role": "baseline",
+      "measuredFullCost": 3.0,
+      "acceptedOutcome": true,
+      "serialLatencyMs": 15,
+      "taskIdentity": "task:matched",
+      "versionIdentity": "v1",
+      "resourceIdentity": "res:1"
+    },
+    {
+      "role": "nativeDirect",
+      "measuredFullCost": 50.0,
+      "acceptedOutcome": false,
+      "serialLatencyMs": 5,
+      "taskIdentity": "task:matched",
+      "versionIdentity": "v1",
+      "resourceIdentity": "res:1"
+    },
+    {
+      "role": "candidate",
+      "measuredFullCost": 9.0,
+      "acceptedOutcome": true,
+      "serialLatencyMs": 40,
+      "taskIdentity": "task:full-chain-only",
+      "versionIdentity": "v1",
+      "resourceIdentity": "res:1"
+    },
+    {
+      "role": "nativeDirect",
+      "measuredFullCost": 50.0,
+      "acceptedOutcome": true,
+      "serialLatencyMs": 5,
+      "taskIdentity": "task:direct-only",
+      "versionIdentity": "v2",
+      "resourceIdentity": "res:other"
+    },
+    {
+      "role": "nativeDirect",
+      "measuredFullCost": 7.0,
+      "acceptedOutcome": true,
+      "serialLatencyMs": 8,
+      "taskIdentity": "task:matched",
+      "versionIdentity": "v2",
+      "resourceIdentity": "res:1"
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "adapterId": "opencode",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"id\":\"open-1\",\"title\":\"synthetic-session\"}",
+      "projection": [
+        {
+          "effect": "session",
+          "sessionId": "open-1"
+        }
+      ]
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"type\":\"message.updated\",\"properties\":{\"info\":{\"id\":\"msg-open-1\",\"role\":\"assistant\",\"sessionID\":\"open-1\"}}}",
+      "projection": []
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"type\":\"message.part.updated\",\"properties\":{\"sessionId\":\"open-1\",\"part\":{\"id\":\"prt-open-1\",\"messageID\":\"msg-open-1\",\"type\":\"text\",\"text\":\"synthetic \"}}}",
+      "projection": [
+        {
+          "effect": "text",
+          "text": "synthetic "
+        }
+      ]
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{\"type\":\"message.part.updated\",\"properties\":{\"sessionId\":\"open-1\",\"part\":{\"id\":\"prt-open-2\",\"messageID\":\"msg-open-1\",\"type\":\"text\",\"text\":\"reply\"}}}",
+      "projection": [
+        {
+          "effect": "text",
+          "text": "reply"
+        }
+      ]
+    },
+    {
+      "channel": "http-sse",
+      "direction": "agent-to-client",
+      "index": 4,
+      "payload": "{\"parts\":[{\"type\":\"text\",\"text\":\"synthetic reply\"}]}",
+      "projection": [
+        {
+          "effect": "message",
+          "output": "synthetic reply",
+          "transitions": [
+            {
+              "kind": "lifecycle",
+              "stage": "submitted"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "accepted"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "processing"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "responding"
+            },
+            {
+              "kind": "text",
+              "text": "synthetic reply",
+              "unitId": "opencode:reply"
+            },
+            {
+              "kind": "lifecycle",
+              "stage": "completed"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "normal-turn",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:564c8248e7af74f49c1d7f5fe1c0870d914ef959fb7204826d7dafede34de568"
+  }
+}

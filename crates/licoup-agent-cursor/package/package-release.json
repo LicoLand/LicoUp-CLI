@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "licoup.package-release.v1",
+  "packageId": "org.licoland.adapter.cursor",
+  "packageVersion": "0.14.0",
+  "clientCompatibility": {
+    "kind": "range",
+    "range": ">=0.3.0, <1.0.0"
+  },
+  "converter": {
+    "kind": "native-executable",
+    "entry": "bin/lico-agent-cursor",
+    "sourceFormat": "cursor.agent-cli.stream-json.v1",
+    "targetFormat": "licoup.conversation.v1"
+  }
+}

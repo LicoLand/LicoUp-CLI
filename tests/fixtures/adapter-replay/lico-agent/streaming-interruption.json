@@ -1,0 +1,59 @@
+{
+  "adapterId": "lico-agent",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "lf-jsonl-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"type\":\"message_update\",\"assistantMessageEvent\":{\"type\":\"text_delta\",\"delta\":\"partial synthetic reply\"}}",
+      "projection": [
+        {
+          "delta": "partial synthetic reply",
+          "effect": "text"
+        }
+      ]
+    },
+    {
+      "channel": "lf-jsonl-jsonrpc",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{",
+      "projection": [
+        {
+          "error": "invalid_json"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "streaming-interruption",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:28fc1ebd569a43d358abbb57751a042bc268f7da8f38835fd006da9433d9347c"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "expect": { "status": "accept", "type": "Wake" },
+  "payload": {
+    "logicalWakeId": "wake:notes-due",
+    "goalId": "goal:notes",
+    "causeRefs": [
+      {
+        "ownerKind": "goal",
+        "opaqueId": "goal:notes",
+        "sourceRevision": 1,
+        "digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "visibilityScope": "goal",
+        "validity": "current"
+      }
+    ],
+    "reviewPolicy": "due-review",
+    "goalRevision": 1,
+    "epoch": 0,
+    "hostGeneration": 1
+  }
+}

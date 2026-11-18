@@ -1,0 +1,19 @@
+{
+  "schema": "licoup.continuity.qualification-observations-draft/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "note": "Worker or Turn exit is not Goal acceptance.",
+  "sample": {
+    "observationId": "obs:worker-exit",
+    "conversationFamily": "family:heldout-exit:0",
+    "split": "heldout",
+    "subgroup": "en",
+    "polarity": "positive",
+    "judgment": "correct",
+    "closureClaim": "workerExit"
+  },
+  "expect": {
+    "result": "unqualified",
+    "reasonsInclude": ["WorkerOrTurnExitClosure", "HardInvariant"]
+  }
+}

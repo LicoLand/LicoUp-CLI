@@ -1,0 +1,95 @@
+id = "openclaw"
+binary_names = ["openclaw"]
+official_docs = "https://docs.openclaw.ai/install"
+
+[[channels]]
+id = "npm"
+kind = "npm"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 10
+official_recommended = true
+licoup_verified = true
+requires_manager = "npm"
+elevation = "none"
+scope = "user"
+package_coordinate = "openclaw"
+official_source = "https://docs.openclaw.ai/install"
+version_policy = "latest-stable"
+install_argv = ["npm", "install", "-g", "openclaw@latest", "--allow-scripts", "openclaw"]
+update_argv = ["npm", "install", "-g", "openclaw@latest", "--allow-scripts", "openclaw"]
+uninstall_argv = ["npm", "uninstall", "-g", "openclaw"]
+verify_argv = ["openclaw", "--version"]
+
+[[channels]]
+id = "homebrew"
+kind = "homebrew"
+oses = ["macos", "linux"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = false
+licoup_verified = false
+requires_manager = "homebrew"
+elevation = "none"
+scope = "user"
+selectable = false
+unsupported_reason = "no-official-package-coordinate"
+package_coordinate = "openclaw"
+official_source = "https://docs.openclaw.ai/install"
+version_policy = "latest-stable"
+
+[[channels]]
+id = "winget"
+kind = "winget"
+oses = ["windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = false
+licoup_verified = false
+requires_manager = "winget"
+elevation = "none"
+scope = "user"
+selectable = false
+unsupported_reason = "no-official-package-coordinate"
+package_coordinate = "openclaw"
+official_source = "https://docs.openclaw.ai/install"
+version_policy = "latest-stable"
+
+[[channels]]
+id = "official-artifact"
+kind = "official-artifact"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 30
+official_recommended = true
+licoup_verified = true
+requires_manager = "none"
+elevation = "none"
+scope = "user"
+package_coordinate = "openclaw-installer"
+official_source = "https://openclaw.ai"
+version_policy = "vendor-latest"
+install_argv = ["bash", "{script}"]
+windows_install_argv = ["powershell", "-NoProfile", "-File", "{script}"]
+update_argv = ["openclaw", "update"]
+uninstall_argv = ["rm", "{install}"]
+verify_argv = ["{install}", "--version"]
+
+[channels.artifact]
+origin_host = "openclaw.ai"
+url_template = "https://openclaw.ai/{installer}"
+[channels.artifact.installer]
+macos = "install.sh"
+linux = "install.sh"
+windows = "install.ps1"
+
+# Where this channel's installer lands its executable. The vendor's own
+# installer performs the placement. Uninstall removes the declared path and
+# verify runs it, so neither depends on a name PATH happens to answer.
+[channels.install]
+[channels.install.binary]
+macos = "openclaw"
+linux = "openclaw"
+[channels.install.dir]
+macos = "{home}/.local/bin"
+linux = "{home}/.local/bin"

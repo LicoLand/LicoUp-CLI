@@ -1,0 +1,31 @@
+[package]
+name = "licoup-client-state"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Portable private client-state collections, snapshots and activity log"
+[dependencies]
+# The private-file access and portable data root every activity and snapshot
+# write stands on.
+licoup-foundation.workspace = true
+# The published collection document store: bounded, atomically written JSON
+# under the portable client-state directory.
+collection-store.workspace = true
+anyhow.workspace = true
+fs2.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+# The store reads and replaces collection documents one file descriptor at a
+# time, which needs the platform open flags.
+nix = { version = "0.27", default-features = false, features = ["fs", "user", "signal", "socket"] }
+
+[dev-dependencies]
+# The collection tests exercise the exact metadata-to-open window in the
+# foundation reader; that observation point exists only behind its test feature.
+licoup-foundation = { workspace = true, features = ["test-support"] }

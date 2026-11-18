@@ -1,0 +1,49 @@
+{
+  "expect": { "status": "accept", "type": "GoalContract" },
+  "payload": {
+    "id": "goal:notes",
+    "matterId": "matter:docs",
+    "sourceIntentRefs": [
+      {
+        "ownerKind": "event",
+        "opaqueId": "event:fixture-one",
+        "sourceRevision": 1,
+        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "visibilityScope": "conversation",
+        "validity": "current"
+      }
+    ],
+    "contractRevision": 1,
+    "expectedResult": "Draft the notes",
+    "criteria": [
+      {
+        "id": "criterion:draft",
+        "descriptionRef": {
+          "ownerKind": "event",
+          "opaqueId": "event:fixture-one",
+          "sourceRevision": 1,
+          "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "visibilityScope": "conversation",
+          "validity": "current"
+        },
+        "required": true,
+        "oracleKind": "user",
+        "artifactVersionRule": "exact-subject",
+        "freshnessRule": "current-agreement",
+        "evaluatorPolicy": "user-acceptance"
+      }
+    ],
+    "scopeRefs": [],
+    "responsibleRoleRef": "membership:assistant",
+    "resourceEnvelopeRef": "envelope:default",
+    "acceptanceMethod": "user-acceptance",
+    "createdEvent": {
+      "ownerKind": "event",
+      "opaqueId": "event:fixture-one",
+      "sourceRevision": 1,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "visibilityScope": "conversation",
+      "validity": "current"
+    }
+  }
+}

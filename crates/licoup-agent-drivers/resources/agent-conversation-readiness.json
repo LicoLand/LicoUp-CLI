@@ -1,0 +1,355 @@
+{
+  "schemaVersion": "v0.0.1:client-agent-conversation-readiness-1",
+  "contractVersion": "CL-06",
+  "minimumConsecutivePasses": 1,
+  "summary": {
+    "total": 13,
+    "ready": 0,
+    "partial": 0,
+    "failed": 0,
+    "blocked": 0,
+    "unverified": 13,
+    "historyOnly": 0,
+    "sendEnabled": 0
+  },
+  "adapters": [
+    {
+      "agentId": "openclaw",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": false,
+      "conversationGatePassed": false,
+      "cleanupPassed": false,
+      "privacyPassed": false,
+      "consecutivePasses": 0,
+      "coreChecks": {
+        "required": 10,
+        "passed": 0,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 0,
+        "passed": 0,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_missing"
+      ]
+    },
+    {
+      "agentId": "claude-code",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": true,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "consecutivePasses": 3,
+      "coreChecks": {
+        "required": 10,
+        "passed": 10,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 3,
+        "passed": 3,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_stale_or_incomplete"
+      ]
+    },
+    {
+      "agentId": "codex",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": true,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "consecutivePasses": 1,
+      "coreChecks": {
+        "required": 10,
+        "passed": 10,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 4,
+        "passed": 2,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_stale_or_incomplete"
+      ]
+    },
+    {
+      "agentId": "antigravity",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": true,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "consecutivePasses": 3,
+      "coreChecks": {
+        "required": 10,
+        "passed": 10,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 2,
+        "passed": 2,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_stale_or_incomplete"
+      ]
+    },
+    {
+      "agentId": "opencode",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": true,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "consecutivePasses": 3,
+      "coreChecks": {
+        "required": 10,
+        "passed": 10,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 2,
+        "passed": 2,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_stale_or_incomplete"
+      ]
+    },
+    {
+      "agentId": "copilot",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": false,
+      "conversationGatePassed": false,
+      "cleanupPassed": false,
+      "privacyPassed": false,
+      "consecutivePasses": 0,
+      "coreChecks": {
+        "required": 10,
+        "passed": 0,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 0,
+        "passed": 0,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_missing"
+      ]
+    },
+    {
+      "agentId": "kilo-code",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": false,
+      "conversationGatePassed": false,
+      "cleanupPassed": false,
+      "privacyPassed": false,
+      "consecutivePasses": 0,
+      "coreChecks": {
+        "required": 10,
+        "passed": 0,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 0,
+        "passed": 0,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_missing"
+      ]
+    },
+    {
+      "agentId": "cursor",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": true,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "consecutivePasses": 3,
+      "coreChecks": {
+        "required": 10,
+        "passed": 10,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 2,
+        "passed": 2,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_stale_or_incomplete"
+      ]
+    },
+    {
+      "agentId": "deepseek-harness",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": false,
+      "conversationGatePassed": false,
+      "cleanupPassed": false,
+      "privacyPassed": false,
+      "consecutivePasses": 0,
+      "coreChecks": {
+        "required": 10,
+        "passed": 0,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 0,
+        "passed": 0,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_missing"
+      ]
+    },
+    {
+      "agentId": "hermes",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": false,
+      "conversationGatePassed": false,
+      "cleanupPassed": false,
+      "privacyPassed": false,
+      "consecutivePasses": 0,
+      "coreChecks": {
+        "required": 10,
+        "passed": 0,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 0,
+        "passed": 0,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_missing"
+      ]
+    },
+    {
+      "agentId": "kimi-code",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": true,
+      "conversationGatePassed": true,
+      "cleanupPassed": true,
+      "privacyPassed": true,
+      "consecutivePasses": 3,
+      "coreChecks": {
+        "required": 10,
+        "passed": 10,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 2,
+        "passed": 2,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_stale_or_incomplete"
+      ]
+    },
+    {
+      "agentId": "pi",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": false,
+      "conversationGatePassed": false,
+      "cleanupPassed": false,
+      "privacyPassed": false,
+      "consecutivePasses": 0,
+      "coreChecks": {
+        "required": 10,
+        "passed": 0,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 0,
+        "passed": 0,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_missing"
+      ]
+    },
+    {
+      "agentId": "lico-agent",
+      "status": "unverified",
+      "sendEnabled": false,
+      "officialNativeLaneProven": false,
+      "conversationGatePassed": false,
+      "cleanupPassed": false,
+      "privacyPassed": false,
+      "consecutivePasses": 0,
+      "coreChecks": {
+        "required": 10,
+        "passed": 0,
+        "failed": 0
+      },
+      "conditionalChecks": {
+        "total": 6,
+        "nativeSupported": 0,
+        "passed": 0,
+        "gaps": 0,
+        "failed": 0
+      },
+      "evidenceBinding": null,
+      "summaryCodes": [
+        "evidence_missing"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,207 @@
+{
+  "schemaVersion": "lico.agent-conversation-adapter.v1",
+  "identity": {
+    "agentId": "deepseek-harness",
+    "driverId": "deepseek-harness-sdk-jsonrpc",
+    "runtimeProtocol": "deepseek-harness-sdk-stdio-jsonrpc",
+    "packagingTargetId": "deepseek-harness"
+  },
+  "officialCapabilityAssessment": {
+    "completedBeforeImplementation": true,
+    "sourceAuthority": "official",
+    "versionSupport": {
+      "kind": "unknown",
+      "source": "unverified",
+      "reason": "no_verified_vendor_bound"
+    },
+    "interfaceName": "official DeepSeek Harness SDK JSON-RPC stdio server",
+    "assessedVersion": "DeepSeek Harness npm SDK profile 0.1.5-rc.2",
+    "versionProbe": "fixed initialize handshake against the SDK runtime carrier",
+    "capabilityProbe": "initialize response and declared SDK protocol methods",
+    "newSessionMethod": "session/prompt with a caller-created session id",
+    "exactResumeMethod": "session/prompt with the same session id inside the owning SDK process; the durable SDK session store refuses re-admission after a respawn",
+    "streamingMethod": "completed session events and status notifications; no live text deltas",
+    "historyMethod": "official protocol does not expose a history read method",
+    "cleanupMethod": "shutdown followed by supervised process-tree termination",
+    "officialReferences": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/sdk/server/README.md",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/sdk/protocol/README.md",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/bundle/sdk-app/README.md",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/master/packages/llm/llm-deepseek/README.md"
+    ]
+  },
+  "transport": {
+    "family": "rpc",
+    "origin": "official",
+    "promptChannel": "json-rpc",
+    "continuityChannel": "protocol-field",
+    "workingDirectoryChannel": "protocol-field",
+    "framing": "jsonl",
+    "sessionScope": "persistent",
+    "fixedLaunchArguments": ["--profile", "sdk"]
+  },
+  "configuration": {
+    "binaryEnvironmentKeys": [
+      "DEEPSEEK_HARNESS_PATH"
+    ],
+    "authentication": "runtime-owned",
+    "modelSelection": "request-field",
+    "reasoningSelection": "request-field",
+    "permissionSelection": "runtime-owned"
+  },
+  "operations": {
+    "discover": {
+      "status": "supported",
+      "method": "fixed executable discovery and initialize handshake"
+    },
+    "openNew": {
+      "status": "supported",
+      "method": "session/prompt with a fresh caller-created session id"
+    },
+    "exactResume": {
+      "status": "supported",
+      "method": "process-local session binding; a respawn derives a fresh session identity because the SDK records session ids durably"
+    },
+    "send": {
+      "status": "supported",
+      "method": "official session/prompt JSON-RPC request"
+    },
+    "stream": {
+      "status": "unsupported",
+      "method": "SDK publishes completed assistant/message events, not live text deltas"
+    },
+    "cancel": {
+      "status": "unsupported",
+      "method": "official protocol does not expose prompt cancellation"
+    },
+    "interruptSteer": {
+      "status": "unsupported",
+      "method": "official protocol does not expose active-prompt steer"
+    },
+    "cleanup": {
+      "status": "supported",
+      "method": "shutdown followed by supervised process-tree termination"
+    },
+    "history": {
+      "status": "unsupported",
+      "method": "official protocol does not expose a history read method"
+    },
+    "approvals": {
+      "status": "unsupported",
+      "method": "client approval response bridge is not enabled"
+    },
+    "usage": {
+      "status": "unsupported",
+      "method": "official protocol usage projection is not enabled"
+    },
+    "multimodal": {
+      "status": "unsupported",
+      "method": "current adapter contribution sends text content blocks only"
+    }
+  },
+  "events": {
+    "framing": "jsonl",
+    "realtimeKinds": ["agent.message.completed"],
+    "terminalKinds": [
+      "dispatch.turn.completed",
+      "dispatch.turn.failed"
+    ],
+    "sessionOwned": true,
+    "turnOwned": true
+  },
+  "lifecycle": {
+    "supervision": "process-tree",
+    "cleanupScope": "process-session",
+    "cancelHandleScope": "unavailable",
+    "maxConcurrentTransports": 8,
+    "maxTrackedSessions": 8,
+    "survivesGuiDisconnect": true,
+    "reattachScope": "activeTurn",
+    "replayMode": "orderedCursor"
+  },
+  "privacy": {
+    "promptInArguments": false,
+    "continuityIdInArguments": false,
+    "boundedInput": true,
+    "boundedOutput": true,
+    "structuredEventProjection": true,
+    "safeCleanup": true,
+    "redactedEvidence": true
+  },
+  "routedContext": {
+    "contractVersion": "lico.routing.distillation-package.v1",
+    "deliveryChannel": "prompt-envelope",
+    "maxPackageBytes": 65536,
+    "requiredSections": [
+      "objective",
+      "currentState",
+      "decisions",
+      "constraints",
+      "openItems"
+    ],
+    "sourceReferences": "opaque-digest-only",
+    "rawConversationAllowed": false,
+    "contextDigestRequired": true,
+    "fidelityFailure": "fail-closed",
+    "finalReplyFeedsNextDistillation": true
+  },
+  "productIntegration": {
+    "dispatchLane": "AgentDispatchLane",
+    "cliUsesCanonicalReadiness": true,
+    "guiUsesCanonicalReadiness": true,
+    "routingUsesCanonicalReadiness": true,
+    "sharedNativeHistoryAuthority": true,
+    "finalReplyFeedsThreadAndDistillation": true
+  },
+  "acceptance": {
+    "coreChecks": [
+      "P-01",
+      "P-02",
+      "P-03",
+      "P-04",
+      "P-05",
+      "P-06",
+      "P-07",
+      "P-08",
+      "P-09",
+      "P-10"
+    ],
+    "conditionalChecks": [
+      "C-01",
+      "C-02",
+      "C-03",
+      "C-04",
+      "C-05",
+      "C-06"
+    ],
+    "checkSemantics": {
+      "P-01": "baseline-binding",
+      "P-02": "native-session-creation",
+      "P-03": "bidirectional-exact-resume",
+      "P-04": "deterministic-final-result",
+      "P-05": "effective-settings-parity",
+      "P-06": "history-readback-and-rendering",
+      "P-07": "error-cancel-timeout-parity",
+      "P-08": "privacy-and-process-boundary",
+      "P-09": "isolation-and-cleanup",
+      "P-10": "exact-release-product-ui",
+      "C-01": "streaming-delta",
+      "C-02": "reasoning-and-tool-trace",
+      "C-03": "approval-lifecycle",
+      "C-04": "attachments-and-multimodal",
+      "C-05": "interrupt-and-steer",
+      "C-06": "usage-and-status"
+    },
+    "minimumConsecutivePasses": 1,
+    "minimumConsecutiveReleaseUiPasses": 1,
+    "productUiRequired": true,
+    "releaseP10Required": true,
+    "liveLocalForwardingRequired": true,
+    "realtimeOutputRequired": true,
+    "sameNativeSessionRequired": true,
+    "canonicalReadinessRequired": true,
+    "nativeToArcRequired": true,
+    "arcToNativeRequired": true,
+    "exactArtifactRequired": true
+  }
+}

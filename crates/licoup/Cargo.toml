@@ -1,0 +1,241 @@
+[package]
+name = "licoup"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "LicoUp client kernel and host library behind the licoup program and its process entries and the client FFI surface."
+
+[features]
+default = []
+# Hermetic work-context constructors for integration tests. Not production.
+test-support = []
+
+[lib]
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[dependencies]
+lico-catalog-convergence.workspace = true
+licoup-foundation.workspace = true
+licoup-client-state.workspace = true
+agent-statistics.workspace = true
+# Balance boundary vocabulary: bound quota/credit facts per provider account.
+balance-detector.workspace = true
+# The flywheel's usage store: the graph-run ledger and budget reservations
+# this host records into.
+acativa = "0.2.0"
+licoup-agent-targets.workspace = true
+licoup-model-catalog.workspace = true
+licoup-platform-bridges.workspace = true
+licoup-agent-adapters.workspace = true
+licoup-agent-adapter-sdk.workspace = true
+# The host side of Agent execution: the adapter registry, adapter execution,
+# the work-context seam and the protocol engines. This host composes it and
+# answers its ports; the crate never reaches back into the host.
+licoup-agent-drivers.workspace = true
+# The Codex adapter package. Composition names it for its parser
+# registration and its turn-event port while the extension host's binary
+# route is completed by the agent-execution port.
+licoup-agent-codex.workspace = true
+# The Claude Code adapter package. Composition names it for its parser
+# registration and its replay arm while the extension host's binary route is
+# completed by the agent-execution port, and the client's Claude Code process
+# half reads the protocol from it rather than keeping a second copy.
+licoup-agent-claude-code.workspace = true
+# The Copilot adapter package. Composition names it for its parser
+# registration, its ACP frame dialect and its driver declaration while the
+# extension host's binary route is completed by the agent-execution port.
+licoup-agent-copilot.workspace = true
+# The Pi adapter package. Composition names it for its parser registration and
+# its turn-event port while the extension host's binary route is completed by
+# the agent-execution port.
+licoup-agent-pi.workspace = true
+# The Antigravity adapter package. Composition names it for its parser
+# registration and its ports while the extension host's binary route is
+# completed by the agent-execution port.
+licoup-agent-antigravity.workspace = true
+# The Cursor adapter package. Composition names it for its parser
+# registration while the extension host's binary route is completed by the
+# agent-execution port the package declares.
+licoup-agent-cursor.workspace = true
+# The DeepSeek Harness adapter package. Composition names it for its parser
+# registration, its replay arm and the session-log reader that replaced the
+# Node worker, while the extension host's binary route is completed by the
+# agent-execution port.
+licoup-agent-deepseek.workspace = true
+# Agent Context Operators: the ACOP codecs own persisted-session decoding
+# for every adapter backed by an a4aa store card. Local path deps during
+# development; the published versions replace them at release time.
+acop = { workspace = true }
+acop-antigravity = { workspace = true }
+acop-claude = { workspace = true }
+acop-codex = { workspace = true }
+acop-copilot = { workspace = true }
+acop-cursor = { workspace = true }
+acop-dsh = { workspace = true }
+acop-hermes = { workspace = true }
+acop-kilo-code = { workspace = true }
+acop-kimi-code = { workspace = true }
+acop-openclaw = { workspace = true }
+acop-opencode = { workspace = true }
+acop-pi = { workspace = true }
+# The Kimi Code adapter package. Composition names it for its ACP frame
+# dialect, its parser registration and its replay arm while the extension
+# host's binary route is completed by the agent-execution port.
+licoup-agent-kimi = { workspace = true, features = ["test-support"] }
+# The Hermes adapter package. Composition names it for its persistent ACP frame
+# dialect, its parser registration and its replay arm while the client still
+# composes Hermes' process half.
+licoup-agent-hermes = { workspace = true, features = ["test-support"] }
+# The Kilo Code adapter package. Composition names it for its parser
+# registration, its endpoint policy and its host ports while the extension
+# host's binary route is completed by the agent-execution port.
+licoup-agent-kilo.workspace = true
+# The Lico Agent adapter package. Composition names it for its parser
+# registration, its replay arm and its RPC driver — the launch, the supervised
+# stdio exchange and the sealed Plan profile — while this host answers the two
+# ports that driver asks: whether a new execution is admitted, and the platform
+# sandbox primitive its Plan turns run under.
+licoup-agent-lico-agent.workspace = true
+licoup-agent-openclaw.workspace = true
+# The OpenCode adapter package. Composition names it for its serve driver — the
+# declaration, the session protocol, the turn and its endpoint policy — and this
+# host answers the ports that driver asks: the serve engine, the consumer its
+# events reach and the admission decision its turn may not make for itself.
+licoup-agent-opencode.workspace = true
+licoup-agent-runtime.workspace = true
+licoup-application.workspace = true
+licoup-project.workspace = true
+licoup-extension-contracts.workspace = true
+licoup-workflow.workspace = true
+# The durable strategy database, extracted from this host so the host no longer
+# owns workflow persistence or the routing/admission contracts the store reads.
+licoup-workflow-store.workspace = true
+# The extracted workflow execution owner. This host composes it and answers its
+# ports; the crate never reaches back into the host.
+licoup-workflow-runtime.workspace = true
+licoup-conversation.workspace = true
+licoup-private-gateway.workspace = true
+licoup-public-gateway.workspace = true
+credential-lease = { workspace = true }
+# The LicoArc endpoint client: the mailbox carrier, the receive loop, the
+# pairing drives and the caller-owned port contracts the `devices` command
+# group composes.
+licoarc-client = { workspace = true }
+# The runtime the mailbox carrier and the receive loop run on.
+tokio = { version = "1", features = ["rt", "sync", "time", "macros"] }
+# The OS-keychain custody backend on the same Credential-Lease surface: every
+# SecItem effect — device-key store items, gateway credentials, the authorized
+# secure-record ledger — goes through it instead of a host-local copy.
+credential-lease-keychain = { workspace = true }
+anyhow.workspace = true
+thiserror.workspace = true
+base64.workspace = true
+chacha20poly1305.workspace = true
+command-group.workspace = true
+hkdf.workspace = true
+mime_guess.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+semver.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+fs2.workspace = true
+interprocess.workspace = true
+icu_segmenter.workspace = true
+libc.workspace = true
+trash.workspace = true
+rusqlite.workspace = true
+log.workspace = true
+env_logger.workspace = true
+time.workspace = true
+ureq.workspace = true
+url.workspace = true
+uuid.workspace = true
+toml.workspace = true
+ed25519-dalek.workspace = true
+rand_core.workspace = true
+regex.workspace = true
+zeroize.workspace = true
+tar.workspace = true
+flate2.workspace = true
+zip.workspace = true
+acop-usage-source = { workspace = true }
+metera-sdk = { workspace = true }
+
+[build-dependencies]
+licoup-state-machine-codegen.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = "0.6.2"
+core-foundation = "0.10.1"
+core-foundation-sys = "0.8.7"
+objc2 = "0.6.4"
+objc2-foundation = { version = "0.3.2", features = ["NSString"] }
+objc2-local-authentication = "0.3.2"
+security-framework = { version = "3.7.0", features = ["OSX_10_15"] }
+security-framework-sys = { version = "2.17.0", features = ["OSX_10_15"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dbus-secret-service = { version = "4.1.0", features = ["crypto-rust"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Diagnostics_ToolHelp",
+  "Win32_System_Threading",
+] }
+
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.27", default-features = false, features = ["fs", "user", "signal", "socket"] }
+
+[dev-dependencies]
+licoup-conversation = { workspace = true, features = ["test-counters"] }
+# The scan-isolation seam and the packaged driver fixtures the target fixtures
+# read travel behind an explicit feature, because `cfg(test)` is false for a
+# dependency.
+licoup-agent-targets = { workspace = true, features = ["test-support"] }
+licoup-agent-drivers = { workspace = true, features = ["test-support"] }
+# The Copilot package's replay arm drives the shared ACP reducer, so this host's
+# test build asks the package for the surface that arm is compiled behind —
+# exactly as it asks `licoup-agent-drivers` above for the reducer itself.
+licoup-agent-copilot = { workspace = true, features = ["test-support"] }
+licoup-private-gateway.workspace = true
+licoup-foundation = { workspace = true, features = ["test-support"] }
+trybuild = { path = "../trybuild" }
+# Compressed DeepSeek Harness session fixtures: the decoder lives in the
+# agent package, and the tests stage real concatenated-frame artifacts.
+zstd.workspace = true
+criterion = "0.5"
+rand_chacha = "0.3"
+
+[[bench]]
+name = "native_backend"
+harness = false
+
+[[bin]]
+name = "licoup"
+path = "src/bin/licoup.rs"
+
+
+
+
+
+[[test]]
+name = "continuity_host"
+path = "tests/continuity_host.rs"
+required-features = ["test-support"]
+
+[[test]]
+name = "continuity_native"
+path = "tests/continuity_native.rs"
+required-features = ["test-support"]
+
+# Real untrusted-extension process isolation: the suite starts real programs
+# under the production `IsolatedProcessCarrier`, so it reads its fixtures from
+# the repository root and is declared here rather than inside the crate.
+[[test]]
+name = "extension_isolation"
+path = "../../tests/integration/extension_isolation/main.rs"

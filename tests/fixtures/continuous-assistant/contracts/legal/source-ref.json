@@ -1,0 +1,11 @@
+{
+  "expect": { "status": "accept", "type": "SourceRef" },
+  "payload": {
+    "ownerKind": "event",
+    "opaqueId": "event:fixture-one",
+    "sourceRevision": 1,
+    "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "visibilityScope": "conversation",
+    "validity": "current"
+  }
+}

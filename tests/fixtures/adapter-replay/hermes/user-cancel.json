@@ -1,0 +1,105 @@
+{
+  "adapterId": "hermes",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "stdio-jsonrpc-acp",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"protocolVersion\":1,\"agentCapabilities\":{\"loadSession\":true,\"sessionCapabilities\":{\"resume\":{}}},\"agentInfo\":{\"name\":\"hermes-agent\",\"version\":\"synthetic\"}}}",
+      "projection": [
+        {
+          "effect": "send",
+          "message": {
+            "id": 2,
+            "jsonrpc": "2.0",
+            "method": "session/load",
+            "params": {
+              "cwd": "/workspace/synthetic-project",
+              "mcpServers": [],
+              "sessionId": "native-session"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "stdio-jsonrpc-acp",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"sessionId\":\"native-session\"}}",
+      "projection": [
+        {
+          "effect": "send",
+          "message": {
+            "id": 4,
+            "jsonrpc": "2.0",
+            "method": "session/prompt",
+            "params": {
+              "prompt": [
+                {
+                  "text": "<REDACTED_CONTENT>",
+                  "type": "text"
+                }
+              ],
+              "sessionId": "native-session"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "channel": "stdio-jsonrpc-acp",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"jsonrpc\":\"2.0\",\"method\":\"session/update\",\"params\":{\"sessionId\":\"native-session\",\"update\":{\"sessionUpdate\":\"agent_message_chunk\",\"content\":{\"type\":\"text\",\"text\":\"synthetic hermes reply\"}}}}",
+      "projection": []
+    },
+    {
+      "channel": "stdio-jsonrpc-acp",
+      "direction": "agent-to-client",
+      "index": 3,
+      "payload": "{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":{\"stopReason\":\"cancelled\"}}",
+      "projection": [
+        {
+          "error": "hermes_acp_turn_not_completed",
+          "message": "Hermes ACP did not complete the requested turn.",
+          "sessionId": "native-session",
+          "stage": "session/prompt",
+          "turnStatus": "cancelled",
+          "userInteractionRequired": false
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "user-cancel",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:41dc0f4e1c8a5b66431f7ac3b6c129020388cddeb4120db0eb31d7821ca51a47"
+  }
+}

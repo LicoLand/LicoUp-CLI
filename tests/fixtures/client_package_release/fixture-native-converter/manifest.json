@@ -1,0 +1,43 @@
+{
+  "schema": "licoup.extension-package.v1",
+  "id": "org.licoland.fixture.native-converter",
+  "version": "1.3.0",
+  "displayName": "LicoUp fixture native converter",
+  "hostProtocol": {
+    "major": 1,
+    "minimumMinor": 0
+  },
+  "compatibility": {
+    "clientVersions": [
+      ">=0.2.0, <1.0.0"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "native-converter-fixture",
+      "major": 1
+    }
+  ],
+  "runtime": {
+    "mode": "process",
+    "entry": "bin/licoup-fixture-converter"
+  },
+  "conversion": {
+    "kind": "native-executable",
+    "entry": "bin/licoup-fixture-converter",
+    "sourceFormats": [
+      "fixture.agent-session.v1"
+    ],
+    "targetFormat": "licoup.conversation.v1"
+  },
+  "activation": "on-demand",
+  "requires": [],
+  "optionalRequires": [],
+  "permissions": [
+    {
+      "capability": "org.licoland.fixture/files",
+      "scope": "self"
+    }
+  ],
+  "contributions": []
+}

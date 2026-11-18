@@ -1,0 +1,8 @@
+{
+  "expect": { "status": "reject", "reason": "invalid_span", "check": "span" },
+  "text": "你好",
+  "payload": {
+    "startByte": 1,
+    "endByte": 2
+  }
+}

@@ -1,0 +1,14 @@
+[package]
+name = "licoup-workflow"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "LicoUp Adaptive Flywheel workflow compiler and transition machine."
+[dependencies]
+acativa = "0.2.0"
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true

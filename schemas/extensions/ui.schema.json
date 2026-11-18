@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://licoland.com/schemas/extensions/ui.schema.json",
+  "title": "LicoUp declarative UI contribution",
+  "description": "One interface contribution as data. It binds to a host primitive through `resourceRef` and `actionRef` and names the least profile it needs; it carries no script, no widget tree, no direct RPC handle and no secret. Focus, input-method editing, accessibility, theming and prepared-value consistency belong to the host primitives.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "kind", "title"],
+  "properties": {
+    "schema": {
+      "const": "licoup.ui-contribution.v1"
+    },
+    "id": {
+      "$ref": "#/$defs/namespacedName"
+    },
+    "kind": {
+      "enum": ["settings", "command", "navigation", "metric-panel", "resource-view"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "requiredProfile": {
+      "description": "The least profile this contribution needs, as a profile id. An id this host does not publish keeps the contribution out of the registry and leaves every other contribution mounted.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/publishedProfile"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        }
+      ]
+    },
+    "resourceRef": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "description": "The resource the host prepares and hands back. The contribution never reads a source directly."
+    },
+  "actionRef": {
+   "type": "string",
+   "minLength": 1,
+   "maxLength": 160,
+   "description": "The action this contribution may invoke. The host owns the action's authority."
+  },
+  "resourceFormat": {
+   "$ref": "#/$defs/namespacedName",
+   "description": "The bounded pure-data format a `resource-view` contribution wants rendered, such as `licoup.ui.graph-resource.v1`. Only a resource view may name one; a host mounts it only when it compiles a renderer for that format, and an unknown format keeps the contribution preserved while every other contribution mounts."
+  },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "type"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "type": {
+            "enum": ["text", "number", "boolean", "select", "secret-ref"]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "The current value of an ordinary field. It is absent for `secret-ref`: the host collects the secret in its own control and stores a credential handle."
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "secret-ref"
+                }
+              },
+              "required": ["type"]
+            },
+            "then": {
+              "not": {
+                "properties": { "value": {} },
+                "required": ["value"]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "series": {
+      "type": "array",
+      "description": "The series a metric panel draws. A panel names standardized metrics; it never parses a vendor's own files.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["metric", "label", "unit"],
+        "properties": {
+          "metric": {
+            "$ref": "#/$defs/namespacedName"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "metric-panel"
+          }
+        },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "series": {
+            "type": "array",
+            "minItems": 1
+          }
+        },
+        "required": ["series"]
+      },
+      "else": {
+        "properties": {
+          "series": {
+            "type": "array",
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "resourceFormat": {} },
+        "required": ["resourceFormat"]
+      },
+      "then": {
+        "properties": {
+          "kind": { "const": "resource-view" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "namespacedName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+(?:[./-][A-Za-z0-9_-]+)*$",
+      "maxLength": 160
+    },
+    "publishedProfile": {
+      "type": "string",
+      "enum": ["agent-execution", "model-provider", "usage-metric", "package-deployment", "declarative-ui"]
+    }
+  }
+}

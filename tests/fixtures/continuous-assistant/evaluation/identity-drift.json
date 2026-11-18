@@ -1,0 +1,31 @@
+{
+  "schema": "licoup.continuity.evaluation-identity-delta/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "changes": {
+    "model": {
+      "field": "modelDigest",
+      "to": "model:digest-evaluation-b"
+    },
+    "runtime": {
+      "field": "adapterRuntimeDigest",
+      "to": "adapter:digest-evaluation-b"
+    },
+    "prompt": {
+      "field": "promptDigest",
+      "to": "prompt:digest-evaluation-b"
+    },
+    "resource": {
+      "field": "toolContractDigest",
+      "to": "tools:digest-evaluation-b"
+    },
+    "policy": {
+      "field": "policyRevision",
+      "to": "draft-2"
+    }
+  },
+  "expect": {
+    "previousResultBecomes": "stale",
+    "automaticAdvancement": false
+  }
+}

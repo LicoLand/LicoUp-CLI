@@ -1,0 +1,23 @@
+{
+  "machines": [
+    {
+      "id": "analytics.package",
+      "rust_module": "analytics_package",
+      "states": [
+        { "id": "not-installed", "rust_name": "NotInstalled" },
+        { "id": "active" },
+        { "id": "draining" },
+        { "id": "removed" }
+      ],
+      "events": ["activate", "begin-uninstall", "complete-uninstall"],
+      "initial": "not-installed",
+      "terminal": ["removed"],
+      "transitions": [
+        { "from_state": "not-installed", "event": "activate", "to_state": "active" },
+        { "from_state": "active", "event": "begin-uninstall", "to_state": "draining" },
+        { "from_state": "draining", "event": "begin-uninstall", "to_state": "draining" },
+        { "from_state": "draining", "event": "complete-uninstall", "to_state": "removed" }
+      ]
+    }
+  ]
+}

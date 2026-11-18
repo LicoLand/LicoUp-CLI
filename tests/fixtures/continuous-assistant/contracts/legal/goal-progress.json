@@ -1,0 +1,16 @@
+{
+  "expect": { "status": "accept", "type": "GoalProgress" },
+  "payload": {
+    "goalId": "goal:notes",
+    "revision": 1,
+    "lifecycle": "active",
+    "control": "enabled",
+    "criterionEvidenceRefs": [],
+    "activeExecutionRefs": ["dispatch:one"],
+    "blockers": [],
+    "nextAttention": {
+      "kind": "active-execution",
+      "executionRef": "dispatch:one"
+    }
+  }
+}

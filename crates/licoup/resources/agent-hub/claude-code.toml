@@ -1,0 +1,100 @@
+id = "claude-code"
+binary_names = ["claude"]
+official_docs = "https://code.claude.com/docs/en/quickstart"
+
+[[channels]]
+id = "homebrew"
+kind = "homebrew"
+oses = ["macos"]
+architectures = ["aarch64", "x86_64"]
+priority = 10
+official_recommended = true
+licoup_verified = true
+requires_manager = "homebrew"
+elevation = "none"
+scope = "user"
+package_coordinate = "claude-code"
+package_form = "cask"
+official_source = "https://code.claude.com/docs/en/setup"
+version_policy = "latest-stable"
+install_argv = ["brew", "install", "--cask", "claude-code"]
+update_argv = ["brew", "upgrade", "--cask", "claude-code"]
+uninstall_argv = ["brew", "uninstall", "--cask", "claude-code"]
+verify_argv = ["claude", "--version"]
+
+[[channels]]
+id = "npm"
+kind = "npm"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 20
+official_recommended = true
+licoup_verified = true
+requires_manager = "npm"
+elevation = "none"
+scope = "user"
+package_coordinate = "@anthropic-ai/claude-code"
+official_source = "https://www.npmjs.com/package/@anthropic-ai/claude-code"
+version_policy = "latest-stable"
+install_argv = ["npm", "install", "-g", "@anthropic-ai/claude-code"]
+update_argv = ["npm", "install", "-g", "@anthropic-ai/claude-code@latest"]
+uninstall_argv = ["npm", "uninstall", "-g", "@anthropic-ai/claude-code"]
+verify_argv = ["claude", "--version"]
+
+[[channels]]
+id = "winget"
+kind = "winget"
+oses = ["windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 10
+official_recommended = true
+licoup_verified = true
+requires_manager = "winget"
+elevation = "none"
+scope = "user"
+package_coordinate = "Anthropic.ClaudeCode"
+official_source = "https://code.claude.com/docs/en/setup"
+version_policy = "latest-stable"
+install_argv = ["winget", "install", "-e", "--id", "Anthropic.ClaudeCode", "--accept-package-agreements", "--accept-source-agreements"]
+update_argv = ["winget", "upgrade", "-e", "--id", "Anthropic.ClaudeCode", "--accept-package-agreements", "--accept-source-agreements"]
+uninstall_argv = ["winget", "uninstall", "-e", "--id", "Anthropic.ClaudeCode"]
+verify_argv = ["claude", "--version"]
+
+[[channels]]
+id = "official-artifact"
+kind = "official-artifact"
+oses = ["macos", "linux", "windows"]
+architectures = ["aarch64", "x86_64"]
+priority = 30
+official_recommended = true
+licoup_verified = true
+requires_manager = "none"
+elevation = "none"
+scope = "user"
+package_coordinate = "claude-native-installer"
+official_source = "https://claude.ai"
+version_policy = "vendor-latest"
+install_argv = ["bash", "{script}"]
+windows_install_argv = ["powershell", "-NoProfile", "-File", "{script}"]
+update_argv = ["claude", "update"]
+uninstall_argv = ["rm", "{install}"]
+verify_argv = ["{install}", "--version"]
+
+[channels.artifact]
+origin_host = "claude.ai"
+url_template = "https://claude.ai/{installer}"
+[channels.artifact.installer]
+macos = "install.sh"
+linux = "install.sh"
+windows = "install.ps1"
+
+# Where this channel's installer lands its executable. The vendor's own
+# installer performs the placement. Uninstall removes the declared path and
+# verify runs it, so neither depends on a name PATH happens to answer.
+[channels.install]
+[channels.install.binary]
+macos = "claude"
+linux = "claude"
+[channels.install.dir]
+macos = "{home}/.local/bin"
+linux = "{home}/.local/bin"

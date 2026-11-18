@@ -1,0 +1,83 @@
+{
+  "adapterId": "claude-code",
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "frames": [
+    {
+      "channel": "lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 0,
+      "payload": "{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"synthetic-session\",\"model\":\"synthetic-model\",\"permissionMode\":\"plan\"}",
+      "projection": [
+        {
+          "effect": "progress",
+          "sessionId": "synthetic-session"
+        }
+      ]
+    },
+    {
+      "channel": "lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 1,
+      "payload": "{\"type\":\"assistant\",\"session_id\":\"synthetic-session\",\"message\":{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"synthetic reply\"}]}}",
+      "projection": [
+        {
+          "effect": "progress",
+          "sessionId": "synthetic-session"
+        }
+      ]
+    },
+    {
+      "channel": "lf-ndjson",
+      "direction": "agent-to-client",
+      "index": 2,
+      "payload": "{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"synthetic reply\",\"session_id\":\"synthetic-session\",\"permission_denials\":[]}",
+      "projection": [
+        {
+          "effect": "protocol_finished",
+          "effective": {
+            "approvalPolicy": "plan",
+            "cwd": null,
+            "model": "synthetic-model",
+            "permissionMode": "plan",
+            "reasoningEffort": null,
+            "sandbox": null
+          },
+          "events": [],
+          "output": "synthetic reply",
+          "sessionId": "synthetic-session",
+          "turnId": "synthetic-turn"
+        }
+      ]
+    }
+  ],
+  "invocation": {
+    "interface": "native-adapter-parser-replay",
+    "readOnly": true
+  },
+  "provenance": {
+    "humanReviewed": true,
+    "redacted": true,
+    "source": "synthetic-fallback",
+    "taskContent": "synthetic-engineering-only"
+  },
+  "review": {
+    "checklist": {
+      "framesMatchProtocolCapture": true,
+      "noUserConversation": true,
+      "pathsAndIdentityChecked": true,
+      "projectionsMatchParserOutput": true,
+      "syntheticTaskConfirmed": true
+    },
+    "reviewerClass": "human",
+    "status": "approved"
+  },
+  "scenario": "native-resume",
+  "schemaVersion": "lico.adapter-transcript.v1",
+  "redaction": {
+    "algorithm": "lico-transcript-redaction-v1",
+    "contentSha256": "sha256:bde3f019de4501a48eaefc5633ee405d3d2c7ab0ebcfd12860e29a88171f2395"
+  }
+}

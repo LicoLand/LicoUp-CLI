@@ -1,0 +1,66 @@
+[package]
+name = "licoup-agent-deepseek"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "DeepSeek Harness adapter package: the Harness SDK driver and its vendor protocol"
+
+# The crate is one package's program. `parser` is this Agent's vendor protocol
+# below the adapter port: the Harness SDK JSON-RPC vocabulary and the byte-line
+# parser that classifies it once, per ADR-0008. `driver` is the process half that
+# speaks that vocabulary — the `--profile sdk` transport, its supervision and the
+# turn it carries. `session_store` is the Harness's own durable session-log
+# reader, which the usage half of this package reads instead of starting a Node
+# worker. `registration` is what composition injects into
+# `licoup-agent-adapter-sdk`, and `replay` is the arm that drives the same parser
+# from a recorded transcript.
+#
+# The kernel links no part of this crate's protocol: composition names the crate
+# for its registration and for `driver`, and the driver reads its frames from
+# `parser` rather than keeping a second copy. Nothing here reaches back into a
+# client crate, and the only host fact the driver asks for is the launch
+# environment the host owns.
+[features]
+default = []
+
+[dependencies]
+licoup-agent-adapter-sdk.workspace = true
+# The workspace-owned process supervisor, raw-execution record and turn-event
+# emitters every Agent launch stands on. They are the host's shared half and
+# name no Agent, so the package composes them directly instead of declaring a
+# seam for a fact the foundation already owns.
+licoup-foundation.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+# One turn's start is stamped in RFC 3339 because that is the vocabulary the
+# host's run record reads.
+time.workspace = true
+# A transport pool key is derived per process, and a caller that named no session
+# gets one.
+uuid.workspace = true
+# The Harness's session artifact is a concatenated Zstandard container, so the
+# reader that folds it needs a decoder. This is the only external crate the
+# package adds, and it is a codec rather than a client or vendor library.
+zstd.workspace = true
+
+[[bin]]
+name = "lico-agent-deepseek"
+path = "src/bin/lico-agent-deepseek.rs"
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the package binary, which reads its own
+# package documents as data.
+[dev-dependencies]
+licoup-extension-contracts.workspace = true
+
+# The published A4AA DeepSeek Harness dialect descriptor is projected into the
+# constants this package compiles against. It stays a build dependency: the
+# descriptor is read on every build, while the package keeps its own
+# synchronous transport pool and session-log reader instead of linking
+# `a4aa`'s async runtime.
+[build-dependencies]
+a4aa.workspace = true
+a4aa-dsh.workspace = true

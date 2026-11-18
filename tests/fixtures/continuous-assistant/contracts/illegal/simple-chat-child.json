@@ -1,0 +1,10 @@
+{
+  "expect": { "status": "reject", "reason": "invalid_request", "check": "task-child" },
+  "payload": {
+    "goalId": "goal:notes",
+    "parentConversationId": "conversation:parent",
+    "speechAct": "question",
+    "followThroughKind": "durable",
+    "requestId": "request:force-child"
+  }
+}

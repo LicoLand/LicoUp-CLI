@@ -1,0 +1,10 @@
+[package]
+name = "licoup-agent-adapters"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Provider-neutral LicoUp Subagent Mesh adapter registry for caller and target port lookup."
+[dependencies]
+licoup-agent-runtime.workspace = true

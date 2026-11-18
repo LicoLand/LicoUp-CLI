@@ -1,0 +1,15 @@
+{
+  "schema": "licoup.continuity.qualification-observations-draft/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "note": "Self-confidence is stored as evidence provenance and never used as admission.",
+  "sample": {
+    "observationId": "obs:self-confidence",
+    "conversationFamily": "family:heldout-confidence:0",
+    "split": "heldout",
+    "subgroup": "en",
+    "polarity": "negative",
+    "judgment": "abstain",
+    "selfConfidence": 0.99
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://licoland.com/schemas/extensions/provider.schema.json",
+  "title": "LicoUp model provider configuration",
+  "description": "One model endpoint: identity, dialect, credential handle, catalog and versioned compatibility options. No endpoint and no model id is pre-listed, no key material appears here, and no price is asserted as spent. A dialect that is not a published compatible one owes its own stream adapter rather than imitating a compatible API.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "displayName",
+    "baseUrl",
+    "apiDialect",
+    "configRevision",
+    "catalogSource",
+    "models"
+  ],
+  "properties": {
+    "schema": {
+      "const": "licoup.model-provider.v1"
+    },
+    "id": {
+      "$ref": "#/$defs/namespacedName"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "baseUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://[^/@?#]+",
+      "maxLength": 512,
+      "description": "The endpoint. A credential handle issued for one origin is not resolved for another, so pointing this at a new origin does not inherit the old secret."
+    },
+    "apiDialect": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "description": "The dialect the endpoint speaks, in the provider's own words. `openai-chat-compatible` and `openai-responses-compatible` need no adapter code."
+    },
+    "credentialRef": {
+      "type": "string",
+      "pattern": "^credential:[A-Za-z0-9._-]+$",
+      "maxLength": 128,
+      "description": "A host-issued handle. Key material pasted here is refused before the configuration is stored, logged or graphed."
+    },
+    "configRevision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "catalogSource": {
+      "enum": ["static", "discovered"],
+      "description": "`static` lists the models here and needs no `modelProvider.models` call; `discovered` requires the provider to implement it."
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "displayName"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160,
+            "description": "The vendor's own model id. It is not namespaced: the catalog key already carries the provider id and generation."
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "inputModalities": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          "outputModalities": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          "tools": {
+            "type": ["boolean", "null"],
+            "description": "Null means the vendor published nothing. A reader may not substitute false."
+          },
+          "reasoning": {
+            "type": ["boolean", "null"],
+            "description": "Null means unknown; no reasoning strength is invented to fill a uniform table."
+          },
+          "contextTokens": {
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "description": "Null means unknown; no default window is substituted."
+          },
+          "pricingSource": {
+            "$ref": "#/$defs/namespacedName",
+            "description": "A reference to a price estimate. It is never an incurred cost: cost is an observation."
+          }
+        }
+      }
+    },
+    "compat": {
+      "type": "object",
+      "description": "Versioned semantic parameters, never key material.",
+      "additionalProperties": {
+        "type": ["string", "number", "boolean", "null"]
+      }
+    },
+    "streamAdapter": {
+      "$ref": "#/$defs/namespacedName",
+      "description": "Required when the dialect is not a compatible one: a custom API supplies its own stream adapter."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "apiDialect": {
+            "not": {
+              "enum": ["openai-chat-compatible", "openai-responses-compatible"]
+            }
+          }
+        },
+        "required": ["apiDialect"]
+      },
+      "then": {
+        "required": ["streamAdapter"]
+      }
+    }
+  ],
+  "$defs": {
+    "namespacedName": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)+(?:[./-][A-Za-z0-9_-]+)*$",
+      "maxLength": 160
+    }
+  }
+}

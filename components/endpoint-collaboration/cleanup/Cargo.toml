@@ -1,0 +1,23 @@
+[workspace]
+
+[package]
+name = "licoup-endpoint-collaboration-cleanup"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+license = "AGPL-3.0-or-later"
+publish = false
+description = "Endpoint cleanup slice of the endpoint collaboration package (org.licoland.feature.collaboration): the native owner of the bounded, resumable file half of an app-data erase for one revoked LicoUp endpoint."
+
+[dependencies]
+# The client's own data-home, bounded private-file and data-root-inventory
+# owners. This package declares the file stage and runs those owners over one
+# data root; it keeps no second walker, no second file writer and no second
+# inventory grammar.
+licoup-foundation = { path = "../../../crates/licoup-foundation" }
+anyhow = "1.0"
+fs2 = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+uuid = { version = "1.11", features = ["v4", "serde"] }

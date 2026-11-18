@@ -1,0 +1,10 @@
+{
+  "expect": { "status": "accept", "type": "ContextCompositionRequest", "check": "composition-request" },
+  "payload": {
+    "conversationId": "conversation:child-a",
+    "recipientMembershipId": "membership:child-coordinator",
+    "authorizedScopes": ["conversation"],
+    "revocationGeneration": 0,
+    "limit": 20
+  }
+}

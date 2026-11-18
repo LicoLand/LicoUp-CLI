@@ -1,0 +1,19 @@
+{
+  "schema": "licoup.continuity.qualification-identity-delta-draft/v1",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "promptChange": {
+    "field": "promptDigest",
+    "from": "prompt:digest-synthetic-a",
+    "to": "prompt:digest-synthetic-b"
+  },
+  "adapterRuntimeChange": {
+    "field": "adapterRuntimeDigest",
+    "from": "adapter:digest-synthetic-a",
+    "to": "adapter:digest-synthetic-b"
+  },
+  "expect": {
+    "previousResultBecomes": "stale",
+    "automaticAdvancement": false
+  }
+}

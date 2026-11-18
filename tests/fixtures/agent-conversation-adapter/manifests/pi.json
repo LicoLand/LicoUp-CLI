@@ -1,0 +1,214 @@
+{
+  "schemaVersion": "lico.agent-conversation-adapter.v1",
+  "identity": {
+    "agentId": "pi",
+    "driverId": "pi-rpc",
+    "runtimeProtocol": "pi-rpc-stdio-jsonl",
+    "packagingTargetId": "pi"
+  },
+  "officialCapabilityAssessment": {
+    "completedBeforeImplementation": true,
+    "sourceAuthority": "official",
+    "versionSupport": {
+      "kind": "unknown",
+      "source": "unverified",
+      "reason": "no_verified_vendor_bound"
+    },
+    "interfaceName": "official Pi RPC stdio interface",
+    "assessedVersion": "version reported by fixed Pi probe",
+    "versionProbe": "fixed --version probe",
+    "capabilityProbe": "RPC capability and state handshake",
+    "newSessionMethod": "RPC new session operation",
+    "exactResumeMethod": "RPC restore with caller-supplied session id",
+    "streamingMethod": "RPC message update events",
+    "historyMethod": "RPC state and exact session read",
+    "cleanupMethod": "disposable session root followed by absence verification",
+    "officialReferences": [
+      "https://github.com/badlogic/pi-mono"
+    ]
+  },
+  "transport": {
+    "family": "rpc",
+    "origin": "official",
+    "promptChannel": "json-rpc",
+    "continuityChannel": "protocol-field",
+    "workingDirectoryChannel": "process-cwd",
+    "framing": "jsonl",
+    "sessionScope": "persistent",
+    "fixedLaunchArguments": [
+      "--mode",
+      "rpc",
+      "--offline"
+    ]
+  },
+  "configuration": {
+    "binaryEnvironmentKeys": [
+      "PI_PATH",
+      "PI_BIN",
+      "PI_CODING_AGENT_PATH"
+    ],
+    "authentication": "runtime-owned",
+    "modelSelection": "request-field",
+    "reasoningSelection": "request-field",
+    "permissionSelection": "runtime-owned"
+  },
+  "operations": {
+    "discover": {
+      "status": "supported",
+      "method": "fixed version and capability probes"
+    },
+    "openNew": {
+      "status": "supported",
+      "method": "RPC new session operation"
+    },
+    "exactResume": {
+      "status": "supported",
+      "method": "RPC restore with caller-supplied session id"
+    },
+    "send": {
+      "status": "supported",
+      "method": "official structured prompt operation"
+    },
+    "stream": {
+      "status": "supported",
+      "method": "RPC message update events"
+    },
+    "cancel": {
+      "status": "unsupported",
+      "method": "official lane does not expose a durable active-turn cancel handle"
+    },
+    "interruptSteer": {
+      "status": "supported",
+      "method": "RPC steer with exact active session and turn identifiers"
+    },
+    "cleanup": {
+      "status": "supported",
+      "method": "disposable session root followed by absence verification"
+    },
+    "history": {
+      "status": "supported",
+      "method": "RPC state and exact session read"
+    },
+    "approvals": {
+      "status": "unsupported",
+      "method": "client approval response bridge is not enabled"
+    },
+    "usage": {
+      "status": "unsupported",
+      "method": "official lane usage projection is not enabled"
+    },
+    "multimodal": {
+      "status": "unsupported",
+      "method": "current adapter contribution is text-only"
+    }
+  },
+  "events": {
+    "framing": "jsonl",
+    "realtimeKinds": [
+      "agent.message.chunk",
+      "agent.tool.started",
+      "agent.tool.completed"
+    ],
+    "terminalKinds": [
+      "dispatch.turn.completed",
+      "dispatch.turn.failed"
+    ],
+    "sessionOwned": true,
+    "turnOwned": true
+  },
+  "lifecycle": {
+    "supervision": "process-tree",
+    "cleanupScope": "disposable-root",
+    "cancelHandleScope": "unavailable",
+    "maxConcurrentTransports": 8,
+    "maxTrackedSessions": 1024,
+    "survivesGuiDisconnect": true,
+    "reattachScope": "activeTurn",
+    "replayMode": "orderedCursor"
+  },
+  "privacy": {
+    "promptInArguments": false,
+    "continuityIdInArguments": false,
+    "boundedInput": true,
+    "boundedOutput": true,
+    "structuredEventProjection": true,
+    "safeCleanup": true,
+    "redactedEvidence": true
+  },
+  "routedContext": {
+    "contractVersion": "lico.routing.distillation-package.v1",
+    "deliveryChannel": "prompt-envelope",
+    "maxPackageBytes": 65536,
+    "requiredSections": [
+      "objective",
+      "currentState",
+      "decisions",
+      "constraints",
+      "openItems"
+    ],
+    "sourceReferences": "opaque-digest-only",
+    "rawConversationAllowed": false,
+    "contextDigestRequired": true,
+    "fidelityFailure": "fail-closed",
+    "finalReplyFeedsNextDistillation": true
+  },
+  "productIntegration": {
+    "dispatchLane": "AgentDispatchLane",
+    "cliUsesCanonicalReadiness": true,
+    "guiUsesCanonicalReadiness": true,
+    "routingUsesCanonicalReadiness": true,
+    "sharedNativeHistoryAuthority": true,
+    "finalReplyFeedsThreadAndDistillation": true
+  },
+  "acceptance": {
+    "coreChecks": [
+      "P-01",
+      "P-02",
+      "P-03",
+      "P-04",
+      "P-05",
+      "P-06",
+      "P-07",
+      "P-08",
+      "P-09",
+      "P-10"
+    ],
+    "conditionalChecks": [
+      "C-01",
+      "C-02",
+      "C-03",
+      "C-04",
+      "C-05",
+      "C-06"
+    ],
+    "checkSemantics": {
+      "P-01": "baseline-binding",
+      "P-02": "native-session-creation",
+      "P-03": "bidirectional-exact-resume",
+      "P-04": "deterministic-final-result",
+      "P-05": "effective-settings-parity",
+      "P-06": "history-readback-and-rendering",
+      "P-07": "error-cancel-timeout-parity",
+      "P-08": "privacy-and-process-boundary",
+      "P-09": "isolation-and-cleanup",
+      "P-10": "exact-release-product-ui",
+      "C-01": "streaming-delta",
+      "C-02": "reasoning-and-tool-trace",
+      "C-03": "approval-lifecycle",
+      "C-04": "attachments-and-multimodal",
+      "C-05": "interrupt-and-steer",
+      "C-06": "usage-and-status"
+    },
+    "minimumConsecutivePasses": 1,
+    "minimumConsecutiveReleaseUiPasses": 1,
+    "productUiRequired": true,
+    "releaseP10Required": true,
+    "liveLocalForwardingRequired": true,
+    "realtimeOutputRequired": true,
+    "sameNativeSessionRequired": true,
+    "canonicalReadinessRequired": true,
+    "nativeToArcRequired": true,
+    "arcToNativeRequired": true,
+    "exactArtifactRequired": true
+  }
+}

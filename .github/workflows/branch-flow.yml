@@ -1,0 +1,38 @@
+name: Branch flow
+
+on:
+  push:
+    branches: ["nightly", "stable", "release"]
+  pull_request:
+    branches: ["nightly", "stable", "release"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: branch-flow-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  branch-flow:
+    if: github.event.deleted != true
+    name: Branch flow
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Fetch immutable cutoff refs
+        run: git fetch --no-tags origin '+refs/heads/nightly-cutoff/*:refs/remotes/origin/nightly-cutoff/*'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "24"
+      - name: Verify branch flow fixtures
+        run: node tools/scripts/verify-branch-flow.mjs --self-test
+      - name: Verify branch flow
+        run: node tools/scripts/verify-branch-flow.mjs

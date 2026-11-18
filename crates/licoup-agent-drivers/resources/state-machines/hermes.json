@@ -1,0 +1,31 @@
+{
+  "machines": [
+    {
+      "id": "agent.hermes-protocol",
+      "rust_module": "hermes_protocol",
+      "states": [
+        { "id": "await-initialize", "rust_name": "AwaitInitialize" },
+        { "id": "await-session", "rust_name": "AwaitSession" },
+        { "id": "await-model", "rust_name": "AwaitModel" },
+        { "id": "await-prompt", "rust_name": "AwaitPrompt" },
+        { "id": "finished", "rust_name": "Finished" }
+      ],
+      "events": ["transport-ready", "initialized", "session-model", "session-prompt", "model-ready", "prompt-completed", "fail"],
+      "initial": "await-initialize",
+      "terminal": ["finished"],
+      "transitions": [
+        { "from_state": "await-initialize", "event": "transport-ready", "to_state": "await-session" },
+        { "from_state": "await-initialize", "event": "initialized", "to_state": "await-session" },
+        { "from_state": "await-session", "event": "session-model", "to_state": "await-model" },
+        { "from_state": "await-session", "event": "session-prompt", "to_state": "await-prompt" },
+        { "from_state": "await-model", "event": "model-ready", "to_state": "await-prompt" },
+        { "from_state": "await-prompt", "event": "prompt-completed", "to_state": "finished" },
+        { "from_state": "await-initialize", "event": "fail", "to_state": "finished" },
+        { "from_state": "await-session", "event": "fail", "to_state": "finished" },
+        { "from_state": "await-model", "event": "fail", "to_state": "finished" },
+        { "from_state": "await-prompt", "event": "fail", "to_state": "finished" },
+        { "from_state": "finished", "event": "fail", "to_state": "finished" }
+      ]
+    }
+  ]
+}

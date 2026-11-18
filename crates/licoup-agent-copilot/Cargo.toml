@@ -1,0 +1,61 @@
+[package]
+name = "licoup-agent-copilot"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Copilot adapter package: the Copilot ACP declaration and its frame dialect"
+
+# The crate is one package's program. `parser` is this Agent's vendor protocol
+# below the adapter port: the ACP frames Copilot sends, classified once, per
+# ADR-0008. `dialect` is that parser projected onto the shared ACP engine's
+# port, `driver` is Copilot's immutable launch metadata, `registration` is what
+# composition injects into `licoup-agent-adapter-sdk`, and `replay` is the arm
+# that drives the same parser from a recorded transcript.
+#
+# The kernel links no part of this crate's protocol. The ACP reducer itself is
+# shared: Copilot, Kimi Code and Hermes reach it through `licoup-agent-drivers`,
+# which owns the framing and the session semantics and no Agent's policy. This
+# crate supplies that engine's per-Agent answers and reaches no client crate.
+[features]
+default = []
+# The recorded-transcript replay arm drives the same shared ACP reducer the host
+# links for its own suites, so it travels behind the engine's `test-support`
+# surface. A production build of this package carries no replay arm: the host
+# composes the arms its own corpus runs.
+test-support = ["licoup-agent-drivers/test-support"]
+
+[dependencies]
+licoup-agent-adapter-sdk.workspace = true
+# The shared ACP engines: the reducer, the process runtime and the port one
+# Agent's frame dialect is read through. This package answers that port; it
+# never reaches into a client crate for it.
+licoup-agent-drivers.workspace = true
+# The ACP envelope vocabulary this Agent's frames are validated against.
+licoup-foundation.workspace = true
+serde_json.workspace = true
+
+# The published Copilot card and mechanism dialect are consumed at build time.
+# `a4aa` links the ACP runtime, whose feature set turns on serde_json's
+# `preserve_order`; keeping the dependency in the build graph leaves the
+# client's own JSON ordering (and the tests that pin it) unchanged while the
+# generated launch and mechanism facts still come from the published crate.
+[build-dependencies]
+a4aa.workspace = true
+a4aa-copilot.workspace = true
+
+[[bin]]
+name = "lico-agent-copilot"
+path = "src/bin/lico-agent-copilot.rs"
+
+# Test-only. The committed package artifact is validated with the host's own
+# manifest, permission and client-compatibility contract instead of a second
+# reading of it. Nothing here enters the package binary, which links no kernel
+# crate and reads its own package documents as data.
+[dev-dependencies]
+licoup-extension-contracts.workspace = true
+# The package's own suite replays the recorded Copilot transcripts through the
+# same shared arm a composing test build reaches, so the engine's replay surface
+# is on for this crate's tests exactly as it is for the host's.
+licoup-agent-drivers = { workspace = true, features = ["test-support"] }

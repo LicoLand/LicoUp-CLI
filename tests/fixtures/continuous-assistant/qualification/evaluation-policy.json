@@ -1,0 +1,50 @@
+{
+  "schema": "licoup.continuity.qualification-policy-draft/v1",
+  "policy_revision": "draft-1",
+  "status": "proposed-engineering-defaults-not-measured",
+  "evidenceClass": "synthetic",
+  "liveQualified": false,
+  "statistics": {
+    "method": "one-sided-95-percent-wilson-upper",
+    "z": 1.6448536269514722,
+    "zero_samples": "unknown",
+    "cluster_by": "conversation_family"
+  },
+  "semantic": {
+    "minimum_negative_cases": 300,
+    "minimum_positive_cases": 300,
+    "false_takeover_upper_max": 0.02,
+    "missed_commitment_upper_max": 0.05,
+    "non_abstain_coverage_min": 0.8,
+    "minimum_cases_per_required_subgroup": 50,
+    "required_subgroups": [
+      "zh-CN",
+      "en",
+      "non-coding",
+      "coding",
+      "compound-or-returning"
+    ],
+    "subgroup_raw_error_max": 0.1
+  },
+  "hard_invariants": {
+    "unapproved_disclosures_max": 0,
+    "known_duplicate_effects_max": 0,
+    "fabricated_goal_closures_max": 0,
+    "rewritten_authorship_max": 0,
+    "deleted_source_resurrections_max": 0
+  },
+  "comparison": {
+    "success_noninferiority_margin": 0.03,
+    "cost_per_accepted_outcome_ratio_max": 0.9,
+    "foreground_added_latency_p95_ms_max": 800,
+    "require_matched_environment": true,
+    "unknown_cost": "not_economically_qualified"
+  },
+  "rollout": [
+    "offline",
+    "admitted_shadow",
+    "qualified_low_risk",
+    "expanded"
+  ],
+  "scope_note": "Synthetic draft for later M4 policy admission. Not live qualification evidence."
+}

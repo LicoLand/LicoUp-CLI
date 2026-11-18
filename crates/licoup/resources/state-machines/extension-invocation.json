@@ -1,0 +1,20 @@
+{
+  "machines": [
+    {
+      "id": "extension.invocation",
+      "rust_module": "extension_invocation",
+      "states": [
+        { "id": "outstanding" },
+        { "id": "settled" },
+        { "id": "unknown" }
+      ],
+      "events": ["settle-completed", "settle-unknown"],
+      "initial": "outstanding",
+      "terminal": ["settled", "unknown"],
+      "transitions": [
+        { "from_state": "outstanding", "event": "settle-completed", "to_state": "settled" },
+        { "from_state": "outstanding", "event": "settle-unknown", "to_state": "unknown" }
+      ]
+    }
+  ]
+}

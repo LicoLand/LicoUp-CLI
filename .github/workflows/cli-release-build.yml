@@ -1,0 +1,143 @@
+name: CLI release build
+
+# One native-host build, contract, archive and checksum path shared by the
+# tagged Release workflow and the pull-request verification workflow.
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: Rust target triple
+        required: true
+        type: string
+      os:
+        description: GitHub-hosted runner label matching the target
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ inputs.target }}
+    runs-on: ${{ inputs.os }}
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the release source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "24"
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: Resolve and verify the release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(node -p 'require("./tools/cli-version.json").productVersion')"
+          if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+            test "v${version}" = "${GITHUB_REF_NAME}"
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+      - name: Resolve the release asset names
+        id: assets
+        shell: bash
+        env:
+          TARGET: ${{ inputs.target }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          node tools/scripts/release/cli-release-assets.mjs plan \
+            --version "${VERSION}" --target "${TARGET}" --github-output "${GITHUB_OUTPUT}"
+      - name: Build the released binaries
+        shell: bash
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          node tools/scripts/cargo-client.mjs build --release --locked --target "${TARGET}" \
+            -p licoup --bin licoup -p licoup-public-gateway --bin lico-subagent-mcp
+      - name: Write the release contract
+        shell: bash
+        env:
+          TARGET: ${{ inputs.target }}
+          CLI_BINARY: ${{ steps.assets.outputs.cli_binary }}
+        run: |
+          set -euo pipefail
+          out="build/crates/licoup/target/${TARGET}/release"
+          node tools/scripts/release/cli-release-contract.mjs \
+            --binary "${out}/${CLI_BINARY}" --target "${TARGET}" --output "build/release/contract.json"
+      - name: Archive the release on Unix
+        if: steps.assets.outputs.format != 'zip'
+        shell: bash
+        env:
+          TARGET: ${{ inputs.target }}
+          ARCHIVE: ${{ steps.assets.outputs.archive }}
+          CLI_BINARY: ${{ steps.assets.outputs.cli_binary }}
+          MCP_BINARY: ${{ steps.assets.outputs.mcp_binary }}
+        run: |
+          set -euo pipefail
+          out="build/crates/licoup/target/${TARGET}/release"
+          stage="build/release/stage"
+          mkdir -p "${stage}" build/release
+          cp "${out}/${CLI_BINARY}" "${out}/${MCP_BINARY}" "build/release/contract.json" "${stage}/"
+          tar -C "${stage}" -czf "build/release/${ARCHIVE}" \
+            "${CLI_BINARY}" "${MCP_BINARY}" contract.json
+      - name: Archive the release on Windows
+        if: steps.assets.outputs.format == 'zip'
+        shell: pwsh
+        env:
+          TARGET: ${{ inputs.target }}
+          ARCHIVE: ${{ steps.assets.outputs.archive }}
+          CLI_BINARY: ${{ steps.assets.outputs.cli_binary }}
+          MCP_BINARY: ${{ steps.assets.outputs.mcp_binary }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $out = "build/crates/licoup/target/$env:TARGET/release"
+          $stage = "build/release/stage"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item -LiteralPath (Join-Path $out $env:CLI_BINARY) -Destination $stage
+          Copy-Item -LiteralPath (Join-Path $out $env:MCP_BINARY) -Destination $stage
+          Copy-Item -LiteralPath "build/release/contract.json" -Destination $stage
+          Compress-Archive -Path (Join-Path $stage "*") `
+            -DestinationPath (Join-Path "build/release" $env:ARCHIVE) -CompressionLevel Optimal -Force
+      - name: Write the per-archive checksum on Unix
+        if: steps.assets.outputs.format != 'zip'
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.assets.outputs.archive }}
+          CHECKSUM: ${{ steps.assets.outputs.checksum }}
+        run: |
+          set -euo pipefail
+          cd build/release
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "${ARCHIVE}" > "${CHECKSUM}"
+          else
+            shasum -a 256 "${ARCHIVE}" > "${CHECKSUM}"
+          fi
+      - name: Write the per-archive checksum on Windows
+        if: steps.assets.outputs.format == 'zip'
+        shell: pwsh
+        env:
+          ARCHIVE: ${{ steps.assets.outputs.archive }}
+          CHECKSUM: ${{ steps.assets.outputs.checksum }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $archivePath = Join-Path "build/release" $env:ARCHIVE
+          $checksumPath = Join-Path "build/release" $env:CHECKSUM
+          $digest = (Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath).Hash.ToLowerInvariant()
+          # Write LF, not the Windows default CRLF: the aggregation job verifies
+          # these files with `sha256sum -c` on Linux.
+          [System.IO.File]::WriteAllText($checksumPath, "$digest  $env:ARCHIVE`n", [System.Text.Encoding]::ASCII)
+      - name: Upload the release artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ steps.assets.outputs.archive }}
+          path: |
+            build/release/${{ steps.assets.outputs.archive }}
+            build/release/${{ steps.assets.outputs.checksum }}
+          if-no-files-found: error

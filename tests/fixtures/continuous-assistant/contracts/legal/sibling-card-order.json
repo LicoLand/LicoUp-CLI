@@ -1,0 +1,15 @@
+{
+  "expect": { "status": "accept", "check": "sibling-order" },
+  "left": {
+    "parentConversationId": "conversation:parent",
+    "eventId": "event:card-a",
+    "sequence": 4,
+    "partId": "part:card-a"
+  },
+  "right": {
+    "parentConversationId": "conversation:parent",
+    "eventId": "event:card-b",
+    "sequence": 7,
+    "partId": "part:card-b"
+  }
+}

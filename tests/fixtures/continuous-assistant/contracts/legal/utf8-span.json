@@ -1,0 +1,8 @@
+{
+  "expect": { "status": "accept", "check": "span" },
+  "text": "你好",
+  "payload": {
+    "startByte": 0,
+    "endByte": 6
+  }
+}
